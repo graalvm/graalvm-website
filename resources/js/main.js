@@ -1225,3 +1225,34 @@ $("a").each(function() {
         $(this).addClass('activeMenuItem');
     }
 });
+
+//Downloads Page
+
+//Unfold and Fold GraalVM releases description on Downloads page
+   function openDescription() {
+      var opening=document.getElementById("description");
+      if (opening.style.display === "none") {
+        opening.style.display = "block";
+      } else {
+        opening.style.display = "none";
+      }
+    }
+    function closeDescription(){
+      var closing=document.getElementById("description");
+      if (opening.style.display === "block") {
+        opening.style.display = "none";
+      } else {
+        opening.style.display = "block";
+      }
+    }
+
+//Switch between 19 and 20 branches on Downloads page
+    $('.download-tab').click(function() {
+      $('.download-tab').removeClass('active');
+      $(this).addClass('active');
+      var ix = $(this).index();
+
+      $('#tab-20').toggle(ix === 0);
+      $('#tab-19').toggle(ix === 1);
+      $('#tab-nightly').toggle(ix === 2);
+    });
