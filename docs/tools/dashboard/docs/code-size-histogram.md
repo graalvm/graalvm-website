@@ -1,4 +1,4 @@
-### Code Size Breakdown
+# Code Size Breakdown
 
 The Code Size Breakdown component of GraalVM Dashboard displays the breakdown of
 the code by packages, classes and methods that were
@@ -10,7 +10,8 @@ characterize which packages or classes contribute most to its size. The
 following screenshot demonstrates the Code Size breakdown of the `Hello`
 program.  
 
-<img src="/docs/tools/dashboard/resources/img/code-size-breakdown.png" alt="code-size" width="800" height="500"/>
+<!-- <img src="/docs/tools/dashboard/resources/img/code-size-breakdown.png" alt="code-size" width="800" height="500"/> -->
+![code-size](/docs/tools/dashboard/resources/img/code-size-breakdown.png)
 
 On the left you see the partition of packages (e.g., `java.lang`, `java.util`)
 coming from the JDK. On the right you see `com.oracle` package which corresponds
