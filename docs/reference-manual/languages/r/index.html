@@ -739,8 +739,6 @@ can run R code at <a href="#high-performance">unparalleled performance</a>,
 <a href="#graalvm-integration">integrates with the GraalVM</a>
 ecosystem and provides <a href="#graalvm-r-engine-additional-features">additional R level features</a>.</p>
 
-<p>Note: The R language is currently <a href="https://docs.oracle.com/en/graalvm/enterprise/20/guide/overview/license/licensing-information.html">experimental</a> and not recommended for production use at this time.</p>
-
 <h2 id="installing-r">Installing R</h2>
 
 <p>The R language runtime is not provided by default, can be added to GraalVM using the functional <code>gu</code> utility:</p>
@@ -750,39 +748,46 @@ ecosystem and provides <a href="#graalvm-r-engine-additional-features">additiona
 See <code>gu --help</code> for more information.</p>
 
 <h3 id="requirements">Requirements</h3>
-<p>GraalVM R engine requires the <a href="https://www.openmprtl.org/">OpenMP runtime library</a> and <a href="https://gcc.gnu.org/wiki/GFortranBinaries">GFortran 3</a> runtime libraries to be installed
-on the target system. Following commands should install those dependencies.</p>
+<p>GraalVM R engine requires the <a href="https://www.openmprtl.org/">OpenMP runtime library</a>.
+Following commands should install this dependency:</p>
 
 <ul>
-  <li>Ubuntu 18.04 and 19.10: <code>apt-get install libgfortran-8-dev libgomp1</code></li>
-  <li>Oracle Linux 8: <code>yum install libgfortran</code></li>
-  <li>MacOS: <code>brew install gcc@4.9</code></li>
+  <li>Ubuntu 18.04 and 19.10: <code>apt-get install libgomp1</code></li>
+  <li>Oracle Linux 7: <code>yum install libgomp</code></li>
+  <li>Oracle Linux 8: <code>libgomp</code> should be already installed</li>
+  <li>MacOS: <code>libgomp</code> should be already installed</li>
 </ul>
 
-<p>On macOS it is necessary to run <code>$GRAALVM_HOME/bin/configure_fastr</code>.
-This script will attempt to locate the necessary runtime libraries on your computer
-and will fine-tune the the GraalVM R installation according to your system.
-On Linux systems, this script will check that the necessary libraries are installed, and if not,
-it will suggest how to install them.</p>
+<p>As of version 20.1.0 and later, FastR on Linux supports and bundles GFortran version 3
+runtime libraries, and on macOS – GFortran version 8.3.0
+runtime libraries. It is not necessary to install the runtime libraries. However,
+note that runtime libraries of certain version are only compatible with GFortran
+compiler of that version or later.</p>
+
+<p>On Linux system, <code>$R_HOME/bin/configure_fastr</code> can be used to check that the
+necessary libraries are installed, and if not, it will suggest how to install them.</p>
 
 <p>Moreover, to install R packages that contain C/C++ or Fortran code, compilers
 for those languages must be present on the target system. Following packages
 satisfy the dependencies of the most common R packages:</p>
 
 <ul>
-  <li>Ubuntu 18.04:
-    <pre><code>apt-get install build-essential gfortran-8 libxml2 libc++-dev
-</code></pre>
-  </li>
-  <li>Ubuntu 19.10:
+  <li>Ubuntu 18.04 and 19.10:
     <pre><code>apt-get install build-essential gfortran libxml2 libc++-dev
 </code></pre>
   </li>
-  <li>Oracle Linux 8:
-    <pre><code>yum groupinstall 'Development Tools' &amp;&amp; yum install libgfortran gcc-gfortran bzip2 libxml2-devel
+  <li>Oracle Linux 7 and 8:
+    <pre><code>yum groupinstall 'Development Tools' &amp;&amp; yum install gcc-gfortran bzip2 libxml2-devel
+</code></pre>
+  </li>
+  <li>MacOS
+    <pre><code>brew install gcc
 </code></pre>
   </li>
 </ul>
+
+<p>Note: if the <code>gfortran</code> executable is not on your system path, you will need to configure
+the full path to it in <code>$R_HOME/etc/Makeconf</code>, variable <code>FC</code>.</p>
 
 <h3 id="search-paths-for-packages">Search Paths for Packages</h3>
 <p>The default R library location is within the GraalVM installation directory.
@@ -793,9 +798,9 @@ edit the <code>R_LIBS_USER</code> variable in the <code>$GRAALVM_HOME/etc/Renvir
 <h2 id="running-r-code">Running R Code</h2>
 
 <p>Run R code with the <code>R</code> and <code>Rscript</code> commands:</p>
-<pre><code class="language-shell">$ R [polyglot options] [R options] [filename]
+<pre><code>R [polyglot options] [R options] [filename]
 </code></pre>
-<pre><code class="language-shell">$ Rscript [polyglot options] [R options] [filename]
+<pre><code>Rscript [polyglot options] [R options] [filename]
 </code></pre>
 
 <p>GraalVM R engine uses the same <a href="/docs/reference-manual/polyglot/#polyglot-options">polyglot options</a> as other GraalVM languages and the same R options as <a href="https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Invoking-R-from-the-command-line">GNU R</a>, e.g., <code>bin/R --vanilla</code>.
@@ -806,14 +811,17 @@ Use <code>--help</code> to print the list of supported options. The most importa
   <li><code>--vm.Djava.net.useSystemProxies=true</code> to pass any options to the JVM, this will be translated to <code>-Djava.net.useSystemProxies=true</code>.</li>
 </ul>
 
-<p>Note: unlike other GraalVM languages, R does not yet ship with a
+<p>Note that unlike other GraalVM languages, R does not yet ship with a
 <a href="/docs/reference-manual/aot-compilation/">Native Image</a> of its runtime.
 Therefore the <code>--native</code> option, which is the default, will still start Rscript on top of JVM,
 but for the sake of future compatibility the Java interoperability will not be available in such case.</p>
 
-<p>Users can optionally build the native image using:</p>
-<pre><code class="language-shell">jre/languages/R/bin/install_r_native_image
+<p>You can optionally build the native image using:</p>
+<pre><code>gu rebuild-images R
 </code></pre>
+<p>The native image of FastR is intended only for curious users and experiments.
+There are known issues and limitations. Once the native image was built, you can use
+the <code>--jvm</code> flag to run FastR again in the JVM mode.</p>
 
 <h2 id="running-r-extensions">Running R Extensions</h2>
 
