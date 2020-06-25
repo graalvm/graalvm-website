@@ -690,42 +690,27 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h3 id="version-roadmap">Version Roadmap</h3>
+                <h3 id="graalvm-community-version-roadmap">GraalVM Community Version Roadmap</h3>
 
-<p>New versions of GraalVM, functional releases, are released every 3 months on a predictable
-schedule, always to the closest Tuesday to the 17th of the month of February,
-May, August, and November. These functional releases become inactive once a new release is
-published.</p>
+<p>Minor Feature releases of GraalVM Community are produced every three months on
+a predictable schedule, always to the closest Tuesday to the 17th of the month
+of February, May, August and November. Once a new Feature release is made
+available, it will supersede any previous one.</p>
 
-<p>Critical Patch Updates (CPU) for GraalVM Enterprise follow the schedule for all CPU
-releases of Oracle as described
-<a href="https://www.oracle.com/technetwork/topics/security/alerts-086861.html">here</a>.
-The release happens quarterly always on the closest Tuesday to the 17th of the
-month of January, April, July, and October. All active releases receive patch
-updates.</p>
+<p>There is an Annual release train for each calendar year numbered 19.x, 20.x,
+21.x, etc.. Each Annual release train is comprised of a series of minor Feature
+releases. The final Feature release, e.g., 20.3, is supported for 12 months with
+bug and vulnerability fixes.</p>
 
-<h3 id="support-options-and-timelines">Support Options and Timelines</h3>
-
-<p>Each Annual Release (for example, 20) has 4 feature releases (0-3). These are
-released once per quarter. The 4th feature release (for example 20.3) is
-maintained for 12 months.
-For Oracle GraalVM Enterprise Edition Support Polices, please see <a href="https://www.oracle.com/us/assets/lifetime-support-middleware-069163.pdf">Oracle Lifetime Support Policy for Oracle Fusion Middleware Products</a>.</p>
-
-<p><strong>Oracle GraalVM Enterprise Edition</strong> Long-Term-Support (LTS) releases will happen every three years and be
-commercially supported. Oracle GraalVM Enterprise Edition 20.3 will become the
-first LTS release.</p>
-
-<h2 id="graalvm-community-edition">GraalVM Community Edition</h2>
-<p>Builds for the functional releases for the GraalVM Community Edition are released on the same schedule with the GraalVM Enterprise.
-Critical Patch Updates (CPU) for GraalVM Community Edition follow the OpenJDK CPU release schedule and become available shortly after the CPU dates for GraalVM Enterprise.
-Critical Patch Updates (CPU) for GraalVM Community Edition are available for the maintenance releases.</p>
+<p>Critical Patch Update (CPU) of GraalVM Community is based on the final GA tagged
+OpenJDK CPU changes and become available shortly after the OpenJDK CPU.</p>
 
 <p>Find below a graphical visualizations of the release roadmap, the dates and
 version numbers of upcoming releases.</p>
 
 
 
-  <svg id="timeline" width="680" height="130">
+  <svg id="timeline" width="620" height="130">
   </svg>
 
   <div id="div_template"></div>
@@ -781,9 +766,9 @@ version numbers of upcoming releases.</p>
 
       const typeToString = function(type) {
         switch(type) {
-          case 'majorRelease': return 'Functional Release';
-          case 'activeCPU': return 'Maintenance Release (CPU)';
-          case 'maintainanceCPU': return 'Critical Patch Update Release (CPU)';
+          case 'majorRelease': return 'Feature Release';
+          case 'activeCPU': return 'Critical Patch Update Release (CPU)';
+          case 'maintainanceCPU': return 'Annual Release';
         }
         return 'Unknown';
       }
@@ -863,12 +848,14 @@ version numbers of upcoming releases.</p>
       }
 
       var svg = d3.select('#timeline');
-      var timeScaleRaw = d3.scaleTime().domain([new Date(2019, 7, 1), new Date(2022, 0, 11)]).range([0, svg.attr('width') - 100]);
-      var timeScale = d => timeScaleRaw(d) + 100;
+      // var timeScaleRaw = d3.scaleTime().domain([new Date(2019, 7, 1), new Date(2022, 0, 11)]).range([0, svg.attr('width') - 100]);
+      var timeScaleRaw = d3.scaleTime().domain([new Date(2019, 7, 1), new Date(2022, 0, 11)]).range([0, svg.attr('width')]);
+      var timeScale = d => timeScaleRaw(d) + 50;
       const levelScale = x => 30 + x * 40;
       const levels = [0, 1, 2];
       const levelColor = ["#F29111", "#43AAC1", "#9CD5E1"];
-      const levelText = ["Functional", "CPU", "Maintenance"];
+      // const levelText = ["Feature", "CPU", "Annual"];
+      const levelText = [];
 
       var rectangle = svg.selectAll('rect').data(levels).enter().append("rect")
                              .attr("x", 0)
@@ -876,11 +863,11 @@ version numbers of upcoming releases.</p>
                             .attr("width", svg.attr('width'))
                             .attr("height", levelScale(1) - levelScale(0)).attr("fill", d => levelColor[d]);
 
-      svg.selectAll('text').data(levels).enter().append("text")
-                             .attr("x", 50)
-                             .attr("y", d => levelScale(d))
-                            .attr("width", 100)
-                            .attr("height", levelScale(1) - levelScale(0)).attr('text-anchor', 'middle').text(d => levelText[d]);
+      // svg.selectAll('text').data(levels).enter().append("text")
+      //                        .attr("x", 50)
+      //                        .attr("y", d => levelScale(d))
+      //                       .attr("width", 100)
+      //                       .attr("height", levelScale(1) - levelScale(0)).attr('text-anchor', 'middle');
 
       d3.select('#timeline').selectAll('circle').data(allReleases).enter().append('circle').attr('r', 5).attr('cx', d => timeScale(d.date)).attr('cy', x => levelScale(x.level)).on('mouseover', showTooltip).on('mouseout', hideTooltip);
       d3.select('#timeline').selectAll('text#versions').data(allReleases).enter().append('text').attr('class', 'version').attr('font-size', '13px').attr('cursor', 'default').attr('width', 20).attr('height', 20).attr('text-anchor', 'middle').attr('x', d => timeScale(d.date)).attr('y', x => levelScale(x.level) - 8).text(d => d.version);
