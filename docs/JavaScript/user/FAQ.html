@@ -645,6 +645,25 @@ $(document).ready(function(){
   <li>For <code>ant</code>, use <code>ANT_OPTS="-Dpolyglot.js.nashorn-compat=true" ant</code> when using GraalVM JavaScript via ScriptEngine</li>
 </ul>
 
+<h3 id="builtin-functions-like-arraymap-or-fnapply-are-not-available-on-non-javascript-objects-like-proxyarrays-from-java">Builtin functions like <code>array.map()</code> or <code>fn.apply()</code> are not available on non-JavaScript objects like <code>ProxyArray</code>s from Java.</h3>
+
+<p>Reason:</p>
+<ul>
+  <li>Java objects provided to JavaScript are treated as close as possible to their JavaScript counterpart. For instance, Java arrays provided to JavaScript are treated like JavaScript <em>Array exotic objects</em> (JavaScript arrays) whenever possible; the same is true for <em>functions</em>. One obvious difference is that such object’s prototype is <code>null</code>. This means that while you can e.g. read the <code>length</code> or read and write the values of a Java array in JavaScript code, you cannot call <code>sort()</code> on it, as the <code>Array.prototype</code> is not provided by default.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>While the objects don’t have the methods of the prototype assigned, you can explicitly call them, e.g. <code>Array.prototype.call.sort(myArray)</code>.</li>
+  <li>We offer the experimental option <code>js.experimental-foreign-object-prototype</code>. When enabled, objects on the JavaScript side get the most prototype (e.g. <code>Array.prototype</code>, <code>Function.prototype</code>, <code>Object.prototype</code>) set and can thus behave more similarly to native JavaScript objects of the respective type. Normal JavaScript precedence rules apply here, e.g. own properties (of the Java object in that case) take precedence over and hide properties from the prototype.</li>
+</ul>
+
+<p>Note that while the JavaScript builtin functions e.g. from <code>Array.prototype</code> can be called on the respective Java types, those functions expect JavaScript semantics.
+This for instance means that operations might fail (typically with a <code>TypeError</code>: <code>Message not supported</code>) when an operation is not supported in Java.
+Consider <code>Array.prototype.push</code> as an example: while arrays can grow in size in JavaScript, they are fixed-size in Java, thus pushing a value is semantically not possible and will fail.
+In such cases, you can wrap the Java object and handle that case explicitly.
+Use the interfaces <code>ProxyObject</code> and <code>ProxyArray</code> for that purpose.</p>
+
 <h2 id="performance">Performance</h2>
 
 <h3 id="my-application-is-slower-on-graalvm-javascript-than-on-another-engine">My application is slower on GraalVM JavaScript than on [another engine]</h3>
@@ -659,6 +678,7 @@ $(document).ready(function(){
 <ul>
   <li>Use proper warmup in your benchmark, and disregard the first few iterations where the application still warms up.</li>
   <li>Use the <code>--jvm</code> option for slower startup, but higher peak performance.</li>
+  <li>Double-check you have no flags set that might lower your performance, e.g. <code>-ea</code>/<code>-esa</code>.</li>
   <li>Try to minify the problem to the root cause, and <a href="https://github.com/graalvm/graaljs/issues">file an issue</a> so the GraalVM team can have a look.</li>
 </ul>
 
@@ -732,6 +752,7 @@ public class Minified {
 <p>Solution:</p>
 <ul>
   <li>Ensure the object (type) in question does handle the respective message.</li>
+  <li>Specifically, ensure the JavaScript operation you try to execute on a Java type is possible semantically in Java. For instance, while you can <code>push</code> a value to an array in JavaScript and thus automatically grow the array, arrays in Java are of fixed length and trying to push to them will result in a <code>Message not supported</code> failure. You might want to wrap Java objects for such cases, e.g. as a <code>ProxyArray</code>.</li>
   <li>Ensure access to the class is permitted, by having <code>@HostAccess.Export</code> on your class and/or the <code>Context.Builder.allowHostAccess()</code> set to a permissive setting. See <a href="https://graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.html">JavaDoc of org.graalvm.polyglot.Context</a>.</li>
 </ul>
 
