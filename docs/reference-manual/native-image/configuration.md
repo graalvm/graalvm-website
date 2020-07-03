@@ -94,7 +94,6 @@ comes from the jar file.
 
 ### Specifying Default Options for Native Image
 
-
 If there is a need to pass some options for every image build unconditionally, for
 example, to always generate an image in verbose mode (`--verbose`), we can
 make use of the `NATIVE_IMAGE_CONFIG_FILE` environment variable.
@@ -112,6 +111,12 @@ NativeImageArgs = --configurations-path /home/user/custom-image-configs \
                   -O1
 ```
 
+### Changing Default Folder for Native Image Configuration Data
+
+The Native Image builder by default stores configuration data in the HOME directory (`$HOME/.native-image/`). You can use a different directory by setting the `NATIVE_IMAGE_USER_HOME` environment variable, e.g.:
+```
+ export NATIVE_IMAGE_USER_HOME=$HOME/.config/native-image
+```
 
 ## Runtime vs Build Time Initialization
 

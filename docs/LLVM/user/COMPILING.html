@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/docs/LLVM/user/README">
+  <link rel="canonical" href="https://www.graalvm.org/docs/LLVM/user/COMPILING">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -350,7 +350,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/docs/LLVM/user/README">
@@ -494,51 +494,66 @@ $(document).ready(function(){
 
           <div class="col-sm-9">
             <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-              <h1 id="for-llvm-user">For LLVM User</h1>
+              <h1 id="compiling-native-projects-to-llvm-bitcode">Compiling Native Projects to LLVM Bitcode</h1>
 
-<p>The GraalVM LLVM runtime can execute programming languages that can be transformed
-to LLVM bitcode on GraalVM. This includes languages like C/C++, Fortran, and others.
-To execute a program, you have to compile the program to LLVM bitcode with an LLVM
-front end such as <code>clang</code>.</p>
+<p>The GraalVM LLVM runtime executes LLVM bitcode. LLVM bitcode is a <a href="https://llvm.org/docs/BitCodeFormat.html">binary format</a>
+that is usually not written by hand. Instead, frontends compile a source language to bitcode.
+For example, <a href="https://clang.llvm.org/">clang</a> is a frontend that transforms C/C++ into bitcode.</p>
 
-<h2 id="running-llvm-bitcode-programs-on-graalvm">Running LLVM bitcode programs on GraalVM</h2>
+<h2 id="file-format">File Format</h2>
 
-<pre><code>$GRAALVM_HOME/bin/lli [options] &lt;bitcode file&gt; [program args]
+<p>While the GraalVM LLVM runtime can execute <a href="https://llvm.org/docs/BitCodeFormat.html">plain bitcode files</a>,
+the preferred format is a <em>native executable</em> with <em>embedded bitcode</em>. The executable file formats differ on Linux and MacOS.
+Linux by default uses ELF files. The bitcode is stored in a section called <code>.llvmbc</code>.
+MacOS uses Mach-O files. The bitcode is in the <code>__bundle</code> section of the <code>__LLVM</code> segment.</p>
+
+<p>Using native executables with embedded bitcode offers two advantages over plain bitcode files.
+First, build systems for native projects, for example a <code>Makefile</code>, expect the result to be an executable.
+Embedding the bitcode instead of changing the output format improves compatibility with existing projects.
+Second, executables allow specifying library dependencies which is not possible with LLVM bitcode.
+The GraalVM LLVM runtime utilizes this information to find and load dependencies.</p>
+
+<h2 id="using-the-pre-built-llvm-toolchain-for-compiling-cc">Using the pre-built LLVM Toolchain for compiling C/C++</h2>
+
+<p>To simplify compiling C/C++ to executables with embedded bitcode, GraalVM comes with a pre-built LLVM toolchain.
+The LLVM toolchain can be installed using the <code>gu</code> command:</p>
+
+<pre><code class="language-shell">$GRAALVM_HOME/bin/gu install llvm-toolchain
 </code></pre>
 
-<p>Where <code>&lt;bitcode file&gt;</code> is a <a href="/docs/LLVM/user/COMPILING">compiled program with embedded LLVM bitcode</a>.
-Note: LLVM bitcode is platform dependent. The program must be compiled for
-the appropriate platform.</p>
+<p>To get the location of the toolchain, use the <code>--print-toolchain-path</code> argument of <code>lli</code>:</p>
 
-<h2 id="compiling-to-llvm-bitcode-format">Compiling to LLVM bitcode format</h2>
-
-<p>GraalVM can execute C/C++, Fortran, and other programs that can be compiled to
-LLVM bitcode. For that, GraalVM needs the binaries to be compiled with embedded
-bitcode. The <a href="/docs/LLVM/user/COMPILING">COMPILING</a> document provides information on the expected
-file format and on compiling to bitcode.</p>
-
-<h3 id="quick-start">Quick Start</h3>
-<p>GraalVM comes with a pre-built LLVM toolchain for compiling C/C++ to LLVM bitcode.
-It is used as follows:</p>
-
-<pre><code class="language-shell"># install the toolchain (only needed once)
-$GRAALVM_HOME/bin/gu install llvm-toolchain
-# get the path to the toolchain
-export LLVM_TOOLCHAIN=$($GRAALVM_HOME/bin/lli --print-toolchain-path)
-# compile a C file using the bundled `clang`
-$TOOLCHAIN_PATH/clang example.c -o example
-# run the result on GraalVM
-$GRAALVM_HOME/bin/lli example
+<pre><code class="language-shell">export LLVM_TOOLCHAIN=$($GRAALVM_HOME/bin/lli --print-toolchain-path)
 </code></pre>
 
-<p>See <a href="/docs/LLVM/user/COMPILING">COMPILING</a> for more details.</p>
+<p>The toolchain contains compilers such as <code>clang</code> for C or <code>clang++</code> for C++, but also other tools that are needed
+for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries. See the content of
+the toolchain path for a list of available tools:</p>
 
-<h2 id="debugging">Debugging</h2>
+<pre><code class="language-shell">ls $LLVM_TOOLCHAIN
+</code></pre>
 
-<p>GraalVM supports debugging programs with the Chrome Inspector. To enable debugging,
-use the <code>lli --inspect</code> flag.</p>
+<p>Use those tools just as you would do for native compilation. For example, the C code file <code>hello.c</code>:</p>
 
-<p>See <a href="/docs/LLVM/user/DEBUGGING">DEBUGGING</a> for more information.</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+
+int main() {
+    printf("Hello from GraalVM!\n");
+    return 0;
+}
+</code></pre>
+
+<p>You can compile <code>hello.c</code> to an executable with embedded LLVM bitcode as follows:</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello.c -o hello
+</code></pre>
+
+<p>The resulting executable <code>hello</code> can be executed on GraalVM using <code>lli</code>:</p>
+<pre><code class="language-shell">$GRAALVM_HOME/bin/lli hello
+</code></pre>
+<h2 id="where-to-continue">Where to continue?</h2>
+
+<p>There is a <a href="https://medium.com/graalvm/graalvm-llvm-toolchain-f606f995bf">blog post</a> covering our LLVM toolchain which
+contains more complex examples and background information on compiling to bitcode.</p>
 
             </div>
 
