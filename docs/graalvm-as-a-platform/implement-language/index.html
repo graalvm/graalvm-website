@@ -829,7 +829,7 @@ up the necessary command line depending on whether <code>JAVA_HOME</code> points
 GraalVM or another JVM installation. The following subsections describe the
 command line for both cases.</p>
 
-<h3 id="graalvm">GraalVM</h3>
+<h3 id="run-simplelanguage-with-graalvm-as-java_home">Run SimpleLanguage with GraalVM as JAVA_HOME</h3>
 
 <p>Assuming <code>JAVA_HOME</code> points to the GraalVM installation and that the current
 working directory is the <code>simplelanguage</code> directory, to run SimpleLanguage one
@@ -852,18 +852,30 @@ this case, the launcher).</p>
 
 <p><em>NOTE! This should only be used during development.</em></p>
 
-<p>If it is required to disable the class path separation and enable having the
+<p>For development purposes it is useful to disable the class path separation and enable having the
 language implementation on the application class path (for example, for testing
-the internals of the language) you can add the <code>-XX:-UseJVMCIClassLoader</code>
+the internals of the language).</p>
+
+<p>For GraalVM distribution based on JDK 8, you can add the <code>-XX:-UseJVMCIClassLoader</code>
 option. This disables the class path isolation, enabling the language
 implementation to be placed on the application class path. The command line can
-then look like the following.</p>
+be as the following:</p>
 
-<pre><code class="language-shell">$ $JAVA_HOME/bin/java \
+<pre><code>$JAVA_HOME/bin/java \
     -XX:-UseJVMCIClassLoader -Dgraalvm.locatorDisabled=true \
     -cp launcher/target/launcher-20.1.0-SNAPSHOT.jar:language/target/simplelanguage.jar \
     com.oracle.truffle.sl.launcher.SLMain language/tests/Add.sl
 </code></pre>
+
+<p>For JDK 11 based distribution of GraalVM, the <code>-XX:-UseJVMCIClassLoader</code> option
+is not valid. The Java Module System isolation is used. You can achieve the same behaviour
+using <code>--add-exports</code> or <code>--upgrade-module-path</code>. The later is preferable.</p>
+
+<p>The Truffle API jar on the Maven Central exports all API packages in its module-info. Apply <code>--upgrade-module-path</code> option together with <code>-Dgraalvm.locatorDisabled=true</code> and this jar to export Truffle API packages:</p>
+<pre><code>-Dgraalvm.locatorDisabled=true --module-path=&lt;yourModulePath&gt;:${truffle.dir} --upgrade-module-path=${truffle.dir}/truffle-api.jar
+</code></pre>
+
+<p>A sample POM using the <code>--upgrade-module-path</code> to export Truffle API packages can be found in the <a href="https://github.com/graalvm/simplelanguage/blob/master/language/pom.xml#L58">Simple Language POM.xml</a> file.</p>
 
 <h3 id="other-jvm-implementations">Other JVM Implementations</h3>
 
