@@ -1,11 +1,11 @@
 ## Polyglot Options
 
-You can configure language engine for better throughput or startup. 
+You can configure language engine for better throughput or startup.
 
 * `--engine.Mode=default`: Configures the execution mode of the engine. The execution mode automatically tunes the polyglot engine towards latency or throughput.
     * `throughput`: To collect the maximum amount of profiling information and compile using the
     maximum number of optimizations. This mode results in slower application startup
-    but better throughput. This mode uses the compiler configuration `community` or 
+    but better throughput. This mode uses the compiler configuration `community` or
     `enterprise` if not specified otherwise.
     * `default`: To use a balanced engine configuration. This mode uses the compiler configuration `community` or `enterprise` if not specified otherwise.
     * `latency`: To collect only minimal profiling information and compile as fast as possible

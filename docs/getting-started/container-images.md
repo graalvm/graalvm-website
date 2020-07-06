@@ -1,4 +1,4 @@
-## GraalVM Container Images
+# GraalVM Container Images
 
 GraalVM Community container images are available for download from [GitHub Packages](https://github.com/graalvm/container/packages/237037).
 
