@@ -747,7 +747,7 @@ With that engine, GraalVM can execute JavaScript and Node.js applications.</p>
       </h2>
 
 <p>GraalVM can execute plain JavaScript code:</p>
-<pre><code>js [options] [filename...] -- [args]
+<pre><code>$ js [options] [filename...] -- [args]
 </code></pre>
     
       <h3 id="running-nodejs-apps">
@@ -771,7 +771,7 @@ command and supports all Node.js APIs.</p>
 <p>1. Install the <code>colors</code> and <code>ansispan</code> modules using <code>npm install</code> as
 follows:</p>
 
-<pre><code>npm install colors ansispan
+<pre><code>$ npm install colors ansispan
 </code></pre>
 
 <p>After the modules are installed, you can use them from your application.</p>
@@ -853,7 +853,7 @@ follows:</p>
 
 <p>3. Execute it on GraalVM using the <code>node</code> command as follows:</p>
 
-<pre><code>node app.js
+<pre><code>$ node app.js
 </code></pre>
     
       <h2 id="interoperability">
@@ -863,24 +863,83 @@ follows:</p>
         
         
       </h2>
-<p>GraalVM supports several other programming languages, including Ruby, R, Python
-and LLVM. While GraalVM is designed to run Node.js and JavaScript applications,
-it also provides an API for programming language interoperability that lets you
-execute code from any other language that GraalVM supports.</p>
 
-<p>From JavaScript code you can access Java applications, as in the following
-example:</p>
+<p>GraalVM supports several other programming languages like Ruby, R, Python and
+LLVM. While GraalVM is designed to run Node.js and JavaScript applications, it
+also provides the interoperability between those languages and lets you execute
+code from or call methods in any of those languages using GraalVM Polyglot APIs.</p>
+
+<p>To enable Node.js or JavaScript interoperability with other languages, pass
+<code>--jvm</code> and <code>--polyglot</code> options, for example:</p>
+<pre><code>$ node --jvm --polyglot
+Welcome to Node.js v12.15.0.
+Type ".help" for more information.
+&gt; var array = Polyglot.eval("python", "[1,2,42,4]")
+&gt; console.log(array[2]);
+42
+&gt; console.log(Polyglot.eval('R', 'runif(100)')[0]);
+0.8198353068437427
+</code></pre>
+    
+      <h2 id="interoperability-with-java">
+        
+        
+          Interoperability with Java <a href="#interoperability-with-java" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To access Java from JavaScript, use <code>Java.type</code> as in the following example:</p>
 <pre><code>$ node --jvm
 &gt; var BigInteger = Java.type('java.math.BigInteger');
 &gt; console.log(BigInteger.valueOf(2).pow(100).toString(16));
 10000000000000000000000000
 </code></pre>
 
-<p>You can also call methods in other programming languages that GraalVM supports:</p>
-<pre><code>$ node --jvm --polyglot
-&gt; console.log(Polyglot.eval('R', 'runif(100)')[0]);
-0.8198353068437427
+<p>Vice versa, you can execute JavaScript from Java by embedding the JavaScript context in the Java program:</p>
+<pre><code>import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+
+public class HelloPolyglot {
+
+    static String JS_CODE = "(function myFun(param){console.log('hello '+param);})";
+
+    public static void main(String[] args) {
+        System.out.println("Hello Java!");
+        try (Context context = Context.create()) {
+            Value value = context.eval("js", JS_CODE);
+            value.execute(args[0]);
+        }
+    }
+}
 </code></pre>
+<p>By wrapping the function definition (<code>()</code>), you return the function immediately.
+The source code unit can be represented with a String, as in the example, a file, read from URL, and <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">other means</a>.</p>
+
+<p>Run it:</p>
+<pre><code>$ javac HelloPolyglot.java
+$ java HelloPolyglot JavaScript
+Hello Java!
+hello JavaScript
+</code></pre>
+<p>This way you can evaluate JavaScript context embedded in Java, but you will not be able to
+call a function and set parameters in the function directly from the Java code.
+Node.js runtime cannot be embedded into a JVM but has to be started as a separate process.</p>
+
+<p>For example, save this code as <em>app.js</em>:</p>
+<pre><code>var HelloPolyglot = Java.type("HelloPolyglot");
+
+HelloPolyglot.main(["from node.js"]);
+
+console.log("done");
+</code></pre>
+<p>Then start <code>node</code> with the <code>--jvm</code> option to enable interoperability with Java:</p>
+<pre><code>$ node --jvm --vm.cp=. app.js
+Hello Java!
+hello from node.js
+done
+</code></pre>
+<p>By setting the classpath, you instruct <code>node</code> to start a JVM properly. Both Node.js and JVM then run in the same process and the interoperability works using the same <code>Value</code> classes as above.</p>
     
       <h2 id="graalvm-javascript-compatibility">
         
