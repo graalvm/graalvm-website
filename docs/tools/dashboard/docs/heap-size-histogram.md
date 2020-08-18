@@ -12,5 +12,4 @@ the `Hello` example, Heap Size Breakdown may not be very helpful as most of the
 objects in the heap are internal to Native Image pulls. We do not have any
 preallocated objects that belong to the `Hello` example.
 
-<!-- <img src="/docs/tools/dashboard/resources/img/heap-size-breakdown.png" alt="heap-size" width="800" height="500"/> -->
-![heap-size](/docs/tools/dashboard/resources/img/heap-size-breakdown.png)
+<img src="/docs/tools/dashboard/resources/img/heap-size-breakdown.png" alt="heap-size" width="800" height="500"/>

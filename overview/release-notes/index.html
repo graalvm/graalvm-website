@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html xml:lang="en-us" lang="en-us">
+    <head>
+        
+
+
+
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta property="og:site_name" content="Oracle Help Center">
+
+        <!-- The title values -->
+        <title></title>
+        <meta property="og:title" content="">
+        <meta name="application-name" content="GraalVM">
+        <meta name="dcterms.title" content="">
+        <!-- The description values -->
+        
+        
+        
+        <meta name="dcterms.created" content="2020-08-18T18:53:44+00:00">
+        <meta name="dcterms.category" content="">
+        <meta name="dcterms.identifier" content="">
+        <meta name="dcterms.product" content="">
+        <meta name="dcterms.isVersionOf" content="">
+
+        
+        
+        <link rel="first" href="/main.html" title="First Page" type="text/html">
+        <link rel="contents" href="/toc.htm" title="Table of Contents" type="text/html">
+        <link rel="self" href="/overview/release-notes/" title="Current Page" type="text/html">
+
+        <link rel="stylesheet" href="/sp_common/book-template/ohc-book-template/css/book.css">
+        <link rel="shortcut icon" href="/sp_common/book-template/ohc-common/img/favicon.ico">
+        <meta name="robots" content="all">
+        <link rel="schema.dcterms" href="http://purl.org/dc/terms/">
+        <script>
+            document.write('<style type="text/css">');
+            document.write('body > .noscript, body > .noscript ~ * { opacity: 0; }');
+            document.write('</style>');
+        </script>
+        <script data-main="/sp_common/book-template/ohc-book-template/js/book-config" src="/sp_common/book-template/requirejs/require.js"></script>
+        <script>
+            if (window.require === undefined) {
+                document.write('<script data-main="../../sp_common/book-template/ohc-book-template/js/book-config" src="../../sp_common/book-template/requirejs/require.js"><\/script>');
+                document.write('<link href="../../sp_common/book-template/ohc-book-template/css/book.css" rel="stylesheet">');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="noscript alert alert-danger text-center" role="alert">
+            
+            
+            <span class="fa fa-exclamation-triangle" aria-hidden="true"></span> JavaScript must be enabled to correctly display this content
+        </div>
+        <article>
+            <h2 id="release-notes">Release Notes</h2>
+
+<p>This page highlights changes to Oracle GraalVM Enterprise Edition between releases.
+GraalVM Enterprise comprises different components, changes to which are
+listed separately. Release notes are grouped in a descending order for
+usability reasons.</p>
+
+<p>Consult <a href="/en/graalvm/enterprise/20/docs/overview/version-roadmap/">GraalVM Enterprise version roadmap</a> for
+information on the updates cadence and release dates.</p>
+
+<h2 id="2020">20.2.0</h2>
+<p>(2020-08-18)</p>
+
+<h3 id="java">Java</h3>
+<ul>
+  <li>Oracle GraalVM Enterprise Edition is based on Oracle JDK version 1.8.0_261 and
+Oracle JDK version 11.0.8.0.2. You can find Oracle JDK release notes for these
+versions at the <a href="https://www.oracle.com/technetwork/java/javase/overview/index.html">Oracle Technology Network website</a>.</li>
+  <li>Added the ability to release the memory used by <a href="/docs/reference-manual/languages/jvm/">libgraal</a> to the OS when an application enters a stable phase and compilation goes idle. This is achieved by attaching each compiler thread to a libgraal isolate. The number of compiler threads that can be attached to an isolate is controlled by the <code>jvmci.ThreadsPerNativeLibraryRuntime</code> system property. The default is all threads attached to a single isolate. Isolates are initialized on demand to handle extra compiler threads. When a compiler thread becomes idle (idleness delay is configurable by <code>jvmci.CompilerIdleDelay</code>), it detaches itself from its isolate. As the last thread detaches from an isolate, it is shutdown and its memory (i.e., the libgraal heap) is released to the OS. This feature has the following of advantages:
+    <ul>
+      <li>It can reduce the RSS memory footprint of a GraalVM process. If the compiler is not being used, it uses no resources.</li>
+      <li>If multiple isolates are used, it mitigates interference between complier threads. For example, there is less contention on shared objects and a garbage collection in one isolate will not pause threads in other isolates.</li>
+    </ul>
+  </li>
+  <li>Fixed an error in code generation which led to incorrect behaviour of programs using the Apache commons-compress BZip2 implementation (see <a href="https://github.com/oracle/graal/issues/2534">#2534</a>).</li>
+  <li>Improved excessive compile time of certain programs (see <a href="https://github.com/oracle/graal/issues/2548">#2548</a>).</li>
+  <li>Improved the optimization responsible for removing redundant read/write, array <code>clone()</code> and accesses to the cloned arrays operations. Workloads that heavily use array read/write operations, especially inside loops, in combination with allocations may benefit from this optimization. As a result of the enhanced read/write optimization, the speedups of up to 2.5x on the <a href="https://browserbench.org/JetStream1.1/in-depth.html">JetStream</a> benchmarks were seen with GraalVM JavaScript engine.</li>
+  <li>Added an experimental partial loop unrolling optimization. Partial loop unrolling is an extended form of traditional <a href="https://en.wikipedia.org/wiki/Loop_unrolling">loop unrolling</a> optimization that works for arbitrary counted loops with an unknown upper bound of loop iterations <code>i</code>. The optimization is not enabled by default, you can experiment with the optimization by enabling it with <code>-Dgraal.EnterprisePartialUnroll=true</code>. Note, the optimization is still experimental and thus may lead to unknown errors.</li>
+  <li>Improved error reporting with <a href="/docs/reference-manual/languages/jvm/">libgraal</a>. Fatal errors in libgraal now produce a <code>hs-err</code> crash log that can substantially improve triaging and debugging such errors. Likewise, low level libgraal output, such as libgraal GC messages produced by <code>-Dlibgraal.PrintGC=true</code> are routed to HotSpot’s log stream. That is, libgraal error handling and logging is unified with HotSpot support for these features and thus configurable by options such as <code>-XX:LogFile</code> and <code>-XX:OnError</code>.</li>
+  <li>Renamed the <code>MitigateSpeculativeExecutionAttacks</code> compiler option to <code>SpectrePHTBarriers</code> (e.g., use <code>-Dgraal.SpectrePHTBarriers=AllTargets</code> for <code>java</code> or <code>--vm.Dgraal.SpectrePHTBarriers=AllTargets</code> for <code>js</code>).</li>
+</ul>
+
+<h3 id="native-image">Native Image</h3>
+<ul>
+  <li>Improved generation of native images statically linked against <code>muslc</code>. If you have <code>musl-gcc</code> on the path, you can now generate a native image statically linked against muslc with the following options: <code>--static --libc=musl</code>. More information about it is available in the <a href="/docs/reference-manual/native-image/StaticImages/">documentation</a>.</li>
+  <li>Added an option to create “mostly static” native images which link statically everything except <code>libc</code>. Native images built this way are convenient to use in small docker images, for example, based on <a href="https://github.com/GoogleContainerTools/distroless/tree/master/base">distroless/static</a>. Enable nearly static native image generation with the following option: <code>-H:+StaticExecutableWithDynamicLibC</code>.</li>
+  <li>Enabled <code>-H:+RemoveSaturatedTypeFlows</code> by default, which should result in faster native image generation and use less memory for the generation.</li>
+  <li>Changed the class initialization strategy to initialize at build time only a small part of the JDK library. To get the previous behaviour back, use <code>--initialize-at-build-time</code> option for necessary packages.</li>
+  <li>Improved the G1GC-like garbage collection for workloads where native image requires smaller GC pauses. More details are in the <a href="/docs/reference-manual/native-image/LowLatencyGC/">documentation</a> on how to enable and configure it.</li>
+  <li>Many other improvements and bug fixes can be found in <a href="https://github.com/oracle/graal/issues?q=is%3Aissue+is%3Aclosed+label%3Anative-image">the repository</a>.</li>
+</ul>
+
+<h3 id="javascript">JavaScript</h3>
+
+<ul>
+  <li>Updated Node.js to version 12.18.0, notable changes in this release are available from the <a href="https://nodejs.org/en/blog/release/v12.18.0/">Node.JS project website</a>.</li>
+  <li>Updated ICU4J library to version 67.1.</li>
+  <li>Implemented the <a href="https://github.com/tc39/proposal-unified-intl-numberformat">Intl.NumberFormat Unified API</a> proposal.</li>
+  <li>Implemented the <a href="https://github.com/tc39/proposal-logical-assignment">Logical Assignment Operators</a> proposal.</li>
+  <li>Implemented the <a href="https://github.com/tc39/proposal-top-level-await">Top-level Await</a> proposal.</li>
+  <li>Implemented the <a href="https://github.com/tc39/proposal-promise-any">Promise.any</a> proposal. It is available in ECMAScript 2021 mode (<code>--js.ecmascript-version=2021</code>).</li>
+  <li>Implemented support for async stack traces.</li>
+  <li>Fixed <code>Date.toLocaleString</code> and <code>Intl.DateTimeFormat</code> to use the context’s default time zone rather than the system default if no explicit time zone is requested.</li>
+  <li>Improved <code>js.timezone</code> option to validate the time zone ID and support zone offsets like “-07:00”.</li>
+</ul>
+
+<h3 id="updates-for-language-and-tool-implementers">Updates for Language and Tool Implementers</h3>
+<ul>
+  <li>Enabled by default the new inlining heuristic in which inlining budgets are based on Graal IR node counts and not on Truffle Node counts. More information can be found in the <a href="/docs/reference-manual/truffle-framework/Inlining/">Inlining</a> guide.</li>
+  <li>Added support for subclassing <code>DynamicObject</code> so that guest languages can directly base their object class hierarchy on it, add fields and use <code>@ExportLibrary</code> on subclasses.</li>
+  <li>Added new <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObjectLibrary.html">DynamicObjectLibrary</a> API for accessing and mutating properties and the shape of <code>DynamicObject</code> instances. More information can be found in the <a href="/docs/reference-manual/truffle-framework/DynamicObjectModel/">Dynamic Object Model</a> guide.</li>
+  <li>Added new identity APIs to <code>InteropLibrary</code>:
+    <ul>
+      <li><code>hasIdentity(Object receiver)</code> to find out whether an object specifies identity</li>
+      <li><code>isIdentical(Object receiver, Object other, InteropLibrary otherLib)</code> to compare the identity of two object</li>
+      <li><code>isIdenticalOrUndefined(Object receiver, Object other)</code> export to specify the identity of an object</li>
+      <li><code>identityHashCode(Object receiver)</code> useful to implement maps that depend on identity</li>
+    </ul>
+  </li>
+  <li>Added Truffle DSL <code>@Bind</code> annotation to common out expression for use in guards and specialization methods.</li>
+  <li>Added the ability to disable adoption for DSL cached expressions with type node using <code>@Cached(value ="...", weak = true)</code>.</li>
+  <li>Added an option not to adopt the parameter annotated by <code>@Cached</code>, using <code>@Cached(value ="...", adopt = false)</code>.</li>
+  <li>Added <code>CompilerDirectives.shouldNotReachHere()</code> as a short-cut for languages to indicate that a path should not be reachable neither in compiled nor interpreted code paths.</li>
+</ul>
+
+<p>More details are available from <a href="https://github.com/oracle/graal/blob/master/truffle/CHANGELOG.md">the changelog</a>.</p>
+
+<h3 id="updates-for-polyglot-embedders">Updates for Polyglot Embedders</h3>
+<ul>
+  <li>Added <code>Context.parse(Source)</code> to parse but not evaluate a source. Parsing a source allows to trigger e.g., syntax validation prior to executing the code.</li>
+  <li>Added <code>PolyglotException.isResourceExhausted()</code> to determine if an error was caused by a resource limit (e.g., <code>OutOfMemoryError</code>) that was exceeded.</li>
+  <li>Added a factory method creating a <code>FileSystem</code> based on the host Java NIO. The obtained instance can be used as a delegate in a decorating filesystem.</li>
+  <li>Added optional <code>FileSystem.isSameFile</code> method testing if the given paths refer to the same physical file. The method can be overridden by the <code>FileSystem</code> implementer with a more efficient test.</li>
+</ul>
+
+<p>More details are available from <a href="https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md">the changelog</a>.</p>
+
+<h3 id="tooling">Tooling</h3>
+<h5 id="vs-code">VS Code</h5>
+<ul>
+  <li>Updated Language Server Protocol (LSP) implementation to support the latest protocol version 3.15.</li>
+  <li>Updated VSCode extension by merging into one. <a href="https://www.graalvm.org/docs/tools/vscode">More details</a> about Visual Studio Code Extension.</li>
+  <li>Added showing code coverage from <a href="/docs/tools/lsp/">GraalVM LSP</a> in VS Code.</li>
+</ul>
+
+<h5 id="visualvm">VisualVM</h5>
+<ul>
+  <li>Updated VisualVM to use NetBeans platform 11.3.</li>
+  <li>Added GoToSource from VisualVM to your preferred IDE.</li>
+</ul>
+
+<h5 id="ideal-graph-visualizer-igv">Ideal Graph Visualizer (IGV)</h5>
+<ul>
+  <li>Usability improvements for graphs identification in <a href="/docs/tools/igv/">IGV</a> (IGV graph now displays a dump ID and a user label with Graph name).</li>
+  <li>Added <code>Go To Type</code> and <code>Attach Debugger</code> actions.</li>
+  <li>IGV updated to NetBeans platform to 11.3.</li>
+</ul>
+
+<h3 id="llvm-runtime">LLVM Runtime</h3>
+<ul>
+  <li>Added support for <code>InteropLibrary.isIdentical</code> and related messages.</li>
+  <li>Added the <code>--print-toolchain-api-identifier</code>, <code>--print-toolchain-api-tool &lt;tool-name&gt;</code> and <code>--print-toolchain-api-paths &lt;path-name&gt;</code> arguments to the <code>lli</code> launcher. These can be used to query the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">Toolchain API</a> from the command line.</li>
+  <li>Added support for requesting locations via the <code>#getPaths()</code> method to the <a href="https://github.com/oracle/graal/blob/master/sulong/projects/com.oracle.truffle.llvm.api/src/com/oracle/truffle/llvm/api/Toolchain.java">Java API of the Toolchain</a>. For example, the location of the toolchain executables or libraries.</li>
+  <li>Added <code>llvm/api/toolchain.h</code> header for accessing the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">Toolchain</a> from C code.</li>
+  <li>Added ability to read and write bigger values to a polyglot i8 array. For example, when reading an i64 from a foreign value that is typed as i8 array, the LLVM runtime will read 8 i8 values and combine them to an i64 result.</li>
+  <li>Removed the <code>--llvm.sourcePath</code> option (deprecated since 19.0). Use <code>--inspect.SourcePath</code> instead.</li>
+  <li>Removed support for the <code>application/x-llvm-ir-bitcode-base64</code> mime-type (deprecated since 19.0).</li>
+</ul>
+
+<h3 id="python">Python</h3>
+<ul>
+  <li>Improved reference counting for native extensions to prevent memory leaks.</li>
+  <li>Added code serialization to <code>.pyc</code> files (<code>.pyc</code> files persistently store the Python bytecode compiled from the source <code>.py</code> files).</li>
+  <li>Fixed warning in pandas about size of the <code>datetime</code> objects.</li>
+  <li>Improved compatibility (more CPython unittests pass for core types).</li>
+  <li>Added support for parsing requests with arguments for embedding Python.</li>
+  <li>Added support for the basic usage of <code>tox</code> – a Python testing wrapper.</li>
+  <li>Removed support for iterables as arrays in polyglot applications.</li>
+  <li>Added a faster implementation of <code>_struct</code>.</li>
+</ul>
+
+<h3 id="r">R</h3>
+<ul>
+  <li>Improved SVG support activated with the <code>--R.UseInternalGridGraphics=false</code> flag.</li>
+  <li>Improved FastR user experience: FastR should have no requirements on both Linux and MacOS i.e., installating GCC or GFortran should not be necessary to run FastR, but it may be necessary to install some 3rd party R packages.</li>
+</ul>
+
+<h3 id="ruby">Ruby</h3>
+<p>New features:</p>
+<ul>
+  <li>Updated to Ruby 2.6.6.</li>
+  <li>Configured Ruby to always show core library files in backtraces.</li>
+  <li>The Java stacktrace is now shown when sending SIGQUIT to the process, also on TruffleRuby Native, see <a href="/docs/reference-manual/ruby/Debugging/">Debugging</a> for details.</li>
+  <li>Use <code>InteropLibrary#toDisplayString()</code> to better display objects from other languages.</li>
+  <li><code>foreign_object.to_s</code> now uses <code>InteropLibrary#toDisplayString()</code> (and still <code>asString()</code> if <code>isString()</code>).</li>
+  <li><code>foreign_object.inspect</code> has been improved to be more useful (include the language and meta object).</li>
+  <li><code>foreign_object.name = value</code> will now call <code>Interoplibrary#writeMember("name", value)</code> instead of <code>invokeMember("name=", value)</code>.</li>
+  <li>Calls to foreign objects with a block argument will now pass the block as the last argument.</li>
+  <li><code>foreign.name</code> will now use <code>invokeMember</code> if invocable and if not use <code>readMember</code>, see <code>doc/contrib/interop_implicit_api.md</code> for details.</li>
+</ul>
+
+<p>Bug fixes:</p>
+<ul>
+  <li>Fix <code>#class_exec</code>, <code>#module_exec</code>, <code>#instance_eval</code>, and <code>instance_exec</code> to use activated refinements (@ssnickolay).</li>
+  <li>Use upgraded default gems when installed.</li>
+  <li>The output for <code>--engine.TraceCompilation</code> is now significantly easier to read, by having shorter method names and source names.</li>
+  <li>Fixed indentation for squiggly heredoc syntax with single quotes.</li>
+  <li>Fixed missing flushing when printing an exception at top-level with a custom backtrace, which caused no output being shown.</li>
+</ul>
+
+<p>Compatibility:</p>
+<ul>
+  <li>Implemented <code>Ripper</code> by using the C extension.</li>
+  <li>Implemented <code>ObjectSpace::WeakMap</code>.</li>
+  <li>Supported <code>#refine</code> for Module (@ssnickolay).</li>
+  <li>Fixed <code>refine + super</code> compatibility (@ssnickolay)</li>
+  <li>Implemented <code>UnboundMethod#bind_call</code>.</li>
+  <li><code>RUBY_REVISION</code> is now the full commit hash used to build TruffleRuby, similar to MRI 2.7+.</li>
+  <li>Changed the lookup methods to achieve Refinements specification (@ssnickolay)</li>
+</ul>
+
+<p>Performance:</p>
+<ul>
+  <li>Enabled lazy translation from the parser AST to the Truffle AST for user code by default. This should improve application startup time.</li>
+  <li><code>instance variable ... not initialized</code> and similar warnings are now optimized to have no peak performance impact if they are not printed (depends on <code>$VERBOSE</code>).</li>
+  <li>Implemented integer modular exponentiation using <code>BigInteger#mod_pow</code> ( @skateman).</li>
+  <li>Fixed a performance issue when computing many substrings of a given non-leaf <code>String</code> with non-US-ASCII characters.</li>
+  <li>Speedup native handle to Ruby object lookup for C extensions.</li>
+</ul>
+
+<p>Changes:</p>
+<ul>
+  <li>RubyGems gem commands updated to use the <code>--no-document</code> option by default.</li>
+</ul>
+
+<h2 id="oracle-graalvm-enterprise-edition-2011">Oracle GraalVM Enterprise Edition 20.1.1</h2>
+<p>(2020-07-14)</p>
+
+<p>Oracle GraalVM Enterprise Edition 20.1.1 is a Critical Patch Update (CPU) release.
+It includes all the Oracle Java Development Kit (JDK) security fixes released as part of that CPU. This release fixes vulnerabilities mentioned in <a href="https://www.oracle.com/security-alerts/cpujul2020.html" title="July 2020 Oracle Critical Patch Update Advisory">July 2020 Oracle Critical Patch Update Advisory</a>.</p>
+
+<p>It also includes the following:</p>
+<ul>
+  <li>Update Java to 8u261 for Oracle JDK 8 based GraalVM Enterprise, please see <a href="https://www.oracle.com/java/technologies/javase/8u261-relnotes.html" title="Java SE 8 Release Notes">Java SE 8 release notes</a></li>
+  <li>Update Java to 11.0.8 for Oracle JDK 11 based GraalVM Enterprise, please see <a href="https://www.oracle.com/java/technologies/javase/11-0-8-relnotes.html" title="Java SE 11 Release Notes">Java SE 11 release notes</a></li>
+</ul>
+
+<h2 id="oracle-graalvm-enterprise-edition-20101">Oracle GraalVM Enterprise Edition 20.1.0.1</h2>
+<p>(2020-07-06)</p>
+
+<p>This is a high severity update for GraalVM Enterprise to address Java Secure
+Socket Extension (JSSE) client not accepting <code>status_request</code> extension in
+<code>CertificateRequest</code> messages (see
+<a href="https://bugs.openjdk.java.net/browse/JDK-8236039">JDK-8236039</a>).</p>
+
+<h2 id="oracle-graalvm-enterprise-edition-2010">Oracle GraalVM Enterprise Edition 20.1.0</h2>
+<p>(2020-05-19)</p>
+
+<h3 id="java-1">Java</h3>
+<ul>
+  <li>Oracle GraalVM Enterprise Edition is based on Oracle JDK version 1.8.0_251 and
+Oracle JDK version 11.0.7. You can find Oracle JDK release notes for these
+versions at the <a href="https://www.oracle.com/technetwork/java/javase/overview/index.html">Oracle Technology Network website</a>.</li>
+  <li>Added new <code>TuneInlinerExploration</code> option to increase or decrease the time spent
+exploring inlining opportunities. Tuning this option helps to achieve better
+peak performance or limit time to reach (potentially lower) peak performance
+which might improve overall speed of the program. This option is only a
+heuristic and should be tuned for a specific application.</li>
+  <li>Significantly improved performance for some benchmarks on JDK 11 due to fixes in
+the area of synchronization. Two notable examples of the improvements are
+<a href="https://github.com/renaissance-benchmarks/renaissance/blob/f2b51e9f03edd61e6508d33d7616ba810b4dd706/benchmarks/actors/src/main/scala/org/renaissance/actors/Reactors.scala">Renaissance:reactors</a> and some WebLogic Server JNDI benchmarks
+which show approximately 50% better results.</li>
+  <li>Added support for compiling classes with irreducible loops in the bytecode. These
+often occur in Kotlin applications using coroutines with loops. The support
+both improves performance of such applications and enables their ahead-of-time compilation.</li>
+  <li>Added support to optimize away some redundant clone operations. For example, in
+code patterns similar to the one below, the GraalVM compiler will avoid creating
+the array clone:
+<code>new int[length].clone().length</code></li>
+  <li>
+    <p>Added support for visualizing libgraal memory usage in VisualVM:
+<img src="/docs/overview/img/visualvm-shows-libgraal-memory.png" alt="" /></p>
+  </li>
+  <li>The <a href="https://github.com/oracle/graal/issues/1829">mitigation</a> of the Intel Jump
+Conditional Code (JCC) Erratum is now only enabled for CPUs that need it.</li>
+</ul>
+
+<h3 id="native-image-1">Native Image</h3>
+<ul>
+  <li>Improved scalability of the static analysis. The static analysis time was
+infeasible for some large applications. We added a new mechanism, called
+“saturated type flows”, to make the analysis faster. The new analysis is
+disabled by default for GraalVM 20.1, but we plan to enable it by default in a
+future release. We encourage all users to try it out using the image builder
+option <code>-H:+RemoveSaturatedTypeFlows</code>. According to our measurements the
+precision of the static analysis is comparable, but if you have an application
+where many more classes or methods are reachable with this option please <a href="https://github.com/oracle/graal/issues">create an issue on GitHub</a>.</li>
+  <li>Added new option for the image generator to exit handlers on termination
+signals: <code>--install-exit-handlers</code>. This improves the user experience when
+running a native image in a Docker container as the init process, since Linux
+does not install a default signal handler for the process with id “1” and the
+native image is therefore not reacting to a shutdown request from Docker.</li>
+  <li>Improved support for soft references. Before 20.1, soft references (the Java
+<code>SoftReference</code> class) were cleared immediately at every GC like weak
+references. Now they are cleared based on a policy that takes the last access
+and the memory pressure into account.</li>
+  <li>Improved thin locking: Java monitor operations (the <code>synchronized</code> keyword) now use allocation-free thin locks when the lock is not contended.</li>
+  <li>Improved support for timezones: information about all timezones is now included
+in every image, and the default timezone is correctly initialized at image
+startup and no longer fixed at image generation time.</li>
+  <li>Improved checking that the native compiler toolchain is correct, for example,
+whether the compiler version on Windows is correct. This avoids strange errors due
+to known incompatible compiler versions.</li>
+</ul>
+
+<h3 id="javascript-1">JavaScript</h3>
+<ul>
+  <li>Enabled ECMAScript 2020 mode features by default.</li>
+  <li>Implemented several ECMAScript proposals, including Optional Chaining, Hashbang
+Grammar, FinalizationRegistry, private class methods, RegExp Match Indices,
+<code>export * as ns from "mod"</code>, Intl.Locale, Intl.DisplayNames, Intl.DateTimeFormat
+dateStyle and timeStyle.</li>
+  <li>Added <code>npx</code> (npm package runner) utility into GraalVM distributions.</li>
+  <li>Removed the JOni RegExp-engine and the <code>use-tregex</code> option. TRegex engine is now the default regex engine.</li>
+  <li>Removed our <code>SIMD.js</code> implementation.</li>
+  <li>Node.js is available in the Windows distribution of GraalVM Enterprise.</li>
+</ul>
+
+<h3 id="llvm-runtime-1">LLVM Runtime</h3>
+
+<ul>
+  <li>Updated musl libc to version 1.1.24.</li>
+  <li>Added a preliminary support for running C++ code in managed mode.</li>
+  <li>Both <code>libc++</code> and <code>libc++abi</code> are now shipped as bitcode libraries.</li>
+  <li>Improved C++ support, <code>libsulong++</code> is loaded only if <code>libc++</code> is loaded. The
+executables (ELF, Mach-O) compiled with the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">toolchain</a> usually have a dependency
+on this library and will continue to work. Plain bitcode files, which do not
+allow specification of dependencies, may fail with an error similar to the
+following:
+    <pre><code>Global variable ZNSt3_15ctypeIcE2idE is declared but not defined.
+</code></pre>
+    <p>This can be solved, for example, by specifying the dependency on the command
+line <code>lli --lib libc++.so.1 ...</code> on Linux or <code>lli --lib libc++.1.dylib</code> on
+macOS.</p>
+  </li>
+  <li>Changed module initialization order to be only based on the dependencies
+recorded in the ELF/Mach-O file (instead of looking at imported symbols). This
+might change the order in which plain bitcode files are initialized since they
+do not allow recording dependencies. If the initialization order is important,
+the suggested approach is to use ELF/Mach-O files. See the
+<a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">Toolchain</a>
+documentation for more details.</li>
+  <li>Added support for on-stack-replacement of loops during bitcode execution, now it
+can compile long-running loops before the surrounding function is compiled.</li>
+</ul>
+
+<h3 id="python-1">Python</h3>
+<ul>
+  <li>Updated to Python 3.8.2.</li>
+  <li>Improved tuples with primitive elements performance.</li>
+  <li>Improved performance of sequences, sets, dicts, and list expressions.</li>
+  <li>Added support of <code>cProfile</code> and <code>trace</code> modules through the GraalVM CPU sampler and coverage, respectively.</li>
+  <li>Added support of NumPy on macOS.</li>
+  <li>Added support of <code>setuptools-scm</code> and <code>pytz.timezone</code>.</li>
+  <li>Added support of a new syntax for iterable unpacking from yield and return statements.</li>
+  <li>Fixed issues with inspection and printing of non-Python numbers in the Chrome debugger.</li>
+  <li>Fixed issues with AST sharing across different contexts when these contexts run concurrently on multiple threads.</li>
+  <li>Fixed passing non-ASCII strings to <code>gethostbyname</code>.</li>
+  <li>Improved Jython compatibility mode: treat Java <code>null</code> as identical to Python <code>None</code> when comparing with the <code>is</code> operator.</li>
+  <li>Improved Jython compatibility mode: <code>isinstance</code> now works with Java classes and objects.</li>
+  <li>Moved all GraalPython specific functions on <code>sys</code> or <code>builtins</code> to the <code>_graalpython_</code> module.</li>
+</ul>
+
+<p>To see a complete list of changes, please refer to the <a href="https://github.com/graalvm/graalpython/blob/master/CHANGELOG.md#version-2010">project changelog</a>.</p>
+
+<h3 id="r-1">R</h3>
+<ul>
+  <li>Preview of improved graphical support based on the <code>graphics</code>, <code>grDevices</code>, and <code>JavaGD</code> packages
+    <ul>
+      <li>Use <code>--R.UseInternalGridGraphics=false</code> to activate this feature.</li>
+      <li>Our custom grid package re-implementation, which is currently the default, will be first deprecated and then removed in future releases.</li>
+    </ul>
+  </li>
+  <li>Included GCC runtime libraries for supported systems (Linux and macOS).</li>
+  <li>Removed GFortran as a requirement to run FastR.</li>
+  <li>The GFortran runtime libraries versions are 4.8.5 on Linux and 8.3.0 on macOS. When compiling additional R packages with Fortran code, one must use GFortran of the same or higher version.</li>
+  <li>GFortran is now the default Fortran compiler even in the <a href="https://www.graalvm.org/docs/reference-manual/languages/r/#running-r-extensions">LLVM toolchain </a>.</li>
+  <li>Added support for <code>traceback()</code> to show frames from other GraalVM languages and C/C++ when run in the LLVM mode (<code>--R.BackEnd=llvm</code>).</li>
+  <li>Improved interoperability with other languages: “@” and “$” can be used to access members of foreign polyglot objects.</li>
+</ul>
+
+<p>A detailed list of the changes and bug fixes is available in the <a href="https://github.com/oracle/fastr/blob/master/CHANGELOG.md#2010">project changelog</a>.</p>
+
+<h3 id="ruby-1">Ruby</h3>
+<ul>
+  <li>Added nightly builds, see the <a href="https://github.com/oracle/truffleruby/blob/master/README.md">README</a> for details.</li>
+  <li><code>||=</code> will not compile the right-hand-side if it is only executed once, to match the idiomatic lazy-initialization use-case (see the <a href="https://engineering.shopify.com/blogs/engineering/optimizing-ruby-lazy-initialization-in-truffleruby-with-deoptimization">blog post</a>).</li>
+  <li>Optimized performance of <code>bundle install</code>.</li>
+  <li>Added the <code>--metrics-profile-require</code> option to profile searching, parsing, translating and loading files.</li>
+  <li>Changed the C API type <code>VALUE</code> to be defined as <code>unsigned long</code> as on MRI. This enables using <code>switch (VALUE)</code> and other expressions which rely on <code>VALUE</code> being an integer type.</li>
+  <li>Removed deprecated <code>Truffle::System.full_memory_barrier</code>, <code>Truffle::Primitive.logical_processors</code>, and <code>Truffle::AtomicReference</code>.</li>
+  <li>Improved interoperability with other languages: hash keys are no longer reported as polyglot members.</li>
+  <li>Added <code>Truffle::Interop.hash_keys_as_members</code> to treat a Ruby Hash as a polyglot object with the Hash keys as members.</li>
+</ul>
+
+<p>Other 56 bug fixes and 52 compatibility improvements, see a detailed <a href="https://github.com/oracle/truffleruby/blob/master/CHANGELOG.md#2010">changelog</a>.</p>
+
+<h3 id="tooling-1">Tooling</h3>
+<h5 id="chrome-inspector">Chrome Inspector</h5>
+<ul>
+  <li>Implemented the display of asynchronous stack traces in debugger, in Chrome Inspector and in exception traces.</li>
+</ul>
+
+<h5 id="language-server-protocol">Language Server Protocol</h5>
+<ul>
+  <li>Improved stability of GraalVM Language Server and GraalVM VSCode Extensions.</li>
+  <li>Changed to start GraalVM Language Server in the native mode for better startup performance.</li>
+  <li>Stabilized support for LSP in R and Ruby.</li>
+</ul>
+
+<h5 id="visualvm-1">VisualVM</h5>
+<ul>
+  <li>Enabled VisualVM to monitor libgraal memory usage.</li>
+  <li>Implemented showing compiled and interpreter time in the GraalVM sampler.</li>
+  <li>Improved JFR viewer to display stack traces for JFR events.</li>
+</ul>
+
+<h5 id="ideal-graph-visualizer">Ideal Graph Visualizer</h5>
+<ul>
+  <li>
+    <p>Added grouping of graph dumps by session:
+<img src="/docs/overview/img/igv-session-grouping.png" alt="" /></p>
+  </li>
+  <li>Added an action to go to compiler classes.</li>
+  <li>Improved stability of IGV to no longer hang on some graph layout.</li>
+</ul>
+
+<h5 id="graalvm-updater-gu">GraalVM Updater <code>gu</code></h5>
+<ul>
+  <li>Added support for wildcards when GraalVM Updater installs from a directory (<code>-C</code>).</li>
+</ul>
+
+<h3 id="updates-for-polyglot-embedders-1">Updates for Polyglot Embedders</h3>
+<ul>
+  <li>Added <code>Value.isMetaObject()</code>, <code>Value.getMetaQualifiedName()</code>, <code>Value.getMetaSimpleName()</code> and <code>Value.isMetaInstance(Object)</code> to allow language agnostic access to meta-objects like classes or types.</li>
+  <li>The result of <code>Value.getMetaObject()</code> will always return meta-objects. It is recommended but not required to change uses of meta-objects to use <code>Value.getMetaQualifiedName()</code> instead of <code>Value.toString()</code> to return a type name.</li>
+  <li>Added <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/options/OptionDescriptor.html#getDeprecationMessage--">OptionDescriptor.getDeprecationMessage</a> returning the option deprecation reason. Added <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/options/OptionDescriptor.Builder.html#deprecationMessage-java.lang.String-">OptionDescriptor.Builder.deprecationMessage()</a> to set the option deprecation reason.</li>
+  <li>Added <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#hostClassLoader-java.lang.ClassLoader-">Context.Builder.hostClassLoader</a> to allow an embedder to specify a context <code>ClassLoader</code> for code execution.</li>
+</ul>
+
+<p>More changes can be found in the <a href="https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-2010">GraalVM SDK changelog</a>.</p>
+
+<h3 id="updates-for-language-and-tool-implementers-1">Updates for Language and Tool Implementers</h3>
+<ul>
+  <li><code>engine.Mode</code> is now a supported option and no longer experimental.</li>
+  <li>Added new meta-data APIs to <code>InteropLibrary</code>:
+    <ul>
+      <li><code>has/getLanguage(Object receiver)</code> to access the original language of an object</li>
+      <li><code>has/getSourceLocation(Object receiver)</code> to access the source location of an object (e.g., a function or classes)</li>
+      <li><code>has/toDisplayString(Object receiver, boolean allowsSideEffect)</code> to produce a human-readable string</li>
+      <li><code>has/getMetaObject(Object receiver)</code> to access the meta-object of an object</li>
+      <li><code>isMetaObject(Object receiver)</code> to find out whether an object is a meta-object (e.g., Java class)</li>
+      <li><code>getMetaQualifiedName(Object receiver)</code> to get the qualified name of a meta-object</li>
+      <li><code>getMetaSimpleName(Object receiver)</code> to get the simple name of a the meta-object</li>
+      <li><code>isMetaInstance(Object receiver, Object instance)</code> to check whether an object is an instance of a meta-object</li>
+    </ul>
+  </li>
+  <li>Added <code>TruffleLanguage.getLanguageView</code> that allows to wrap values to add language specific information for primitive and foreign values.</li>
+  <li>Added <code>TruffleLanguage.getScopedView</code> that allows to wrap values to add scoping and visibility to language values.</li>
+  <li>Added <code>TruffleInstrument.Env.getScopedView</code> and <code>TruffleInstrument.Env.getLanguageView</code> to access language and scoped views from instruments.</li>
+  <li>Added <code>TruffleInstrument.Env.getLanguageInfo</code> to convert language classes to <code>LanguageInfo</code>.</li>
+  <li>Added <code>@GenerateLibrary(dynamicDispatchEnabled = false)</code> that allows to disable dynamic dispatch semantics for a library. The default is <code>true</code>.</li>
+  <li>Added ability to load external default exports for libraries using a service provider. See <code>GenerateLibrary(defaultExportLookupEnabled = true)</code>.</li>
+  <li>Added <code>@ExportLibrary(transitionLimit="3")</code> that allows the accepts condition of exported libraries to transition from true to false for a library created for a receiver instance. This is, for example, useful to export messages for array strategies.</li>
+  <li>Added support for asynchronous stack traces for languages and tools to allow debuggers to show them.</li>
+</ul>
+
+<p>To see a full list of changes to APIs, proceed to the
+<a href="https://github.com/oracle/graal/blob/master/truffle/CHANGELOG.md#version-2010">GraalVM Truffle changelog</a>.</p>
+
+<h2 id="oracle-graalvm-enterprise-edition-2001">Oracle GraalVM Enterprise Edition 20.0.1</h2>
+<p>(2020-04-14)</p>
+
+<p>This is a Critical Patch Update (CPU) for Oracle GraalVM Enterprise Edition 20.0. The
+update is to address security vulnerabilities announced in the <a href="https://www.oracle.com/security-alerts/cpuapr2020.html">April 2020 Oracle Critical Patch Update Advisory</a>.</p>
+
+<p>The release also includes:</p>
+<ul>
+  <li>Java update to 8u251 for Oracle JDK 8 based GraalVM, please see <a href="https://www.oracle.com/technetwork/java/javase/8u251-relnotes-5972664.html">Java SE 8 release notes</a></li>
+  <li>Java update to 11.0.7 for Oracle JDK 11 based GraalVM, please see <a href="https://www.oracle.com/technetwork/java/javase/11-0-7-oracle-relnotes-5972662.html">Java SE 11 release notes</a></li>
+</ul>
+
+<p> For more details, refer to the <a href="https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=267504246345799&amp;id=2650792.1&amp;_afrWindowMode=0&amp;_adf.ctrl-state=11vfkxz57s_296">My Oracle Support Note</a> summarizing the changes required for Oracle GraalVM Enterprise Edition to approach this <a href="https://www.oracle.com/security-alerts/cpuapr2020.html">Critical Patch Update</a>.</p>
+
+<h2 id="oracle-graalvm-enterprise-edition-2000">Oracle GraalVM Enterprise Edition 20.0.0</h2>
+<p>(2020-02-18)</p>
+
+<h3 id="platform-updates">Platform Updates</h3>
+<p>GraalVM Enterprise 20.0 improves significantly on the previously available builds
+for Windows platforms. Windows is no longer an experimental platform in the GraalVM ecosystem.
+Windows builds now contain the functional <a href="/en/graalvm/enterprise/20/docs/reference-manual/graalvm-updater/"><code>gu</code> utility</a> to install the
+components. GraalVM Native Image component needs <a href="/en/graalvm/enterprise/20/docs/reference-manual/enterprise-native-image/">to be installed</a>
+with <code>gu</code> as on other platforms. JavaScript engine is now included in the GraalVM Windows distribution. Node.js support on the Windows platform is scheduled to be included in the next GraalVM release (20.1).</p>
+
+<p><a href="/en/graalvm/enterprise/20/docs/reference-manual/wasm/">GraalWasm</a>, GraalVM implementation of the WebAssembly language, is distributed through the usual component distribution channels.</p>
+
+<p>The GraalVM distribution for AArch64 now includes a functional <code>node.js</code> runtime (both in <code>--jvm</code> and native modes).</p>
+
+<h3 id="java-2">Java</h3>
+<ul>
+  <li>GraalVM Community Editions are based on OpenJDK version 1.8.0_242 and OpenJDK version 11.0.6.</li>
+  <li>GraalVM Enterprise Editions are based on Oracle JDK version 1.8.0_241 and Oracle JDK version 11.0.6. You can find the JDK release notes at the <a href="https://www.oracle.com/technetwork/java/javase">Oracle Technology Network website</a>.</li>
+  <li>Added mitigation of Jump Conditional Code (JCC) Erratum (see <a href="https://github.com/oracle/graal/issues/1829">#1829</a>).</li>
+  <li>GraalVM has a default setting of <code>ThreadPriorityPolicy=1</code>, which means thread priorities set in Java are reflected by native operating sytstem thread priorities. This may affect Java application performance.</li>
+</ul>
+
+<h3 id="native-image-2">Native Image</h3>
+<ul>
+  <li>Native Image support on Windows has significantly advanced. Please report issues if you find any problems.</li>
+  <li>Native images built with GraalVM Enterprise can now include a G1-based low latency garbage collector that reduces stop-the-world pauses and improves latency. It is an experimental feature that can be enabled at image build time with <code>-H:+UseLowLatencyGC</code>. For more details, please refer to the <a href="/en/graalvm/enterprise/20/docs/reference-manual/native-image/MemoryManagement/">documentation</a>.</li>
+  <li>Fixed several Java Native Interface (JNI) and JDK11 related issues, please refer to <a href="https://github.com/oracle/graal/issues?utf8=%E2%9C%93&amp;q=is%3Aissue+is%3Aclosed+label%3Anative-image">GitHub</a> for more information.</li>
+</ul>
+
+<h3 id="javascript-2">JavaScript</h3>
+<ul>
+  <li>Updated Node.js to 12.15.0, please see <a href="https://github.com/nodejs/node/blob/master/doc/changelogs/CHANGELOG_V12.md#12.15.0">Node.js 12.15.0 release notes</a>.</li>
+  <li>Added the <code>js.commonjs-require</code> option to load npm-compatible CommonJS modules from plain JavaScript. This is an experimental feature. See <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/NodeJSVSJavaScriptContext.md">NodeJSVSJavaScriptContext.md</a> for details.</li>
+  <li>Added the <code>js.load-from-classpath</code> option to allow loading files from the classpath via the <code>classpath:</code> pseudo URLs (disabled by default). Its usage is not recommended with untrusted code.</li>
+  <li>Added the implementation of the <code>String.prototype.replaceAll</code> <a href="https://github.com/tc39/proposal-string-replaceall">proposal</a>. It is available in ECMAScript 2020 mode (<code>--js.ecmascript-version=2020</code>).</li>
+  <li>Updated <code>String.prototype.matchAll</code> to be available only in ECMAScript 2020 mode (<code>--js.ecmascript-version=2020</code>).</li>
+  <li>Added the <code>js.bind-member-functions</code> option for the implicit binding of unbound functions returned by <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getMember-java.lang.String-"><code>Value.getMember</code></a> to the receiver. The preferred way of calling members is using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#invokeMember-java.lang.String-java.lang.Object...-"><code>Value.invokeMember</code></a>.</li>
+  <li>Made the support for Nashorn pseudo URLs available only in the Nashorn compatibility mode (<code>--js.nashorn-compat</code>).</li>
+  <li>Implemented support for public and private class fields, including static fields. This feature can be enabled using the experimental option <code>js.class-fields</code> and is available by default in Node.js.</li>
+  <li>Added the <code>js.global-arguments</code> option with <code>true</code> as a default value for the non-standard arguments global property.</li>
+</ul>
+
+<p>More details can be found in the <a href="https://github.com/graalvm/graaljs/blob/release/graal-vm/20.0/CHANGELOG.md#version-2000">project changelog</a> on GitHub.</p>
+
+<h3 id="llvm-runtime-2">LLVM Runtime</h3>
+<ul>
+  <li>The <a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">toolchain</a> is now based on LLVM 9.0.0.</li>
+  <li>Support accessing <code>llvm-ar</code>, <code>llvm-nm</code>, <code>llvm-objcopy</code>, <code>llvm-objdump</code>, <code>llvm-ranlib</code>, <code>llvm-readelf</code>, <code>llvm-readobj</code> and <code>llvm-strip</code> via the toolchain.</li>
+</ul>
+
+<p>For more details refer to the component <a href="https://github.com/oracle/graal/blob/master/sulong/CHANGELOG.md#version-2000">changelog</a> on GitHub.</p>
+
+<h3 id="python-2">Python</h3>
+<ul>
+  <li>Improved Jython Compatibility by implementing syntax <code>from JavaType import *</code> to import all static members of a Java class, and by enabling import of Python code from inside <code>JAR</code> files by adding <code>path/to/jarfile.jar!path/inside/jar</code> to <code>sys.path</code>.</li>
+  <li>Added support for date and time interop.</li>
+  <li>Added support for setting the time zone via <code>Context.Builder.timeZone</code>.</li>
+  <li>Implemented <a href="https://www.python.org/dev/peps/pep-0570/">PEP 570</a> - Python Positional-Only Parameters.</li>
+</ul>
+
+<p>To see a complete list of changes, please refer to the <a href="https://github.com/graalvm/graalpython/blob/master/CHANGELOG.md#version-2000">project changelog</a>.</p>
+
+<h3 id="r-2">R</h3>
+<ul>
+  <li>On Linux, the required version of <code>libgfortran</code> changed from 3 to 5. See the <a href="/en/graalvm/enterprise/20/docs/reference-manual/r/">requirements section</a> for details.</li>
+  <li>Implemented subsetting an array by numeric and/or string matrix.</li>
+  <li>Fixed an issue where polyglot value is not an object (see <a href="https://github.com/oracle/fastr/issues/123">#123</a>).</li>
+  <li>Fixed an issue with the incorrect formatting for <code>sprintf %g</code> and <code>%G</code> (trailing zeroes, see <a href="https://github.com/oracle/fastr/issues/126">#126</a>).</li>
+  <li>Added  R builtins and C APIs:
+    <ul>
+      <li>Ported all external C functions used by <code>nlm</code> (see <a href="https://github.com/oracle/fastr/issues/100">#100</a>) and <code>fisher.test</code> from the <code>stats</code> base package.</li>
+      <li>Added <code>Rf_asS4</code> C API function (see <a href="https://github.com/oracle/fastr/issues/118">#118</a>).</li>
+    </ul>
+  </li>
+</ul>
+
+<p>More details can be found in the <a href="https://github.com/oracle/fastr/blob/master/CHANGELOG.md#2000">project changelog</a> on GitHub.</p>
+
+<h3 id="ruby-2">Ruby</h3>
+<p>A detailed <a href="https://github.com/oracle/truffleruby/blob/master/CHANGELOG.md#2000">changelog</a> for the Ruby component is available on GitHub.</p>
+
+<ul>
+  <li>Updated to Ruby 2.6.5 (see <a href="https://github.com/oracle/truffleruby/issues/1749">#1749</a>).</li>
+  <li>Updated the internal LLVM toolchain to LLVM 9 and reduce its download size.</li>
+  <li>Automatically set <code>PKG_CONFIG_PATH</code> as needed for compiling OpenSSL on macOS (see <a href="https://github.com/oracle/truffleruby/issues/1830">#1830</a>).</li>
+  <li>Performance improvements related to sockets and <code>RSTRING_PTR</code>.</li>
+  <li>100+ compatibility and bug fixes, please refer to the <a href="https://github.com/oracle/truffleruby/blob/master/CHANGELOG.md#2000">changelog</a>.</li>
+</ul>
+
+<h3 id="changes-for-graalvm-embedders-sdk">Changes for GraalVM Embedders (SDK)</h3>
+<ul>
+  <li>The deprecated <code>graalvm.home</code> and <code>graalvm.version</code> system properties have been removed, use the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/home/HomeFinder.html">HomeFinder</a> instead.</li>
+  <li>Added <code>EventContext.createError</code> which allows to introduce guest application errors in execution listeners/nodes.</li>
+  <li>Added <code>Context.Builder.currentWorkingDirectory</code> to set the current working directory used by the guest application to resolve relative paths.</li>
+  <li>The algorithm used to generate a unique <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html#getURI--">URI</a> for a Source built without an URI was changed to <code>SHA-256</code>.</li>
+  <li>All Truffle Graal runtime options (<code>-Dgraal.</code>) will be deprecated with 20.1. The Truffle runtime options are no longer specified as Graal options (<code>-Dgraal.</code>). The Graal options must be replaced by corresponding engine options specified using the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Engine.Builder.html#option-java.lang.String-java.lang.String-">polyglot API</a>. The <code>TRUFFLE_STRICT_OPTION_DEPRECATION</code> environment variable can be used to detect usages of deprecated GraalVM options. When the <code>TRUFFLE_STRICT_OPTION_DEPRECATION</code> is set to true and the deprecated Graal option is used, the Truffle runtime throws an exception listing the used deprecated options and corresponding replacements.</li>
+</ul>
+
+<p>More details are in the <a href="https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-2000">SDK</a> and <a href="https://github.com/oracle/graal/blob/master/truffle/CHANGELOG.md#version-2000">Truffle</a> changelogs.</p>
+
+<h3 id="tooling-2">Tooling</h3>
+<ul>
+  <li>Added an option for <code>gu</code> to install all available components from a local directory, for example: <code>gu install -C /path/to/downloaded/20.0-components/ native-image llvm-toolchain ruby r python wasm</code>.</li>
+  <li>Added a JDK Flight Recorder Data Viewer to <a href="/en/graalvm/enterprise/20/docs/tools/visualvm/">VisualVM</a>.</li>
+  <li>Added an integration of <a href="https://github.com/oracle/graal/blob/master/tools/docs/T-Trace-Manual.md">T-trace instrumentation framework</a> with OpenTracing.</li>
+  <li>Added LLVM languages support to <a href="https://github.com/oracle/graal/blob/master/tools/docs/T-Trace-Manual.md">T-trace instrumentation framework</a>.</li>
+  <li>Added a Technology Preview of the Language Server Protocol implementation for GraalVM languages and its support to GraalVM VSCode Extensions.</li>
+</ul>
+
+            
+        </article>
+    </body>
+</html>

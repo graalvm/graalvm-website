@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xml:lang="en-us" lang="en-us">
+    <head>
+        
+
+
+
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta property="og:site_name" content="Oracle Help Center">
+
+        <!-- The title values -->
+        <title></title>
+        <meta property="og:title" content="">
+        <meta name="application-name" content="GraalVM">
+        <meta name="dcterms.title" content="">
+        <!-- The description values -->
+        
+        
+        
+        <meta name="dcterms.created" content="2020-08-18T18:53:44+00:00">
+        <meta name="dcterms.category" content="">
+        <meta name="dcterms.identifier" content="">
+        <meta name="dcterms.product" content="">
+        <meta name="dcterms.isVersionOf" content="">
+
+        <link rel="prev" href="/en/graalvm/enterprise/20/docs/overview/jvm-runtime-mode/" title="Previous" type="text/html">
+        
+        <link rel="first" href="/main.html" title="First Page" type="text/html">
+        <link rel="contents" href="/toc.htm" title="Table of Contents" type="text/html">
+        <link rel="self" href="/overview/compiler/" title="Current Page" type="text/html">
+
+        <link rel="stylesheet" href="/sp_common/book-template/ohc-book-template/css/book.css">
+        <link rel="shortcut icon" href="/sp_common/book-template/ohc-common/img/favicon.ico">
+        <meta name="robots" content="all">
+        <link rel="schema.dcterms" href="http://purl.org/dc/terms/">
+        <script>
+            document.write('<style type="text/css">');
+            document.write('body > .noscript, body > .noscript ~ * { opacity: 0; }');
+            document.write('</style>');
+        </script>
+        <script data-main="/sp_common/book-template/ohc-book-template/js/book-config" src="/sp_common/book-template/requirejs/require.js"></script>
+        <script>
+            if (window.require === undefined) {
+                document.write('<script data-main="../../sp_common/book-template/ohc-book-template/js/book-config" src="../../sp_common/book-template/requirejs/require.js"><\/script>');
+                document.write('<link href="../../sp_common/book-template/ohc-book-template/css/book.css" rel="stylesheet">');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="noscript alert alert-danger text-center" role="alert">
+            <a href="/en/graalvm/enterprise/20/docs/overview/jvm-runtime-mode/" class="pull-left"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>Previous</a>
+            
+            <span class="fa fa-exclamation-triangle" aria-hidden="true"></span> JavaScript must be enabled to correctly display this content
+        </div>
+        <article>
+            <h1 id="compiler">Compiler</h1>
+
+<ul>
+  <li><a href="#compiler-operating-modes">Compiler Operating Modes</a></li>
+  <li><a href="#diagnostic-data">Diagnostic Data</a></li>
+</ul>
+
+<p>The GraalVM compiler is a dynamic just-in-time (JIT) compiler that transforms
+bytecode into machine code. It is written in Java and integrates with the
+HotSpot JVM. It also provides optimized performance for programs running on the
+JVM through unique approaches to code analysis and optimization.</p>
+
+<p>For example, the compiler assures performance advantages for highly abstracted
+programs due to its ability to remove costly object allocations. For more
+information on performance tuning, refer to <a href="/en/graalvm/enterprise/20/docs/reference-manual/jvm/Options/">compiler configuration options</a>.</p>
+
+<p>The compiler depends on a JVM that supports a compatible version of the JVM
+Compiler Interface (JVMCI). GraalVM Enterprise includes a version of the HotSpot
+JVM that supports JVMCI. JVMCI is a privileged low-level interface to the JVM.
+It can read metadata from the VM such as method bytecode and install machine
+code into the VM . GraalVM Enterprise includes the <a href="https://github.com/oracle/graal/blob/master/truffle/README.md">Truffle Language Implementation framework</a>. For
+improved performance of Truffle Abstract Syntax Trees (AST), they are compiled
+to machine code by the GraalVM compiler. When such a Truffle AST is hot (i.e.,
+called many times), it is scheduled for compilation by the compiler. The
+pipeline for such a compilation is:</p>
+
+<ul>
+  <li>Truffle Framework code and data (AST) is partially evaluated to produce a compilation graph.</li>
+  <li>The compilation graph is optimized by the GraalVM compiler to produce machine code.</li>
+  <li>The JVMCI API is used to install this machine code in the VM’s code cache.</li>
+  <li>The AST will automatically redirect execution to the installed machine code once it is available.</li>
+</ul>
+
+<h2 id="compiler-operating-modes">Compiler Operating Modes</h2>
+
+<p>There are two operating modes of the GraalVM compiler when used as a HotSpot JIT
+compiler: as pre-compiled machine code (“libgraal”) or as dynamically executed
+Java bytecode (“jargraal”).</p>
+
+<p><strong>libgraal:</strong> the GraalVM compiler is compiled ahead of time into a native shared library. In
+this operating mode, the shared library is loaded by the HotSpot VM. The
+compiler uses memory separate from the HotSpot heap and it runs fast from the
+start since it does not need to warm-up. This is the default and recommended
+mode of operation.</p>
+
+<p><strong>jargraal:</strong> the GraalVM compiler goes through the same warm-up phase that the rest of Java
+application does. That is, it is first interpreted before its hot methods are
+compiled. This mode is selected with the <code>-XX:-UseJVMCINativeLibrary</code> command
+line option.</p>
+
+<h2 id="diagnostic-data">Diagnostic Data</h2>
+
+<p>If an uncaught exception is thrown by the compiler, the compilation is simply
+discarded and execution continues. However, the compiler can instead produce
+diagnostic data (such as compiler immediate representation graphs) that can be
+submitted along with a bug report. This is enabled with
+<code>-Dgraal.CompilationFailureAction=Diagnose</code>. The default location of the
+diagnostics output is in <code>graal_dumps/</code> under the current working directory of
+the process but can be changed with the <code>-Dgraal.DumpPath</code> option. During VM
+shutdown, the location of the archive containing the diagnostic data is printed
+to the console.</p>
+
+<p>Furthermore, diagnostic data can be produced for any compilation performed by
+the GraalVM compiler with the <code>-Dgraal.Dump option</code>. This will produce
+diagnostic data for every method compiled by the compiler. To refine the set of
+methods for which diagnostic data is produced, use the
+<code>-Dgraal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option. For example
+<code>-Dgraal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic
+data only for  methods in the <code>java.lang.String</code> class as well as methods named
+<code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
+
+<p>Instead of being written to a file, diagnostic data can also be sent over the
+network to the <a href="/en/graalvm/enterprise/20/docs/tools/igv/">Ideal Graph Visualizer</a>.
+This requires the <code>-Dgraal.PrintGraph=Network</code> option, upon which the compiler
+will try to send diagnostic data to <em>127.0.0.1:4445</em>. This network endpoint can
+be configured with the <code>-Dgraal.PrintGraphHost</code> and <code>-Dgraal.PrintGraphPort</code>
+options.</p>
+
+            
+        </article>
+    </body>
+</html>

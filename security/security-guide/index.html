@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xml:lang="en-us" lang="en-us">
+    <head>
+        
+
+
+
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta property="og:site_name" content="Oracle Help Center">
+
+        <!-- The title values -->
+        <title></title>
+        <meta property="og:title" content="">
+        <meta name="application-name" content="GraalVM">
+        <meta name="dcterms.title" content="">
+        <!-- The description values -->
+        
+        
+        
+        <meta name="dcterms.created" content="2020-08-18T18:53:44+00:00">
+        <meta name="dcterms.category" content="">
+        <meta name="dcterms.identifier" content="">
+        <meta name="dcterms.product" content="">
+        <meta name="dcterms.isVersionOf" content="">
+
+        
+        
+        <link rel="first" href="/main.html" title="First Page" type="text/html">
+        <link rel="contents" href="/toc.htm" title="Table of Contents" type="text/html">
+        <link rel="self" href="/security/security-guide/" title="Current Page" type="text/html">
+
+        <link rel="stylesheet" href="/sp_common/book-template/ohc-book-template/css/book.css">
+        <link rel="shortcut icon" href="/sp_common/book-template/ohc-common/img/favicon.ico">
+        <meta name="robots" content="all">
+        <link rel="schema.dcterms" href="http://purl.org/dc/terms/">
+        <script>
+            document.write('<style type="text/css">');
+            document.write('body > .noscript, body > .noscript ~ * { opacity: 0; }');
+            document.write('</style>');
+        </script>
+        <script data-main="/sp_common/book-template/ohc-book-template/js/book-config" src="/sp_common/book-template/requirejs/require.js"></script>
+        <script>
+            if (window.require === undefined) {
+                document.write('<script data-main="../../sp_common/book-template/ohc-book-template/js/book-config" src="../../sp_common/book-template/requirejs/require.js"><\/script>');
+                document.write('<link href="../../sp_common/book-template/ohc-book-template/css/book.css" rel="stylesheet">');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="noscript alert alert-danger text-center" role="alert">
+            
+            
+            <span class="fa fa-exclamation-triangle" aria-hidden="true"></span> JavaScript must be enabled to correctly display this content
+        </div>
+        <article>
+            <h2 id="security-guide">Security Guide</h2>
+
+<ul>
+  <li><a href="#security-model">Security Model</a></li>
+  <li><a href="#truffle-guest-applications">Truffle Guest Applications</a></li>
+  <li><a href="#managed-execution-of-native-code">Managed Execution of Native Code</a></li>
+  <li><a href="#native-image">Native Image</a></li>
+  <li><a href="#security-manager-and-untrusted-code">Security Manager and Untrusted Code</a></li>
+  <li><a href="#graalvm-enterprise-to-graalvm-community-downgrade">GraalVM Enterprise to GraalVM Community Downgrade</a></li>
+</ul>
+
+<p>This security guide provides developers and embedders with information on the
+security model and features of Oracle GraalVM Enterprise Edition, such that they can build a secure
+application on top of it. It assumes that readers are familiar with the
+<a href="/overview/technical-architecture/">architecture of GraalVM Enterprise</a>.
+This guide does not replace but rather supplements the
+Java security documentation with aspects unique to GraalVM Enterprise. It also provides
+security researchers with information on GraalVM’s security model.</p>
+
+<p>We appreciate reports of bugs that break the security model via the process
+outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">Reporting Vulnerabilities guide</a>.</p>
+
+<h2 id="security-model">Security Model</h2>
+<p>Oracle GraalVM Enterprise Edition is a runtime. It accepts instructions in a
+higher-level programming language (or an intermediate representation thereof) as
+input, which is executed at some point. Developers that that implement security
+controls for their applications (such as access control) in code that is being
+run by GraalVM Enterprise can rely on the correct execution of instructions.
+Incorrect execution of security-critical code running on top of GraalVM
+Enterprise that allows to bypass such a security control is regarded a security
+vulnerability.</p>
+
+<p>Using the Truffle Language Implementation framework of GraalVM Enterprise,
+interpreters for guest languages can be implemented to execute guest
+applications written in languages such as Javascript, Python or Ruby on top of
+GraalVM. The execution context for these guest applications can be created with
+restricted privileges, to allow for the execution of less trusted guest
+applications. For example, an embedder writes an application server (the host
+application) that runs JavaScript guest applications from a less trusted source.
+GraalVM offers features to limit the privileges of the guest
+application to some extent.</p>
+
+<p>For every Truffle language shipped with GraalVM, a launcher, e.g. (interactive)
+shell, is provided. These launchers behave in the same way and come with the
+same security guarantees as their “original” counterparts.</p>
+
+<h2 id="truffle-guest-applications">Truffle Guest Applications</h2>
+<p>GraalVM allows a host application written in a JVM-based language to create an
+execution context to run code written in one or multiple Truffle language(s). When
+creating a context, the host application can control which resources the guest
+can access. By default access to all managed resources is denied and needs to be
+granted explicitly.</p>
+
+<h3 id="file-io">File I/O</h3>
+<p>Access to files can be controlled via two means. The <code>allowIO</code> privilege grants
+the guest application unrestricted access to the host file system:</p>
+<pre><code>Context context = Context.newBuilder().allowIO(true).build();
+</code></pre>
+<p>Alternatively the Truffle framework virtual file system that all guest file I/O will be routed through can be installed:</p>
+<pre><code>Context context = Context.newBuilder().fileSystem(FileSystem fs).build();
+</code></pre>
+
+<h3 id="threading">Threading</h3>
+<p>A guest application can only create new threads, if the context is created with the corresponding privilege:</p>
+<pre><code>Context context = Context.newBuilder().allowCreateThread(true).build()
+</code></pre>
+
+<h3 id="native-access">Native Access</h3>
+<p>The Truffle framework native interface allows access to privileged native code.
+It needs to be granted to a guest application context via:</p>
+<pre><code>Context context = Context.newBuilder().allowNativeAccess(true).build()
+</code></pre>
+
+<h3 id="host-interoperability">Host Interoperability</h3>
+<p>GraalVM Enterprise allows exchanging objects between the host and the guest application.
+Since the guest application is potentially less trusted than the host
+application, multiple controls exist to tune the degree of interoperability
+between the guest and the host:</p>
+
+<ul>
+  <li><code>allowHostAccess(policy)</code> – configures which public constructors, methods or fields of public classes of the host can be accessed by the guest</li>
+  <li><code>allowHostClassLookup(Predicate&lt;String&gt; classFilter)</code> – allows the guest application to look up the host application classes specified in the classFilter via <code>Java.type</code>. For example, a Javascript context can create a Java ArrayList, provided that ArrayList is whitelisted by the classFilter and access is permitted by the host access policy: <code>context.eval("js", "var array = Java.type('java.util.ArrayList')")</code></li>
+  <li><code>allowHostClassLoading(true/false)</code> - allows the guest application to access the host’s class loader to load new classes. Classes are only accessible if access to them is granted by the host access policy.</li>
+</ul>
+
+<p>The host access policy has three different options:</p>
+
+<ul>
+  <li><code>ALL</code> - all public constructors, methods or fields of public classes of the host can be accessed by the guest.</li>
+  <li><code>NONE</code> - no constructors, methods or fields of the host can be accessed by the guest.</li>
+  <li><code>EXPLICIT</code> - only public constructors, methods and fields of public classes that are annotated with <code>@HostAccess.Export</code> can be accessed by the guest.</li>
+</ul>
+
+<p>The following example demonstrates how these configuration options work together:</p>
+
+<pre><code> public class MyClass {
+     @HostAccess.Export
+     public int accessibleMethod() {
+         return 42;
+     }
+
+     public static void main(String[] args) {
+         try (Context context = Context.newBuilder() //
+                         .allowHostClassLookup(c -&gt; c.equals("myPackage.MyClass")) //
+                         .build()) {
+             int result = context.eval("js", "" +
+                             "var MyClass = Java.type('myPackage.MyClass');" +
+                             "new MyClass().accessibleMethod()").asInt();
+             assert result == 42;
+         }
+     }
+ }
+</code></pre>
+
+<p>This Java/JavaScript example</p>
+<ul>
+  <li>creates a new context with the permission to look up the class <code>myPackage.MyClass</code> in the guest application
+evaluates a JavaScript code snippet that accesses the Java class <code>myPackage.MyClass</code> using the <code>Java.type</code> builtin provided by the JavaScript language implementation</li>
+  <li>creates a new instance of the Java class <code>MyClass</code> by using the JavaScript <code>new</code> keyword</li>
+  <li>calls the method <code>accessibleMethod()</code> which returns “42”. The method is accessible to the guest application because because the enclosing class and the declared method are public, as well as annotated with the <code>@HostAccess.Export</code> annotation.</li>
+</ul>
+
+<p>The guest can also pass objects back to the host. This is implemented by functions that return a value. For example,</p>
+<pre><code>Value a = Context.create().eval("js", "21 + 21");
+</code></pre>
+<p>returns a guest object representing the value “42”. When executing less trusted
+guest code, application developers need to take care when processing objects
+returned from the guest application – the host application should treat them as
+less trusted input and sanitize accordingly.</p>
+
+<h3 id="sharing-execution-engines">Sharing Execution Engines</h3>
+<p>Application developers may choose to share execution engines among execution
+contexts for performance reasons. While the context holds the state of the
+executed code, the engine holds the code itself. Sharing of an execution engine
+among multiple contexts needs to be set up explicitly and can increase
+performance in scenarios where a number of contexts execute the same code. In
+scenarios where contexts that share an execution engine for common code also
+execute sensitive (i.e., private) code, the corresponding source objects can opt
+out from code sharing with:</p>
+<pre><code>Source.newBuilder(…).cached(false).build()
+</code></pre>
+
+<h3 id="scriptengine-compatibility">ScriptEngine Compatibility</h3>
+<p>For reasons of backward compatibility, certain Truffle languages also support
+Java’s ScriptEngine interface. For example, this allows GraalVM JavaScript to be
+used as a drop-in replacement for Nashorn. However, to maintain compatibility,
+the Nashorn GraalVM JavaScript ScriptEngine interface will create a context with
+<strong>all privileges</strong> granted to the script and <strong>should be used with extreme caution</strong> and
+only for trusted code.</p>
+
+<h2 id="managed-execution-of-native-code">Managed Execution of Native Code</h2>
+<p>The Truffle framework also supports the LLVM intermediate representation (IR) as
+a Truffle language. Several native system programming languages, above all C/C++,
+can be compiled to LLVM IR with the LLVM compiler toolchain. Typically, these
+languages are not memory safe by themselves and violations of memory safety
+being a frequent cause for security vulnerabilities.</p>
+
+<p>Oracle GraalVM Enterprise Edition supports a managed execution mode for LLVM IR
+code. In managed mode, all ties to the native level are abstracted and routed
+through GraalVM. In particular this means that:</p>
+
+<ul>
+  <li>Temporal and spatial memory safety. Memory is allocated from the Java heap. This
+means that memory allocations are managed objects and all accesses are performed
+in a memory-safe manner (no arbitrary pointer arithmetics, no unchecked
+out-of-bounds accesses).</li>
+  <li>Type safety. It is not possible to reinterpret a data pointer into a function
+pointer and execute arbitrary instructions (since these are distinct pointer
+types for LLVM Runtime).</li>
+  <li>System calls are intercepted and routed to the corresponding Truffle Framework
+APIs. For example, file IO is mapped to the Truffle Framework FileSystem API.
+The set of currently supported system calls is very limited – only syscalls
+that can safely be mapped to the Truffle API level are available. Since LLVM
+Runtime in managed mode always runs bitcode compiled for Linux/x86, it only
+needs to implement system calls for this platform.</li>
+  <li>All dependent libraries are executed in managed mode as well, removing all
+references to natively executed system libraries. This includes libraries that
+are provided by the LLVM Runtime, such as muslibc.</li>
+</ul>
+
+<p>Managed mode can be selected when creating a context <code>(Context.create())</code> or
+when calling the <code>bin/lli</code> binary by specifying the <code>--llvm.managed</code> option. A
+“managed” context will adhere to any restrictions (e.g., <code>allowIO</code>) passed
+during context creation and does not need the <code>allowNativeAccess</code> privilege.</p>
+
+<h2 id="native-image">Native Image</h2>
+<p>The native image builder generates a snapshot of an application after startup
+and bundles it in a binary executable.</p>
+
+<p>By default, the native image builder executes the static initializers of classes
+at build time and persists the state in the native image heap. This means that any
+information that is obtained or computed in static initializers becomes part of
+the native image executable. This can lead to unintentionally including properties
+of the build environment, such as environment variables in the image heap. This
+can either result in sensitive data ending up in the snapshot or fixing initialization
+data that is supposed to be obtained at startup, such as random number seeds.</p>
+
+<p>Developers can request static initializers that process sensitive information to
+be instead executed at <a href="/reference-manual/native-image/ClassInitialization/">runtime</a>
+by either specifying the <code>--initialize-at-run-time</code> CLI parameter when building
+a native image, or making use of the <code>RuntimeClassInitialization</code> API.</p>
+
+<p>In addition, developers can run the native image builder in a dedicated environment,
+such as a container, that does not contain any sensitive information in the first
+place.</p>
+
+<h2 id="security-manager-and-untrusted-code">Security Manager and Untrusted Code</h2>
+<p>The OpenJDK vulnerability group strongly discourages to running untrusted code
+under a security manager. This also applies to GraalVM, which does not support
+untrusted code execution in Java. While GraalVM’s ability to restrict the
+execution of Truffle language applications to a certain extent is not dependent
+on a security manager, it is not suited to be used as a sandbox for running
+untrusted code.</p>
+
+<p>Native Image does not support a security manager in general. Attempting to set
+a security manager will trigger a runtime error.</p>
+
+<p>The Truffle framework needs to be invoked with all permissions to make full use
+of its functionality - Truffle provides its own controls to manage resources.</p>
+
+<p>If untrusted and potentially malicious code is to be executed, we recommend
+GraalVM customers who have an immediate requirement to execute untrusted and
+potentially adversarial code, adopt the appropriate isolation primitives to
+ensure the confidentiality and integrity of their application data.</p>
+
+<h2 id="graalvm-enterprise-to-graalvm-community-downgrade">GraalVM Enterprise to GraalVM Community Downgrade</h2>
+<p>GraalVM’s managed execution of native code is only available in GraalVM
+Enterprise. When downgrading to GraalVM Community, native code execution is only
+available with the <code>allowNativeAccess</code> privilege. This also applies to languages
+implemented with Truffle framework that allow for native code extensions, such
+as Python and Ruby.</p>
+
+            
+        </article>
+    </body>
+</html>

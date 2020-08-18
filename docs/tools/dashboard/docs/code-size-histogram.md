@@ -10,8 +10,7 @@ characterize which packages or classes contribute most to its size. The
 following screenshot demonstrates the Code Size breakdown of the `Hello`
 program.  
 
-<!-- <img src="/docs/tools/dashboard/resources/img/code-size-breakdown.png" alt="code-size" width="800" height="500"/> -->
-![code-size](/docs/tools/dashboard/resources/img/code-size-breakdown.png)
+<img src="/docs/tools/dashboard/resources/img/code-size-breakdown.png" alt="code-size" width="800" height="500"/>
 
 On the left you see the partition of packages (e.g., `java.lang`, `java.util`)
 coming from the JDK. On the right you see `com.oracle` package which corresponds

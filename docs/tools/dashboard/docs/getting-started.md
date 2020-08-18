@@ -3,7 +3,7 @@
 GraalVM Dashboard is a web-based dashboard for visualizing arbitrary aspects of
 dynamic and static compilations in GraalVM, in particular, in [GraalVM Native Image](https://www.graalvm.org/docs/reference-manual/native-image). The
 tool has been designed to display the information on methods compilation,
-reachability, class usability, profiling data and even information about
+reachability, class usability, profiling data, and even information about
 dynamic compilation pressure, compiled code lifetime, compilation count,
 deoptimization etc..
 
@@ -23,11 +23,21 @@ GraalVM Dashboard is organized around the concept of "data formats". To generate
 report files for the GraalVM Dashboard, you need to pass certain flags when
 building a native image.
 
-* `-H:DashboardDump=<path>` - to define the path for the dump file
+### Mandatory:
+* `-H:+DashboardDump=<path>` - to define the path for the dump file
+
+##### One or more:
 * `-H:+DashboardAll` - to dump all available data
 * `-H:+DashboardHeap` - to dump the breakdown of the image heap
 * `-H:+DashboardCode` - to dump the breakdown of the code size per method
 * `-H:+DashboardPointsTo` - to dump the point-to analysis information
+
+### Optional:
+* `-H:-DashboardBgv` - to **NOT** dump in BGV format (+ default)
+
+##### One of:
+* `-H:+DashboardJson` - to dump in JSON format
+* `-H:+DashboardPretty` - to dump in JSON pretty print format
 
 By selecting just a subset of all data, you receive a smaller dump file.
 
@@ -99,9 +109,9 @@ takes a String as an argument, and two implementations of this class:
 standard output to print that String out.
 
 The `main` method first creates a thread which initializes the state of this
-`Hello` class. Then it starts that thread and waits for it to finish. The
+`Hello` class. Then is starts that thread and waits for it to finish. The
 `setup()` method takes an argument from the command line and if its length is
-bigger than zero, prints it with a standard output. Otherwise, it creates a
+bigger than zero, prints it with a standard output. Otherwise, create a
 `NullPrinter`.
 
 Compile it and build a native image:
@@ -118,14 +128,13 @@ Image Dump Format, which is the only format readable by the tool.
 To open the dumped file in GraalVM Dashboard, click on the "Add data" button
 on the left, which will open a dialog box. Here you can select the dumped file,
 obtained during the native-image build:
-
-<!-- <img src="/docs/tools/dashboard/resources/img/import_dump_file.png" alt="code-size" width="800" height="500"/> -->
-![import-dump](/docs/tools/dashboard/resources/img/import_dump_file.png)
+<br>
+<img src="/docs/tools/dashboard/resources/img/import_dump_file.png" alt="import-dump" width="450" height=200/>
 
 ### Terms of Use
 The server that hosts the GraalVM website delivers an HTML version of the GraalVM
 Dashboard tool. All the subsequent logic happens offline, in the client-side
-HTML page. No data collection by Oracle, re-use and sharing to a server happens
+HTML page. No data collection by Oracle, re-use, and sharing to a server happens
 when using the tool.
 
 According to the [Terms of Use](https://www.oracle.com/legal/terms.html) for
