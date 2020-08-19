@@ -10,7 +10,7 @@
 
   <title>
     
-      Debugging and Monitoring Tools
+      VisualVM
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/docs/graalvm-tools/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/visualvm/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -366,7 +366,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/docs/graalvm-tools/">
@@ -381,13 +381,31 @@ $(document).ready(function(){
         
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/tools/visualvm/">
               VisualVM
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -630,32 +648,160 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-debugging-and-monitoring-tools">
+                <h1 id="visualvm">
         
         
-          GraalVM Debugging and Monitoring Tools
+          VisualVM
         
         
       </h1>
 
-<p>GraalVM provides a set of tools for developers to debug and monitor
-deployed applications or the GraalVM platform itself. Traditional
-tools may not be ready to diagnose polyglot programs, while GraalVM
-tools are implemented to inspect single or multi language applications by
-debugging via numerous clients, profiling, statement counting, dynamic analysis,
-and many more. These are:</p>
+<p>GraalVM comes with the <a href="https://visualvm.github.io">VisualVM</a> tool which includes heap analysis
+features for the supported guest languages. These languages and features are
+currently available:</p>
 
 <ul>
-  <li><a href="/tools/visualvm/">VisualVM</a></li>
-  <li><a href="/tools/chrome-debugger/">Chrome Debugger</a></li>
-  <li><a href="/tools/vscode-extension/">GraalVM Visual Studio Code Extension</a></li>
-  <li><a href="/tools/lsp/">Language Server Protocol</a></li>
-  <li><a href="/tools/graalvm-insight/">GraalVM Insight</a></li>
-  <li><a href="/tools/code-coverage/">Code Coverage Command Line Tool</a></li>
-  <li><a href="/tools/profiling/">Profiling Command Line Tool</a></li>
+  <li><strong>Java:</strong> Heap Summary, Objects View, Threads View, OQL Console</li>
+  <li><strong>JavaScript:</strong> Heap Summary, Objects View, Thread View</li>
+  <li><strong>Python:</strong> Heap Summary, Objects View</li>
+  <li><strong>Ruby:</strong> Heap Summary, Objects View, Threads View</li>
+  <li><strong>R:</strong> Heap Summary, Objects View</li>
+</ul>
+    
+      <h3 id="starting-visualvm">
+        
+        
+          Starting VisualVM <a href="#starting-visualvm" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>To start VisualVM execute <code>jvisualvm</code>. Immediately after the startup,
+the tool shows all locally running Java processes in the Applications area,
+including the VisualVM process itself.</p>
+
+<p><strong>Important:</strong> <a href="/reference-manual/enterprise-native-image/">GraalVM Native Image</a> does not implement JVMTI agent, hence triggering heap dump creation from Applications area is impossible. Apply <code>-H:+AllowVMInspection</code> flag with the <code>native-image</code> tool for Native Image processes. This way your application will handle signals and get a heap dump when it receives SIGUSR1 signal. Guest language REPL process must be started also with the <code>--jvm</code> flag to monitor it using VisualVM. This functionality is available with <a href="http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html">GraalVM Enterprise Edition</a>. It is <strong>not</strong> available in GraalVM open source version available on GitHub. See the <a href="/reference-manual/native-image/NativeImageHeapdump/">Generating Native Heap Dumps</a> page for details on creating heap dumps from a native image process.</p>
+    
+      <h3 id="getting-heap-dump">
+        
+        
+          Getting Heap Dump <a href="#getting-heap-dump" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>To get a heap dump of, for example, a Ruby application for later analysis,
+first start your application, and let it run for a few seconds to warm up. Then
+right-click its process in VisualVM and invoke the Heap Dump action. A
+new heap viewer for the Ruby process opens.</p>
+    
+      <h3 id="analyzing-objects">
+        
+        
+          Analyzing Objects <a href="#analyzing-objects" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>Initially the Summary view for the Java heap is displayed. To analyze the Ruby
+heap, click the leftmost (Summary) dropdown in the heap viewer toolbar, choose
+the Ruby Heap scope and select the Objects view. Now the heap viewer displays
+all Ruby heap objects, aggregated by their type.</p>
+
+<p>Expand the Proc node in the results view to see a list of objects of this type.
+Each object displays its logical value as provided by the underlying
+implementation. Expand the objects to access their variables and references,
+where available.</p>
+
+<p><img src="../img/HeapViewer_objects.png" alt="" title="VisualVM Heap Viewer - analyzing objects" /></p>
+
+<p>Now enable the Preview, Variables and References details by clicking the buttons
+in the toolbar and select the individual <em>ProcType</em> objects. Where available, the
+Preview view shows the corresponding source fragment, the Variables view shows
+variables of the object and References view shows objects referring to the
+selected object.</p>
+
+<p>Last, use the Presets dropdown in the heap viewer toolbar to switch the view
+from All Objects to Dominators or GC Roots. To display the heap dominators,
+retained sizes must be computed first, which can take a few minutes for the
+<em>server.rb</em> example. Select the Objects aggregation in the toolbar to view the
+individual dominators or GC roots.</p>
+
+<p><img src="../img/HeapViewer_objects_dominators.png" alt="" title="VisualVM Heap Viewer - analyzing objects" /></p>
+    
+      <h3 id="analyzing-threads">
+        
+        
+          Analyzing Threads <a href="#analyzing-threads" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>Click the leftmost dropdown in the heap viewer toolbar and select the Threads
+view for the Ruby heap. The heap viewer now displays the Ruby thread stack
+trace, including local objects. The stack trace can alternatively be displayed
+textually by clicking the HTML toolbar button.</p>
+
+<p><img src="../img/HeapViewer_thread.png" alt="" title="VisualVM Heap Viewer - analyzing thread" /></p>
+    
+      <h3 id="reading-jfr-snapshots">
+        
+        
+          Reading JFR Snapshots <a href="#reading-jfr-snapshots" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>VisualVM tool bundled with GraalVM 19.2.x and later in both Community and Enterprise
+editions has the ability to read JFR snapshots – snapshots taken with JDK
+Flight Recorder (previously Java Flight Recorder). JFR is a tool for collecting
+diagnostic and profiling data about a running Java application. It is integrated
+into the Java Virtual Machine (JVM) and causes almost no performance overhead,
+so it can be used even in heavily loaded production environments.</p>
+
+<p>To install the JFR support, released as a plugin:</p>
+<ol>
+  <li>run <code>&lt;GRAALVM_HOME&gt;/bin/jvisualvm</code> to start VisualVM;</li>
+  <li>navigate to Tools &gt; Plugins &gt; Available Plugins to list all available plugins and install the <em>VisualVM-JFR</em> and
+<em>VisualVM-JFR-Generic</em> modules.</li>
+</ol>
+
+<p>The JFR snapshots can be opened using either the File &gt; Load action or by
+double-clicking the JFR Snapshots node and adding the snapshot into the JFR
+repository permanently. Please follow the documentation for your Java version to
+create JFR snapshots.</p>
+
+<p>The JFR viewer reads all JFR snapshots created from Java 7 and newer and presents the data in typical
+VisualVM views familiar to the tool users.</p>
+
+<p><img src="../img/visualvm_jfr.png" alt="" title="JFR viewer - read JFR snapshots" /></p>
+
+<p>These views and functionality are currently available:</p>
+
+<ul>
+  <li><em>Overview tab</em> displays the basic information about the recorded process like
+its main class, arguments, JVM version and configuration, and system properties.
+This tab also provides access to the recorded thread dumps.</li>
+  <li><em>Monitor tab</em> shows the process uptime and basic telemetry – CPU usage, Heap
+and Metaspace utilization, number of loaded classes and number of live &amp; started
+threads.</li>
+  <li><em>Threads tab</em> reconstructs the threads timeline based on all events recorded in
+the snapshot as precisely as possible, based on the recording configuration.</li>
+  <li><em>Locks tab</em> allows to analyze threads synchronization.</li>
+  <li><em>File IO tab</em> presents information on read and write events to the filesystem.</li>
+  <li><em>Socket IO tab</em> presents information on read and write events to the network.</li>
+  <li><em>Sampler tab</em> shows per-thread CPU utilization and memory allocations, and a
+heap histogram. There is also an experimental feature “CPU sampler” building CPU
+snapshot from the recorded events. It does not provide an exact performance
+analysis but still helps to understand what was going on in the recorded
+application and where the CPU bottleneck might be.</li>
+  <li><em>Browser tab</em> provides a generic browser of all events recorded in the snapshot.</li>
+  <li><em>Environment tab</em> gives an overview of the recording machine setup and condition
+like CPU model, memory size, operating system version, CPU utilization, memory
+usage, etc..</li>
+  <li><em>Recording tab</em> lists the recording settings and basic snapshot telemetry like
+number of events, total recording time, etc..</li>
 </ul>
 
-<p>GraalVM also provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrument API</a> for creating language-agnostic tools like debuggers or profilers. To get started with a custom tool implementation on top of GraalVM, proceed to the <a href="/docs/graalvm-as-a-platform/implement-instrument/">guide</a>.</p>
+<p>Note: The support of JDK Flight Recorder is currently experimental. Some advanced features like
+analyzing JVM internals, showing event stack traces or support for creating JFR
+snapshots from live processes are not available in this preview version and will
+be addressed incrementally in the following releases.</p>
 
               </div>
 

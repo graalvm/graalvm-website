@@ -10,7 +10,7 @@
 
   <title>
     
-      Debugging and Monitoring Tools
+      Code Coverage
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/docs/graalvm-tools/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/code-coverage/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -366,7 +366,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/docs/graalvm-tools/">
@@ -436,13 +436,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/tools/code-coverage/">
               Code Coverage
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -630,32 +648,266 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-debugging-and-monitoring-tools">
+                <h1 id="code-coverage-command-line-tool">
         
         
-          GraalVM Debugging and Monitoring Tools
+          Code Coverage Command Line Tool
         
         
       </h1>
 
-<p>GraalVM provides a set of tools for developers to debug and monitor
-deployed applications or the GraalVM platform itself. Traditional
-tools may not be ready to diagnose polyglot programs, while GraalVM
-tools are implemented to inspect single or multi language applications by
-debugging via numerous clients, profiling, statement counting, dynamic analysis,
-and many more. These are:</p>
+<p>As of version 19.3.0 GraalVM provides a <strong>Code coverage command line tool</strong>
+that lets record and analyze the source code coverage of a particular execution
+of code.</p>
 
-<ul>
-  <li><a href="/tools/visualvm/">VisualVM</a></li>
-  <li><a href="/tools/chrome-debugger/">Chrome Debugger</a></li>
-  <li><a href="/tools/vscode-extension/">GraalVM Visual Studio Code Extension</a></li>
-  <li><a href="/tools/lsp/">Language Server Protocol</a></li>
-  <li><a href="/tools/graalvm-insight/">GraalVM Insight</a></li>
-  <li><a href="/tools/code-coverage/">Code Coverage Command Line Tool</a></li>
-  <li><a href="/tools/profiling/">Profiling Command Line Tool</a></li>
-</ul>
+<p>Code coverage, as a percentage of source code lines, functions or statements
+covered, is an important metric for understanding a particular source code execution, and is commonly associated with test quality (test coverage).
+Providing a visual coverage overview for individual lines of code shows
+the developer which code paths are covered and which are not, giving insight
+into the character of the execution which can, for example, inform further
+testing efforts.</p>
 
-<p>GraalVM also provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrument API</a> for creating language-agnostic tools like debuggers or profilers. To get started with a custom tool implementation on top of GraalVM, proceed to the <a href="/docs/graalvm-as-a-platform/implement-instrument/">guide</a>.</p>
+<p>In this section, we use an example application to demonstrate the code
+coverage capabilities that GraalVM offers. This example application defines a
+<code>getPrime</code> function that calculates the n-th prime using a basic prime number
+calculator based on the ancient <a href="https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes">Sieve of Eratosthenes</a> algorithm. It also has a somewhat naive cache of the first 20 prime numbers.</p>
+
+<p>1.Copy the following code into a new file named <code>primes.js</code>:</p>
+
+<pre><code class="language-javascript">class AcceptFilter {
+    accept(n) {
+        return true
+    }
+}
+class DivisibleByFilter {
+    constructor(number, next) {
+        this.number = number;
+        this.next = next;
+    }
+    accept(n) {
+        var filter = this;
+        while (filter != null) {
+            if (n % filter.number === 0) {
+                    return false;
+            }
+            filter = filter.next;
+        }
+        return true;
+    }
+}
+class Primes {
+    constructor() {
+        this.number = 2;
+        this.filter = new AcceptFilter();
+    }
+    next() {
+        while (!this.filter.accept(this.number)) {
+            this.number++;
+        }
+        this.filter = new DivisibleByFilter(this.number, this.filter);
+        return this.number;
+    }
+}
+function calculatePrime(n) {
+    var primes = new Primes();
+    var primesArray = [];
+    for (let i = 0; i &lt; n; i++) {
+        primesArray.push(primes.next());
+    }
+    return primesArray[n-1];
+}
+function getPrime(n) {
+    var cache = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71];
+    var n = arguments[0];
+    if (n &gt; cache.length) { return calculatePrime(n); }
+    return cache[n-1];
+}
+// TESTS
+console.assert(getPrime(1) == 2);
+console.assert(getPrime(10) == 29);
+</code></pre>
+
+<p>Notice that the last couple of lines are assertions which we will, for illustration, treat as unit tests.</p>
+
+<p>2.Run <code>js primes.js</code>. The example application should print no output, since all the assertions pass. But how well do the assertions test the implementation?</p>
+
+<p>3.Run <code>js primes.js --coverage</code> to enable code coverage. The code coverage tool should print output for the example application as follows:</p>
+
+<pre><code>$ js primes.js --coverage
+--------------------------------------------------------
+Code coverage histogram.
+Shows what percent of each element was covered during execution
+--------------------------------------------------------
+ Path               |  Statements |    Lines |    Roots
+--------------------------------------------------------
+ /path/to/primes.js |      20.69% |   26.67% |   22.22%
+--------------------------------------------------------
+</code></pre>
+<p>The tracer prints a coverage histogram for each source file. We can see that
+statement coverage is roughly 20%, line coverage is 26% and root coverage (the
+term root covers functions, methods, etc.) is 22.22%. This tells us that our
+simple tests are not particularly good at exercising the source code.  Now we
+will figure out what parts of the code are not covered.</p>
+
+<p>4.Run <code>js primes.js --coverage --coverage.Output=detailed</code>. Prepare for a somewhat verbose output.
+Specifying the output as <code>detailed</code> will print all the source code lines with a
+coverage annotation at the beginning. Due to potentially large output it is
+recommended to combine this output mode with the <code>--coverage.OutputFile</code> option
+which prints the output directly to a file. The output for our example
+application is as follows:</p>
+
+<pre><code>$ js primes.js --coverage --coverage.Output=detailed
+--------------------------------------------------------
+Code coverage per line of code and what percent of each element was covered during execution (per source)
+  + indicates the line is covered during execution
+  - indicates the line is not covered during execution
+  p indicates the line is part of a statement that was incidentally covered during execution
+    e.g. a not-taken branch of a covered if statement
+--------------------------------------------------------
+ Path               |  Statements |    Lines |    Roots
+ /path/to/primes.js |      20.69% |   26.67% |   22.22%
+
+  class AcceptFilter {
+      accept(n) {
+-         return true
+      }
+  }
+  class DivisibleByFilter {
+      constructor(number, next) {
+-         this.number = number;
+-         this.next = next;
+      }
+      accept(n) {
+-         var filter = this;
+-         while (filter != null) {
+-             if (n % filter.number === 0) {
+-                     return false;
+-             }
+-             filter = filter.next;
+          }
+-         return true;
+      }
+  }
+  class Primes {
+      constructor() {
+-         this.number = 2;
+-         this.filter = new AcceptFilter();
+      }
+      next() {
+-         while (!this.filter.accept(this.number)) {
+-             this.number++;
+          }
+-         this.filter = new DivisibleByFilter(this.number, this.filter);
+-         return this.number;
+      }
+  }
+  function calculatePrime(n) {
+-     var primes = new Primes();
+-     var primesArray = [];
+-     for (let i = 0; i &lt; n; i++) {
+-         primesArray.push(primes.next());
+      }
+-     return primesArray[n-1];
+  }
+  function getPrime(n) {
++     var cache = [2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59,61,67,71];
++     var n = arguments[0];
+p     if (n &gt; cache.length) { return calculatePrime(n); }
++     return cache[n-1];
+  }
+  // TESTS
++ console.assert(getPrime(1) == 2);
++ console.assert(getPrime(10) == 29);
+--------------------------------------------------------
+</code></pre>
+
+<p>As the legend at the beginning of the output explains, lines that are covered by
+the execution are preceded with a <code>+</code>, lines not covered by the execution are
+preceded with a <code>-</code>. Lines that are covered partially (e.g., when an <code>if</code>
+statement is covered, but only one branch is taken, we consider the other bench
+to be incidentally covered) are preceded with <code>p</code>.</p>
+
+<p>Looking at the output we can see that the <code>calculatePrime</code> function and all its
+calls are never executed. Looking again at the assertions and the <code>getPrime</code>
+function it becomes clear that our tests always hit the cache, thus most of the
+code is never executed. Let’s improve on that.</p>
+
+<p>5.Add <code>console.assert(getPrime(30) == 113);</code> to the end of the <code>primes.js</code> file
+and run <code>js primes.js --coverage</code>. Since the new assertion added calls
+<code>getPrime</code> with 30 (our cache only has 20 entries) our coverage will look like
+this:</p>
+
+<pre><code>$ js primes.js --coverage
+-------------------------------------------------------
+Code coverage histogram.
+  Shows what percent of each element was covered during execution
+-------------------------------------------------------
+ Path               |  Statements |    Lines |    Roots
+-------------------------------------------------------
+ /path/to/primes.js |     100.00% |  100.00% |  100.00%
+-------------------------------------------------------
+</code></pre>
+    
+      <h3 id="integrating-with-other-tools">
+        
+        
+          Integrating with other tools <a href="#integrating-with-other-tools" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The code coverage tool provides ways to integrate with other tools. Running
+with <code>--coverage.Output=lcov</code> produces output in the commonly used
+<a href="https://linux.die.net/man/1/lcov">lcov</a> format which is used by multiple tools
+(e.g., <code>genhtml</code>) to display coverage data. Take a look at the next example that
+shows how to visualise coverage of a Node.js app with Visual Studio Code.</p>
+
+<p>1.Copy the following code into a new file named <code>nodeapp.js</code>:</p>
+
+<pre><code>const express = require('express')
+const app = express()
+const port = 3000
+
+app.get('/', (req, res) =&gt; {
+  res.send('Hello World!')
+})
+
+app.get('/neverCalled', (req, res) =&gt; {
+  res.send('You should not be here')
+})
+
+app.get('/shutdown', (req, res) =&gt; {
+  process.exit();
+})
+app.listen(port, () =&gt; console.log(`Example app listening on port ${port}!`))
+</code></pre>
+
+<p>2.Install the express module dependency: <code>npm install express</code>.</p>
+
+<p>3.Launch Visual Studio Code and install a code coverage plugin that supports <em>lcov</em>.
+We use <a href="https://marketplace.visualstudio.com/items?itemName=brainfit.vscode-coverage-highlighter">Code Coverage Highlighter</a> for this example, but other plugins should work similarly.</p>
+
+<p>4.Run the <em>nodeapp.js</em> file with coverage enabled and configured:</p>
+
+<pre><code>node --coverage --coverage.Output=lcov \
+--coverage.OutputFile=coverage/lcov.info \
+nodeapp.js
+</code></pre>
+
+<p>Note that the Code Coverage Highlighter plugin looks for the <code>lcov.info</code> file in
+the <code>coverage</code> directory by default, so we direct the output of the code
+coverage tool there.</p>
+
+<p>5.Visit <a href="http://localhost:3000/">localhost:3000/</a> in your browser, then visit <a href="http://localhost:3000/shutdown">localhost:3000/shutdown</a> to close the app.</p>
+
+<p>6.Open Visual Studio Code and open the folder containing the <code>nodeapp.js</code> file
+and <code>coverage</code> directory and you should be greeted with an image similar to the following.</p>
+
+<p><img src="../img/vscode-coverage.png" alt="" /></p>
+
+<p>If you wish to integrate the data gathered by the GraalVM code coverage tool
+with your own visualisation, the <code>--coverage.Output=json</code> option results in
+the output being a JSON file with the raw data gathered by the tracker.</p>
 
               </div>
 

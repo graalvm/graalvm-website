@@ -10,7 +10,7 @@
 
   <title>
     
-      Debugging and Monitoring Tools
+      Profiler
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/docs/graalvm-tools/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/profiling/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -366,7 +366,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/docs/graalvm-tools/">
@@ -447,13 +447,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/tools/profiling/">
               Profiler
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -630,32 +648,325 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-debugging-and-monitoring-tools">
+                <h1 id="profiling-command-line-tool">
         
         
-          GraalVM Debugging and Monitoring Tools
+          Profiling Command Line Tool
         
         
       </h1>
 
-<p>GraalVM provides a set of tools for developers to debug and monitor
-deployed applications or the GraalVM platform itself. Traditional
-tools may not be ready to diagnose polyglot programs, while GraalVM
-tools are implemented to inspect single or multi language applications by
-debugging via numerous clients, profiling, statement counting, dynamic analysis,
-and many more. These are:</p>
+<p>GraalVM provides <strong>Profiling command line tool</strong> that let you optimize your code
+through analysis of CPU and memory usage.</p>
+
+<p>Most applications spend 80 percent of their runtime in 20 percent of the code.
+For this reason, to optimize the code, it is essential to know where the
+application spends its time. GraalVM provides simple command line tools for
+runtime and memory profiling to help you analyze and optimize your code.</p>
+
+<p>In this section, we use an example application to demonstrate the profiling
+capabilities that GraalVM offers. This example application uses a basic prime
+number calculator based on the ancient <a href="https://en.wikipedia.org/wiki/Sieve_of_Eratosthenes">Sieve of Eratosthenes</a>
+algorithm.</p>
+
+<ol>
+  <li>
+    <p>Copy the following code into a new file named <code>primes.js</code>:</p>
+
+    <pre><code class="language-javascript"> class AcceptFilter {
+     accept(n) {
+         return true
+     }
+ }
+
+ class DivisibleByFilter {
+     constructor(number, next) {
+         this.number = number;
+         this.next = next;
+     }
+
+     accept(n) {
+         var filter = this;
+         while (filter != null) {
+             if (n % filter.number === 0) {
+                 return false;
+             }
+             filter = filter.next;
+         }
+         return true;
+     }
+ }
+
+ class Primes {
+     constructor() {
+         this.number = 2;
+         this.filter = new AcceptFilter();
+     }
+
+     next() {
+         while (!this.filter.accept(this.number)) {
+             this.number++;
+         }
+         this.filter = new DivisibleByFilter(this.number, this.filter);
+         return this.number;
+     }
+ }
+
+ var primes = new Primes();
+ var primesArray = [];
+ for (let i = 0; i &lt; 5000; i++) {
+     primesArray.push(primes.next());
+ }
+ console.log(`Computed ${primesArray.length} prime numbers. ` +
+             `The last 5 are ${primesArray.slice(-5)}.`);
+</code></pre>
+  </li>
+  <li>
+    <p>Run <code>js primes.js</code>.</p>
+
+    <p>The example application should print output as follows:</p>
+    <pre><code> $&gt; js primes.js
+ Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
+
+</code></pre>
+
+    <p>This code takes a moment to compute so let’s see where all the time is spent.</p>
+  </li>
+  <li>
+    <p>Run <code>js primes.js --cpusampler</code> to enable CPU sampling.</p>
+
+    <p>The CPU sampler tool should print output for the example application as
+ follows:</p>
+
+    <pre><code> $ ./js primes.js --cpusampler
+ Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
+ ---------------------------------------------------------------------------------------------------
+ Sampling Histogram. Recorded 1184 samples with period 1ms
+   Self Time: Time spent on the top of the stack.
+   Total Time: Time the location spent on the stack.
+   Opt %: Percent of time spent in compiled and therfore non-interpreted code.
+ ---------------------------------------------------------------------------------------------------
+  Name        |      Total Time     |  Opt % ||       Self Time     |  Opt % | Location
+ ---------------------------------------------------------------------------------------------------
+  next        |       1216ms  98.5% |  87.9% ||       1063ms  85.9% |  99.0% | primes.js~31-37:564-770
+  accept      |        159ms  11.2% |  22.7% ||        155ms  12.5% |  14.8% | primes.js~13-22:202-439
+  :program    |       1233ms 100.0% |   0.0% ||         18ms   1.5% |   0.0% | primes.js~1-47:0-1024
+  constructor |          1ms   0.1% |   0.0% ||          1ms   0.1% |   0.0% | primes.js~7-23:72-442
+ ---------------------------------------------------------------------------------------------------
+
+</code></pre>
+    <p>The sampler prints an execution time histogram for each JavaScript function.
+ By default, CPU sampling takes a sample every single millisecond. From the
+ result we can see that roughly 96 percent of the time is spent
+ in the <code>DivisibleByFilter.accept</code> function.</p>
+
+    <pre><code class="language-javascript"> accept(n) {
+     var filter = this;
+     while (filter != null) {
+         if (n % filter.number === 0) {
+             return false;
+         }
+         filter = filter.next;
+     }
+     return true;
+ }
+
+</code></pre>
+
+    <p>Now find out more about this function by filtering the samples and
+ include statements in the profile in addition to methods.</p>
+  </li>
+  <li>
+    <p>Run <code>js primes.js --cpusampler --cpusampler.Mode=statements --cpusampler.FilterRootName=*accept</code>
+to collect statement samples for all functions that end with <code>accept</code>.</p>
+
+    <pre><code> $ js primes.js --cpusampler --cpusampler.Mode=statements --cpusampler.FilterRootName=*accept
+ Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
+ ----------------------------------------------------------------------------------------------------
+ Sampling Histogram. Recorded 1567 samples with period 1ms
+   Self Time: Time spent on the top of the stack.
+   Total Time: Time the location spent on the stack.
+   Opt %: Percent of time spent in compiled and therfore non-interpreted code.
+ ----------------------------------------------------------------------------------------------------
+  Name         |      Total Time     |  Opt % ||       Self Time     |  Opt % | Location
+ ----------------------------------------------------------------------------------------------------
+  accept~16-18 |        436ms  27.8% |  94.3% ||        435ms  27.8% |  94.5% | primes.js~16-18:275-348
+  accept~15    |        432ms  27.6% |  97.0% ||        432ms  27.6% |  97.0% | primes.js~15:245-258
+  accept~19    |        355ms  22.7% |  95.5% ||        355ms  22.7% |  95.5% | primes.js~19:362-381
+  accept~17    |          1ms   0.1% |   0.0% ||          1ms   0.1% |   0.0% | primes.js~17:322-334
+ ----------------------------------------------------------------------------------------------------
+
+</code></pre>
+    <p>Roughly 30 percent of the time is spent in this if condition:</p>
+    <pre><code class="language-javascript"> if (n % filter.number === 0) {
+     return false;
+ }
+
+</code></pre>
+    <p>The if condition contains an expensive modulo operation, which might
+ explain the runtime of the statement.</p>
+
+    <p>Now use the CPU tracer tool to collect execution counts of each statement.</p>
+  </li>
+  <li>
+    <p>Run <code>js primes.js --cputracer --cputracer.TraceStatements --cputracer.FilterRootName=*accept</code>
+to collect execution counts for all statements in methods ending with <code>accept</code>.</p>
+
+    <pre><code> $ js primes.js --cputracer --cputracer.TraceStatements --cputracer.FilterRootName=*accept
+ Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
+ -----------------------------------------------------------------------------------------
+ Tracing Histogram. Counted a total of 351278226 element executions.
+   Total Count: Number of times the element was executed and percentage of total executions.
+   Interpreted Count: Number of times the element was interpreted and percentage of total executions of this element.
+   Compiled Count: Number of times the compiled element was executed and percentage of total executions of this element.
+ -----------------------------------------------------------------------------------------
+  Name     |          Total Count |    Interpreted Count |       Compiled Count | Location
+ -----------------------------------------------------------------------------------------
+  accept   |     117058669  33.3% |         63575   0.1% |     116995094  99.9% | primes.js~15:245-258
+  accept   |     117053670  33.3% |         63422   0.1% |     116990248  99.9% | primes.js~16-18:275-348
+  accept   |     117005061  33.3% |         61718   0.1% |     116943343  99.9% | primes.js~19:362-381
+  accept   |         53608   0.0% |          1857   3.5% |         51751  96.5% | primes.js~14:215-227
+  accept   |         53608   0.0% |          1857   3.5% |         51751  96.5% | primes.js~13-22:191-419
+  accept   |         48609   0.0% |          1704   3.5% |         46905  96.5% | primes.js~17:322-334
+  accept   |          4999   0.0% |           153   3.1% |          4846  96.9% | primes.js~21:409-412
+  accept   |             1   0.0% |             1 100.0% |             0   0.0% | primes.js~2-4:25-61
+  accept   |             1   0.0% |             1 100.0% |             0   0.0% | primes.js~3:52-55
+ -----------------------------------------------------------------------------------------
+
+</code></pre>
+    <p>Now the output shows execution counters for each statement, instead of timing
+ information. Tracing histograms often provides insights into the behavior
+ of the algorithm that needs optimization.</p>
+
+    <p>Lastly, using the memory tracer tool for capturing allocations is currently an experimental feature in GraalVM.
+ Node, <code>--memtracer</code> as an experimental tool must be preceded by the <code>--experimental-options</code> command line option.</p>
+  </li>
+  <li>
+    <p>Run <code>js primes.js --experimental-options --memtracer</code> to display source code locations and
+counts of reported allocations.</p>
+
+    <pre><code> $ js primes.js --experimental-options --memtracer
+ Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
+ ------------------------------------------------------------
+  Location Histogram with Allocation Counts. Recorded a total of 5013 allocations.
+    Total Count: Number of allocations during the execution of this element.
+    Self Count: Number of allocations in this element alone (excluding sub calls).
+ ------------------------------------------------------------
+  Name        |      Self Count |     Total Count |  Location
+ ------------------------------------------------------------
+  next        |     5000  99.7% |     5000  99.7% | primes.js~31-37:537-737
+  :program    |       11   0.2% |     5013 100.0% | primes.js~1-46:0-966
+  Primes      |        1   0.0% |        1   0.0% | primes.js~25-38:454-739
+ ------------------------------------------------------------
+
+</code></pre>
+
+    <p>This output shows the number of allocations which were recorded per function.
+ For each prime number that was computed, the program allocates one object in
+ <code>next</code> and one in <code>constructor</code> of <code>DivisibleByFilter</code>. Allocations are recorded
+ independently of whether they could get eliminated by the compiler. The Graal
+ compiler is particularly powerful in optimizing allocations and can push
+ allocations into infrequent branches to increase execution performance. The
+ GraalVM team plans to add information about memory optimizations to the
+ memory tracer in the future.</p>
+  </li>
+</ol>
+    
+      <h3 id="tool-reference">
+        
+        
+          Tool Reference <a href="#tool-reference" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>Use the <code>--help:tools</code> option in all guest language launchers to display
+reference information for the CPU sampler, the CPU tracer, and the memory tracer.</p>
+
+<p>The current set of available options is as follows:</p>
+    
+      <h3 id="cpu-sampler-command-options">
+        
+        
+          CPU Sampler Command Options <a href="#cpu-sampler-command-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
 <ul>
-  <li><a href="/tools/visualvm/">VisualVM</a></li>
-  <li><a href="/tools/chrome-debugger/">Chrome Debugger</a></li>
-  <li><a href="/tools/vscode-extension/">GraalVM Visual Studio Code Extension</a></li>
-  <li><a href="/tools/lsp/">Language Server Protocol</a></li>
-  <li><a href="/tools/graalvm-insight/">GraalVM Insight</a></li>
-  <li><a href="/tools/code-coverage/">Code Coverage Command Line Tool</a></li>
-  <li><a href="/tools/profiling/">Profiling Command Line Tool</a></li>
+  <li><code>--cpusampler</code>: enables the CPU sampler. Disabled by default.</li>
+  <li><code>--cpusampler.Delay=&lt;Long&gt;</code>: delays the sampling for the given number of milliseconds (default: 0).</li>
+  <li><code>--cpusampler.FilterFile=&lt;Expression&gt;</code>: applies a wildcard filter for source
+file paths. For example, <code>*program*.sl</code>. The default is ∗.</li>
+  <li><code>--cpusampler.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the
+matching mime-type. For example, <code>+</code>. The default is no filter.</li>
+  <li><code>--cpusampler.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for
+program roots. For example, <code>Math.*</code>. The default is ∗.</li>
+  <li><code>--cpusampler.GatherHitTimes</code>: saves a timestamp for each taken sample. The default is false.</li>
+  <li><code>--cpusampler.Mode=&lt;Mode&gt;</code>:  describes level of sampling detail. Please note that increased detail can lead to reduced accuracy.
+    <ul>
+      <li><code>exclude_inlined_roots</code> samples roots excluding inlined functions (enabled by default);</li>
+      <li><code>roots</code>samples roots including inlined functions;</li>
+      <li><code>statements</code> samples all statements.</li>
+    </ul>
+  </li>
+  <li><code>--cpusampler.Output=&lt;Output&gt;</code>: prints a ‘histogram’ or ‘calltree’ as output.
+The default is ‘histogram’.</li>
+  <li><code>--cpusampler.Period=&lt;Long&gt;</code>: specifies the period, in milliseconds, to
+sample the stack.</li>
+  <li><code>--cpusampler.SampleInternal</code>: captures internal elements. The default is
+false.</li>
+  <li><code>--cpusampler.StackLimit=&lt;Integer&gt;</code>: specifies the maximum number of stack
+elements.</li>
+  <li><code>--cpusampler.SummariseThreads </code>: prints sampling output as a summary of all ‘per thread’ profiles. The default is false.</li>
 </ul>
+    
+      <h3 id="cpu-tracer-command-options">
+        
+        
+          CPU Tracer Command Options <a href="#cpu-tracer-command-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>GraalVM also provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrument API</a> for creating language-agnostic tools like debuggers or profilers. To get started with a custom tool implementation on top of GraalVM, proceed to the <a href="/docs/graalvm-as-a-platform/implement-instrument/">guide</a>.</p>
+<ul>
+  <li><code>--cputracer</code>: enables the CPU tracer. Disabled by default.</li>
+  <li><code>--cputracer.FilterFile=&lt;Expression&gt;</code>: applies a wildcard filter for source
+file paths. For example, <code>*program*.sl</code>. The default is ∗.</li>
+  <li><code>--cputracer.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the
+matching mime-type. For example, <code>+</code>. The default is no filter.</li>
+  <li><code>--cputracer.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for
+program roots. For example, <code>Math.*</code>. The default is ∗.</li>
+  <li><code>--cputracer.Output=&lt;Output&gt;</code> prints a <code>histogram</code> or <code>json</code> as output. The default is <code>histogram</code>.</li>
+  <li><code>--cputracer.TraceCalls</code>: captures calls when tracing. The default is false.</li>
+  <li><code>--cputracer.TraceInternal</code>: traces internal elements. The default is false.</li>
+  <li><code>--cputracer.TraceRoots=&lt;Boolean&gt;</code>: captures roots when tracing. The default
+is true.</li>
+  <li><code>--cputracer.TraceStatements</code>: captures statements when tracing. The default
+is false.</li>
+</ul>
+    
+      <h3 id="memory-tracer-command-options">
+        
+        
+          Memory Tracer Command Options <a href="#memory-tracer-command-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Note: The memory tracer tool is currently an experimental tool. Make sure to prepend <code>--experimental-options</code> flag to enable <code>--memtracer</code>.</p>
+
+<ul>
+  <li><code>--experimental-options --memtracer</code>: enables the memory tracer. Disabled by default.</li>
+  <li><code>--memtracer.FilterFile=&lt;Expression&gt;</code>: applies a wildcard filter for source file paths. For example, <code>*program*.sl</code>. The default is ∗.</li>
+  <li><code>--memtracer.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the matching mime-type. For example, <code>+</code>. The default is no filter.</li>
+  <li><code>--memtracer.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for program roots. For example, <code>Math.*</code>. The default is ∗.</li>
+  <li><code>--memtracer.Output=&lt;Format&gt;</code>: prints a ‘typehistogram’, ‘histogram’, or ‘calltree’ as output. The default is ‘histogram’.</li>
+  <li><code>--memtracer.StackLimit=&lt;Integer&gt;</code>: sets the maximum number of maximum stack elements.</li>
+  <li><code>--memtracer.TraceCalls</code>: captures calls when tracing. The default is false.</li>
+  <li><code>--memtracer.TraceInternal</code>: captures internal elements. The default is false.</li>
+  <li><code>--memtracer.TraceRoots=&lt;Boolean&gt;</code>: captures roots when tracing. The default is true.</li>
+  <li><code>--memtracer.TraceStatements</code>: captures statements when tracing. The default is false.</li>
+</ul>
 
               </div>
 

@@ -10,7 +10,7 @@
 
   <title>
     
-      Debugging and Monitoring Tools
+      Chrome Debugger
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/docs/graalvm-tools/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/chrome-debugger/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -366,7 +366,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/docs/graalvm-tools/">
@@ -392,13 +392,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/tools/chrome-debugger/">
               Chrome Debugger
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -630,32 +648,222 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-debugging-and-monitoring-tools">
+                <h1 id="chrome-debugger">
         
         
-          GraalVM Debugging and Monitoring Tools
+          Chrome Debugger
         
         
       </h1>
 
-<p>GraalVM provides a set of tools for developers to debug and monitor
-deployed applications or the GraalVM platform itself. Traditional
-tools may not be ready to diagnose polyglot programs, while GraalVM
-tools are implemented to inspect single or multi language applications by
-debugging via numerous clients, profiling, statement counting, dynamic analysis,
-and many more. These are:</p>
+<p>GraalVM supports debugging of guest language applications and provides a
+built-in implementation of
+the <a href="https://chromedevtools.github.io/devtools-protocol/">Chrome DevTools Protocol</a>.
+This allows you to attach compatible debuggers such as
+<a href="https://developers.google.com/web/tools/chrome-devtools/">Chrome Developer Tools</a>
+to GraalVM.</p>
 
+<p>To debug guest language applications, pass the <code>--inspect</code> option to the
+command-line launcher, as in the following
+example with a Node.js hello world program:</p>
+
+<pre><code>var http = require('http');
+
+var server = http.createServer(function (request, response) {
+  response.writeHead(200, {"Content-Type": "text/plain"});
+  response.end("Hello World!\n");
+});
+
+server.listen(8000);
+
+console.log("Server running at http://localhost:8000/");
+</code></pre>
+
+<ol>
+  <li>Save this program as <code>HelloWorld.js</code> and then run:</li>
+</ol>
+
+<pre><code>$ node --inspect --jvm HelloWorld.js
+Debugger listening on port 9229.
+To start debugging, open the following URL in Chrome:
+    chrome-devtools://devtools/bundled/js_app.html?ws=127.0.1.1:9229/76fcb6dd-35267eb09c3
+Server running at http://localhost:8000/
+</code></pre>
+
+<ol>
+  <li>
+    <p>Navigate to <code>http://localhost:8000/</code> in your browser to launch the node application.</p>
+  </li>
+  <li>
+    <p>Open the <code>chrome-devtools:...</code> link in a separate Chrome browser tab.</p>
+  </li>
+  <li>
+    <p>Navigate to the <code>HelloWorld.js</code> file and submit a breakpoint at line 4.</p>
+  </li>
+  <li>
+    <p>Refresh the node.js app and you can see the breakpoint hit.</p>
+  </li>
+</ol>
+
+<p>You can inspect the stack, variables, evaluate variables and selected expressions
+in a tooltip, and so on. By hovering a mouse over the <code>response</code> variable, for
+instance, you can inspect its properties as can be seen in the screenshot below:</p>
+
+<p><img src="../img/ChromeInspector.png" alt="" title="Chrome DevTools debugging node in GraalVM" /></p>
+
+<p>Consult the
+<a href="https://developers.google.com/web/tools/chrome-devtools/javascript/reference">JavaScript Debugging Reference</a>
+for details on Chrome DevTools debugging features.</p>
+
+<p>This debugging process applies to all guest languages that GraalVM supports.
+Other languages such as R and Ruby can be debugged as easily as JavaScript,
+including stepping through language boundaries during guest language
+<a href="/reference-manual/polyglot-programming/">interoperability</a>.</p>
+    
+      <h3 id="inspect-options">
+        
+        
+          Inspect Options <a href="#inspect-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="node-launcher">
+        
+        
+          Node Launcher <a href="#node-launcher" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>The node.js implementation that GraalVM provides accepts the same options as
+<a href="https://nodejs.org/">node.js built on the V8 JavaScript engine</a>, such as:</p>
+
+<pre><code>--inspect[=[host:]&lt;port number&gt;]
+</code></pre>
+
+<p>Enables the inspector agent and listens on port 9229 by default. To listen on a
+different port, specify the optional port number.</p>
+
+<pre><code>--inspect-brk[=[host:]&lt;port number&gt;]
+</code></pre>
+
+<p>Enables the inspector agent and suspends on the first line of the application
+code. Listens on port 9229 by default, to listen on a different port, specify
+the optional port number. This applies to the <code>node</code> launcher only.</p>
+    
+      <h3 id="other-language-launchers">
+        
+        
+          Other Language Launchers <a href="#other-language-launchers" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Other guest language launchers such as <code>js</code>, <code>python</code>, <code>Rscript</code>, <code>ruby</code>, <code>lli</code> and <code>polyglot</code>
+accept the <code>--inspect[=[host:]&lt;port number&gt;]</code> option, but suspend on the first line of
+the application code by default.</p>
+
+<pre><code>--inspect.Suspend=(true|false)
+</code></pre>
+
+<p>Disables the initial suspension if you specify <code>--inspect.Suspend=false</code>.</p>
+    
+      <h3 id="additional-common-inspect-options">
+        
+        
+          Additional Common Inspect Options <a href="#additional-common-inspect-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>All launchers accept also following additional options:</p>
+
+<pre><code>--inspect.Path=&lt;path&gt;
+</code></pre>
+
+<p>Allows to specify a custom path that generates the connection URL. Do note that any website opened in your browser that has knowledge of the URL can connect to the debugger. <strong>A predictable path can thus be abused by a malicious website to execute arbitrary code on your computer, even if you are behind a firewall.</strong> Therefore the path is randomly generated by default.</p>
+
+<pre><code>--inspect.SourcePath=&lt;source path&gt;
+</code></pre>
+<p>This option specifies a list of directories or ZIP/JAR files representing the source path. When the inspected application contains relative references to source files, their content is loaded from locations resolved with respect to this source path. It is useful during LLVM debugging, for instance.
+The paths are delimited by <code>:</code> on UNIX systems and by <code>;</code> on MS Windows.</p>
+
+<pre><code>--inspect.Secure=(true|false)
+</code></pre>
+
+<p>When true, use TLS/SSL to secure the debugging protocol. Besides changing the WS
+(web socket) protocol to WSS, the HTTP endpoint that serves metadata about the debuggee
+is also changed to HTTPS. This is not compatible e.g., with
+<a href="chrome://inspect">chrome://inspect</a> page, which is not able to provide the debuggee
+information and launch the debugger then. Launch debugging via the printed WSS URL directly.</p>
+
+<p>Use the standard <code>javax.net.ssl.*</code> system options to provide information about
+keystore with the TLS/SSL encryption keys, or following options:</p>
 <ul>
-  <li><a href="/tools/visualvm/">VisualVM</a></li>
-  <li><a href="/tools/chrome-debugger/">Chrome Debugger</a></li>
-  <li><a href="/tools/vscode-extension/">GraalVM Visual Studio Code Extension</a></li>
-  <li><a href="/tools/lsp/">Language Server Protocol</a></li>
-  <li><a href="/tools/graalvm-insight/">GraalVM Insight</a></li>
-  <li><a href="/tools/code-coverage/">Code Coverage Command Line Tool</a></li>
-  <li><a href="/tools/profiling/">Profiling Command Line Tool</a></li>
+  <li><code>--inspect.KeyStore</code> keystore file path,</li>
+  <li><code>--inspect.KeyStoreType</code> keystore file type (defaults to JKS),</li>
+  <li><code>--inspect.KeyStorePassword</code> keystore password,</li>
+  <li><code>--inspect.KeyPassword</code> password for recovering keys, if it’s different from the keystore password.</li>
 </ul>
 
-<p>GraalVM also provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrument API</a> for creating language-agnostic tools like debuggers or profilers. To get started with a custom tool implementation on top of GraalVM, proceed to the <a href="/docs/graalvm-as-a-platform/implement-instrument/">guide</a>.</p>
+<pre><code>--inspect.WaitAttached=(true|false)
+</code></pre>
+
+<p>When true, no guest language source code is executed until the inspector client
+is attached. Unlike <code>--inspect.Suspend=true</code>, the execution is resumed right
+after the client is attached. That assures that no execution is missed by the
+inspector client. It is <code>false</code> by default.</p>
+    
+      <h3 id="advanced-debug-options">
+        
+        
+          Advanced Debug Options <a href="#advanced-debug-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>Following options are for language experts and language developers:</p>
+
+<pre><code>--inspect.Initialization=(true|false)
+</code></pre>
+
+<p>When true, inspect the language initialization phase. When initial suspension is
+active, suspends at the beginning of language initialization and not necessarily
+at the beginning of the application code. It’s <code>false</code> by default.</p>
+
+<pre><code>--inspect.Internal=(true|false)
+</code></pre>
+
+<p>When true, internal sources are inspected as well. Internal sources may provide
+language implementation details. It’s <code>false</code> by default.</p>
+    
+      <h3 id="programmatic-launch-of-inspector-backend">
+        
+        
+          Programmatic Launch of Inspector Backend <a href="#programmatic-launch-of-inspector-backend" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Embedders can provide the appropriate inspector options to the <code>Engine/Context</code>
+to launch the inspector backend. The following code snippet provides an example of
+a possible launch:</p>
+
+<pre><code>import org.graalvm.polyglot.*;
+
+class DebuggerSample {
+    public static void main(String... args) {
+        String port = "4242";
+        String path = java.util.UUID.randomUUID().toString();
+        Context context = Context.newBuilder("js")
+                    .option("inspect", port)
+                    .option("inspect.Path", path)
+                    .build();
+        String hostAdress = "localhost";
+        String url = String.format(
+                    "chrome-devtools://devtools/bundled/js_app.html?ws=%s:%s/%s",
+                    hostAdress, port, path);
+    }
+}
+</code></pre>
 
               </div>
 

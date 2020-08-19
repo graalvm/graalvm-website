@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xml:lang="en-us" lang="en-us">
+    <head>
+        
+
+
+
+
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta property="og:site_name" content="Oracle Help Center">
+
+        <!-- The title values -->
+        <title></title>
+        <meta property="og:title" content="">
+        <meta name="application-name" content="GraalVM Community">
+        <meta name="dcterms.title" content="">
+        <!-- The description values -->
+        
+        
+        
+        <meta name="dcterms.created" content="2020-08-19T08:59:10+00:00">
+        <meta name="dcterms.category" content="">
+        <meta name="dcterms.identifier" content="">
+        <meta name="dcterms.product" content="">
+        <meta name="dcterms.isVersionOf" content="">
+
+        <link rel="prev" href="/en/graalvm/enterprise/20/docs/tools/profiling/" title="Previous" type="text/html">
+        
+        <link rel="first" href="/main.html" title="First Page" type="text/html">
+        <link rel="contents" href="/toc.htm" title="Table of Contents" type="text/html">
+        <link rel="self" href="/tools/igv/" title="Current Page" type="text/html">
+
+        <link rel="stylesheet" href="/sp_common/book-template/ohc-book-template/css/book.css">
+        <link rel="shortcut icon" href="/sp_common/book-template/ohc-common/img/favicon.ico">
+        <meta name="robots" content="all">
+        <link rel="schema.dcterms" href="http://purl.org/dc/terms/">
+        <script>
+            document.write('<style type="text/css">');
+            document.write('body > .noscript, body > .noscript ~ * { opacity: 0; }');
+            document.write('</style>');
+        </script>
+        <script data-main="/sp_common/book-template/ohc-book-template/js/book-config" src="/sp_common/book-template/requirejs/require.js"></script>
+        <script>
+            if (window.require === undefined) {
+                document.write('<script data-main="../../sp_common/book-template/ohc-book-template/js/book-config" src="../../sp_common/book-template/requirejs/require.js"><\/script>');
+                document.write('<link href="../../sp_common/book-template/ohc-book-template/css/book.css" rel="stylesheet">');
+            }
+        </script>
+    </head>
+    <body>
+        <div class="noscript alert alert-danger text-center" role="alert">
+            <a href="/en/graalvm/enterprise/20/docs/tools/profiling/" class="pull-left"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>Previous</a>
+            
+            <span class="fa fa-exclamation-triangle" aria-hidden="true"></span> JavaScript must be enabled to correctly display this content
+        </div>
+        <article>
+            <h1 id="ideal-graph-visualizer">Ideal Graph Visualizer</h1>
+
+<p>Ideal Graph Visualizer (IGV) is a developer tool allowing to analyze compilation
+graphs and investigate performance issues.  The tool is essential for any
+language implementers building on top of <strong>Oracle GraalVM Enterprise Edition</strong>. It is
+available as a separate download on <a href="https://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html">Oracle Technology Network</a> and requires accepting the Oracle Technology Network Developer License.</p>
+
+<p>Ideal Graph Visualizer is developed to view and inspect interim graph representations from GraalVM and Truffle compilations.</p>
+
+<p>1.Unzip the downloaded package and enter <code>bin</code> directory:</p>
+
+<pre><code>cd idealgraphvisualizer/bin
+</code></pre>
+
+<p>2.Launch the tool:</p>
+
+<pre><code>idealgraphvisualizer
+</code></pre>
+
+<p>3.Save the following code snippet as  <code>Test.rb</code>:</p>
+
+<pre><code>require 'json'
+
+obj = {
+  time: Time.now,
+  msg: 'Hello World',
+  payload: (1..10).to_a
+}
+
+encoded = JSON.dump(obj)
+
+js_obj = Polyglot.eval('js', 'JSON.parse').call(encoded)
+
+puts js_obj[:time]
+puts js_obj[:msg]
+puts js_obj[:payload].join(' ')
+</code></pre>
+
+<p>4.From another console window, make sure <code>ruby</code> component is installed in GraalVM,
+and connect <code>Test.rb</code> script to the running IGV:</p>
+
+<pre><code>gu list
+ruby --jvm --polyglot --vm.Dgraal.Dump=:1 --vm.Dgraal.PrintGraph=Network Test.rb
+</code></pre>
+<p>This causes GraalVM to dump compiler graphs in IGV format over the network to an IGV process listening
+on <code>127.0.0.1:4445</code>. Once the connection is made, you are able to see the graphs in the Outline window.
+Find e.g., <code>java.lang.String.char(int)</code> folder and open its <em>After parsing</em> graph by double-clicking.
+If the node has <code>sourceNodePosition</code> property, then the Processing Window will attempt to display its location and the entire stacktrace.</p>
+
+<h3 id="browsing-graphs">Browsing Graphs</h3>
+<p>Once a specific graph is opened, you can search for nodes by name, ID, or by <code>property=value</code> data, and all matching results will be shown.
+Another cool feature of this tool is the ability to navigate to the original guest language source code!
+Select a node in graph and press ‘go to source’ button in the Stack View window.</p>
+
+<p><img src="/docs/img/IGV_add_source.png" alt="" /></p>
+
+<p>Graphs navigation is available also from the context menu, enabled by focusing
+and right-clicking a specific graph node. Extract nodes option will re-render
+a graph and display just selected nodes and their neighbours.</p>
+
+<p><img src="/docs/img/IGV_context_menu.png" alt="" /></p>
+
+<p>If the graph is larger than the screen, manipulate with the ‘satellite’ view button
+in the main toolbar to move the viewport rectangle.</p>
+
+<p><img src="/docs/img/IGV_satellite_view.png" alt="" /></p>
+
+<p>For user preference, the graph color scheme is adjustable by editing
+the Coloring filter, enabled by default in the left sidebar.</p>
+
+<h3 id="viewing-source-code">Viewing Source Code</h3>
+
+<p>Source code views can be opened in manual and assisted modes. Once you select a node
+in the graph view, the Processing View will open. If IGV knows where the source code
+for the current frame is, the green ‘go to source’ arrow is enabled. If IGV does not
+know where the source is, the line is greyed out and a ‘looking glass’ button appears.</p>
+
+<p><img src="/docs/img/IGV_add_source.png" alt="" /></p>
+
+<p>Press it and select “Locate in Java project” to locate the correct project in the dialog.
+IGV hides projects which do not contain the required source file.
+The “Source Collections” serves to display the stand alone roots added by “Add root of sources” general action.
+If the source is located using the preferred method (i.e., from a Java project),
+its project can be later managed on the Project tab. That one is initially hidden,
+but you can display the list of opened projects using Window - Projects.</p>
+
+<h3 id="dumping-graphs">Dumping Graphs</h3>
+
+<p>The IGV tool is developed to allow GraalVM language implementers
+to optimize their languages assembled with the Truffle framework. As a development
+tool it should not be installed to production environments.</p>
+
+<p>To dump the GraalVM compiler graphs from an embedded Java application to IGV,
+you need to add options to GraalVM based processes. Depending on the language/VM
+used, you may need to prefix the options by <code>--vm</code>. See the particular
+language’s documentation for the details. The main option to add is
+<code>-Dgraal.Dump=:1</code>. This will dump graphs in an IGV readable format to the local
+file system. To send the dumps directly to IGV over the network, add
+<code>-Dgraal.PrintGraph=Network</code> when starting a GraalVM instance. Optionally a
+port can be specified. Then dumps are sent to IGV from the running GraalVM on
+localhost. If IGV does not listen on localhost, options “Ideal Graph Settings|
+Accept Data from network” can be checked. If there is not an IGV instance
+listening on <code>127.0.0.1</code> or it cannot be connected to, the dumps will be
+redirected to the local file system. The file system location is <code>graal_dumps/</code>
+under the current working directory of the process and can be changed with the
+<code>-Dgraal.DumpPath</code> option.</p>
+
+<p>In case an older GraalVM is used, you may need to explicitly request that dumps
+include the <code>nodeSourcePosition</code> property. This is done by adding the
+<code>-XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints</code> options.</p>
+
+            
+        </article>
+    </body>
+</html>
