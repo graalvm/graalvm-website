@@ -10,7 +10,6 @@ cp ohc-index.md index.md
 bundle exec jekyll build --config _config_enterprise.yml
 rm _site/toc.htm
 cp toc.htm _site/_toc.htm
-cp licensing-information.html _site/docs/overview/licensing-information.html
 mv _site html
 zip -r html html/ -x *.DS_Store
 git checkout _layouts/docs.html
