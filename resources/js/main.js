@@ -237,28 +237,29 @@ $(document).ready(function () {
   twitterFetcher.fetch(configProfile);
 
 //Embedded Tweets Styling
+
 function customizeTweet() {
+  if (document.getElementById("twitter-widget-0")) {
 
-    if (document.getElementById("twitter-widget-0")) {
+      var maxTweets = 10;
 
-        var maxTweets = 10;
+      for (i = 0; i < maxTweets; i++) {
 
-        for (i = 0; i < maxTweets; i++) {
+          if (document.getElementById("twitter-widget-" + i)) {
+             var tweetCSS = ".EmbeddedTweet{border:none !important}";
+             var tweetStyle = document.createElement("style");
 
-            if (document.getElementById("twitter-widget-" + i)) {
-               var tweetCSS = ".EmbeddedTweet{border:none !important}";
-               var tweetStyle = document.createElement("style");
+             tweetStyle.setAttribute("id", "tweet-style-" + i);
+             tweetStyle.innerHTML = tweetCSS;
+             tweetStyle.type = "text/css";
 
-               tweetStyle.setAttribute("id", "tweet-style-" + i);
-               tweetStyle.innerHTML = tweetCSS;
-               tweetStyle.type = "text/css";
-
-               var styleTag = document.getElementById("twitter-widget-" + i).shadowRoot;
-               styleTag.insertBefore(tweetStyle, styleTag.childNodes[0]);
-            }
-        }
-    }
+             var styleTag = document.getElementById("twitter-widget-" + i).shadowRoot;
+             styleTag.insertBefore(tweetStyle, styleTag.childNodes[0]);
+          }
+      }
+  }
 }
+document.querySelector("iframe").addEventListener( "load", customizeTweet)
 
 function addLoadEvent(func) {
   var oldonload = window.onload;
@@ -274,7 +275,7 @@ function addLoadEvent(func) {
   }
 }
 
-addLoadEvent(customizeTweet);
+// addLoadEvent(customizeTweet);
 
 //Header loading
 (document, 'script', 'twitter-wjs');

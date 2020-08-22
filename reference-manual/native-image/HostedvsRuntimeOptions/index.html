@@ -10,7 +10,7 @@
 
   <title>
     
-      Implementing Native Methods in Java with Native Image
+      Native Image Hosted and Runtime Options
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css>
 
-  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/ImplementingNativeMethodsInJavaWithSVM/">
+  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/HostedvsRuntimeOptions/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -464,33 +464,11 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/reference-manual/native-image/HostedvsRuntimeOptions/">
               Native Image Hosted and Runtime Options
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/reference-manual/native-image/C-API/">
-              Native Image C API
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub toc-bullets-highlight">
-          
-            
-            <a href="/reference-manual/native-image/ImplementingNativeMethodsInJavaWithSVM/">
-              Implementing Native Methods in Java with Native Image
             </a>
           </li>
 
@@ -511,6 +489,28 @@ $(document).ready(function(){
       });
     </script>
   </div>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/reference-manual/native-image/C-API/">
+              Native Image C API
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/reference-manual/native-image/ImplementingNativeMethodsInJavaWithSVM/">
+              Implementing Native Methods in Java with Native Image
+            </a>
+          </li>
 
           
         
@@ -891,334 +891,124 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="implementing-native-methods-in-java-with-native-image">
+                <h1 id="native-image-hosted-and-runtime-options">
         
         
-          Implementing Native Methods in Java with Native Image
+          Native Image Hosted and Runtime Options
         
         
       </h1>
 
-<p>Native Image can be used to implement low-level system operations in Java and
-make them available via JNI to Java code executing on a standard JVM. As
-a result one can use the same language to write the application logic
-as well as the system calls.</p>
+<p>Besides options to the native image builder listed in the <a href="/reference-manual/native-image/Options/">Options</a>
+guide,  Native Image also distinguishes hosted and runtime options.</p>
 
-<p>Note that this document describes the opposite of what is commonly done via JNI:
-Usually low-level system operations are implemented in C and invoked from Java
-using JNI. If you are interested in how Native Image supports the common use case,
-continue reading to <a href="/reference-manual/native-image/JNI/">Native Image JNI support</a> guide instead.</p>
+<ul>
+  <li>
+    <p>Hosted options: configure the boot image generation, i.e., influence what is put into the image and how the image is built.
+They are set using the prefix <code>-H:</code> on the command line.</p>
+  </li>
+  <li>
+    <p>Runtime options: get their initial value during boot image generation, using the prefix <code>-R:</code> on the command line of the boot image generator. At runtime, the default prefix is <code>-XX:</code> (but this is application specific and not mandated by Substrate VM).</p>
+  </li>
+</ul>
+
+<p>For developer documentation on how to define and use options, read the documentation of the <code>com.oracle.svm.core.option</code> package.</p>
     
-      <h2 id="create-a-shared-library">
+      <h2 id="list-of-useful-options">
         
         
-          Create a Shared Library <a href="#create-a-shared-library" class="anchor_heading">#</a>
+          List of Useful Options <a href="#list-of-useful-options" class="anchor_heading">#</a>
         
         
       </h2>
-
-<p>First of all one has to use the <code>native-image</code> command to generate a shared library
-with some JNI-compatible <a href="/reference-manual/native-image/SubstrateVM/#images-and-entry-points">entry points</a>.
-Let’s start with the Java code:</p>
-<pre><code class="language-java">package org.pkg.implnative;
-
-import org.graalvm.nativeimage.c.function.CEntryPoint;
-import org.graalvm.word.Pointer;
-
-public final class NativeImpl {
-    @CEntryPoint(name = "Java_org_pkg_apinative_Native_add")
-    public static int add(Pointer jniEnv, Pointer clazz, @CEntryPoint.IsolateThreadContext long isolateId, int a, int b) {
-        return a + b;
-    }
-}
-</code></pre>
-<p>After being processed by the <code>native-image</code> command the code
-<a href="/reference-manual/native-image/C-API/">exposes a C function</a> <code>Java_org_pkg_apinative_Native_add</code>
-(the name follows conventions of JNI that will be handy later) and
-a SubstrateVM signature typical for JNI methods. The first parameter
-is a reference to <code>JNIEnv*</code> value, the second parameter is a reference
-to the <code>jclass</code> value for the class declaring the method. The third parameter is a
-portable (e.g. <code>long</code>) identifier of the <a href="/reference-manual/native-image/C-API/">SubstrateVM isolatethread</a>.
-The rest of the parameters are the actual parameters of the Java <code>Native.add</code>
-method described in the next section. Compile the code with shared option on:</p>
-<pre><code>$GRAALVM/bin/native-image --shared -H:Name=libnativeimpl -cp nativeimpl
-</code></pre>
-<p>and the <code>libnativeimpl.so</code> is generated. We are ready to use it from standard
-Java code.</p>
     
-      <h2 id="bind-java-native-method">
+      <h3 id="graph-dumping">
         
         
-          Bind Java Native Method <a href="#bind-java-native-method" class="anchor_heading">#</a>
+          Graph Dumping <a href="#graph-dumping" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
+<p>Native Image re-used the GraalVM options for graph dumping, logging, counters
+and everything else of the GraalVM debug environment. These GraalVM options can
+be used both as hosted options (if you want to dump graphs of the boot image
+generator) and runtime options (if you want to dump graphs during dynamic
+compilation at runtime).</p>
 
-<p>Now we need another Java class to use the native library generated in the previous step:</p>
-<pre><code class="language-java">package org.pkg.apinative;
+<p>The GraalVM compiler options that work as expected include <code>Dump</code>, <code>DumpOnError</code>, <code>Log</code>,
+<code>MethodFilter</code> and the options to specify file names and ports for the dump
+handlers.</p>
 
-public final class Native {
-    private static native int add(long isolateThreadId, int a, int b);
-}
-</code></pre>
-<p>the package name of the class as well as name of the method has to correspond
-(after the <a href="https://docs.oracle.com/javase/7/docs/technotes/guides/jni/spec/design.html">JNI mangling</a>)
-to the name of the <code>@CEntryPoint</code> introduced previously. The first argument is
-a portable (e.g. <code>long</code>) identifier of the SubstrateVM isolate thread. The rest of the arguments
-matches the parameters of the entry point.</p>
+<p>Example that dumps Graal graphs of the boot image generator: <code>-H:Dump= -H:MethodFilter=ClassName.MethodName</code>.</p>
+
+<p>Example that dumps Graal graphs at run time: specify the dump flags at runtime with <code>-XX:Dump= -XX:MethodFilter=ClassName.MethodName</code>.</p>
     
-      <h2 id="loading-the-native-library">
+      <h3 id="debug-options">
         
         
-          Loading the Native Library <a href="#loading-the-native-library" class="anchor_heading">#</a>
+          Debug Options <a href="#debug-options" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
+<p>These options enable additional checks in the generated executable to help with debugging.</p>
 
-<p>The next step is to bind the JDK with the generated <code>.so</code> library - e.g.
-make sure the implementation of the native <code>Native.add</code> method is loaded.
-Simple <code>load</code> or <code>loadLibrary</code> calls will do:</p>
-<pre><code class="language-java">public static void main(String[] args) {
-    System.loadLibrary("nativeimpl");
-    // ...
-}
-</code></pre>
-<p>under the assumption your <code>LD_LIBRARY_PATH</code> environment variable is specified
-or <code>java.library.path</code> Java property is properly set.</p>
+<ul>
+  <li><code>-H:[+|-]HostedAssertions</code>
+Enable or disable Java assert statements in the boot image generator.
+This flag is translated to either <code>-ea -esa</code> or <code>-da -dsa</code> for the HotSpot VM.</li>
+  <li><code>-H:[+|-]RuntimeAssertions</code>
+Enable or disable Java assert statements at run time.</li>
+  <li><code>-H:TempDirectory=FileSystemPath</code>
+Directory for temporary files generated during boot image generation.
+If this option is specified, the temporary files are not deleted so that you can inspect them after boot image generation.</li>
+</ul>
     
-      <h2 id="initializing-the-substrate-vm">
+      <h3 id="garbage-collection-options">
         
         
-          Initializing the Substrate VM <a href="#initializing-the-substrate-vm" class="anchor_heading">#</a>
+          Garbage Collection Options <a href="#garbage-collection-options" class="anchor_heading">#</a>
         
         
-      </h2>
-
-<p>Before making calls to the <code>Native.add</code> method, we need to create a Substrate VM
-isolate. Substrate VM provides special built-in to allow that:
-<code>CEntryPoint.Builtin.CREATE_ISOLATE</code>. Define another method along your other
-existing <code>@CEntryPoint</code> methods. Let it return <code>IsolateThread</code> and take no parameters:</p>
-<pre><code class="language-java">public final class NativeImpl {
-    @CEntryPoint(name = "Java_org_pkg_apinative_Native_createIsolate", builtin=CEntryPoint.Builtin.CREATE_ISOLATE)
-    public static native IsolateThread createIsolate();
-}
-</code></pre>
-<p>SubstrateVM then generates default native implementation of the
-method into the final <code>.so</code> library.
-The method initializes the Substrate VM runtime and
-returns a portable identification - e.g. <code>long</code> to hold
-an instance of a <a href="/reference-manual/native-image/C-API/">Substrate VM isolatethread</a>. The isolate thread can then be used for
-multiple invocations of the native part of our code:</p>
-<pre><code class="language-java">package org.pkg.apinative;
-
-public final class Native {
-    public static void main(String[] args) {
-        System.loadLibrary("nativeimpl");
-
-        long isolateThread = createIsolate();
-
-        System.out.println("2 + 40 = " + add(isolateThread, 2, 40));
-        System.out.println("12 + 30 = " + add(isolateThread, 12, 30));
-        System.out.println("20 + 22 = " + add(isolateThread, 20, 22));
-    }
-
-    private static native int add(long isolateThread, int a, int b);
-    private static native long createIsolate();
-}
-</code></pre>
-<p>The standard JVM is started. It initializes a Substrate VM isolate,
-attaches current thread to the isolate and the universal answer <code>42</code> is
-then computed three times inside of the isolate.</p>
+      </h3>
+<ul>
+  <li><code>-Xmn=</code>
+Set the size of the young generation (the amount of memory that can be allocated without triggering a GC).
+Value is specified in bytes, suffix <code>k</code>, <code>m</code>, or <code>g</code> can be used for scaling.</li>
+  <li><code>-Xmx=</code>
+Set the maximum heap size in bytes.
+Value is specified in bytes, suffix <code>k</code>, <code>m</code>, or <code>g</code> can be used for scaling.
+Note that this is not the maximum amount of consumed memory, because during GC the system can request more temporary memory.</li>
+  <li><code>-Xms=</code>
+Set the minimum heap size in bytes.
+Value is specified in bytes, suffix <code>k</code>, <code>m</code>, or <code>g</code> can be used for scaling.
+Heap space that is unused will be retained for future heap usage, rather than being returned to the operating system.</li>
+  <li><code>-R:[+|-]PrintGC</code>
+Print summary GC information after each collection.</li>
+  <li><code>-R:[+|-]VerboseGC</code>
+Print more information about the heap before and after each
+collection.</li>
+</ul>
     
-      <h2 id="calling-jvm-from-native-java">
+      <h3 id="control-the-main-entry-points">
         
         
-          Calling JVM from Native Java <a href="#calling-jvm-from-native-java" class="anchor_heading">#</a>
+          Control the Main Entry Points <a href="#control-the-main-entry-points" class="anchor_heading">#</a>
         
         
-      </h2>
-
-<p>There is a detailed <a href="src/com.oracle.svm.tutorial/src/com/oracle/svm/tutorial/CInterfaceTutorial.java">tutorial on the C interface</a> of Substrate VM. The following example shows how to make a callback to JVM.</p>
-
-<p>In the classical setup, when C needs to call into JVM, it uses <a href="/reference-manual/native-image/JNI/">jni.h</a>
-header file. The file defines essential JVM structures (like <code>JNIEnv</code>) as well as
-functions one can invoke to inspect classes, access fields, and call methods
-in the JVM. In order to call these functions from our <code>NativeImpl</code> class in our
-example, we need to define appropriate Java API wrappers of the <code>jni.h</code> concepts:</p>
-
-<pre><code class="language-java">@CContext(JNIHeaderDirectives.class)
-@CStruct(value = "JNIEnv_", addStructKeyword = true)
-interface JNIEnvironment extends PointerBase {
-    @CField("functions")
-    JNINativeInterface getFunctions();
-}
-
-@CPointerTo(JNIEnvironment.class)
-interface JNIEnvironmentPointer extends PointerBase {
-    JNIEnvironment read();
-    void write(JNIEnvironment value);
-}
-
-@CContext(JNIHeaderDirectives.class)
-@CStruct(value = "JNINativeInterface_", addStructKeyword = true)
-interface JNINativeInterface extends PointerBase {
-    @CField
-    GetMethodId getGetStaticMethodID();
-
-    @CField
-    CallStaticVoidMethod getCallStaticVoidMethodA();
-}
-
-interface GetMethodId extends CFunctionPointer {
-    @InvokeCFunctionPointer
-    JMethodID find(JNIEnvironment env, JClass clazz, CCharPointer name, CCharPointer sig);
-}
-
-interface JObject extends PointerBase {
-}
-
-interface CallStaticVoidMethod extends CFunctionPointer {
-    @InvokeCFunctionPointer
-    void call(JNIEnvironment env, JClass cls, JMethodID methodid, JValue args);
-}
-
-interface JClass extends PointerBase {
-}
-interface JMethodID extends PointerBase {
-}
-</code></pre>
-
-<p>If we leave aside the meaning of <code>JNIHeaderDirectives</code> for now, the rest
-of the interfaces is a type-safe representation of the C pointers found in the
-<code>jni.h</code> file. <code>JClass</code>, <code>JMethodID</code>, <code>JObject</code> are all pointers. Thanks to
-the above definitions we now have Java interfaces to represent
-instances of these objects in our native Java code in a type safe way.</p>
-
-<p>The core part of any <a href="/reference-manual/native-image/JNI/">JNI</a> API is the set of functions one can call
-when talking to the JVM. There are dozens of them, but in the <code>JNINativeInterface</code>
-definition we just define wrappers for those few that we need in our example.
-Again, we give them proper types, so in our native Java code we can use
-<code>GetMethodId.find(...)</code>, <code>CallStaticVoidMethod.call(...)</code>, etc. In addition,
-there is another important part missing in the puzzle - the <code>jvalue</code> union type
-wrapping all the possible Java primitive and object types. Here comes definition
-of its getters and setters:</p>
-
-<pre><code class="language-java">@CContext(JNIHeaderDirectives.class)
-@CStruct("jvalue")
-interface JValue extends PointerBase {
-    @CField boolean z();
-    @CField byte b();
-    @CField char c();
-    @CField short s();
-    @CField int i();
-    @CField long j();
-    @CField float f();
-    @CField double d();
-    @CField JObject l();
-
-
-    @CField void z(boolean b);
-    @CField void b(byte b);
-    @CField void c(char ch);
-    @CField void s(short s);
-    @CField void i(int i);
-    @CField void j(long l);
-    @CField void f(float f);
-    @CField void d(double d);
-    @CField void l(JObject obj);
-
-    JValue addressOf(int index);
-}
-</code></pre>
-<p>The <code>addressOf</code> method is a special Substrate VM construct used to perform
-C pointer arithmetics. Given a pointer one can treat it as initial element of
-an array, then for example, use <code>addressOf(1)</code> to access the subsequent element.
-With this we have all the API we need to make a callback: let’s redefine
-the previously introduced <code>NativeImpl.add</code> method to accept properly typed
-pointers, and then use these pointers to invoke a JVM method before computing
-the sum of <code>a + b</code>:</p>
-
-<pre><code class="language-java">@CEntryPoint(name = "Java_org_pkg_apinative_Native_add")
-static int add(JNIEnvironment env, JClass clazz, @CEntryPoint.IsolateThreadContext long isolateThreadId, int a, int b) {
-    JNINativeInterface fn = env.getFunctions();
-
-    try (
-        CTypeConversion.CCharPointerHolder name = CTypeConversion.toCString("hello");
-        CTypeConversion.CCharPointerHolder sig = CTypeConversion.toCString("(ZCBSIJFD)V");
-    ) {
-        JMethodID helloId = fn.getGetStaticMethodID().find(env, clazz, name.get(), sig.get());
-
-        JValue args = StackValue.get(8, JValue.class);
-        args.addressOf(0).z(false);
-        args.addressOf(1).c('A');
-        args.addressOf(2).b((byte)22);
-        args.addressOf(3).s((short)33);
-        args.addressOf(4).i(39);
-        args.addressOf(5).j(Long.MAX_VALUE / 2l);
-        args.addressOf(6).f((float) Math.PI);
-        args.addressOf(7).d(Math.PI);
-        fn.getCallStaticVoidMethodA().call(env, clazz, helloId, args);
-    }
-
-    return a + b;
-}
-</code></pre>
-
-<p>The above example seeks a static method <code>hello</code> and invokes it with eight
-<code>JValue</code> parameters in an array reserved by <code>StackValue.get</code>
-on the stack. Individual parameters are accessed by use of
-the <code>addressOf</code> operator and filled with appropriate primitive values
-before the call happens. The method <code>hello</code> is defined in the class <code>Native</code>
-and just prints values of all parameters to verify they are properly
-propagated from the <code>NativeImpl.add</code> caller:</p>
-
-<pre><code>public class Native {
-    public static void hello(boolean z, char c, byte b, short s, int i, long j, float f, double d) {
-        System.err.println("Hi, I have just been called back!");
-        System.err.print("With: " + z + " " + c + " " + b + " " + s);
-        System.err.println(" and: " + i + " " + j + " " + f + " " + d);
-    }
-</code></pre>
-
-<p>There is just one final piece to explain: the <code>JNIHeaderDirectives</code>.
-Substrate VM C interface needs to understand the layout of the C structures. It
-needs to know at which offset of <code>JNINativeInterface</code> structure it can find
-the pointer to <code>GetMethodId</code> function. To do so, it needs <code>jni.h</code> and additional
-files during compilation. One can specify them by <code>@CContext</code> annotation and
-implementation of its <code>Directives</code>:</p>
-
-<pre><code class="language-java">final class JNIHeaderDirectives implements CContext.Directives {
-    @Override
-    public List&lt;String&gt; getOptions() {
-        File[] jnis = findJNIHeaders();
-        return Arrays.asList("-I" + jnis[0].getParent(), "-I" + jnis[1].getParent());
-    }
-
-    @Override
-    public List&lt;String&gt; getHeaderFiles() {
-        File[] jnis = findJNIHeaders();
-        return Arrays.asList("&lt;" + jnis[0] + "&gt;", "&lt;" + jnis[1] + "&gt;");
-    }
-
-    private static File[] findJNIHeaders() throws IllegalStateException {
-        final File jreHome = new File(System.getProperty("java.home"));
-        final File include = new File(jreHome.getParentFile(), "include");
-        final File[] jnis = {
-            new File(include, "jni.h"),
-            new File(new File(include, "linux"), "jni_md.h"),
-        };
-        return jnis;
-    }
-}
-</code></pre>
-
-<p>The good thing is that <code>jni.h</code> is inside of every JDK, so one can use the
-<code>java.home</code> property to locate the necessary header files. The actual logic
-can, of course, be made more robust and OS-independent.</p>
-
-<p>Implementing any JVM native method in Java and/or making callbacks to the JVM
-with Substrate VM should now be as easy as expanding upon the given example
-and invoking <code>native-image</code>.</p>
+      </h3>
+<ul>
+  <li><code>-H:Kind=[EXECUTABLE | SHARED_LIBRARY]</code>
+Generate a executable with a main entry point, or a shared library with all entry points that are marked via <code>@CEntryPoint</code>.</li>
+  <li><code>-H:Class=ClassName</code>
+Class containing the default entry point method.
+Ignored if <code>Kind == SHARED_LIBRARY</code>.</li>
+  <li><code>-H:Projects=Project1,Project2</code>
+The project that contains the application (and transitively all projects that it depends on).</li>
+  <li><code>-H:Name=FileName</code>
+Name of the executable file that is generated.</li>
+  <li><code>-H:Path=FileSystemPath</code>
+Directory where the generated executable is placed.</li>
+</ul>
 
               </div>
 

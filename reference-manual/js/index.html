@@ -754,7 +754,7 @@ guides are available.</p>
       </h2>
 
 <p>GraalVM can execute plain JavaScript code:</p>
-<pre><code>$ js [options] [filename...] -- [args]
+<pre><code>js [options] [filename...] -- [args]
 </code></pre>
     
       <h2 id="running-nodejs">
@@ -765,7 +765,7 @@ guides are available.</p>
         
       </h2>
 <p>GraalVM is adapted to run unmodified Node.js applications. Applications can
-import npm modules, including native ones.</p>
+import NPM modules, including native ones.</p>
 
 <p>To run Node.js-based applications, use the <code>node</code> utility in the GraalVM distribution:</p>
 <pre><code>node [options] [filename] [args]
@@ -785,82 +785,21 @@ follows:</p>
 
 <p>2. Add the following code snippet to a file named <code>app.js</code> and save it in the same directory where you installed Node.js modules:</p>
 
-<div class="snippet-container">
-  <div>
-    <span href="" class="copy-button" onclick="copySnippet(this);">
-      <img src="/resources/img/copy.svg" title="Copy" />
-    </span>
-  </div>
+<pre><code class="language-js">const http = require("http");
+const span = require("ansispan");
+require("colors");
 
-  <!--
-  javascript
-  js/app.js
-  -->
+http.createServer(function (request, response) {
+    response.writeHead(200, {"Content-Type": "text/html"});
+    response.end(span("Hello Graal.js!".green));
+}).listen(8000, function() { console.log("Graal.js server running at http://127.0.0.1:8000/".red); });
 
-  
-
-  
-<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript">  <span class="c1">// RUN-CMD: rm -rf node_modules</span>
-<span class="c1">// RUN-CMD: npm install ansispan colors</span>
-<span class="c1">// RUN-CMD: node {file}</span>
-<span class="c1">// RUN-CMD: rm -r node_modules</span>
-
-<span class="c1">// BEGIN-SNIPPET</span>
-
-<span class="kr">const</span> <span class="nx">http</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"http"</span><span class="p">);</span>
-<span class="kr">const</span> <span class="nx">span</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">"ansispan"</span><span class="p">);</span>
-<span class="nx">require</span><span class="p">(</span><span class="s2">"colors"</span><span class="p">);</span>
-
-<span class="nx">http</span><span class="p">.</span><span class="nx">createServer</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">request</span><span class="p">,</span> <span class="nx">response</span><span class="p">)</span> <span class="p">{</span>
-    <span class="nx">response</span><span class="p">.</span><span class="nx">writeHead</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="p">{</span><span class="s2">"Content-Type"</span><span class="p">:</span> <span class="s2">"text/html"</span><span class="p">});</span>
-    <span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">(</span><span class="nx">span</span><span class="p">(</span><span class="s2">"Hello Graal.js!"</span><span class="p">.</span><span class="nx">green</span><span class="p">));</span>
-<span class="p">}).</span><span class="nx">listen</span><span class="p">(</span><span class="mi">8000</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"Graal.js server running at http://127.0.0.1:8000/"</span><span class="p">.</span><span class="nx">red</span><span class="p">);</span> <span class="p">});</span>
-<span class="c1">// END-SNIPPET</span>
-
-<span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span> <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">"DONE!"</span><span class="p">);</span> <span class="nx">process</span><span class="p">.</span><span class="nx">exit</span><span class="p">();</span> <span class="p">},</span> <span class="mi">2000</span><span class="p">);</span>
-  </code></pre></figure>
-
-
-  
-
-  <script>
-  var beginPattern = "BEGIN-SNIPPET";
-  var endPattern = "END-SNIPPET";
-  var parent = document.currentScript.parentElement;
-  var dropMode = true;
-  function cleanWhitespace(element) {
-    textNodes = element.contents().filter(
-      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
-    ).replaceWith("\n\n");
-    return element;
-  }
-  $(parent).find("figure > pre > code > span").each(function() {
-    var span = $(this);
-    if (dropMode) {
-      this.parentElement.removeChild(this);
-      if (span.text().includes(beginPattern)) {
-        dropMode = false;
-      }
-    } else {
-      if (span.text().includes(endPattern)) {
-        dropMode = true;
-      }
-      if (dropMode) {
-        this.parentElement.removeChild(this);
-      }
-    }
-  });
-  $(parent).find("figure > pre > code").each(function() {
-    $(this).html($(this).html().trim());
-    cleanWhitespace($(this));
-  });
-  </script>
-
-</div>
+setTimeout(function() { console.log("DONE!"); process.exit(); }, 2000);
+</code></pre>
 
 <p>3. Execute it on GraalVM using the <code>node</code> command as follows:</p>
 
-<pre><code>$ node app.js
+<pre><code>node app.js
 </code></pre>
 <p>Continue reading to the <a href="/reference-manual/js/NodeJS/">Node.js Runtime</a> guide.</p>
     
@@ -879,7 +818,8 @@ code from or call methods in any of those languages using GraalVM Polyglot APIs.
 
 <p>To enable Node.js or JavaScript interoperability with other languages, pass
 <code>--jvm</code> and <code>--polyglot</code> options, for example:</p>
-<pre><code>$ node --jvm --polyglot
+<pre><code>node --jvm --polyglot
+
 Welcome to Node.js v12.15.0.
 Type ".help" for more information.
 &gt; var array = Polyglot.eval("python", "[1,2,42,4]")
@@ -902,7 +842,8 @@ reference.</p>
       </h2>
 
 <p>To access Java from JavaScript, use <code>Java.type</code> as in the following example:</p>
-<pre><code>$ node --jvm
+<pre><code>node --jvm
+
 &gt; var BigInteger = Java.type('java.math.BigInteger');
 &gt; console.log(BigInteger.valueOf(2).pow(100).toString(16));
 10000000000000000000000000
@@ -929,8 +870,9 @@ public class HelloPolyglot {
 The source code unit can be represented with a String, as in the example, a file, read from URL, and <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">other means</a>.</p>
 
 <p>Run it:</p>
-<pre><code>$ javac HelloPolyglot.java
-$ java HelloPolyglot JavaScript
+<pre><code>javac HelloPolyglot.java
+java HelloPolyglot JavaScript
+
 Hello Java!
 hello JavaScript
 </code></pre>
@@ -946,7 +888,8 @@ HelloPolyglot.main(["from node.js"]);
 console.log("done");
 </code></pre>
 <p>Then start <code>node</code> with the <code>--jvm</code> option to enable interoperability with Java:</p>
-<pre><code>$ node --jvm --vm.cp=. app.js
+<pre><code>node --jvm --vm.cp=. app.js
+
 Hello Java!
 hello from node.js
 done

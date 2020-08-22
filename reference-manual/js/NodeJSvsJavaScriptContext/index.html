@@ -757,7 +757,7 @@ As such, it can run JavaScript code in a variety of embedding scenarios, includi
 
 <p>Depending on the GraalVM’s JavaScript embedding scenario, applications have access to different built-in capabilities.
 For example, Node.js applications running on GraalVM’s JavaScript engine have access to all of Node.js’ APIs, including built-in Node.js’ modules such as <code>'fs'</code>, <code>'http'</code>, etc.
-Conversely, JavaScript code embedded in a Java application has access to limited capabilities, as specified through the <a href="https://www.graalvm.org/docs/reference-manual/embed/">Context API</a>, and do <em>not</em> have access to Node.js built-in modules.</p>
+Conversely, JavaScript code embedded in a Java application has access to limited capabilities, as specified through the <a href="https://www.graalvm.org/reference-manual/embed-languages/#compile-and-run-a-polyglot-application">Context API</a>, and do <em>not</em> have access to Node.js built-in modules.</p>
 
 <p>This guide describes the main differences between a Node.js application and a GraalVM JavaScript application embedded in Java.</p>
     
@@ -894,19 +894,19 @@ Experimental support for CommonJS modules can be enabled through the <code>js.co
       <h4 id="experimental-support-for-commonjs-npm-modules-in-the-context-api">
         
         
-          Experimental support for CommonJS Npm modules in the <code>Context</code> API.
+          Experimental support for CommonJS NPM modules in the <code>Context</code> API
         
         
       </h4>
 
-<p>The <code>js.commonjs-require</code> option provides a built-in <code>require()</code> function that can be used to load Npm-compatible CommonJS modules in a JavaScript <code>Context</code>.
+<p>The <code>js.commonjs-require</code> option provides a built-in <code>require()</code> function that can be used to load NPM-compatible CommonJS modules in a JavaScript <code>Context</code>.
 Currently, this is an experimental feature not for production usage.</p>
 
 <p>To enable CommonJS support, a JavaScript context can be created in the following way:</p>
 <pre><code>Map&lt;String, String&gt; options = new HashMap&lt;&gt;();
 // Enable CommonJS experimental support.
 options.put("js.commonjs-require", "true");
-// (optional) folder where the Npm modules to be loaded are located.
+// (optional) folder where the NPM modules to be loaded are located.
 options.put("js.commonjs-require-cwd", "/path/to/root/folder");
 // (optional) initialization script to pre-define globals.
 options.put("js.commonjs-global-properties", "./globals.js");
@@ -927,38 +927,38 @@ Value module = cx.eval("js", "require('some-module');");
       <h5 id="differences-with-nodejs-built-in-require-function">
         
         
-          Differences with Node.js built-in <code>require()</code> function.
+          Differences with Node.js built-in <code>require()</code> function
         
         
       </h5>
 
-<p>The <code>Context</code> built-in <code>require()</code> function can load regular Npm modules implemented in JavaScript, but cannot load <em>native</em> Npm modules.
+<p>The <code>Context</code> built-in <code>require()</code> function can load regular NPM modules implemented in JavaScript, but cannot load <em>native</em> NPM modules.
 The built-in <code>require()</code> relies on the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">Truffle FileSystem</a>, therefore I/O access needs to be enabled at context creation time using the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowIO-boolean-"><code>allowIO</code> option</a>.
-The built-in <code>require()</code> aims to be largely compatible with Node.js, and we expect it to work with any Npm module that would work in a browser (e.g., created using a package bundler).</p>
+The built-in <code>require()</code> aims to be largely compatible with Node.js, and we expect it to work with any NPM module that would work in a browser (e.g., created using a package bundler).</p>
     
       <h5 id="installing-an-npm-module-to-be-used-via-the-context-api">
         
         
-          Installing an Npm module to be used via the <code>Context</code> API.
+          Installing an NPM module to be used via the <code>Context</code> API
         
         
       </h5>
 
-<p>In order to be used from a JavaScript <code>Context</code>, an Npm module needs to be installed to a local folder.
+<p>In order to be used from a JavaScript <code>Context</code>, an NPM module needs to be installed to a local folder.
 This can be done using GraalVM JavaScript’s <code>npm install</code> command like one would normally do for Node.js applications.
-At runtime, the option <code>js.commonjs-require-cwd</code> can be used to specify the main installation folder for Npm packages.
+At runtime, the option <code>js.commonjs-require-cwd</code> can be used to specify the main installation folder for NPM packages.
 The <code>require()</code> built-in function will resolve packages according to the default Node.js’ <a href="https://nodejs.org/api/modules.html#modules_all_together">package resolution protocol</a> starting from the directory specified via <code>js.commonjs-require-cwd</code>.
 When no directory is provided with the option, the current working directory of the application will be used.</p>
     
       <h5 id="nodejs-core-modules-mockups">
         
         
-          Node.js core modules mockups.
+          Node.js core modules mockups
         
         
       </h5>
 
-<p>Some JavaScript applications or Npm modules might need functionalities that are available in Node.js’ built-in modules (e.g., <code>'fs'</code>, <code>'buffer'</code>, etc.)
+<p>Some JavaScript applications or NPM modules might need functionalities that are available in Node.js’ built-in modules (e.g., <code>'fs'</code>, <code>'buffer'</code>, etc.)
 Such modules are not available in the <code>Context</code> API.
 Thankfully, the Node.js community has developed high-quality JavaScript implementations for many Node.js core modules (e.g.,: the <a href="https://www.npmjs.com/package/buffer">‘buffer’</a> module for the browser).
 Such alternative module implementations can be exposed to a JavaScript <code>Context</code> using the <code>js.commonjs-core-modules-replacements</code> option, in the following way:</p>
@@ -969,12 +969,12 @@ Such alternative module implementations can be exposed to a JavaScript <code>Con
       <h5 id="global-symbols-pre-initialization">
         
         
-          Global symbols pre-initialization.
+          Global symbols pre-initialization
         
         
       </h5>
 
-<p>An Npm module or a JavaScript application might expect certain global properties to be defined in the global scope.
+<p>An NPM module or a JavaScript application might expect certain global properties to be defined in the global scope.
 For example, applications or modules might expect the <code>Buffer</code> global symbol to be defined in the JavaScript global object.
 The option <code>js.commonjs-global-properties</code> can be used to pre-initialize such global symbols using the <code>Context</code> API.
 The option can be used in the following way:</p>
