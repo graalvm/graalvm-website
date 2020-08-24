@@ -90,7 +90,7 @@ class Utilities {
     static pretty_name(language) {
         switch(language) {
             case 'js': return 'Graal.js';
-            case 'r': return 'FastR';
+            // case 'r': return 'FastR';
             case 'ruby': return 'TruffleRuby';
         }
     }
@@ -243,31 +243,31 @@ class DependencyFileProcessor {
 
         return results;
     }
-
-    static handle_packrat_lock(db, contents) {
-        if (db.language != 'r') {
-            return [];
-        }
-
-        const r = /\nPackage: (\w+)\nSource: (\w+)\nVersion: (.+?)\n/g;
-        let match;
-        const queries = [];
-
-        while (match = r.exec(contents)) {
-            queries.push(match.slice(1, 4));
-        }
-
-        queries.sort(function(a, b) {
-            return a[0].localeCompare(b[0]);
-        });
-
-        let results = [];
-        for (let [name, repository, version] of queries) {
-            results = results.concat(db.lookup(name, version, true));
-        }
-
-        return results;
-    }
+    //
+    // static handle_packrat_lock(db, contents) {
+    //     if (db.language != 'r') {
+    //         return [];
+    //     }
+    //
+    //     const r = /\nPackage: (\w+)\nSource: (\w+)\nVersion: (.+?)\n/g;
+    //     let match;
+    //     const queries = [];
+    //
+    //     while (match = r.exec(contents)) {
+    //         queries.push(match.slice(1, 4));
+    //     }
+    //
+    //     queries.sort(function(a, b) {
+    //         return a[0].localeCompare(b[0]);
+    //     });
+    //
+    //     let results = [];
+    //     for (let [name, repository, version] of queries) {
+    //         results = results.concat(db.lookup(name, version, true));
+    //     }
+    //
+    //     return results;
+    // }
 }
 
 if (typeof module !== 'undefined') {
