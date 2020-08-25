@@ -241,7 +241,7 @@ $(document).ready(function () {
 function customizeTweet() {
   if (document.getElementById("twitter-widget-0")) {
 
-      var maxTweets = 10;
+      var maxTweets = 100;
 
       for (i = 0; i < maxTweets; i++) {
 
@@ -259,7 +259,7 @@ function customizeTweet() {
       }
   }
 }
-document.querySelector("iframe").addEventListener( "load", customizeTweet)
+// document.querySelector("iframe").addEventListener( "load", customizeTweet)
 
 function addLoadEvent(func) {
   var oldonload = window.onload;
@@ -275,7 +275,7 @@ function addLoadEvent(func) {
   }
 }
 
-// addLoadEvent(customizeTweet);
+addLoadEvent(customizeTweet);
 
 //Header loading
 (document, 'script', 'twitter-wjs');
