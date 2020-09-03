@@ -1,4 +1,4 @@
-// On-load actions.
+// On-load actions
 $(window).on("load", function () {
   $("body").removeClass("preload");
 });
@@ -134,12 +134,12 @@ function establishSessionAndCreateTerminal(serverUrl) {
 
 $(document).ready(function () {
 
-  // highlightjs init
+  // Highlightjs init
   $('pre code').each(function (i, block) {
     hljs.highlightBlock(block);
   });
 
-  //slick slider init
+  //Slick slider init
     (function () {
       $('.video-carousel').slick({
         dots: true,
@@ -237,7 +237,6 @@ $(document).ready(function () {
   twitterFetcher.fetch(configProfile);
 
 //Embedded Tweets Styling
-
 function customizeTweet() {
   if (document.getElementById("twitter-widget-0")) {
 
@@ -301,7 +300,7 @@ addLoadEvent(customizeTweet);
     });
   }());
 
-  // stiky content menu
+  // Sticky content menu
   (function () {
     var headerHeight = $('.header').innerHeight();
     var sectionHeadingHeight = $('.section-heading').innerHeight();
@@ -324,7 +323,7 @@ addLoadEvent(customizeTweet);
   }());
 
 
-  // mobile menu
+  // Mobile menu
   if ($('.js-show-menu').length) {
     $(".js-show-menu, .overlay").click(function (e) {
       e.preventDefault();
@@ -445,7 +444,7 @@ addLoadEvent(customizeTweet);
 //   });
 // }
 
-// stiky sidebar
+// Sticky sidebar
 var sidebar = document.querySelector('.sidebar-wrap');
 
 if (sidebar) {
@@ -460,7 +459,7 @@ if (sidebar) {
 }
 
 
-// video popup
+// Video popup
 var modal = document.getElementById('video-view');
 var btnsArray = document.querySelectorAll(".js-popup");
 var closeModal = document.getElementById("js-close");
@@ -572,442 +571,443 @@ if (safVideo && defVideo) {
   }
 }
 
+// // Load Google map on Events page
+// if ($('#map').length) {
+//   jQuery(function($) {
+//     // Asynchronously Load the map API
+//     var script = document.createElement('script');
+//     script.src = "//maps.googleapis.com/maps/api/js?key=&sensor=false&callback=initialize";
+//     document.body.appendChild(script);
+//   });
+// }
+//
+//
+// // Initialize and add the map
+// function initialize() {
+//   let defaultView = {lat: 46.214484, lng: -21.114842};
+//   const locations = {
+//     london: [
+//       {
+//         conference: 'Oracle OpenWorld Europe',
+//         date: 'January 16-17, 2019',
+//         url: '#event-one',
+//         position: {lat: 51.508633, lng: 0.029889}
+//       }
+//     ],
+//     stockholm: [
+//       {
+//         conference: 'JFokus VM Summit',
+//         date: 'February 4-6, 2019',
+//         url: '#event-two',
+//         position: {lat: 59.330278, lng: 18.055894}
+//       }
+//     ],
+//     washington_dc: [
+//       {
+//         conference: 'CGO & Graal Workshop',
+//         date: 'February 16-20, 2019',
+//         url: '#event-three',
+//         position: {lat: 38.904722, lng: -77.016389}
+//       }
+//     ],
+//     lviv: [
+//       {
+//         conference: 'JavaDay Lviv',
+//         date: 'February 23, 2019',
+//         url: '#event-four',
+//         position: {lat: 49.81794, lng: 24.022687}
+//       }
+//     ],
+//     atlanta: [
+//       {
+//         conference: 'DevNexus 2019',
+//         date: 'March 6-9, 2019',
+//         url: '#event-five',
+//         position: {lat: 33.883619, lng: -84.4665739}
+//       }
+//     ],
+//     bruhl: [
+//       {
+//         conference: 'JAVALAND',
+//         date: 'March 19-21, 2019',
+//         url: '#event-six',
+//         position: {lat: 50.799537, lng: 6.879517}
+//       }
+//     ],
+//     wroclaw: [
+//       {
+//         conference: 'Wroclove.rb',
+//         date: 'March 22-24, 2019',
+//         url: '#event-seven',
+//         position: {lat: 51.110939, lng: 17.053061}
+//       }
+//     ],
+//     brussels: [
+//       {
+//         conference: 'EuroLLVM 2019',
+//         date: 'April 8-9, 2019',
+//         url: '#event-eight',
+//         position: {lat: 50.854455, lng: 4.356530}
+//       }
+//     ]
+//   };
+//
+//   let labelIndex = 1;
+//   let markerDefault = '/resources/img/marker.svg';
+//   let markerActive = '/resources/img/marker-active.svg';
+//
+//   // For more options see: https://developers.google.com/maps/documentation/javascript/reference#MapOptions
+//   let mapOptions = {
+//     zoom: 2.5,
+//     center: new google.maps.LatLng(defaultView),
+//     disableDefaultUI: true,
+//     styles: [
+//       {
+//         "featureType": "all",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative",
+//         "elementType": "geometry",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative",
+//         "elementType": "geometry.fill",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative",
+//         "elementType": "geometry.stroke",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative",
+//         "elementType": "labels",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative",
+//         "elementType": "labels.text.fill",
+//         "stylers": [
+//           {
+//             "color": "#0c0b0b"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "geometry",
+//         "stylers": [
+//           {
+//             "hue": "#ff0000"
+//           },
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "geometry.fill",
+//         "stylers": [
+//           {
+//             "color": "#180c0c"
+//           },
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "geometry.stroke",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           },
+//           {
+//             "color": "#d2d7da"
+//           },
+//           {
+//             "weight": "1.00"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "labels",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.country",
+//         "elementType": "labels.text",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.province",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "administrative.land_parcel",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "hue": "#ff0069"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "landscape",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "hue": "#2800ff"
+//           },
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "landscape",
+//         "elementType": "geometry",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "landscape",
+//         "elementType": "geometry.fill",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           },
+//           {
+//             "color": "#a6afb6"
+//           },
+//           {
+//             "gamma": "1.00"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "poi",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "road",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "saturation": -100
+//           },
+//           {
+//             "lightness": 45
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "road",
+//         "elementType": "labels.text.fill",
+//         "stylers": [
+//           {
+//             "color": "#090909"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "road.highway",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "simplified"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "road.arterial",
+//         "elementType": "labels.icon",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "transit",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "all",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           },
+//           {
+//             "hue": "#ff0000"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "geometry.fill",
+//         "stylers": [
+//           {
+//             "visibility": "on"
+//           },
+//           {
+//             "color": "#ffffff"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "geometry.stroke",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "labels",
+//         "stylers": [
+//           {
+//             "visibility": "off"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "labels.text.fill",
+//         "stylers": [
+//           {
+//             "color": "#9b7f7f"
+//           }
+//         ]
+//       },
+//       {
+//         "featureType": "water",
+//         "elementType": "labels.text.stroke",
+//         "stylers": [
+//           {
+//             "color": "#fef7f7"
+//           }
+//         ]
+//       }
+//     ]
+//   };
+//
+//
+//   const mapElement = document.getElementById('map');
+//
+//   // Create the Google Map using our element and options defined above
+//   const map = new google.maps.Map(mapElement, mapOptions);
+//
+//   for (let city in locations) {
+//     let bounds = new google.maps.LatLngBounds();
+//     let cityLocations = locations[city];
+//
+//     for (let i = 0; i < cityLocations.length; i++) {
+//       const marker = new google.maps.Marker({
+//         position: cityLocations[i].position,
+//         map: map,
+//         icon: markerDefault,
+//         label: {
+//           text: ""+(labelIndex++),
+//           color: "white",
+//           fontSize: '11px'
+//         },
+//         url: cityLocations[i].url
+//       });
+//
+//       bounds.extend(marker.position);
+//       const infoWindow = new google.maps.InfoWindow();
+//       let infoWindowContent = '<div class="info-tooltip"><div class="info-tooltip__col"><h4 class="events-table__detail__title">Conference</h4><p>' + cityLocations[i].conference + '</p></div><div class="info-tooltip__col"><h4 class="events-table__detail__title">Date</h4><p>' + cityLocations[i].date + '</p></div></div>'
+//
+//       google.maps.event.addListener(marker, "mouseover", function () {
+//         marker.setIcon(markerActive);
+//         infoWindow.setContent(infoWindowContent);
+//         infoWindow.open(map, marker);
+//       });
+//
+//       google.maps.event.addListener(marker, 'mouseout', function () {
+//         marker.setIcon(markerDefault);
+//         infoWindow.close(map, marker);
+//       });
+//
+//       google.maps.event.addListener(marker, "click", function () {
+//         let elem = $(marker.url);
+//         let eventTableRow = $('.events-table__row');
+//         eventTableRow.removeClass('active');
+//
+//         $('html, body').animate({
+//           scrollTop: elem.offset().top - 70
+//         }, 1000 );
+//         elem.toggleClass('active');
+//       });
+//     }
+//   }
+// }
 
-if ($('#map').length) {
-  jQuery(function($) {
-    // Asynchronously Load the map API
-    var script = document.createElement('script');
-    script.src = "//maps.googleapis.com/maps/api/js?key=&sensor=false&callback=initialize";
-    document.body.appendChild(script);
-  });
-}
-
-
-// Initialize and add the map
-function initialize() {
-  let defaultView = {lat: 46.214484, lng: -21.114842};
-  const locations = {
-    london: [
-      {
-        conference: 'Oracle OpenWorld Europe',
-        date: 'January 16-17, 2019',
-        url: '#event-one',
-        position: {lat: 51.508633, lng: 0.029889}
-      }
-    ],
-    stockholm: [
-      {
-        conference: 'JFokus VM Summit',
-        date: 'February 4-6, 2019',
-        url: '#event-two',
-        position: {lat: 59.330278, lng: 18.055894}
-      }
-    ],
-    washington_dc: [
-      {
-        conference: 'CGO & Graal Workshop',
-        date: 'February 16-20, 2019',
-        url: '#event-three',
-        position: {lat: 38.904722, lng: -77.016389}
-      }
-    ],
-    lviv: [
-      {
-        conference: 'JavaDay Lviv',
-        date: 'February 23, 2019',
-        url: '#event-four',
-        position: {lat: 49.81794, lng: 24.022687}
-      }
-    ],
-    atlanta: [
-      {
-        conference: 'DevNexus 2019',
-        date: 'March 6-9, 2019',
-        url: '#event-five',
-        position: {lat: 33.883619, lng: -84.4665739}
-      }
-    ],
-    bruhl: [
-      {
-        conference: 'JAVALAND',
-        date: 'March 19-21, 2019',
-        url: '#event-six',
-        position: {lat: 50.799537, lng: 6.879517}
-      }
-    ],
-    wroclaw: [
-      {
-        conference: 'Wroclove.rb',
-        date: 'March 22-24, 2019',
-        url: '#event-seven',
-        position: {lat: 51.110939, lng: 17.053061}
-      }
-    ],
-    brussels: [
-      {
-        conference: 'EuroLLVM 2019',
-        date: 'April 8-9, 2019',
-        url: '#event-eight',
-        position: {lat: 50.854455, lng: 4.356530}
-      }
-    ]
-  };
-
-  let labelIndex = 1;
-  let markerDefault = '/resources/img/marker.svg';
-  let markerActive = '/resources/img/marker-active.svg';
-
-  // For more options see: https://developers.google.com/maps/documentation/javascript/reference#MapOptions
-  let mapOptions = {
-    zoom: 2.5,
-    center: new google.maps.LatLng(defaultView),
-    disableDefaultUI: true,
-    styles: [
-      {
-        "featureType": "all",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "on"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "labels",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#0c0b0b"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "on"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "hue": "#ff0000"
-          },
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "color": "#180c0c"
-          },
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "visibility": "on"
-          },
-          {
-            "color": "#d2d7da"
-          },
-          {
-            "weight": "1.00"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "labels",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.country",
-        "elementType": "labels.text",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.province",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "administrative.land_parcel",
-        "elementType": "all",
-        "stylers": [
-          {
-            "hue": "#ff0069"
-          }
-        ]
-      },
-      {
-        "featureType": "landscape",
-        "elementType": "all",
-        "stylers": [
-          {
-            "hue": "#2800ff"
-          },
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "landscape",
-        "elementType": "geometry",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "landscape",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "visibility": "on"
-          },
-          {
-            "color": "#a6afb6"
-          },
-          {
-            "gamma": "1.00"
-          }
-        ]
-      },
-      {
-        "featureType": "poi",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "road",
-        "elementType": "all",
-        "stylers": [
-          {
-            "saturation": -100
-          },
-          {
-            "lightness": 45
-          }
-        ]
-      },
-      {
-        "featureType": "road",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#090909"
-          }
-        ]
-      },
-      {
-        "featureType": "road.highway",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "simplified"
-          }
-        ]
-      },
-      {
-        "featureType": "road.arterial",
-        "elementType": "labels.icon",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "transit",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "all",
-        "stylers": [
-          {
-            "visibility": "on"
-          },
-          {
-            "hue": "#ff0000"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "geometry.fill",
-        "stylers": [
-          {
-            "visibility": "on"
-          },
-          {
-            "color": "#ffffff"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "geometry.stroke",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "labels",
-        "stylers": [
-          {
-            "visibility": "off"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "labels.text.fill",
-        "stylers": [
-          {
-            "color": "#9b7f7f"
-          }
-        ]
-      },
-      {
-        "featureType": "water",
-        "elementType": "labels.text.stroke",
-        "stylers": [
-          {
-            "color": "#fef7f7"
-          }
-        ]
-      }
-    ]
-  };
-
-
-  const mapElement = document.getElementById('map');
-
-  // Create the Google Map using our element and options defined above
-  const map = new google.maps.Map(mapElement, mapOptions);
-
-  for (let city in locations) {
-    let bounds = new google.maps.LatLngBounds();
-    let cityLocations = locations[city];
-
-    for (let i = 0; i < cityLocations.length; i++) {
-      const marker = new google.maps.Marker({
-        position: cityLocations[i].position,
-        map: map,
-        icon: markerDefault,
-        label: {
-          text: ""+(labelIndex++),
-          color: "white",
-          fontSize: '11px'
-        },
-        url: cityLocations[i].url
-      });
-
-      bounds.extend(marker.position);
-      const infoWindow = new google.maps.InfoWindow();
-      let infoWindowContent = '<div class="info-tooltip"><div class="info-tooltip__col"><h4 class="events-table__detail__title">Conference</h4><p>' + cityLocations[i].conference + '</p></div><div class="info-tooltip__col"><h4 class="events-table__detail__title">Date</h4><p>' + cityLocations[i].date + '</p></div></div>'
-
-      google.maps.event.addListener(marker, "mouseover", function () {
-        marker.setIcon(markerActive);
-        infoWindow.setContent(infoWindowContent);
-        infoWindow.open(map, marker);
-      });
-
-      google.maps.event.addListener(marker, 'mouseout', function () {
-        marker.setIcon(markerDefault);
-        infoWindow.close(map, marker);
-      });
-
-      google.maps.event.addListener(marker, "click", function () {
-        let elem = $(marker.url);
-        let eventTableRow = $('.events-table__row');
-        eventTableRow.removeClass('active');
-
-        $('html, body').animate({
-          scrollTop: elem.offset().top - 70
-        }, 1000 );
-        elem.toggleClass('active');
-      });
-    }
-  }
-}
 // Search Feature
 
 // III. Display the results
@@ -1209,7 +1209,7 @@ function wrapper(element, matches) {
 
       index = match[0] + match[1]
 
-      // the next node will now actually be the text we just wrapped, so
+      // The next node will now actually be the text we just wrapped, so
       // we need to skip it
       walker.nextNode()
       previousMatch = match
