@@ -1010,36 +1010,31 @@ compiled method.</p>
 <p>One goal of the implementation is to make it simple to configure your
 debugger so that it can identify the relevant source file when it
 stops during program execution. The native image generator tries to
-achieve this by accumulating the relevant sources in a suitably
-structured file cache.</p>
+achieve this by accumulating the relevant sources in a file cache.</p>
 
 <p>The native image generator uses different strategies to locate source
 files for JDK runtime classes, GraalVM classes and application source
-classes for inclusion in the local sources cache. It identifies which
-strategy to use based on the package name of the class. So, for
-example, packages starting with <code>java.*</code> or <code>jdk.*</code> are JDK classes;
-packages starting with <code>org.graal.*</code> or <code>com.oracle.svm.*</code> are GraalVM
-classes; any other packages are regarded as application classes.</p>
+classes for inclusion in the local sources cache.</p>
 
 <p>Sources for JDK runtime classes are retrieved from the <em>src.zip</em> found
 in the JDK release used to run the native image generation process.
-Retrieved files are cached under subdirectory <em>sources/jdk</em>, using the
-module name (for JDK11) and package name of the associated class to
+Retrieved files are cached under subdirectory <em>sources</em>, using the
+package name of the associated class to
 define the directory hierarchy in which the source is located.</p>
 
 <p>So, for example, on Linux the source for class java.util.HashMap will
-be cached in file <em>sources/jdk/java.base/java/util/HashMap.java</em>. Debug
+be cached in file <em>sources/java/util/HashMap.java</em>. Debug
 info records for this class and its methods will identify this source
-file using the relative directory path <em>java.base/java/util</em> and file
+file using the relative directory path <em>java/util</em> and file
 name <em>HashMap.java</em>. On Windows things will be the same modulo use of
 ‘' rather than ‘/’ as the file separator.</p>
 
 <p>Sources for GraalVM classes are retrieved from zip files or source
 directories derived from entries in the classpath. Retrieved files are
-cached under subdirectory <em>sources/graal</em>, using the package name of the
+cached under subdirectory <em>sources</em>, using the package name of the
 associated class to define the directory hierarchy in which the source
 is located (e.g. class <code>com.oracle.svm.core.VM</code> has its source file
-cached at <code>sources/graal/com/oracle/svm/core/VM.java</code>).</p>
+cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
 
 <p>The lookup scheme for cached GraalVM sources varies depending upon
 what is found in each classpath entry. Given a jar file entry like
@@ -1049,15 +1044,15 @@ be extracted. When the entry specifies a dir like <em>/path/to/bar</em> then
 directories <em>/path/to/bar/src</em> and <em>/path/to/bar/src_gen</em> are considered
 as candidates. Candidates are skipped when i) the zip file or source
 directory does not exist or ii) it does not contain at least one
-subdirectory hierarchy that matches one of the the expected GraalVM
+subdirectory hierarchy that matches one of the expected GraalVM
 package hierarchies.</p>
 
 <p>Sources for application classes are retrieved from source jar files or
 source directories derived from entries in the classpath. Retrieved
-files are cached under subdirectory <em>sources/src</em>, using the package
+files are cached under subdirectory <em>sources</em>, using the package
 name of the associated class to define the directory hierarchy in
 which the source is located (e.g., class <code>org.my.foo.Foo</code> has its
-source file cached as <code>sources/src/org/my/foo/Foo.java</code>).</p>
+source file cached as <code>sources/org/my/foo/Foo.java</code>).</p>
 
 <p>The lookup scheme for cached Application sources varies depending upon
 what is found in each classpath entry. Given a jar file entry like
@@ -1084,29 +1079,29 @@ configure extra source search paths.</p>
         
       </h3>
 
-<p>By default gdb will employ the three local directory roots
-<code>sources/{jdk,graal,src}</code> to locate the source files for your app classes, Graal
+<p>By default gdb will employ the <code>sources</code> directory
+to locate the source files for your app classes, Graal
 classes and JDK runtime classes. If the sources cache is not located in the
-directory in which you run gdb you can configure the required paths using the
+directory in which you run gdb you can configure the required path using the
 following command:</p>
-<pre><code>(gdb) set directories /path/to/sources/jdk:/path/to/sources/graal:/path/to/sources/src
+
+<pre><code>(gdb) set directories /path/to/sources
 </code></pre>
-<p>Directory <code>/path/to/sources/jdk</code> should contain source files for all JDK runtime
-classes referenced from debug records.</p>
 
-<p>Directory <code>/path/to/sources/graal</code> should contain source files for all GraalVM
-classes referenced from debug records. Note that the current
+<p>where directory <code>/path/to/sources</code> should contain source files for:</p>
+<ol>
+  <li>all JDK runtime classes referenced from debug records.</li>
+  <li>all GraalVM classes referenced from debug records. Note that the current
 implementation does not yet find some sources for the GraalVM JIT
-compiler in the <em>org.graalvm.compiler*</em> package subspace.</p>
+compiler in the org.graalvm.compiler* package subspace.</li>
+  <li>all application classes referenced from debug records, assuming they can
+be located using the lookup strategy described above.</li>
+</ol>
 
-<p>Directory <code>/path/to/sources/src</code> should contain source files for all
-application classes referenced from debug records, assuming they can
-be located using the lookup strategy described above.</p>
-
-<p>You can supplement the files cached in <code>sources/src</code> by unzipping
+<p>You can supplement the files cached in <code>sources</code> by unzipping
 application source jars or copying application source trees into the
 cache. You need to ensure that any new subdirectory you add to
-<code>sources/src</code> corresponds to the top level package for the classes whose
+<code>sources</code> corresponds to the top level package for the classes whose
 sources are being included.</p>
 
 <p>You can also add extra directories to the search path using the <code>set

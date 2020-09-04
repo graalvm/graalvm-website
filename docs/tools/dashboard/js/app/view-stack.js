@@ -1,0 +1,1 @@
+define(["knockout"],(function(t){return class{constructor(){this.stack=t.observableArray()}push(t){return this.stack.push(t)}pop(){return this.stack.pop()}peek(){return this.stack()[this.stack().length-1]}clear(){this.stack([])}size(){return this.stack().length}isEmpty(){return 0===this.stack().length}currentViewRoot(){return this.peek()}}}));
