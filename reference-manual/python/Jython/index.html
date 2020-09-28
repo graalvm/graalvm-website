@@ -351,7 +351,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/reference-manual/gu/">
+          <a href="/reference-manual/graalvm-updater/">
             GraalVM Updater
           </a>
         </li>
@@ -388,7 +388,7 @@ $(document).ready(function(){
         
           
           <a href="/reference-manual/polyglot-programming/">
-            Polyglot Reference
+            Polyglot Programming
           </a>
         </li>
 
@@ -423,8 +423,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/reference-manual/truffle-framework/">
-            Truffle Language Implementation Framework
+          <a href="">
+            
           </a>
         </li>
 
@@ -708,7 +708,10 @@ command line flag on Graal: <code>--python.EmulateJython</code>.</p>
         
       </h3>
 <p>Import statements allow you to import Java classes, but (unlike Jython), only
-packages in the <code>java</code> namespace can be directly imported. This will work:</p>
+packages in the <code>java</code> namespace can be directly imported. Importing classes
+from packages outside <code>java</code> namespace also requires the
+<code>--python.EmulateJython</code> option to be active.
+This will work:</p>
 <pre><code>import java.lang as lang
 </code></pre>
 <p>But this will not:</p>
@@ -716,7 +719,7 @@ packages in the <code>java</code> namespace can be directly imported. This will 
 from javax.swing import *
 </code></pre>
 <p>Instead, you will have to import one of the classes you are interested in directly:</p>
-<pre><code>import javax.swing.Window as Window
+<pre><code>import javax.swing.JWindow as JWindow
 </code></pre>
     
       <h3 id="basic-object-usage">
@@ -736,7 +739,7 @@ methods:</p>
 &gt;&gt;&gt; boundNextInt = rg.nextInt
 &gt;&gt;&gt; rg.nextInt()
 1491444859
-&gt;&gt;&gt; boundNextInt = rg.nextInt
+&gt;&gt;&gt; boundNextInt()
 1672896916
 </code></pre>
     
@@ -765,32 +768,32 @@ when the elements fit into those Java primitive types.</p>
   </thead>
   <tbody>
     <tr>
-      <td style="text-align: left">null</td>
-      <td style="text-align: left">None</td>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left"><code>None</code></td>
     </tr>
     <tr>
-      <td style="text-align: left">boolean</td>
-      <td style="text-align: left">bool</td>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left"><code>bool</code></td>
     </tr>
     <tr>
-      <td style="text-align: left">byte, short, int, long</td>
-      <td style="text-align: left">int, any object that has an <code>__int__</code> method</td>
+      <td style="text-align: left"><code>byte</code>, <code>short</code>, <code>int</code> , <code>long</code></td>
+      <td style="text-align: left"><code>int</code>, any object that has an <code>__int__</code> method</td>
     </tr>
     <tr>
-      <td style="text-align: left">float</td>
-      <td style="text-align: left">float, any object that has a <code>__float__</code> method</td>
+      <td style="text-align: left"><code>float</code>, <code>double</code></td>
+      <td style="text-align: left"><code>float</code>, any object that has a <code>__float__</code> method</td>
     </tr>
     <tr>
-      <td style="text-align: left">char</td>
-      <td style="text-align: left">str of length 1</td>
+      <td style="text-align: left"><code>char</code></td>
+      <td style="text-align: left"><code>str</code> of length 1</td>
     </tr>
     <tr>
-      <td style="text-align: left">java.lang.String</td>
-      <td style="text-align: left">str</td>
+      <td style="text-align: left"><code>java.lang.String</code></td>
+      <td style="text-align: left"><code>str</code></td>
     </tr>
     <tr>
-      <td style="text-align: left">byte[]</td>
-      <td style="text-align: left">bytes, bytearray, wrapped Java array, Python list with only the appropriate types</td>
+      <td style="text-align: left"><code>byte[]</code></td>
+      <td style="text-align: left"><code>bytes</code>, <code>bytearray</code>, wrapped Java array, Python list with only the appropriate types</td>
     </tr>
     <tr>
       <td style="text-align: left">Java arrays</td>
@@ -801,7 +804,7 @@ when the elements fit into those Java primitive types.</p>
       <td style="text-align: left">Wrapped Java object of the appropriate type</td>
     </tr>
     <tr>
-      <td style="text-align: left">java.lang.Object</td>
+      <td style="text-align: left"><code>java.lang.Object</code></td>
       <td style="text-align: left">Any object</td>
     </tr>
   </tbody>
@@ -826,7 +829,9 @@ achieved as follows on GraalPython:</p>
 implicitly, this may entail a copy of the array data, which can be deceiving when
 using Java arrays as output parameters:</p>
 
-<pre><code>&gt;&gt;&gt; i = java.io.ByteArrayInputStream(b"foobar")
+<pre><code>&gt;&gt;&gt; # This example needs the --python.EmulateJython flag for the java.io import
+&gt;&gt;&gt; import java
+&gt;&gt;&gt; i = java.io.ByteArrayInputStream(b"foobar")
 &gt;&gt;&gt; buf = [0, 0, 0]
 &gt;&gt;&gt; i.read(buf) # buf is automatically converted to a byte[] array
 3
@@ -870,7 +875,9 @@ only enabled with the <code>--python.EmulateJython</code> flag.</p>
 elements to the <code>java.util</code> mapping and list classes’ ` get<code>, </code>set<code>, or </code>put`
 methods. To use these mapping and list clases, you must call the Java methods:</p>
 
-<pre><code>&gt;&gt;&gt; ht = java.util.Hashtable()
+<pre><code>&gt;&gt;&gt; # This example needs the --python.EmulateJython flag for the java.util import
+&gt;&gt;&gt; import java
+&gt;&gt;&gt; ht = java.util.Hashtable()
 &gt;&gt;&gt; ht.put("foo", "bar")
 &gt;&gt;&gt; ht.get("foo")
 'bar'
@@ -913,7 +920,8 @@ public class PythonHandler extends Handler {
 }
 </code></pre>
 <p>Then you can use it like this in Python:</p>
-<pre><code>from java.util.logging import LogManager, Logger
+<pre><code># This example needs the --python.EmulateJython flag for the java.util import
+from java.util.logging import LogManager, Logger
 
 class MyHandler():
     def publish(self, logRecord): print("[python]", logRecord.toString())​
