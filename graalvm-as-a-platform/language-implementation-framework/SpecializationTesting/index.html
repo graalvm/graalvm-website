@@ -10,7 +10,7 @@
 
   <title>
     
-      Truffle Specialization Histogram
+      Testing DSL Specializations
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/SpecializationHistogram/">
+  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -571,11 +571,22 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/SpecializationHistogram/">
               Specialization Histogram
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub toc-bullets-highlight">
+          
+            
+            <a href="/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
+              Testing DSL Specializations
             </a>
           </li>
 
@@ -596,17 +607,6 @@ $(document).ready(function(){
       });
     </script>
   </div>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
-              Testing DSL Specializations
-            </a>
-          </li>
 
           
         
@@ -803,117 +803,67 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="specialization-histogram">
+                <h1 id="testing-truffle-dsl-specializations">
         
         
-          Specialization Histogram
+          Testing Truffle DSL Specializations
         
         
       </h1>
 
-<p>This guide explains how to use the <code>--engine.SpecializationHistogram</code> option.</p>
+<p>This document is about tools for testing Truffle DSL specializations.</p>
+    
+      <h3 id="slow-path-specializations-only-compilation-mode">
+        
+        
+          Slow path specializations only compilation mode <a href="#slow-path-specializations-only-compilation-mode" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>The specialization histogram requires Truffle DSL nodes to be generated in a special way.
-So if you use the plain specialization histogram option it will just print the following:</p>
+<p>Let us start with a small motivating example:</p>
+<pre><code>abstract class PowNode extends Node {
+  public abstract double execute(double a, int exp);
 
-<pre><code class="language-shell">js --engine.SpecializationHistogram test.js
+  @Specialization(guards = "exp==1")
+  double doOne(double a, int exp) {
+    return a;
+  }
 
-[engine] Specialization histogram:
-No specialization statistics data was collected. Either no node with @Specialization annotations was executed or the interpreter was not compiled with -Atruffle.dsl.GenerateSpecializationStatistics=true e.g as parameter to the javac tool.
-</code></pre>
-
-<p>Lets follow the advice of the error and recompile our interpreter.
-For <code>mx</code> users this is as simple as:</p>
-
-<pre><code class="language-shell">mx build -c -A-Atruffle.dsl.GenerateSpecializationStatistics=true
-</code></pre>
-
-<p>After the rebuild the specialization statistics are ready to be use.
-Make sure that your IDE does not recompile the sources automatically in the meantime.
-In this tutorial we use a simple <code>test.js</code> script:</p>
-
-<pre><code class="language-js">function test() {
-  var array = [42, "", {}, []]
-
-  var globalVar = true;
-  for (element of array) {
-    globalVar = element;
+  @Specialization(replaces = "doOne")
+  int doGeneric(double a, int exp) {
+    double res = 1;
+    for (int i = 0; i &lt; exp; i++)
+      res *= a;
+    return res;
   }
 }
-test();
+</code></pre>
+<p>In order to test that <code>doGeneric</code> produces correct result for argument <code>exp == 1</code>,
+we first need to execute this node with a different value, for example, <code>exp == 2</code>,
+to activate the <code>doGeneric</code> specialization and only then with <code>1</code>, which will now
+be handled by the <code>doGeneric</code> specialization instead of the <code>doOne</code> specialization.
+With a real-world code, writing a test that covers specializations that replace other
+specializations can be much more complicated and it leads to fragile tests – changes
+in the production code may cause the test to suddenly cover different specializations
+and this can easily come unnoticed.</p>
+
+<p>Truffle DSL provides a mode where the “fast-path” specializations (those that are “replaced”
+by some other specialization, <code>doOne</code> in our example) are ignored. This allows us to simply
+increase test coverage by running the same tests, which now may cover different code-paths.</p>
+
+<p>When building your languages with <code>mx</code> pass additional option:</p>
+<pre><code>$ mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true
 </code></pre>
 
-<p>Now the specialization statistics need to be enabled, in this example using the Graal.js launcher:</p>
+<p>After the rebuild the generated code will call only “slow-path” specializations.
+Make sure that your IDE does not recompile the sources automatically in the meantime.
+Note that if you compile your dependencies (e.g., Truffle) from source as part of your build,
+this option will apply to the code of those dependencies as well. You may choose to apply this
+option only to some classes by using a filter:</p>
 
-<pre><code class="language-shell">js --experimental-options --engine.SpecializationStatistics test.js
+<pre><code>$ mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true -A-Atruffle.dsl.GenerateSlowPathOnlyFilter=org.my.truffle.language.package
 </code></pre>
-
-<p>After the script was executed a histogram for each class will be printed.
-The histograms will be ordered by the sum of executions of each node, whereas the most frequently used node class will be printed last.</p>
-
-<p>These are some of the histograms printed when executing <code>test.js</code>. (Note the output is likely already outdated)</p>
-
-<pre><code> -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| Name                                                                         Instances          Executions     Executions per instance
- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| JSWriteCurrentFrameSlotNodeGen                                               8 (17%)            18 (12%)        Min=         1 Avg=        2.25 Max=          5  MaxNode= test.js~5-7:76-128
-|   doBoolean &lt;boolean&gt;                                                          1 (13%)             1 (6%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~4:52-71
-|   doInt &lt;int&gt;                                                                  1 (13%)             1 (6%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~5-7:76-128
-|   doSafeIntegerInt                                                             0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doSafeInteger                                                                0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doLong                                                                       0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doDouble                                                                     0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doObject                                                                     7 (88%)            16 (89%)        Min=         1 Avg=        2.29 Max=          5  MaxNode= test.js~5-7:76-128
-|     &lt;DynamicObjectBasic&gt;                                                         6 (86%)            12 (75%)        Min=         1 Avg=        2.00 Max=          5  MaxNode= test.js~5-7:76-128
-|     &lt;IteratorRecord&gt;                                                             1 (14%)             1 (6%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~1-8:16-130
-|     &lt;String&gt;                                                                     2 (29%)             2 (13%)        Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~5-7:76-128
-|     &lt;Integer&gt;                                                                    1 (14%)             1 (6%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~6:105-123
-|   --------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|   [doBoolean]                                                                  1 (13%)             1 (6%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~4:52-71
-|   [doInt, doObject]                                                            1 (13%)             4 (22%)        Min=         4 Avg=        4.00 Max=          4  MaxNode= test.js~5-7:76-128
-|     doInt                                                                        1 (100%)            1 (25%)        Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~5-7:76-128
-|     doObject                                                                     1 (100%)            3 (75%)        Min=         3 Avg=        3.00 Max=          3  MaxNode= test.js~5-7:76-128
-|   [doObject]                                                                   6 (75%)            13 (72%)        Min=         1 Avg=        2.17 Max=          5  MaxNode= test.js~5-7:76-128
- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| Name                                                                         Instances          Executions     Executions per instance
- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-| JSReadCurrentFrameSlotNodeGen                                                8 (17%)            25 (17%)        Min=         1 Avg=        3.13 Max=          5  MaxNode= test.js~5-7:76-128
-|   doBoolean                                                                    0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doInt &lt;no-args&gt;                                                              1 (13%)             1 (4%)         Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~5:81-87
-|   doDouble                                                                     0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   doObject &lt;no-args&gt;                                                           8 (100%)           24 (96%)        Min=         1 Avg=        3.00 Max=          5  MaxNode= test.js~5-7:76-128
-|   doSafeInteger                                                                0 (0%)              0 (0%)         Min=         0 Avg=        0.00 Max=          0  MaxNode=  -
-|   --------------------------------------------------------------------------------------------------------------------------------------------------------------------
-|   [doInt, doObject]                                                            1 (13%)             4 (16%)        Min=         4 Avg=        4.00 Max=          4  MaxNode= test.js~5:81-87
-|     doInt                                                                        1 (100%)            1 (25%)        Min=         1 Avg=        1.00 Max=          1  MaxNode= test.js~5:81-87
-|     doObject                                                                     1 (100%)            3 (75%)        Min=         3 Avg=        3.00 Max=          3  MaxNode= test.js~5:81-87
-|   [doObject]                                                                   7 (88%)            21 (84%)        Min=         1 Avg=        3.00 Max=          5  MaxNode= test.js~5-7:76-128
- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-</code></pre>
-
-<p>The histogram prints two inner tables for every node class.
-The first table groups specialization and dynamic type combination.
-For example in this histogram the node class <code>JSWriteCurrentFrameSlotNodeGen</code> was instantiated <code>8</code> and executed <code>18</code> times.
-This is <code>20%</code> of the total instances and <code>11%</code> of all node executions of the run.
-Three specializations were instantiated in this script namely <code>doBoolean</code>, <code>doObject</code> and <code>doInt</code>.
-The <code>doBoolean</code> specialization was instantiated and executed only once which accounts to <code>13%</code> of all instances and <code>6%</code> of all executions of this node class.
-The <code>doObject</code> specializations was invoked using three different input value combinations: <code>DynamicObjectBasic</code>, <code>IteratorRecord</code>, <code>String</code>.
-Similar to specializations we can see the numbers of times per node they were used and how many times they were executed.
-For each line we can see minimum, average and maximum execution numbers per instance.
-The last column prints the source section of the instance with the maximum executions.
-The second table groups for each combination of specializations that were used by node class.</p>
-
-<p>Here are some ideas of what questions you would want to ask these specialization statistics:</p>
-
-<ol>
-  <li>Is a certain specialization used only rarely and can it be removed/consolidated into a single specialization?</li>
-  <li>Is there a specialization with a very common type combination that could benefit from further specialization?</li>
-  <li>Which specialization combination is common and could deserve its own specialization? This could indicate common polymorphism in the code that could be investigated.</li>
-  <li>What are common specializations, and does the order match the number of executions? Specializations that are most commonly used should be ordered first in the node class. This may lead to improvements in interpreter performance.</li>
-  <li>Are there unexpected specializations instantiated? If yes, investigate further using the printed source section.</li>
-  <li>Which specializations are instantiated often, and should therefore be optimized for memory footprint?</li>
-  <li>Were there nodes with the name <code>Uncached</code> in the profile? The use of uncached nodes should be rare. It can be worth to dig deeper why they were used often.</li>
-</ol>
 
               </div>
 
