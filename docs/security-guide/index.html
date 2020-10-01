@@ -353,8 +353,26 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/getting-started-with-graalvm/">
+          <a href="/docs/getting-started/">
             Getting Started
+          </a>
+        </li>
+
+        
+        
+
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/docs/examples/">
+            Examples
           </a>
         </li>
 
@@ -478,24 +496,6 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/examples/">
-            Examples Applications
-          </a>
-        </li>
-
-        
-        
-
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
           <a href="/release-notes/">
             Release Notes
           </a>
@@ -596,8 +596,7 @@ $(document).ready(function(){
 
 <p>This security guide provides developers and embedders with information on the
 security model and features of GraalVM, such that they can build a secure
-application on top of it. It assumes that readers are familiar with the GraalVM
-architecture. This guide does not replace but rather supplements the Java
+application on top of it. It assumes that readers are familiar with the <a href="/docs/introduction/">GraalVM architecture</a>. This guide does not replace but rather supplements the Java
 security documentation with aspects unique to GraalVM. It also provides security
 researchers with information on GraalVM’s security model.</p>
     
@@ -610,7 +609,7 @@ researchers with information on GraalVM’s security model.</p>
       </h2>
 <p>GraalVM is a shared runtime. It accepts instructions in a higher-level
 programming language (or an intermediate representation thereof) as input, which
-is executed at some point. Developers that implement security controls for their
+is executed later. Developers that implement security controls for their
 applications (such as access control) in code that is being run by GraalVM can
 rely on the correct execution of instructions. Incorrect execution of
 security-critical code running on top of GraalVM that allows to bypass such a
@@ -623,24 +622,23 @@ may further open network sockets to allow debug clients to connect.</p>
 <p>We appreciate reports of bugs that break the security model via the process
 outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">Reporting Vulnerabilities guide</a>.</p>
     
-      <h2 id="truffle">
+      <h2 id="language-implementation-framework">
         
         
-          Truffle <a href="#truffle" class="anchor_heading">#</a>
+          Language Implementation Framework <a href="#language-implementation-framework" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>Using the Truffle Language Implementation framework, interpreters for guest
-languages can be implemented to execute guest applications written in languages
+<p>Using the <a href="/graalvm-as-a-platform/language-implementation-framework/">Language Implementation Framework</a>, interpreters for guest languages can be implemented to execute guest applications written in languages
 such as Javascript, Python, Ruby, R or WebAssembly (Wasm) on top of GraalVM.
 Whereas the execution context for these applications can be created with restricted
 privileges, this mechanism is only fully supported for Javascript and should not be
 used to execute untrusted code.</p>
 
-<p>For every Truffle language shipped with GraalVM, a launcher, e.g., interactive
+<p>For every language implemented with the <a href="/graalvm-as-a-platform/language-implementation-framework/">Language Implementation Framework</a>, and shipped with GraalVM, a launcher, e.g., interactive
 shell, is provided. These launchers behave in the same way and come with the
-same security guarantees as their “original” counterparts.</p>
+same security guarantees as their “original” counterparts. The languages implemented with the Language Implementation Framework are henceforth referenced as <strong>guests languages</strong>.</p>
     
       <h3 id="sharing-execution-engines">
         
@@ -649,7 +647,7 @@ same security guarantees as their “original” counterparts.</p>
         
         
       </h3>
-<p>Application developers may choose to share Truffle execution engines among execution
+<p>Application developers may choose to share execution engines among execution
 contexts for performance reasons. While the context holds the state of the
 executed code, the engine holds the code itself. Sharing of an execution engine
 among multiple contexts needs to be set up explicitly and can increase
@@ -657,7 +655,7 @@ performance in scenarios where a number of contexts execute the same code. In
 scenarios where contexts that share an execution engine for common code also
 execute sensitive (i.e., private) code, the corresponding source objects can opt
 out from code sharing with:</p>
-<pre><code>Source.newBuilder(…).cached(false).build()
+<pre><code class="language-java">Source.newBuilder(…).cached(false).build()
 </code></pre>
     
       <h3 id="scriptengine-compatibility">
@@ -667,7 +665,7 @@ out from code sharing with:</p>
         
         
       </h3>
-<p>For reasons of backward compatibility, certain Truffle languages also support
+<p>For reasons of backward compatibility, certain guest languages also support
 Java’s ScriptEngine interface. For example, this allows GraalVM JavaScript to be
 used as a drop-in replacement for Nashorn. However, to maintain compatibility,
 the Nashorn GraalVM JavaScript ScriptEngine interface will create a context with
@@ -711,15 +709,15 @@ place.</p>
 <p>The OpenJDK vulnerability group strongly discourages to running untrusted code
 under a security manager. This also applies to GraalVM, which does not support
 untrusted code execution in Java. While GraalVM’s ability to restrict the
-execution of Truffle language applications to a certain extent is not dependent
+execution of guest language applications to a certain extent is not dependent
 on a security manager, it is not suited to be used as a sandbox for running
 untrusted code.</p>
 
 <p>Native Image does not support a security manager in general. Attempting to set
 a security manager will trigger a runtime error.</p>
 
-<p>The Truffle framework needs to be invoked with all permissions to make full use
-of its functionality - Truffle provides its own controls to manage resources.</p>
+<p>The Language Implementation Framework needs to be invoked with all permissions to make full use
+of its functionality - it provides its own controls to manage resources.</p>
 
 <p>If untrusted and potentially malicious code is to be executed, we recommend
 GraalVM customers who have an immediate requirement to execute untrusted and

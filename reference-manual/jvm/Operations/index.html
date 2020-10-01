@@ -345,24 +345,6 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/reference-manual/graalvm-updater/">
-            GraalVM Updater
-          </a>
-        </li>
-
-        
-        
-
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
           <a href="/reference-manual/native-image/">
             Native Image
           </a>
@@ -381,8 +363,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/reference-manual/polyglot-programming/">
-            Polyglot Programming
+          <a href="/reference-manual/graalvm-updater/">
+            GraalVM Updater
           </a>
         </li>
 
@@ -417,8 +399,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="">
-            
+          <a href="/reference-manual/polyglot-programming/">
+            Polyglot Programming
           </a>
         </li>
 
@@ -547,8 +529,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/reference-manual/python/">
-            Python Reference
+          <a href="/reference-manual/ruby/">
+            Ruby Reference
           </a>
         </li>
 
@@ -567,24 +549,6 @@ $(document).ready(function(){
           
           <a href="/reference-manual/r/">
             R Reference Manual
-          </a>
-        </li>
-
-        
-        
-
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/reference-manual/ruby/">
-            Ruby Reference
           </a>
         </li>
 
@@ -653,28 +617,29 @@ $(document).ready(function(){
         
       </h1>
     
-      <h3 id="difference-between-running-the-graalvm-compiler-in-a-native-image-vs-on-the-jvm">
+      <h2 id="running-the-graalvm-enterprise-compiler-in-native-image-vs-on-the-jvm">
         
         
-          Difference between running the GraalVM compiler in a Native Image vs on the JVM <a href="#difference-between-running-the-graalvm-compiler-in-a-native-image-vs-on-the-jvm" class="anchor_heading">#</a>
+          Running the GraalVM Enterprise Compiler in Native Image vs on the JVM <a href="#running-the-graalvm-enterprise-compiler-in-native-image-vs-on-the-jvm" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>When running the GraalVM compiler on the JVM, it goes through the same warmup phase that the
-rest of Java application does. That is, it is first interpreted before
+<p>When running the GraalVM Enterprise compiler on the JVM, it goes through the same warm-up phase that the
+rest of the Java application does. That is, it is first interpreted before
 its hot methods are compiled. This can translate into slightly longer times
 until the application reaches peak performance when compared to the native compilers
 in the JVM such as C1 and C2.</p>
 
 <p>To address the issue of taking longer to reach to peak performance, <strong>libgraal</strong>
-was introduced – a shared library, produced using <a href="https://github.com/oracle/graal/blob/master/substratevm/README.md">Native Image</a> to ahead-of-time compile the compiler itself. That means the GraalVM
-compiler is deployed as a native shared library. In this mode, the
-compiler uses memory separate from the HotSpot heap and it runs compiled from
-the start. That is, it has execution properties similar to other native HotSpot
+was introduced – a shared library, produced using <a href="/reference-manual/native-image/">Native Image</a> to ahead-of-time compile the compiler itself. That means the GraalVM Enterprise
+compiler is deployed as a native shared library.</p>
+
+<p>In this mode, the
+compiler uses memory separate from the HotSpot heap, and it runs compiled from
+the start. Therefore it has execution properties similar to other native HotSpot
 compilers such as C1 and C2. Currently, this is the <strong>default mode</strong> of
-operation in both GraalVM Community and Enterprise images. It can be disabled
-with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
+operation. It can be disabled with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
     
       <h2 id="measuring-performance">
         
@@ -684,12 +649,12 @@ with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
         
       </h2>
 
-<p>The first thing to be sure of when measuring the performance is to ensure the JVM is using the GraalVM compiler.
+<p>The first thing to be sure of when measuring the performance is to ensure the JVM is using the GraalVM Enterprise compiler.
 In the GraalVM binary, the JVM is configured to use the GraalVM compiler
 as the top tier compiler by default. You can confirm this by adding <code>-Dgraal.ShowConfiguration=info</code>
 to the command line. It will produce a line of output similar to the one below
 when the compiler is initialized:</p>
-<pre><code>Using Graal compiler configuration 'community' provided by org.graalvm.compiler.hotspot.CommunityCompilerConfigurationFactory loaded from jar:file:/Users/dsimon/graal/graal/compiler/mxbuild/dists/graal.jar!/org/graalvm/compiler/hotspot/CommunityCompilerConfigurationFactory.class
+<pre><code class="language-shell">Using Graal compiler configuration 'community' provided by org.graalvm.compiler.hotspot.CommunityCompilerConfigurationFactory loaded from jar:file:/Users/dsimon/graal/graal/compiler/mxbuild/dists/graal.jar!/org/graalvm/compiler/hotspot/CommunityCompilerConfigurationFactory.class
 </code></pre>
 <p>Note that the GraalVM compiler is only initialized on the first top tier JIT compilation request
 so if your application is short lived, you may not see this output.</p>
@@ -697,9 +662,9 @@ so if your application is short lived, you may not see this output.</p>
 <p>Optimizing JVM-based applications is a science in itself. The compilation may not
 even be a factor in the case of poor performance as the problem may
 lie in any other part of the VM (I/O, garbage collection, threading etc) or in
-poorly written application or 3rd party library code. For this reason, it’s
-worth using profilers such as <a href="http://www.oracle.com/technetwork/java/javaseproducts/mission-control/java-mission-control-1998576.html">Java Mission Control</a> to
-diagnose application behavior.</p>
+a poorly written application or 3rd party library code. For this reason, it’s
+worth the <a href="https://www.oracle.com/java/technologies/jdk-mission-control.html">JDK Mission Control</a> tool chain to
+diagnose the application behavior.</p>
 
 <p>You can also compare performance against the native top tier compiler in the JVM by
 adding <code>-XX:-UseJVMCICompiler</code> to the command line.</p>
@@ -744,7 +709,7 @@ property.</p>
 with extra diagnostics enabled. Just before the VM exits, all diagnostic output
 captured during retried compilations is written to a <code>.zip</code> file and its location
 is printed on the console:</p>
-<pre><code>Graal diagnostic output saved in /Users/demo/graal-dumps/1499768882600/graal_diagnostics_64565.zip
+<pre><code class="language-shell">Graal diagnostic output saved in /Users/demo/graal-dumps/1499768882600/graal_diagnostics_64565.zip
 </code></pre>
 
 <p>You can then attach the .zip file to an issue on <a href="https://github.com/oracle/graal">GitHub</a>.</p>
@@ -771,7 +736,7 @@ there is a section in the file that shows the stack at the time of the crash,
 including the type of code for each frame in the stack, as in the following
 example:</p>
 
-<pre><code>Stack: [0x00007000020b1000,0x00007000021b1000],  sp=0x00007000021af7a0,  free space=1017k
+<pre><code class="language-shell">Stack: [0x00007000020b1000,0x00007000021b1000],  sp=0x00007000021af7a0,  free space=1017k
 Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
 J 761 JVMCI org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V (299 bytes) @ 0x0000000108a2fc01 [0x0000000108a2fac0+0x141] (null)
 j  org.graalvm.compiler.core.gen.NodeLIRBuilder.doBlock(Lorg/graalvm/compiler/nodes/cfg/Block;Lorg/graalvm/compiler/nodes/StructuredGraph;Lorg/graalvm/compiler/core/common/cfg/BlockMap;)V+211
@@ -781,13 +746,13 @@ j  org.graalvm.compiler.core.LIRGenerationPhase.emitBlock(Lorg/graalvm/compiler/
 <p>This example shows that the top frame was compiled (J) by the JVMCI compiler,
 which is the GraalVM compiler. The crash occurred at offset 0x141 in the machine
 code produced for:</p>
-<pre><code>org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V
+<pre><code class="language-shell">org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V
 </code></pre>
 
 <p>The next two frames in the stack were executing in the interpreter (j). The
 location of the crash is also often indicated near the top of the file with
 something like this:</p>
-<pre><code># Problematic frame:
+<pre><code class="language-shell"># Problematic frame:
 # J 761 JVMCI org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V (299 bytes) @ 0x0000000108a2fc01 [0x0000000108a2fac0+0x141] (null)
 </code></pre>
 
@@ -797,7 +762,7 @@ something like this:</p>
 for such a crash, you should first attempt to reproduce the crash with extra
 diagnostics enabled for the compilation of the problematic method.
 In this example, you would add the following to your command line:</p>
-<pre><code>-Dgraal.MethodFilter=NodeLIRBuilder.matchComplexExpressions, -Dgraal.Dump=:2
+<pre><code class="language-shell">-Dgraal.MethodFilter=NodeLIRBuilder.matchComplexExpressions, -Dgraal.Dump=:2
 </code></pre>
 
 <p>These options are described in more detail <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">here</a>.
@@ -818,7 +783,7 @@ when trying to reproduce the crash so you can see what was compiled just before
 the crash.</p>
 
 <p>The following shows sample output from the console:</p>
-<pre><code>HotSpotCompilation-1218        Lorg/graalvm/compiler/core/amd64/AMD64NodeLIRBuilder;                  peephole                                      (Lorg/graalvm/compiler/nodes/ValueNode;)Z           |   87ms   428B   447B  1834kB
+<pre><code class="language-shell">HotSpotCompilation-1218        Lorg/graalvm/compiler/core/amd64/AMD64NodeLIRBuilder;                  peephole                                      (Lorg/graalvm/compiler/nodes/ValueNode;)Z           |   87ms   428B   447B  1834kB
 HotSpotCompilation-1212        Lorg/graalvm/compiler/lir/LIRInstructionClass;                         forEachState                                  (Lorg/graalvm/compiler/lir/LIRInstruction;Lorg/graalvm/compiler/lir/InstructionValueProcedure;)V  |  359ms    92B   309B  6609kB
 HotSpotCompilation-1221        Lorg/graalvm/compiler/hotspot/amd64/AMD64HotSpotLIRGenerator;          getResult                                     ()Lorg/graalvm/compiler/hotspot/HotSpotLIRGenerationResult;  |   54ms    18B   142B  1025kB
 #
@@ -847,11 +812,11 @@ However, you can set the directory with <code>-Dgraal.DumpPath=&lt;path&gt;</cod
 
 <p>A message, such as the following, is printed to the console when this
 directory is first used by the compiler:</p>
-<pre><code>Dumping debug output in /Users/demo/graal-dumps/1499768882600
+<pre><code class="language-shell">Dumping debug output in /Users/demo/graal-dumps/1499768882600
 </code></pre>
 
 <p>This directory should contain content related to the crashing method, such as:</p>
-<pre><code>$ ls -l /Users/demo/graal-dumps/1499768882600
+<pre><code class="language-shell">ls -l /Users/demo/graal-dumps/1499768882600
 -rw-r--r--  1 demo  staff    144384 Jul 13 11:46 HotSpotCompilation-1162[AMD64HotSpotLIRGenerator.getResult()].bgv
 -rw-r--r--  1 demo  staff     96925 Jul 13 11:46 HotSpotCompilation-1162[AMD64HotSpotLIRGenerator.getResult()].cfg
 -rw-r--r--  1 demo  staff  12600725 Jul 13 11:46 HotSpotCompilation-791[NodeLIRBuilder.matchComplexExpressions(List)].bgv
