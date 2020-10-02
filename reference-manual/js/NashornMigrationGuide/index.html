@@ -999,16 +999,14 @@ var myYear = date.year; // calls date.getYear()
 date.year = myYear + 1; // calls date.setYear(myYear + 1);
 </code></pre>
 
-<p>GraalVM JavaScript defines an ordering in which it searches for the field or getters.
-It will always first try to read or write the field with the name as provided in the property.
-If the field cannot be read or written, it will try to call a getter or setter:</p>
+<p>GraalVM JavaScript mimics the behavior of Nashorn regarding the ordering of the access:</p>
 <ul>
-  <li>In case of a read operation, GraalVM JavaScript will first try to call a getter with the name <code>get</code> and the property name in camel case. If that is not available, a getter with the name <code>is</code> and the property name in camel case is called. In the second case, the value is returned even if it is not of type boolean.</li>
-  <li>In case of a write operation, GraalVM JavaScript will try to call a setter with the name <code>set</code> and the property name in camel case, providing the value as argument to that function.</li>
+  <li>In case of a read operation, GraalVM JavaScript will first try to call a getter with the name <code>get</code> and the property name in camel case. If that is not available, a getter with the name <code>is</code> and the property name in camel case is called. In the second case, unlike Nashorn, the resulting value is returned even if it is not of type boolean. Only if both methods are not available, the property itself will be read.</li>
+  <li>In case of a write operation, GraalVM JavaScript will try to call a setter with the name <code>set</code> and the property name in camel case, providing the value as argument to that function. If the setter is not available, the property itself will be written.</li>
 </ul>
 
-<p>Nashorn can expose random behavior when both <code>getFieldName</code> and <code>isFieldName</code> are available.
-Nashorn also gives precedence to getters, even when a public field of the exact name is available.</p>
+<p>Note that Nashorn (and thus, GraalVM JavaScript) makes a clear distinction between property read/writes and function calls.
+When the Java class has both a field and a method of the same name publically available, <code>obj.property</code> will always read the field (or the getter as discussed above), while <code>obj.property()</code> will always call the respective method.</p>
     
       <h2 id="additional-aspects-to-consider">
         
