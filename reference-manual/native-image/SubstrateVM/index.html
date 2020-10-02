@@ -860,12 +860,13 @@ $(document).ready(function(){
       </h1>
 
 <p>Substrate VM is an internal project
-name for the technology behind <a href="/reference-manual/native-image/">GraalVM Native Image</a>.</p>
+name for the technology behind <a href="/reference-manual/native-image/">GraalVM Native Image</a>.
+This guide shows how to set up a development environment for the project.</p>
 
 <p>To get started, install <a href="https://github.com/graalvm/mx">mx</a>.
 Then point the <code>JAVA_HOME</code> variable to a JDK that supports a compatible version
-of the JVM Compiler Interface (JVMCI). JVMCI is a privileged low-level interface
-to the JVM, that can read metadata from the VM such as method bytecode and
+of the JVM Compiler Interface (JVMCI). JVMCI is a privileged, low-level interface
+to the JVM that can read metadata from the VM, such as method bytecode, and
 install machine code into the VM. Obtain JVMCI-enabled:</p>
 <ul>
   <li>JDK 8 from <a href="https://github.com/graalvm/openjdk8-jvmci-builder/releases">GitHub</a></li>
@@ -879,20 +880,25 @@ install machine code into the VM. Obtain JVMCI-enabled:</p>
         
         
       </h4>
-<p>For compilation <code>native-image</code> depends on the local toolchain, so make sure: <code>glibc-devel</code>, <code>zlib-devel</code> (header files for the C library and <code>zlib</code>) and <code>gcc</code> are available on your system.
-Unlike Linux or macOS platforms, building native images on Windows requires meeting certain prerequisites.
+<p>For compilation, <code>native-image</code> depends on the local toolchain. Install
+<code>glibc-devel</code>, <code>zlib-devel</code> (header files for the C library and <code>zlib</code>) and
+<code>gcc</code>, using a package manager available on your OS. Some Linux distributions
+may additionally require <code>libstdc++-static</code>.</p>
+
+<p>Unlike Linux or macOS platforms, building native images on Windows requires meeting certain prerequisites.
 The required Microsoft Visual C++ (MSVC) version depends on the JDK version that
 GraalVM is based on. For GraalVM distribution based on JDK 8, you will need MSVC
 2010 SP1 version. The recommended installation method is using Microsoft Windows
 SDK 7.1:</p>
 <ol>
-  <li>Download the SDK file <code>GRMSDKX_EN_DVD.iso</code> for from <a href="https://www.microsoft.com/en-gb/download">Microsoft</a>.</li>
+  <li>Download the SDK file <code>GRMSDKX_EN_DVD.iso</code> from <a href="https://www.microsoft.com/en-gb/download">Microsoft</a>.</li>
   <li>Mount the image by opening <code>F:\Setup\SDKSetup.exe</code> directly.
 For GraalVM distribution based on JDK 11, you will need MSVC 2017 15.5.5 or later version.</li>
 </ol>
 
-<p>After cloning the repository, run</p>
+<p>The last prerequisite, common for both GraalVM distribution based on JDK 11 and JDK 8, is the proper <a href="https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=vs-2019#developer_command_prompt_shortcuts">Developer Command Prompt</a> for your version of <a href="https://visualstudio.microsoft.com/vs/">Visual Studio</a>. On Windows, the <code>native-image</code> tool only works when it is executed from the x64 Native Tools Command Prompt.</p>
 
+<p>After cloning the repository, run</p>
 <pre><code>cd substratevm
 mx build
 
@@ -902,7 +908,7 @@ mx native-image HelloWorld
 ./helloworld
 </code></pre>
 
-<p>To build Truffle-based images please refer to the documentation in the <a href="https://github.com/oracle/graal/blob/master/vm/README.md">VM suite</a>.</p>
+<p>To build polyglot images, refer to the documentation in the <a href="https://github.com/oracle/graal/blob/master/vm/README.md">VM suite</a>.</p>
     
       <h2 id="build-script">
         
@@ -912,18 +918,18 @@ mx native-image HelloWorld
         
       </h2>
 
-<p>Using Substrate VM requires the <code>mx</code> tool to be installed first, so that it is on your <code>PATH</code>.
+<p>Using Native Image in a development environment requires the <code>mx</code> tool to be installed first, so that it is on your <code>PATH</code>.
 Visit the <a href="https://github.com/graalvm/mx">MX Homepage</a> for more details.</p>
 
 <p>In the main directory, invoke <code>mx help</code> to see the list of commands.
-Most of the commands are inherited from the Graal and Truffle code bases.
-The most important commands for the Substrate VM are listed below.
-More information on the parameters of a command is available by running <code>mx help &lt;command&gt;</code></p>
+Most of the commands are inherited from the <a href="https://github.com/oracle/graal">Graal</a> and <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle</a> code bases.
+More information on a specific command is available by running <code>mx help &lt;command&gt;</code>.
+The most important commands are:</p>
 
 <ul>
-  <li><code>build</code>: Compile all Java and native code.</li>
-  <li><code>clean</code>: Remove all compilation artifacts.</li>
-  <li><code>ideinit</code>: Create project files for Eclipse and other common IDEs.
+  <li><code>build</code>: compile all Java and native code</li>
+  <li><code>clean</code>: remove all compilation artifacts</li>
+  <li><code>ideinit</code>: create project files for Eclipse and other common IDEs
 See the <a href="https://github.com/oracle/graal/blob/master/compiler/docs/IDEs.md">documentation on IDE integration</a> for details.</li>
 </ul>
     
@@ -936,16 +942,13 @@ See the <a href="https://github.com/oracle/graal/blob/master/compiler/docs/IDEs.
       </h2>
 
 <p>After running <code>mx build</code> you can use <code>mx native-image</code> to build native images.
-You can specify the main entry point, i.e., the application you want to create the image for.
-For more information run <code>mx native-image --help</code>.</p>
+You can specify the main entry point, i.e., the application you want to create the image for. For more information run <code>mx native-image --help</code>.</p>
 
-<p>Native image generation is performed by a Java program that runs on a JVMCI-enabled JDK.
-You can debug it with a regular Java debugger.
+<p>A native image generation is performed by a Java program, a Native Image builder, that runs on a JVMCI-enabled JDK. You can debug it with a regular Java debugger.
 Use <code>mx native-image --debug-attach</code> to start native image generation so that it waits for a Java debugger to attach first (by default, at port 8000).
-In Eclipse, use the debugging configuration <em>substratevm-localhost-8000</em> to attach to it.
-This debugging configuration is automatically generated by <code>mx ideinit</code>.</p>
+In Eclipse, use the debugging configuration <em>substratevm-localhost-8000</em> to attach to it. This debugging configuration is automatically generated by <code>mx ideinit</code>.</p>
 
-<p>If you have to debug the compiler graphs that are built as part of building an image, proceed to the <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">debugging</a> page.
+<p>If you have to debug the compiler graphs that are built as part of an image, proceed to the <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">debugging</a> page.
 You can use the <a href="https://docs.oracle.com/en/graalvm/enterprise/20/docs/tools/igv/">Ideal Graph Visualizer (IGV)</a> tool to view individual compilation steps:</p>
 <pre><code>mx igv &amp;&gt;/dev/null &amp;
 mx native-image HelloWorld -H:Dump= -H:MethodFilter=HelloWorld.*
@@ -959,31 +962,29 @@ mx native-image HelloWorld -H:Dump= -H:MethodFilter=HelloWorld.*
         
       </h2>
 
-<p>A native image can be built as a standalone executable, which is the default, or as a shared library by passing <code>--shared</code> to <code>native-image</code>. For an image to be useful, it needs to have at least one entry point method.</p>
+<p>A native image can be built as a standalone executable, which is the default, or as a shared library by passing <code>--shared</code> to the native image builder. For an image to be useful, it needs to have at least one entry point method.</p>
 
-<p>For executables, Substrate VM supports Java main methods with a signature that takes the command line arguments as an array of strings:</p>
+<p>For executables, Native Image supports Java main methods with a signature that takes the command line arguments as an array of strings:</p>
 
 <pre><code class="language-java">public static void main(String[] arg) { /* ... */ }
 </code></pre>
 
-<p>For shared libraries, SVM provides the <code>@CEntryPoint</code> annotation to specify entry point methods that should be exported and callable from C.
-Entry point methods must be static and may only have non-object parameters and return types – this includes Java primitives, but also Word types (including pointers).
-One of the parameters of an entry point method has to be of type <code>IsolateThread</code> or <code>Isolate</code>.
-This parameter provides the current thread’s execution context for the call.
-For example:</p>
+<p>For shared libraries, Native Image provides the <code>@CEntryPoint</code> annotation to specify entry point methods that should be exported and callable from C.
+Entry point methods must be static and may only have non-object parameters and return types – this includes Java primitives, but also Word types (including pointers). One of the parameters of an entry point method has to be of type <code>IsolateThread</code> or <code>Isolate</code>. This parameter provides the current thread’s execution context for the call.</p>
+
+<p>For example:</p>
 
 <pre><code class="language-java">@CEntryPoint static int add(IsolateThread thread, int a, int b) {
     return a + b;
 }
 </code></pre>
 
-<p>Shared library builds generate an additional C header file.
-This header file contains declarations for the <a href="/reference-manual/native-image/C-API/">SVM C API</a>, which allows creating isolates and attaching threads from C code, as well as declarations for each entry point in user code.
-The generated C declaration for the above example is:</p>
+<p>When building a shared library, an additional C header file is generated.
+This header file contains declarations for the <a href="/reference-manual/native-image/C-API/">C API</a>, which allows creating isolates and attaching threads from C code, as well as declarations for each entry point in user code. The generated C declaration for the above example is:</p>
 <pre><code class="language-c">int add(graal_isolatethread_t* thread, int a, int b);
 </code></pre>
 
-<p>Both executable images and shared library images can have an arbitrary number of entry points, for example to implement callbacks or APIs.</p>
+<p>Both executable images and shared library images can have an arbitrary number of entry points, for example, to implement callbacks or APIs.</p>
     
       <h2 id="options">
         
@@ -1003,8 +1004,7 @@ The generated C declaration for the above example is:</p>
         
       </h2>
 
-<p>The list of projects is defined in a custom format in the file <code>mx.substratevm/suite.py</code>.
-It is never necessary to create new projects in the IDE.
+<p>The list of projects is defined in a custom format in the file <code>mx.substratevm/suite.py</code>. It is never necessary to create new projects in the IDE.
 Instead, a new project is created by adding it in <code>suite.py</code> and running <code>mx ideinit</code> to generate a corresponding IDE project.</p>
     
       <h2 id="code-formatting">
@@ -1027,7 +1027,7 @@ Instead, a new project is created by adding it in <code>suite.py</code> and runn
 
 <p>Sometimes, Eclipse gives strange error messages, especially after pulling a
 bigger changeset. Also, projects are frequently added or removed, leading to
-error messages about missing projects if you do not import the new projects. The
+error messages about missing projects if you do not import new projects. The
 following should reset everything:</p>
 
 <ul>
@@ -1048,7 +1048,7 @@ following should reset everything:</p>
         
       </h2>
 
-<p>The Substrate VM is licensed under the GPL 2 with Classpath Exception.</p>
+<p>The Substrate VM project is licensed under the GPL 2 with Classpath Exception.</p>
 
               </div>
 

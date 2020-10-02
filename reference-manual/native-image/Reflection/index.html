@@ -877,16 +877,16 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Java reflection support (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods and fields and their properties at runtime.</p>
+<p>Java reflection support (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods, fields and their properties at run time.</p>
 
-<p>Native Image has partial support for reflection and it needs to know ahead of time the reflectively accessed program elements.
+<p>Native Image has partial support for reflection and needs to know ahead-of-time the reflectively accessed program elements.
 Examining and accessing program elements through <code>java.lang.reflect.*</code> or loading classes with <code>Class.forName(String)</code> at run time requires preparing additional metadata for those program elements.
-(Note: We include here loading classes with <code>Class.forName(String)</code> since it is closely related to reflection.)</p>
+(Note: loading classes with <code>Class.forName(String)</code> are included here since it is closely related to reflection.)</p>
 
-<p>SubstrateVM tries to resolve the target elements through a static analysis that detects calls to the reflection API.
-Where the analysis fails the program elements reflectively accessed at run time must be specified using a manual configuration.</p>
+<p>Native Image tries to resolve the target elements through a static analysis that detects calls to the Reflection API.
+Where the analysis fails, the program elements reflectively accessed at run time must be specified using a manual configuration.</p>
 
-<p>See also the <a href="/reference-manual/native-image/Configuration/">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
+<p>See also the <a href="/reference-manual/native-image/Configuration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
     
       <h2 id="automatic-detection">
         
@@ -896,24 +896,27 @@ Where the analysis fails the program elements reflectively accessed at run time 
         
       </h2>
 
-<p>The analysis intercepts calls to <code>Class.forName(String)</code>, <code>Class.forName(String, ClassLoader)</code>, <code>Class.getDeclaredField(String)</code>, <code>Class.getField(String)</code>, <code>Class.getDeclaredMethod(String, Class[])</code>, <code>Class.getMethod(String, Class[])</code>, <code>Class.getDeclaredConstructor(Class[])</code> and <code>Class.getConstructor(Class[])</code>.
-If the arguments to these calls can be reduced to a constant we try to resolve the target elements.
-If the target elements can be resolved the calls are removed and instead the target elements are embedded in the code.
-If the target elements cannot be resolved, e.g., a class is not on the classpath or it doesn’t declare a field/method/constructor, then the calls are replaced with a snippet that throws the appropriate exception at run time.
-The benefits are two fold.
-First, at run time there are no calls to the reflection API.
-Second, Graal can employ constant folding and optimize the code further.</p>
+<p>The analysis intercepts calls to <code>Class.forName(String)</code>, <code>Class.forName(String, ClassLoader)</code>, <code>Class.getDeclaredField(String)</code>, <code>Class.getField(String)</code>, <code>Class.getDeclaredMethod(String, Class[])</code>, <code>Class.getMethod(String, Class[])</code>, <code>Class.getDeclaredConstructor(Class[])</code>, and <code>Class.getConstructor(Class[])</code>.</p>
+
+<p>If the arguments to these calls can be reduced to a constant, Native Image tries to resolve the target elements.
+If the target elements can be resolved, the calls are removed and instead the target elements are embedded in the code.
+If the target elements cannot be resolved, e.g., a class is not on the classpath or it does not declare a field/method/constructor, then the calls are replaced with a snippet that throws the appropriate exception at run time.
+The benefits are twofold.
+First, at run time there are no calls to the Reflection API.
+Second, GraalVM can employ constant folding and optimize the code further.</p>
 
 <p>The calls are intercepted and processed only when it can be unequivocally determined that the parameters can be reduced to a constant.
-For example the call <code>Class.forName(String)</code> will be replaced with a <code>Class</code> literal only if the <code>String</code> argument can be constant folded, assuming that the class is actually on the classpath.
-Additionally a call to <code>Class.getMethod(String, Class[])</code> will be processed only if the contents of the <code>Class[]</code> argument can be determined with certainty.
-The last restriction is due to the fact that Java doesn’t have immutable arrays.
-Therefore all the changes to the array between the time it is allocated and the time it is passed as an argument need to be tracked.
-The analysis follows a simple rule: if all the writes to the array happen in linear sections of code, i.e., no control flow splits, then the array is effectively constant for the purpose of analyzing the call.
-That is why the analysis doesn’t accept <code>Class[]</code> arguments coming from static fields since the contents of those can change at any time, even if the fields are final.
-Although this may seem too restrictive it covers the most commonly used patterns of reflection API calls.
-The only exception to the constant arguments rule is that the <code>ClassLoader</code> argument of <code>Class.forName(String, ClassLoader)</code> doesn’t need to be a constant; it is ignored and instead a class loader that can load all the classes on the class path is used.
-The analysis runs to a fix point which means that a chain of calls like <code>Class.forName(String).getMethod(String, Class[])</code> will first replace the class constant and then the method effectively reducing this to a <code>java.lang.reflect.Method</code>.</p>
+For example, the call <code>Class.forName(String)</code> will be replaced with a <code>Class</code> literal only if the <code>String</code> argument can be constant folded, assuming that the class is actually on the classpath.
+Additionally, a call to <code>Class.getMethod(String, Class[])</code> will be processed only if the contents of the <code>Class[]</code> argument can be determined with certainty.
+This last restriction is due to the fact that Java does not have immutable arrays.
+Therefore, all the changes to the array between the time it is allocated and the time it is passed as an argument need to be tracked.
+The analysis follows a simple rule: if all the writes to the array happen in linear sections of code, i.e., no control flow splits, then the array is effectively constant for the purpose of analyzing the call.</p>
+
+<p>That is why the analysis does not accept <code>Class[]</code> arguments coming from static fields, since the contents of those can change at any time, even if the fields are final.
+Although this may seem too restrictive, it covers the most commonly used patterns of the Reflection API calls.</p>
+
+<p>The only exception to the constant arguments rule is that the <code>ClassLoader</code> argument of <code>Class.forName(String, ClassLoader)</code> does not need to be a constant; it is ignored and instead a class loader that can load all the classes on the class path is used.
+The analysis runs to a fix point which means that a chain of calls like <code>Class.forName(String).getMethod(String, Class[])</code> will first replace the class constant and then the method will effectively reduce this to <code>java.lang.reflect.Method</code>.</p>
 
 <p>Following are examples of calls that can be intercepted and replaced with the corresponding element:</p>
 
@@ -954,10 +957,10 @@ For these situations a manual configuration as described below can be provided.<
         
       </h2>
 
-<p>A configuration that specifies the program elements that will be accessed reflectively can be provided during the image build as follows:</p>
+<p>A configuration that specifies the program elements that will be accessed reflectively can be provided during the native image build as follows:</p>
 <pre><code>-H:ReflectionConfigurationFiles=/path/to/reflectconfig
 </code></pre>
-<p>where <code>reflectconfig</code> is a JSON file in the following format (use <code>--expert-options</code> for more details):</p>
+<p>Here, <code>reflectconfig</code> is a JSON file in the following format (use <code>--expert-options</code> for more details):</p>
 <pre><code class="language-json">[
   {
     "name" : "java.lang.Class",
@@ -989,9 +992,10 @@ For these situations a manual configuration as described below can be provided.<
     }
 ]
 </code></pre>
-<p>The image build generates reflection metadata for all classes, methods and fields referenced in that file.
-The <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code> and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.
-However, <code>allPublicClasses</code> and <code>allDeclaredClasses</code> don’t automatically register the inner classes for reflective access.
+<p>The native image builder generates reflection metadata for all classes, methods, and fields referenced in that file.
+The <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code>, and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.</p>
+
+<p>However, <code>allPublicClasses</code> and <code>allDeclaredClasses</code> do not automatically register the inner classes for reflective access.
 They just make them available via <code>Class.getClasses()</code> and <code>Class.getDeclaredClasses()</code> when called on the declaring class.
 In order to write a field that is declared <code>final</code>, the <code>allowWrite</code> attribute must be specified for that field (but is not required for non-final fields).
 However, code accessing final fields might not observe changes of final field values in the same way as for non-final fields because of optimizations.</p>
@@ -1025,8 +1029,8 @@ class RuntimeReflectionRegistrationFeature implements Feature {
         
         
       </h3>
-<p>Reflection can be used without restrictions during native image generation, for example in static initializers.
-At this point, code can collect information about methods and fields and store them in own data structures, which are then reflection-free at run time.</p>
+<p>Reflection can be used without restrictions during a native image generation, for example, in static initializers.
+At this point, code can collect information about methods and fields and store them in their own data structures, which are then reflection-free at run time.</p>
     
       <h3 id="unsafe-accesses">
         
@@ -1035,11 +1039,11 @@ At this point, code can collect information about methods and fields and store t
         
         
       </h3>
-<p>The <code>Unsafe</code> class, although its use is discouraged, provides direct access to memory of Java objects. The <code>Unsafe.objectFieldOffset()</code> method provides the offset of a field within a Java object. This information is not available by default, but can be enabled with the <code>allowUnsafeAccess</code> attribute in the reflection configuration, for example:</p>
+<p>The <code>Unsafe</code> class, although its use is discouraged, provides direct access to memory of Java objects. The <code>Unsafe.objectFieldOffset()</code> method provides the offset of a field within a Java object. This information is not available by default, but can be enabled with the <code>allowUnsafeAccess</code> attribute in the reflection configuration. For example:</p>
 <pre><code class="language-json">"fields" : [ { "name" : "hash", "allowUnsafeAccess" : true }, ... ]
 </code></pre>
 
-<p>Note that offsets that are queried during native image generation can be different to the offsets at runtime.</p>
+<p>Note: offsets that are queried during a native image generation can be different from the offsets at run time.</p>
 
               </div>
 

@@ -869,15 +869,15 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="logging-on-native-image">
+                <h1 id="logging-in-native-image">
         
         
-          Logging on Native Image
+          Logging in Native Image
         
         
       </h1>
 
-<p>Native Image supports logging out-of-the box using the <code>java.util.logging.*</code> API.</p>
+<p>Out of the box, Native Image supports logging using the <code>java.util.logging.*</code> API.</p>
     
       <h2 id="default-logging-configuration">
         
@@ -887,11 +887,12 @@ $(document).ready(function(){
         
       </h2>
 
-<p>The logging configuration built in the image by default is based on the <code>logging.properties</code> file found in the JDK.
-This configures a <code>java.util.logging.ConsoleHandler</code> which will only shows messages at the <code>INFO</code> and above levels.
-Custom logging configuration can be loaded either at image build time or at run time as described below.
-An important detail is that if additional logging handlers are used the corresponding classes need to be registered for reflection.
-For example if <code>java.util.logging.FileHandler</code> is used then the following reflection config is necessary:</p>
+<p>The logging configuration built in a native image by default is based on the <code>logging.properties</code> file found in the JDK.
+This configures a <code>java.util.logging.ConsoleHandler</code> which will only show messages at the <code>INFO</code> and above levels.
+Custom logging configuration can be loaded either at image build time or at run time as described below.</p>
+
+<p>Note that if additional logging handlers are used, the corresponding classes need to be registered for reflection.
+For example, if <code>java.util.logging.FileHandler</code> is used then the following reflection configuration is necessary:</p>
 <pre><code class="language-json">{
     "name" : "java.util.logging.FileHandler",
     "methods" : [
@@ -899,7 +900,7 @@ For example if <code>java.util.logging.FileHandler</code> is used then the follo
     ]
   }
 </code></pre>
-<p>See the <a href="/reference-manual/native-image/Reflection/">Reflection Support</a> guide for more details.</p>
+<p>See the <a href="/reference-manual/native-image/Reflection/">Reflection Support</a> page for more details.</p>
     
       <h2 id="build-time-logger-initialization">
         
@@ -923,9 +924,11 @@ For example if <code>java.util.logging.FileHandler</code> is used then the follo
 }
 </code></pre>
 
-<p>The <code>logging.properties</code> file is processed at image build time and it does not need to be included in the native image, therefore reducing the image size.
-The <code>LoggerHolder.LOGGER</code> is also initialized at image build time and is readily available at run time, therefore improving the startup.
-Unless the application needs to process a custom <code>logging.properties</code> configuration at run time this approach is recommended.</p>
+<p>The <code>logging.properties</code> file is processed at image build time.
+It does not need to be included in the native image, therefore reducing the image size.</p>
+
+<p><code>LoggerHolder.LOGGER</code> is also initialized at image build time and is readily available at run time, therefore improving the startup.
+Unless the application needs to process a custom <code>logging.properties</code> configuration at run time, this approach is recommended.</p>
     
       <h2 id="runtime-logger-initialization">
         
@@ -936,8 +939,7 @@ Unless the application needs to process a custom <code>logging.properties</code>
       </h2>
 
 <p>The logger can also be initialized at run time, as in the code below:</p>
-
-<pre><code>public class RuntimeLoggerInit {
+<pre><code class="language-java">public class RuntimeLoggerInit {
     public static void main(String[] args) throws IOException {
         LogManager.getLogManager().readConfiguration(RuntimeLoggerInit.class.getResourceAsStream("logging.properties"));
         Logger logger = Logger.getLogger(RuntimeLoggerInit.class.getName());
@@ -947,8 +949,9 @@ Unless the application needs to process a custom <code>logging.properties</code>
 }
 </code></pre>
 
-<p>In this case the <code>logging.properties</code> file needs to be available for run time processing and it must be included in the image via the <code>-H:IncludeResources=logging.properties</code> option.
-See the information about <a href="/reference-manual/native-image/Resources/">accessing resources at runtime</a> for more details on this option.</p>
+<p>In this case, the <code>logging.properties</code> file needs to be available for runtime processing and it must be included in the image via the <code>-H:IncludeResources=logging.properties</code> option.</p>
+
+<p>See the information about <a href="/reference-manual/native-image/Resources/">accessing resources at runtime</a> for more details on this option.</p>
 
               </div>
 

@@ -885,41 +885,41 @@ Class initialization has negative consequences for ahead-of-time compilation of 
   <li>It increases the amount of work to start the application. For example, the simple “Hello, World!” program requires initialization of more than 300 classes.</li>
 </ul>
 
-<p>To reduce the negative impact of class initialization, Native Image supports class initialization at build time: certain classes can be initialized during image building making run-time initialization and checks unnecessary.
-All the static state from initialized classes is stored into the image.
+<p>To reduce the negative impact of class initialization, Native Image supports class initialization at build time: certain classes can be initialized during image building, making run-time initialization and checks unnecessary.
+All the static state information from initialized classes is stored in the image.
 Access to the static fields that were initialized at build time is transparent to the application and works as if the class was initialized at run time.</p>
 
 <p>Specifying class initialization policies can be complicated due to the following constraints that come from class initialization semantics:</p>
 
 <ul>
-  <li>When a class is initialized all super classes and super interfaces with default methods must also be initialized.
-Interfaces without default methods, however, are not initialized. To describe this we will further use a short term “relevant supertype”, and relevant subtype for subtypes of classes and interfaces with default methods.</li>
+  <li>When a class is initialized, all super classes and super interfaces with default methods must also be initialized.
+Interfaces without default methods, however, are not initialized. To describe this, a short-term “relevant supertype” is used furhter, and a relevant subtype for subtypes of classes and interfaces with default methods.</li>
   <li>Relevant supertypes of types initialized at build time must also be initialized at build time.</li>
   <li>Relevant subtypes of types initialized at run time must also be initialized at run time.</li>
   <li>No instances classes that are initialized at run time must be present in the image.</li>
 </ul>
 
-<p>To have the out-of-the-box experience of Native Image and still get the benefits of build-time initailization, Native Image does three things:</p>
+<p>To enjoy the complete out-of-the-box experience of Native Image and still get the benefits of build-time initailization, Native Image does three things:</p>
 
 <ul>
-  <li><a href="#build-time-initialization-of-native-image-runtime">Build-time Initialization of Native Image Runtime</a></li>
+  <li><a href="#build-time-initialization-of-native-image-runtime">Build-Time Initialization of Native Image Runtime</a></li>
   <li><a href="#automatic-initialization-of-safe-classes">Automatic Initialization of Safe Classes</a></li>
   <li><a href="#explicitly-specifying-class-initialization">Explicitly Specifying Class Initialization</a></li>
 </ul>
 
-<p>To track which classes got initialized and why one can use the flag <code>-H:+PrintClassInitialization</code>.
-This flag greatly helps to configure the image build to work as intended; the goal is to have as many classes initialized at build time and yet keep the correct semantics of the program.</p>
+<p>To track which classes were initialized and why, one can use the flag <code>-H:+PrintClassInitialization</code>.
+This flag greatly helps to configure the image build to work as intended. The goal is to have as many classes as possible initialized at build time, yet keep the correct semantics of the program.</p>
     
       <h2 id="build-time-initialization-of-native-image-runtime">
         
         
-          Build-time Initialization of Native Image Runtime <a href="#build-time-initialization-of-native-image-runtime" class="anchor_heading">#</a>
+          Build-Time Initialization of Native Image Runtime <a href="#build-time-initialization-of-native-image-runtime" class="anchor_heading">#</a>
         
         
       </h2>
 
 <p>In the Native Image runtime most of the classes are initialized at image build time.
-This includes the garbage collector, important JDK classes, the deoptimizer, etc..
+This includes the garbage collector, important JDK classes, the deoptimizer, etc.
 For all of the build-time initialized classes from the runtime, Native Image gives proper support so the semantics remains the same even if initialization happened at build time.
 If there is an issue with a JDK class behaving incorrectly because of class initialization at build time, please <a href="https://github.com/oracle/graal/issues/new">report an issue</a>.</p>
     
@@ -931,8 +931,8 @@ If there is an issue with a JDK class behaving incorrectly because of class init
         
       </h2>
 
-<p>For application classes, the Native Image tries to find classes that can be safely initialized at build time.
-A class is considered safe if all of its relevant super types are safe and if the class’ initializer does not call any unsafe methods or initializes other unsafe classes.</p>
+<p>For application classes, Native Image tries to find classes that can be safely initialized at build time.
+A class is considered safe if all of its relevant super types are safe and if the class initializer does not call any unsafe methods or initialize other unsafe classes.</p>
 
 <p>A method is considered as unsafe:</p>
 
@@ -956,17 +956,17 @@ The list of all classes that are proven safe is displayed in a file when <code>-
       </h2>
 
 <p>Each class can be initialized either (1) at run time, or (2) at build time.
-To specify class-initialization policies we provide two flags <code>--initialize-at-build-time</code> and <code>--initialize-at-run-time</code>.
+To specify class-initialization policies, two flags are provided: <code>--initialize-at-build-time</code> and <code>--initialize-at-run-time</code>.
 These flags allow specifying a policy for whole packages or individual classes.
-For example, if we have a classes <code>p.C1</code>, <code>p.C2</code>, … , <code>p.Cn</code>. We can eagerly initialize this package with</p>
+For example, if you have classes <code>p.C1</code>, <code>p.C2</code>, … , or <code>p.Cn</code>, you can eagerly initialize this package with:</p>
 <pre><code>--initialize-at-build-time=p
 </code></pre>
 
-<p>If we want to delay one of the classes in package <code>p</code> we can simply add</p>
+<p>If you want to delay one of the classes in package <code>p</code>, simply add:</p>
 <pre><code>--initialize-at-run-time=p.C1
 </code></pre>
 
-<p>The whole class hierarchy can be initialized at build time by simply passing <code>--initialize-at-build-time</code> on the command line.</p>
+<p>The whole class hierarchy can be initialized at build time by passing <code>--initialize-at-build-time</code> on the command line.</p>
 
 <p>Class initialization can also be specified programatically by using <a href="https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/hosted/RuntimeClassInitialization.java"><code>RuntimeClassInitialization</code></a> from the <a href="https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/hosted/Feature.java">Native Image feature</a>.</p>
 

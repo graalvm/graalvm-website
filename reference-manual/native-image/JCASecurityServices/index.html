@@ -869,37 +869,37 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="jca-security-services-on-native-image">
+                <h1 id="jca-security-services-in-native-image">
         
         
-          JCA Security Services on Native Image
+          JCA Security Services in Native Image
         
         
       </h1>
 
 <p>This section refers to the use of the services provided by the <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html">Java Cryptography Architecture (JCA)</a> framework.
-The JCA framework relies on reflection to achieve algorithm independence and extensibility, therefore it requires a custom configuration on Substrate VM.
-Additionally, seed generators that use system files like <code>/dev/random</code> or <code>/dev/urandom</code> need to be re-initialized at runtime.</p>
+The JCA framework relies on reflection to achieve algorithm independence and extensibility, therefore it requires a custom configuration in Native Image.
+Additionally, seed generators that use system files like <code>/dev/random</code> or <code>/dev/urandom</code> need to be reinitialized at run time.</p>
 
 <p>By default a native image is built with support for the <code>SecureRandom</code> and <code>MessageDigest</code> engines from the <code>SUN</code> provider.
 These are core security services needed by the VM itself.
-All the other Java security services (<code>Signature</code>, <code>Cipher</code>, <code>Mac</code>, <code>KeyPair</code>, <code>KeyGenerator</code>, <code>KeyFactory</code>, <code>KeyStore</code>, etc.) must be enabled adding the <code>--enable-all-security-services</code> option to the <code>native-image</code> command.
+All the other Java security services (<code>Signature</code>, <code>Cipher</code>, <code>Mac</code>, <code>KeyPair</code>, <code>KeyGenerator</code>, <code>KeyFactory</code>, <code>KeyStore</code>, etc.,) must be enabled by adding the <code>--enable-all-security-services</code> option to the <code>native-image</code> command.
 The reason behind enabling only core security services by default is that you can start with a basic image and add more security services as you need them.
-This helps keeping the overall image size small.</p>
+This helps keep the overall image size small.</p>
 
-<p>Note: The <code>--enable-all-security-services</code> option is enabled by default when <code>https</code> support is enabled.
-See the <a href="/reference-manual/native-image/URLProtocols/">URL Protocols on Substrate VM</a> guide for more details.</p>
+<p>Note: the <code>--enable-all-security-services</code> option is enabled by default when <code>https</code> support is enabled.
+See the <a href="/reference-manual/native-image/URLProtocols/">URL Protocols in Native Image</a> guide for more details.</p>
     
-      <h3 id="provider-registration">
+      <h2 id="provider-registration">
         
         
-          Provider registration <a href="#provider-registration" class="anchor_heading">#</a>
+          Provider Registration <a href="#provider-registration" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The image builder captures the list of providers and their preference order from the underlying JVM.
+      </h2>
+<p>The native image builder captures the list of providers and their preference order from the underlying JVM.
 The provider order is specified in the <code>java.security</code> file under <code>&lt;java-home&gt;/lib/security/java.security</code>.
-New security providers cannot be registered at run time, all providers must be statically configured during native image building.</p>
+New security providers cannot be registered at run time; all providers must be statically configured during a native image building.</p>
     
       <h3 id="alternative-to---enable-all-security-services">
         
@@ -908,11 +908,11 @@ New security providers cannot be registered at run time, all providers must be s
         
         
       </h3>
-<p>Registering <em>all</em> security services doesn’t come for free.
+<p>Registering <em>all</em> security services does not come for free.
 The additional code increases the native image size.
-If your application only requires a subset of the security services you can manually register the corresponding classes for reflection and push the initialization of some seed generators to runtime.
+If your application only requires a subset of the security services, you can manually register the corresponding classes for reflection and push the initialization of some seed generators to run time.
 However this requires deep knowledge of the JCA architecture.
-We are investigating the possibility to provide a finer grain declarative configuration of security services for future releases.
+We are investigating the possibility of providing a finer-grain declarative configuration of security services for future releases.
 If you want to take on this task yourself, you can start by reading the <code>com.oracle.svm.hosted.SecurityServicesFeature</code> class.
 This is where most of the code behind the <code>--enable-all-security-services</code> option is implemented.</p>
 

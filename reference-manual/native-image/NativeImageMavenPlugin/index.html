@@ -881,7 +881,7 @@ $(document).ready(function(){
 of <a href="https://maven.apache.org/what-is-maven.html">Maven</a> with the <a href="https://search.maven.org/artifact/com.oracle.substratevm/native-image-maven-plugin/">Native Image Maven Plugin</a>.</p>
 
 <p>One can build a native image directly with Maven
-using the <code>mvn package</code> command without running the <code>native-image</code> tool as a
+using the <code>mvn package</code> command without running the <code>native-image</code> command as a
 separate step. It is sufficient to add <code>native-image-maven-plugin</code> into the
 <code>&lt;plugins&gt;</code> section of the <code>pom.xml</code> file:</p>
 <pre><code>&lt;plugin&gt;
@@ -905,7 +905,7 @@ separate step. It is sufficient to add <code>native-image-maven-plugin</code> in
     &lt;/configuration&gt;
 &lt;/plugin&gt;
 </code></pre>
-<p>and the <code>org.graalvm.sdk</code> library dependency in the <code>&lt;dependencies&gt;</code> list:</p>
+<p>Then add the <code>org.graalvm.sdk</code> library dependency in the <code>&lt;dependencies&gt;</code> list:</p>
 
 <pre><code>&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.sdk&lt;/groupId&gt;
@@ -915,36 +915,33 @@ separate step. It is sufficient to add <code>native-image-maven-plugin</code> in
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The plugin figures out what jar files it needs to pass to the native image and
-what the executable main class should be. If the heuristics fails with the <code>no
-main manifest attribute, in target/&lt;name&gt;.jar</code> error, the main class should be
-specified in the <code>&lt;configuration&gt;</code> node of the plugin (see Plugin Customization
-section). When <code>mvn package</code> completes, an executable, generated in the <em>target</em>
-directory of the project, is ready for use.</p>
+<p>The plugin figures out which JAR files it needs to pass to the native image and
+what the executable main class should be. If the heuristics fails with the <code>no main manifest attribute, in target/&lt;name&gt;.jar</code> error, the main class should be
+specified in the <code>&lt;configuration&gt;</code> node of the plugin. When <code>mvn package</code> completes, an executable is ready for use, generated in the <em>target</em> directory of the project.</p>
     
-      <h3 id="maven-plugin-customization">
+      <h2 id="maven-plugin-customization">
         
         
           Maven Plugin Customization <a href="#maven-plugin-customization" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>When using GraalVM Enterprise as the <code>JAVA_HOME</code> environment, the plugin builds a native image with enterprise features enabled, e.g., an executable will automatically be built with <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">compressed references</a> and other optimizations enabled.</p>
+<p>When using GraalVM Enterprise as the <code>JAVA_HOME</code> environment, the plugin builds a native image with Enterprise features enabled, e.g., an executable will automatically be built with <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">compressed references</a> and other optimizations enabled.</p>
 
 <p>It is also possible to customize <code>native-image-maven-plugin</code> within a
 <code>&lt;configuration&gt;</code> node. The following configurations are available.</p>
 
 <ol>
-  <li>Configuration parameter <code>&lt;mainClass&gt;</code>. If the execution fails with the <code>no main manifest attribute, in target/&lt;name&gt;.jar</code> error, the main class should be specified. By default the plugin consults several locations in the  <code>pom.xml</code> file in the following order to determine what the main class of the image should be:
+  <li>Configuration parameter <code>&lt;mainClass&gt;</code>: if the execution fails with the <code>no main manifest attribute, in target/&lt;name&gt;.jar</code> error, the main class should be specified. By default the plugin consults several locations in the  <code>pom.xml</code> file in the following order to determine what the main class of the image should be:
     <ul>
       <li><code>&lt;maven-shade-plugin&gt; &lt;transformers&gt; &lt;transformer&gt; &lt;mainClass&gt;</code></li>
       <li><code>&lt;maven-assembly-plugin&gt; &lt;archive&gt; &lt;manifest&gt; &lt;mainClass&gt;</code></li>
       <li><code>&lt;maven-jar-plugin&gt; &lt;archive&gt; &lt;manifest&gt; &lt;mainClass&gt;</code></li>
     </ul>
   </li>
-  <li>Configuration parameter <code>&lt;imageName&gt;</code>. If an image filename is not set explicitly, use parameter <code>&lt;imageName&gt;</code> to provide a custom filename for the image.</li>
-  <li>Configuration parameter <code>&lt;buildArgs&gt;</code>. If you want to pass additional options for the image building, use the <code>&lt;buildArgs&gt;</code> parameter the definition of the plugin. For example, to build a native image with assertions enabled that uses <em>com.test.classname</em> as a main class, add:</li>
+  <li>Configuration parameter <code>&lt;imageName&gt;</code>: if an image filename is not set explicitly, use parameter <code>&lt;imageName&gt;</code> to provide a custom filename for the image.</li>
+  <li>Configuration parameter <code>&lt;buildArgs&gt;</code>: if you want to pass additional options for to the native image builder, use the <code>&lt;buildArgs&gt;</code> parameter in the definition of the plugin. For example, to build a native image with assertions enabled that uses <em>com.test.classname</em> as a main class, add:</li>
 </ol>
 
 <pre><code>&lt;configuration&gt;

@@ -869,34 +869,35 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="dynamic-proxy-on-native-image">
+                <h1 id="dynamic-proxy-in-native-image">
         
         
-          Dynamic Proxy on Native Image
+          Dynamic Proxy in Native Image
         
         
       </h1>
 
-<p>Java dynamic proxies, implemented by <code>java.lang.reflect.Proxy</code>, provide a mechanism which enables object level access control by routing all method invocations through a <code>java.lang.reflect.InvocationHandler</code>.
+<p>Java dynamic proxies, implemented by <code>java.lang.reflect.Proxy</code>, provide a mechanism which enables object level access control by routing all method invocations through <code>java.lang.reflect.InvocationHandler</code>.
 Dynamic proxy classes are generated from a list of interfaces.</p>
 
-<p>Substrate VM does not provide machinery for generating and interpreting bytecodes at run time.
+<p>Native Image does not provide machinery for generating and interpreting bytecodes at run time.
 Therefore all dynamic proxy classes need to be generated at native image build time.</p>
 
-<p>See also the <a href="/reference-manual/native-image/Configuration/">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
+<p>See also the <a href="/reference-manual/native-image/Configuration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
     
-      <h1 id="automatic-detection">
+      <h2 id="automatic-detection">
         
         
-          Automatic Detection
+          Automatic Detection <a href="#automatic-detection" class="anchor_heading">#</a>
         
         
-      </h1>
-<p>Substrate VM employs a simple static analysis that detects calls to <code>java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class&lt;?&gt;[], InvocationHandler)</code> and <code>java.lang.reflect.Proxy.getProxyClass(ClassLoader, Class&lt;?&gt;[])</code> and tries to determine the list of interfaces that define dynamic proxies automatically. Given the list of interfaces, Substrate VM generates the proxy classes at image build time and adds them to the native image heap.
-In addition to generating the dynamic proxy class the constructor of the generated class that takes a <code>java.lang.reflect.InvocationHandler</code> argument, i.e., the one reflectively invoked by <code>java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class&lt;?&gt;[], InvocationHandler)</code>, is registered for reflection so that dynamic proxy instances can be allocated at run time.</p>
+      </h2>
+
+<p>Native Image employs a simple static analysis that detects calls to <code>java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class&lt;?&gt;[], InvocationHandler)</code> and <code>java.lang.reflect.Proxy.getProxyClass(ClassLoader, Class&lt;?&gt;[])</code>, then tries to determine the list of interfaces that define dynamic proxies automatically. Given the list of interfaces, Native Image generates proxy classes at image build time and adds them to the native image heap.
+In addition to generating the dynamic proxy class, the constructor of the generated class that takes a <code>java.lang.reflect.InvocationHandler</code> argument, i.e., the one reflectively invoked by <code>java.lang.reflect.Proxy.newProxyInstance(ClassLoader, Class&lt;?&gt;[], InvocationHandler)</code>, is registered for reflection so that dynamic proxy instances can be allocated at run time.</p>
 
 <p>The analysis is limited to situations where the list of interfaces comes from a constant array or an array that is allocated in the same method.
-For example in the code snippets bellow the dynamic proxy interfaces can be determined automatically.</p>
+For example, in the code snippets bellow the dynamic proxy interfaces can be determined automatically.</p>
     
       <h4 id="static-final-array">
         
@@ -917,9 +918,8 @@ For example in the code snippets bellow the dynamic proxy interfaces can be dete
     }
 }
 </code></pre>
-<p>Note: The analysis operates on Graal graphs and not source code.
+<p>Note: the analysis operates on Graal graphs and not source code.
 Therefore the following ways to declare and populate an array are equivalent from the point of view of the analysis:</p>
-
 <pre><code>private static final Class&lt;?&gt;[] interfacesArrayPreInitialized = new Class&lt;?&gt;[]{java.util.Comparator.class};
 </code></pre>
 
@@ -931,9 +931,9 @@ static {
     interfacesArrayPostInitialized[0] = java.util.Comparator.class;
 }
 </code></pre>
-<p>However, in Java there are no immutable arrays.
-Even if the array is declared as <code>static final</code> its contents can change later on.
-The simple analysis that we employ here doesn’t track further changes to the array.</p>
+<p>However, there are no immutable arrays in Java.
+Even if the array is declared as <code>static final</code>, its contents can change later on.
+The simple analysis employed here does not track further changes to the array.</p>
     
       <h4 id="new-array">
         
@@ -943,7 +943,7 @@ The simple analysis that we employ here doesn’t track further changes to the a
         
       </h4>
 
-<pre><code>class ProxyFactory {
+<pre><code class="language-java">class ProxyFactory {
 
     static Comparator createProxyInstanceFromNewArray() {
         ClassLoader classLoader = ProxyFactory.class.getClassLoader();
@@ -954,7 +954,7 @@ The simple analysis that we employ here doesn’t track further changes to the a
 }
 </code></pre>
 
-<p>Note: Just like with constant arrays, the following ways to declare and populate an array are equivalent from the point of view of the analysis:</p>
+<p>Note: just like with constant arrays, the following ways to declare and populate an array are equivalent from the point of view of the analysis:</p>
 <pre><code>Class&lt;?&gt;[] interfaces = new Class&lt;?&gt;[]{java.util.Comparator.class};
 </code></pre>
 
@@ -975,8 +975,8 @@ For the exceptional cases where the analysis cannot discover the interface array
         
         
       </h2>
-<p>Dynamic proxy classes can be generated at native image build time by specifying the list of interfaces that they implement.
-Substrate VM provides two options for this purpose: <code>-H:DynamicProxyConfigurationFiles=&lt;comma-separated-config-files&gt;</code> and <code>-H:DynamicProxyConfigurationResources=&lt;comma-separated-config-resources&gt;</code>.</p>
+
+<p>Dynamic proxy classes can be generated at native image build time by specifying the list of interfaces that they implement. Native Image provides two options for this purpose: <code>-H:DynamicProxyConfigurationFiles=&lt;comma-separated-config-files&gt;</code> and <code>-H:DynamicProxyConfigurationResources=&lt;comma-separated-config-resources&gt;</code>.</p>
 
 <p>These options accept JSON files whose structure is an array of arrays of fully qualified interface names. For example:</p>
 <pre><code class="language-json">[
@@ -986,8 +986,7 @@ Substrate VM provides two options for this purpose: <code>-H:DynamicProxyConfigu
 ]
 </code></pre>
 
-<p>The <code>java.lang.reflect.Proxy</code> API also allows creation of a dynamic proxy that doesn’t implement any user provided interfaces.
-Therefore the following is a valid configuration:</p>
+<p>The <code>java.lang.reflect.Proxy</code> API also allows creation of a dynamic proxy that does not implement any user provided interfaces. Therefore the following is a valid configuration:</p>
 <pre><code class="language-json">[
     []
 ]
@@ -1005,7 +1004,7 @@ Therefore the following is a valid configuration:</p>
 
 <p>Dynamic proxy classes and instances of dynamic proxy classes that are defined in static initializers can be accessed at run time without any special handling.
 This is possible since the static initializers are executed at native image build time.
-For example this will work:</p>
+For example, this will work:</p>
 <pre><code class="language-java">private final static Comparator proxyInstance;
 private final static Class&lt;?&gt; proxyClass;
 static {

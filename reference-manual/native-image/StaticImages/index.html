@@ -878,7 +878,7 @@ $(document).ready(function(){
       </h1>
 
 <p>Static native images are statically linked binaries which can be used without any additional library dependencies.
-This makes them suitable for use in a <code>FROM scratch</code> Docker container.</p>
+This makes them suitable for use in a Docker container.</p>
     
       <h2 id="prerequisites">
         
@@ -888,74 +888,74 @@ This makes them suitable for use in a <code>FROM scratch</code> Docker container
         
       </h2>
 <ul>
-  <li>Right now, this only works on Linux AMD64 on Java 11</li>
-  <li>You will need <code>gcc</code>, <code>make</code> and <code>configure</code>.</li>
-  <li>Create a directory that will hold the libraries we build. We will refer to this directory as <code>${RESULT_DIR}</code></li>
-  <li>Download the latest <code>musl</code> release from <a href="https://musl.libc.org/">here</a>. This document will use <code>musl-1.2.0</code></li>
-  <li>Download the latest <code>zlib</code> release from <a href="https://zlib.net/">here</a>. This document will use <code>zlib-1.2.11</code></li>
+  <li>Right now, this only works on Linux AMD64 on Java 11.</li>
+  <li>You will need <code>gcc</code>, <code>make</code>, and <code>configure</code>.</li>
+  <li>Create a directory that will hold the libraries you build. You will refer to this directory as <code>${RESULT_DIR}</code>.</li>
+  <li>Download the latest <code>musl</code> release <a href="https://musl.libc.org/">here</a>. This document will use <code>musl-1.2.0</code>.</li>
+  <li>Download the latest <code>zlib</code> release <a href="https://zlib.net/">here</a>. This document will use <code>zlib-1.2.11</code>.</li>
 </ul>
     
-      <h3 id="building-musl">
+      <h4 id="building-musl">
         
         
-          Building musl <a href="#building-musl" class="anchor_heading">#</a>
+          Building musl
         
         
-      </h3>
+      </h4>
 <ul>
-  <li>Extract the musl release <code>tarball</code> and <code>cd</code> into the extracted directory</li>
-  <li>Run <code>./configure --disable-shared --prefix=${RESULT_DIR}</code></li>
-  <li>Run <code>make</code></li>
-  <li>Run <code>make install</code>
+  <li>Extract the musl release <code>tarball</code> and <code>cd</code> into the extracted directory.</li>
+  <li>Run <code>./configure --disable-shared --prefix=${RESULT_DIR}</code>.</li>
+  <li>Run <code>make</code>.</li>
+  <li>Run <code>make install</code>.
 Other than building <code>musl</code> libraries, the build also creates a <code>gcc</code> wrapper called <code>musl-gcc</code> in the <code>${RESULT_DIR}/bin</code> directory.
-You should now put this wrapper on your <code>PATH</code> by running <code>export PATH=$PATH:${RESULT_DIR}/bin</code></li>
+You should now put this wrapper on your <code>PATH</code> by running <code>export PATH=$PATH:${RESULT_DIR}/bin</code>.</li>
 </ul>
     
-      <h3 id="building-zlib">
+      <h4 id="building-zlib">
         
         
-          Building zlib <a href="#building-zlib" class="anchor_heading">#</a>
+          Building zlib
         
         
-      </h3>
+      </h4>
 <ul>
-  <li>Extract the zlib release <code>tarball</code> and <code>cd</code> into the extracted directory</li>
-  <li>We want to compile zlib and link it against musl so we set <code>CC</code> to <code>musl-gcc</code>: <code>export CC=musl-gcc</code></li>
-  <li>Run <code>./configure --static --prefix=${RESULT_DIR}</code></li>
-  <li>Run <code>make</code></li>
-  <li>Run <code>make install</code></li>
+  <li>Extract the zlib release <code>tarball</code> and <code>cd</code> into the extracted directory.</li>
+  <li>You need to compile zlib and link it against musl so set <code>CC</code> to <code>musl-gcc</code>: <code>export CC=musl-gcc</code>.</li>
+  <li>Run <code>./configure --static --prefix=${RESULT_DIR}</code>.</li>
+  <li>Run <code>make</code>.</li>
+  <li>Run <code>make install</code>.</li>
 </ul>
     
-      <h3 id="getting-libstdc">
+      <h4 id="getting-libstdc">
         
         
-          Getting libstdc++ <a href="#getting-libstdc" class="anchor_heading">#</a>
+          Getting libstdc++
         
         
-      </h3>
+      </h4>
 <p><code>libstdc++</code> is obtained by building gcc. There are multiple approaches to obtaining it:</p>
 <ol>
-  <li>Build gcc with <code>musl-gcc</code></li>
-  <li>Use <code>libstdc++.a</code> from your distribution. If you choose this path, please see the <a href="https://www.musl-libc.org/faq.html">FAQs</a> page, “How do I use the musl-gcc wrapper?”:
+  <li>Build gcc with <code>musl-gcc</code>.</li>
+  <li>Use <code>libstdc++.a</code> from your distribution. If you choose this path, check the <a href="https://www.musl-libc.org/faq.html">FAQs</a> page, “How do I use the musl-gcc wrapper?”:
     <blockquote>
       <p>The existing libstdc++ is actually compatible with musl in most cases and could be used by copying it into the musl library path, but the C++ header files are usually not compatible.
- As we do not need C++ header files, this approach should work but if you run into issues, make sure they are not caused by your ditribution’s <code>libstdc++.a</code>.</p>
+ Since do not need C++ header files, this approach should work. If you run into issues, make sure they are not caused by your ditribution’s <code>libstdc++.a</code>.</p>
     </blockquote>
   </li>
   <li>Take <code>libstdc++.a</code> from Alpine.
-In each case, <code>libstdc++.a</code> must be placed in <code>${RESULT_DIR}/lib</code></li>
+In each case, <code>libstdc++.a</code> must be placed in <code>${RESULT_DIR}/lib</code>.</li>
 </ol>
     
-      <h3 id="creating-a-static-native-image">
+      <h4 id="creating-a-static-native-image">
         
         
-          Creating a static native-image <a href="#creating-a-static-native-image" class="anchor_heading">#</a>
+          Creating a static native image
         
         
-      </h3>
+      </h4>
 <ul>
   <li>Verify that <code>musl-gcc</code> is on the path by running <code>musl-gcc -v</code>. If you get an error saying that <code>musl-gcc</code> is not found, something went wrong.</li>
-  <li>Run <code>native-image --static --libc=musl &lt;...other native-image arguments...&gt;</code> to create a static native-image.</li>
+  <li>Run <code>native-image --static --libc=musl &lt;...other native-image arguments...&gt;</code> to create a static native image.</li>
 </ul>
 
               </div>
