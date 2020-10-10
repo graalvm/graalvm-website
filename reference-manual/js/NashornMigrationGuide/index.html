@@ -768,82 +768,123 @@ Note that you have to enable <a href="/reference-manual/js/Options/#stable-and-e
 Further note that setting this flag defeats the <a href="#secure-by-default">secure by default</a> approach of GraalVM JavaScript in some cases, e.g., when operating on a legacy <code>ScriptEngine</code>.</p>
 
 <p>The <code>js.nashorn-compat</code> option can be set:</p>
-<ol>
-  <li>by using a command line option:
-    <pre><code>js --experimental-options --js.nashorn-compat=true
+
+<p>a) by using a command line option:</p>
+<pre><code class="language-shell">js --experimental-options --js.nashorn-compat=true
 </code></pre>
-  </li>
-  <li>by using the Polyglot API:
-```java
-import org.graalvm.polyglot.Context;</li>
-</ol>
+<p>b)  by using the Polyglot API:</p>
+<pre><code class="language-java">import org.graalvm.polyglot.Context;
 
-<p>try (Context context = Context.newBuilder().allowExperimentalOptions(true).option(“js.nashorn-compat”, “true”).build()) {
-    context.eval(“js”, “print(<strong>LINE</strong>)”);
-}</p>
-<pre><code>
-3. by using a system property when starting a Java application (remember to enable `allowExperimentalOptions` on the `Context.Builder` in your application as well):
+try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("js.nashorn-compat", "true").build()) {
+    context.eval("js", "print(__LINE__)");
+}
 </code></pre>
-<p>java -Dpolyglot.js.nashorn-compat=true MyApplication</p>
-<pre><code>
-Functionality only available under this flag includes:
-* `Java.isJavaFunction`, `Java.isJavaMethod`, `Java.isScriptObject`, `Java.isScriptFunction`
-* `new Interface|AbstractClass(fn|obj)`
-* `JavaImporter`
-* `JSAdapter`
-* `java.lang.String` methods on string values
-* `load("nashorn:parser.js")`, `load("nashorn:mozilla_compat.js")`
-* `exit`, `quit`
+<p>c) by using a system property when starting a Java application (remember to enable <code>allowExperimentalOptions</code> on the <code>Context.Builder</code> in your application as well):</p>
+<pre><code class="language-shell">java -Dpolyglot.js.nashorn-compat=true MyApplication
+</code></pre>
+<p>Functionality only available under this flag includes:</p>
+<ul>
+  <li><code>Java.isJavaFunction</code>, <code>Java.isJavaMethod</code>, <code>Java.isScriptObject</code>, <code>Java.isScriptFunction</code></li>
+  <li><code>new Interface|AbstractClass(fn|obj)</code></li>
+  <li><code>JavaImporter</code></li>
+  <li><code>JSAdapter</code></li>
+  <li><code>java.lang.String</code> methods on string values</li>
+  <li><code>load("nashorn:parser.js")</code>, <code>load("nashorn:mozilla_compat.js")</code></li>
+  <li><code>exit</code>, <code>quit</code></li>
+</ul>
+    
+      <h2 id="nashorn-syntax-extensions">
+        
+        
+          Nashorn Syntax Extensions <a href="#nashorn-syntax-extensions" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-## Nashorn Syntax Extensions
-
-[Nashorn syntax extensions](https://wiki.openjdk.java.net/display/Nashorn/Nashorn+extensions) can be enabled using the `js.syntax-extensions` experimental option.
-They're also enabled by default in Nashorn compatibility mode (`js.nashorn-compat`).
-
-## Intentional Design Differences
-GraalVM JavaScript differs from Nashorn in some aspects that were intentional design decisions.
-
-## Secure by Default
-GraalVM JavaScript takes a _secure by default_ approach.
+<p><a href="https://wiki.openjdk.java.net/display/Nashorn/Nashorn+extensions">Nashorn syntax extensions</a> can be enabled using the <code>js.syntax-extensions</code> experimental option.
+They’re also enabled by default in Nashorn compatibility mode (<code>js.nashorn-compat</code>).</p>
+    
+      <h2 id="intentional-design-differences">
+        
+        
+          Intentional Design Differences <a href="#intentional-design-differences" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<p>GraalVM JavaScript differs from Nashorn in some aspects that were intentional design decisions.</p>
+    
+      <h2 id="secure-by-default">
+        
+        
+          Secure by Default <a href="#secure-by-default" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<p>GraalVM JavaScript takes a <em>secure by default</em> approach.
 Unless explicitly permitted by the embedder, JavaScript code cannot access Java classes or access the file system, among other restrictions.
 Several features of GraalVM JavaScript, including Nashorn compatibility features, are only available when the relevant security settings are permissive enough.
-Make sure you [understand the security implications](https://www.graalvm.org/docs/security-guide/) to your application and the host system of any change that lifts the secure default limits!
+Make sure you <a href="https://www.graalvm.org/docs/security-guide/">understand the security implications</a> to your application and the host system of any change that lifts the secure default limits!</p>
 
-For a full list of available settings, see the [JavaDoc of `Context.Builder`](https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html).
-Those flags can be defined when building the context with GraalVM's polyglot API.
-Flags frequently required to enable features of GraalVM JavaScript are:
-* `allowHostAccess()`: Configures which public constructors, methods or fields of public classes are accessible by guest applications. Use `HostAccess.EXPLICIT` or a custom HostAccess policy to selectively enable access. Set to `HostAccess.ALL` to allow unrestricted access.
-* `allowHostClassLookup()`: Sets a filter that specifies the Java host classes that can be looked up by the guest application. Set to the Predicate `className -&gt; true` to allow lookup of all classes.
-* `allowIO()`: Allows the guest language to perform unrestricted IO operations on host system, required e.g. to `load()` from the file system. Set to `true` to enable IO.
+<p>For a full list of available settings, see the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html">JavaDoc of <code>Context.Builder</code></a>.
+Those flags can be defined when building the context with GraalVM’s polyglot API.
+Flags frequently required to enable features of GraalVM JavaScript are:</p>
+<ul>
+  <li><code>allowHostAccess()</code>: Configures which public constructors, methods or fields of public classes are accessible by guest applications. Use <code>HostAccess.EXPLICIT</code> or a custom HostAccess policy to selectively enable access. Set to <code>HostAccess.ALL</code> to allow unrestricted access.</li>
+  <li><code>allowHostClassLookup()</code>: Sets a filter that specifies the Java host classes that can be looked up by the guest application. Set to the Predicate <code>className -&gt; true</code> to allow lookup of all classes.</li>
+  <li><code>allowIO()</code>: Allows the guest language to perform unrestricted IO operations on host system, required e.g. to <code>load()</code> from the file system. Set to <code>true</code> to enable IO.</li>
+</ul>
 
-If you run code on the legacy `ScriptEngine`, see [Setting options via `Bindings`](https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md#setting-options-via-bindings) how to set them there.
+<p>If you run code on the legacy <code>ScriptEngine</code>, see <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md#setting-options-via-bindings">Setting options via <code>Bindings</code></a> how to set them there.</p>
 
-Finally, note that the `nashorn-compat` mode enables the relevant flags when executing code on the `ScriptEngine` (but not on `Context`), to provide better compatibilty with Nashorn in that setup.
-
-### Launcher Name `js`
-When shipped with GraalVM, GraalVM JavaScript comes with a binary launcher named `js`.
-Note that, depending on the build setup, GraalVM might still ship Nashorn and its `jjs` launcher.
-
-### ScriptEngine Name `graal.js`
-GraalVM JavaScript is shipped with ScriptEngine support.
-It registers under several names, including "graal.js", "JavaScript", "js".
+<p>Finally, note that the <code>nashorn-compat</code> mode enables the relevant flags when executing code on the <code>ScriptEngine</code> (but not on <code>Context</code>), to provide better compatibilty with Nashorn in that setup.</p>
+    
+      <h3 id="launcher-name-js">
+        
+        
+          Launcher Name <code>js</code> <a href="#launcher-name-js" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>When shipped with GraalVM, GraalVM JavaScript comes with a binary launcher named <code>js</code>.
+Note that, depending on the build setup, GraalVM might still ship Nashorn and its <code>jjs</code> launcher.</p>
+    
+      <h3 id="scriptengine-name-graaljs">
+        
+        
+          ScriptEngine Name <code>graal.js</code> <a href="#scriptengine-name-graaljs" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>GraalVM JavaScript is shipped with ScriptEngine support.
+It registers under several names, including “graal.js”, “JavaScript”, “js”.
 Be sure to activate the Nashorn compatibility mode as described above if you need full Nashorn compatibility.
-Depending on the build setup, GraalVM might still ship Nashorn and provide it via ScriptEngine.
+Depending on the build setup, GraalVM might still ship Nashorn and provide it via ScriptEngine.</p>
 
-For more details, see [ScriptEngine.md](/reference-manual/js/ScriptEngine/).
-
-### `ClassFilter`
-GraalVM JavaScript supports a class filter when starting with a polyglot `Context`.
-See the [JavaDoc of `Context.Builder.hostClassFilter`](http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#hostClassFilter-java.util.function.Predicate-)
-
-### Fully Qualified Names
-GraalVM Javascript requires the use of `Java.type(typename)`.
+<p>For more details, see <a href="/reference-manual/js/ScriptEngine/">ScriptEngine.md</a>.</p>
+    
+      <h3 id="classfilter">
+        
+        
+          <code>ClassFilter</code> <a href="#classfilter" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>GraalVM JavaScript supports a class filter when starting with a polyglot <code>Context</code>.
+See the <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#hostClassFilter-java.util.function.Predicate-">JavaDoc of <code>Context.Builder.hostClassFilter</code></a></p>
+    
+      <h3 id="fully-qualified-names">
+        
+        
+          Fully Qualified Names <a href="#fully-qualified-names" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>GraalVM Javascript requires the use of <code>Java.type(typename)</code>.
 It does not support accessing classes just by their fully qualified class name by default.
-`Java.type` brings more clarity and avoids the accidental use of Java classes in JavaScript code.
-Patterns like this:
+<code>Java.type</code> brings more clarity and avoids the accidental use of Java classes in JavaScript code.
+Patterns like this:</p>
 
-```js
-var bd = new java.math.BigDecimal('10');
+<pre><code class="language-js">var bd = new java.math.BigDecimal('10');
 </code></pre>
 
 <p>should be expressed as:</p>

@@ -790,7 +790,7 @@ For that, a new <code>org.graalvm.polyglot.Context</code> is built with the <cod
 
 <pre><code class="language-java">Context context = Context.newBuilder("js").
     allowHostAccess(HostAccess.ALL).
-    allowHostClassLookup(className -&gt; true).  //allows access to all Java classes
+    allowHostClassLookup(className -&gt; true). //all Java classes permitted
     build();
 context.eval("js", jsSourceCode);
 </code></pre>
@@ -839,16 +839,20 @@ While the overall feature set is mostly comparable, the engines differ in exact 
 <p>By default, Java classes are not automatically mapped to global variables, e.g., there is no <code>java</code> global property in GraalVM JavaScript.
 Existing code accessing e.g. <code>java.io.File</code> should be rewritten to use the <code>Java.type(name)</code> function.</p>
 
-<pre><code class="language-js">var FileClass = Java.type("java.io.File"); //GraalVM JavaScript compliant syntax
-var FileClass = java.io.File;              //FAILS in GraalVM JavaScript
+<pre><code class="language-js">//GraalVM JavaScript compliant syntax
+var FileClass = Java.type("java.io.File");
+//backwards-compatible syntax
+var FileClass = java.io.File;
 </code></pre>
 
-<p>GraalVM JavaScript provides a <code>Packages</code> global property (and <code>java</code> etc. if the <code>js.nashorn-compat</code> option is set) for compatibility.
+<p>GraalVM JavaScript provides a <code>Packages</code> global property and <code>java</code> and similar global properties for compatibility.
 However, explicitly accessing the required class with <code>Java.type</code> should be preferred whenever possible for two reasons:</p>
 <ol>
   <li>It allows resolving the class in one step rather than trying to resolve each property as a class.</li>
   <li><code>Java.type</code> immediately throws a <code>TypeError</code> if the class cannot be found or is not accessible rather than silently treating an unresolved name as a package.</li>
 </ol>
+
+<p>The <code>js.java-package-globals</code> flag can be used to deactivate the global fields of Java packages (set <code>false</code> to avoid creation of the fields; default is <code>true</code>).</p>
     
       <h3 id="constructing-java-objects">
         
@@ -1137,7 +1141,8 @@ public interface PromiseExecutor {
 }
 </code></pre>
 <p>Any Java object implementing <code>PromiseExecutor</code> can be used to create a JavaScript <code>Promise</code>:</p>
-<pre><code>// `javaExecutable` is a Java object implementing the `PromiseExecutor` interface
+<pre><code>// `javaExecutable` is a Java object
+// implementing the `PromiseExecutor` interface
 var myPromise = new Promise(javaExecutable).then(...);
 </code></pre>
 <p>JavaScript <code>Promise</code> objects can be created not only using functional interfaces, but also using any other Java object that can be executed by the GraalVM JavaScript engine (for example, any Java object implementing the Polyglot <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/proxy/ProxyExecutable.html">ProxyExecutable</a> interface).
@@ -1172,7 +1177,8 @@ More detailed example usages are available in the GraalVM JavaScript <a href="ht
 Java code can access such objects like normal <code>Value</code> objects, with the possibility to register new promise resolution functions using the <code>Promise</code>’s default <code>then()</code> and <code>catch()</code> functions.
 As an example, the following Java code registers a Java callback to be executed when a JavaScript promise resolves:</p>
 <pre><code>Value jsPromise = context.eval(ID, "Promise.resolve(42);");
-Consumer&lt;Object&gt; javaThen = (value) -&gt; System.out.println("Resolved from JavaScript: " + value);
+Consumer&lt;Object&gt; javaThen =
+    (value) -&gt; System.out.println("Resolved from JavaScript: " + value);
 jsPromise.invokeMember("then", javaThen);
 </code></pre>
 <p>More detailed example usages are available in the GraalVM JavaScript <a href="https://github.com/graalvm/graaljs/blob/master/graal-js/src/com.oracle.truffle.js.test/src/com/oracle/truffle/js/test/interop/AsyncInteropTest.java">unit tests</a>.</p>

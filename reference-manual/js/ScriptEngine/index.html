@@ -767,12 +767,14 @@ started in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</
 <p>To set an option via <code>Bindings</code>, use <code>Bindings.put(&lt;option name&gt;, true)</code> <strong>before</strong> the engine’s script context is initialized. Note that
 even a call to <code>Bindings#get(String)</code> may lead to context initialization.
 The following code shows how to enable <code>polyglot.js.allowHostAccess</code> via <code>Bindings</code>:</p>
-<pre><code>ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
-Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
+<pre><code>ScriptEngine eng = new ScriptEngineManager().getEngineByName("JavaScript");
+Bindings bindings = eng.getBindings(ScriptContext.ENGINE_SCOPE);
 bindings.put("polyglot.js.allowHostAccess", true);
-bindings.put("polyglot.js.allowHostClassLookup", (Predicate&lt;String&gt;) s -&gt; true);
+bindings.put("polyglot.js.allowHostClassLookup",
+    (Predicate&lt;String&gt;) s -&gt; true);
 bindings.put("javaObj", new Object());
-engine.eval("(javaObj instanceof Java.type('java.lang.Object'));"); // would not work without allowHostAccess and allowHostClassLookup
+// next line would fail without allowHostAccess and allowHostClassLookup
+eng.eval("(javaObj instanceof Java.type('java.lang.Object'));");
 </code></pre>
 <p>This example would not work if the user would call e.g. <code>engine.eval("var x = 1;")</code> before calling <code>bindings.put("polyglot.js.allowHostAccess", true);</code>, since
 any call to <code>eval</code> forces context initialization.</p>
