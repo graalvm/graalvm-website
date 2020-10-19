@@ -372,7 +372,7 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/reference-manual/native-image/Configuration/">
+            <a href="/reference-manual/native-image/BuildConfiguration/">
               Native Image Configuration
             </a>
           </li>
@@ -517,17 +517,6 @@ $(document).ready(function(){
             
             <a href="/reference-manual/native-image/MemoryManagement/">
               Memory Management
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/reference-manual/native-image/LowLatencyGC/">
-              Low Latency Garbage Collection
             </a>
           </li>
 
@@ -880,7 +869,7 @@ $(document).ready(function(){
 <p>JNI is a native API that enables Java code to interact with native code and vice versa.
 This page gives an overview of the JNI implementation in Native Image.</p>
 
-<p>See also the <a href="/reference-manual/native-image/Configuration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
+<p>See also the <a href="https://github.com/oracle/graal/blob/master/substratevm/Configuration.md#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
     
       <h2 id="integration">
         
@@ -915,7 +904,7 @@ The native image builder must know beforehand which items will be looked up in c
 Moreover, the native image builder must generate call wrapper code ahead-of-time for any method that can be called via JNI.
 Therefore, specifying a concise list of items that need to be accessible via JNI guarantees their availability and allows for a smaller footprint.
 Such a list can be specified with the following image build argument:</p>
-<pre><code>-H:JNIConfigurationFiles=/path/to/jniconfig
+<pre><code class="language-shell">-H:JNIConfigurationFiles=/path/to/jniconfig
 </code></pre>
 <p>Here, <code>jniconfig</code> is a JSON configuration file.
 The syntax is the same as for reflection configuration files, which are described on the <a href="/reference-manual/native-image/Reflection/">Reflection Use</a> page.</p>
@@ -976,7 +965,7 @@ The analysis is not obstructed by object handles because it can observe the enti
 <pre><code>// Java declaration
 native int[] sort0(int[] array);
 // native declaration with JNI name mangling
-jintArray JNICALL Java_org_example_sorter_IntSorter_sort0(JNIEnv *env, jobject this, jintArray array) {
+jintArray JNICALL Java_org_example_sorter_IntSorter_sort0(JNIEnv *env, jobject this, jintArray array)
 </code></pre>
 
 <p>When the image build encounters a method that is declared native, it generates a graph with a wrapper that performs the transition to native code and back, adds the <code>JNIEnv*</code> and <code>this</code> arguments, boxes any object arguments in handles, and in case of an object return type, unboxes the returned handle.</p>
@@ -994,8 +983,8 @@ Alternatively, instead of requiring symbols that conform to JNI name mangling sc
         
       </h2>
 <p>JNI provides a set of functions that native code can use to interact with Java code.
-Native Image implements these functions using <code>@CEntryPoint</code>. For example:</p>
-<pre><code>@CEntryPoint(...) private static void DeleteGlobalRef(JNIEnvironment env, JNIObjectHandle globalRef) { /* setup; */ JNIGlobalHandles.singleton().delete(globalRef); }
+Substrate VM implements these functions using <code>@CEntryPoint</code>, for example:</p>
+<pre><code class="language-c">@CEntryPoint(...) private static void DeleteGlobalRef(JNIEnvironment env, JNIObjectHandle globalRef) { /* setup; */ JNIGlobalHandles.singleton().delete(globalRef); }
 </code></pre>
 <p>JNI specifies that these functions are provided via function pointers in a C struct that is accessible via the <code>JNIEnv*</code> argument.
 The automatic initialization of this struct is prepared during the native image build.</p>

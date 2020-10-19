@@ -372,7 +372,7 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/reference-manual/native-image/Configuration/">
+            <a href="/reference-manual/native-image/BuildConfiguration/">
               Native Image Configuration
             </a>
           </li>
@@ -517,17 +517,6 @@ $(document).ready(function(){
             
             <a href="/reference-manual/native-image/MemoryManagement/">
               Memory Management
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/reference-manual/native-image/LowLatencyGC/">
-              Low Latency Garbage Collection
             </a>
           </li>
 
@@ -898,8 +887,7 @@ For GraalVM distribution based on JDK 11, you will need MSVC 2017 15.5.5 or late
 
 <p>The last prerequisite, common for both GraalVM distribution based on JDK 11 and JDK 8, is the proper <a href="https://docs.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=vs-2019#developer_command_prompt_shortcuts">Developer Command Prompt</a> for your version of <a href="https://visualstudio.microsoft.com/vs/">Visual Studio</a>. On Windows, the <code>native-image</code> tool only works when it is executed from the x64 Native Tools Command Prompt.</p>
 
-<p>After cloning the repository, run</p>
-<pre><code>cd substratevm
+<pre><code class="language-shell">cd substratevm
 mx build
 
 echo "public class HelloWorld { public static void main(String[] args) { System.out.println(\"Hello World\"); } }" &gt; HelloWorld.java
@@ -950,41 +938,9 @@ In Eclipse, use the debugging configuration <em>substratevm-localhost-8000</em> 
 
 <p>If you have to debug the compiler graphs that are built as part of an image, proceed to the <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">debugging</a> page.
 You can use the <a href="https://docs.oracle.com/en/graalvm/enterprise/20/docs/tools/igv/">Ideal Graph Visualizer (IGV)</a> tool to view individual compilation steps:</p>
-<pre><code>mx igv &amp;&gt;/dev/null &amp;
+<pre><code class="language-shell">mx igv &amp;&gt;/dev/null &amp;
 mx native-image HelloWorld -H:Dump= -H:MethodFilter=HelloWorld.*
 </code></pre>
-    
-      <h2 id="images-and-entry-points">
-        
-        
-          Images and Entry Points <a href="#images-and-entry-points" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>A native image can be built as a standalone executable, which is the default, or as a shared library by passing <code>--shared</code> to the native image builder. For an image to be useful, it needs to have at least one entry point method.</p>
-
-<p>For executables, Native Image supports Java main methods with a signature that takes the command line arguments as an array of strings:</p>
-
-<pre><code class="language-java">public static void main(String[] arg) { /* ... */ }
-</code></pre>
-
-<p>For shared libraries, Native Image provides the <code>@CEntryPoint</code> annotation to specify entry point methods that should be exported and callable from C.
-Entry point methods must be static and may only have non-object parameters and return types – this includes Java primitives, but also Word types (including pointers). One of the parameters of an entry point method has to be of type <code>IsolateThread</code> or <code>Isolate</code>. This parameter provides the current thread’s execution context for the call.</p>
-
-<p>For example:</p>
-
-<pre><code class="language-java">@CEntryPoint static int add(IsolateThread thread, int a, int b) {
-    return a + b;
-}
-</code></pre>
-
-<p>When building a shared library, an additional C header file is generated.
-This header file contains declarations for the <a href="/reference-manual/native-image/C-API/">C API</a>, which allows creating isolates and attaching threads from C code, as well as declarations for each entry point in user code. The generated C declaration for the above example is:</p>
-<pre><code class="language-c">int add(graal_isolatethread_t* thread, int a, int b);
-</code></pre>
-
-<p>Both executable images and shared library images can have an arbitrary number of entry points, for example, to implement callbacks or APIs.</p>
     
       <h2 id="options">
         

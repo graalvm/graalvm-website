@@ -372,7 +372,7 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/reference-manual/native-image/Configuration/">
+            <a href="/reference-manual/native-image/BuildConfiguration/">
               Native Image Configuration
             </a>
           </li>
@@ -517,17 +517,6 @@ $(document).ready(function(){
             
             <a href="/reference-manual/native-image/MemoryManagement/">
               Memory Management
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/reference-manual/native-image/LowLatencyGC/">
-              Low Latency Garbage Collection
             </a>
           </li>
 
@@ -880,21 +869,28 @@ $(document).ready(function(){
 <p>By default, the native image builder will not integrate any of the resources which are on the classpath during the generation into the final image.
 To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or the corresponding ClassLoader methods) return specific resources (instead of null), the resources that should be accessible at image run time need to be explicitly specified. This can be done via a configuration file such as the following:</p>
 
-<pre><code>{
-  "resources": [
-    {"pattern": "&lt;Java regexp that matches resource(s) to be included in the image&gt;"},
-    {"pattern": "&lt;another regexp&gt;"},
-    ...
-  ]
+<pre><code class="language-json">{
+  "resources": {
+    "includes": [
+      {"pattern": "&lt;Java regexp that matches resource(s) to be included in the image&gt;"},
+      {"pattern": "&lt;another regexp&gt;"},
+      ...
+    ],
+    "excludes": [
+      {"pattern": "&lt;Java regexp that matches resource(s) to be excluded from the image&gt;"},
+      {"pattern": "&lt;another regexp&gt;"},
+      ...
+    ]
+  } 
 }
 </code></pre>
 
-<p>The configuration file’s path must be provided to the native image builder with <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>. Alternatively, individual resource paths can also be specified directly to <code>native-image</code>:</p>
-<pre><code>native-image -H:IncludeResources=&lt;Java regexp that matches resources to be included in the image&gt; ...
+<p>The configuration file’s path must be provided to <code>native-image</code> with <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>. Alternatively, individual resource paths can also be specified directly to <code>native-image</code>:</p>
+<pre><code class="language-shell">native-image -H:IncludeResources=&lt;Java regexp that matches resources to be included in the image&gt; -H:ExcludeResources=&lt;Java regexp that matches resources to be excluded from the image&gt; ...
 </code></pre>
-<p>The <code>-H:IncludeResources</code> option can be passed several times to define more than one regexp to match resources.</p>
+<p>The <code>-H:IncludeResources</code> and <code>-H:ExcludeResources</code> options can be passed several times to define more than one regexp to match or exclude resources, respectively.</p>
 
-<p>To see which resources get included into the image, you can enable the related logging info with <code>-H:Log=registerResource:</code>.</p>
+<p>To see which resources get ultimately included into the image, you can enable the related logging info with <code>-H:Log=registerResource:</code>.</p>
     
       <h3 id="example-usage">
         
@@ -922,9 +918,10 @@ To make calls such as <code>Class.getResource()</code> or <code>Class.getResourc
   <li><code>Resource0.txt</code> can be loaded with <code>.*/Resource0.txt$</code>.</li>
   <li><code>Resource0.txt</code> and <code>Resource1.txt</code> can be loaded with <code>.*/Resource0.txt$</code> and <code>.*/Resource1.txt$</code>
 (or alternatively with a single <code>.*/(Resource0|Resource1).txt$</code>).</li>
+  <li>Also, if we want to include everything except the <code>Resource2.txt</code> file, we can simply exclude it with <code>-H:IncludeResources='.*/Resource.*txt$'</code> followed by <code>-H:ExcludeResources='.*/Resource2.txt$'</code>.</li>
 </ul>
 
-<p>See also the <a href="/reference-manual/native-image/Configuration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
+<p>See also the <a href="https://github.com/oracle/graal/blob/master/substratevm/Configuration.md#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
     
       <h2 id="resource-bundles-in-native-image">
         
@@ -948,8 +945,8 @@ To make calls such as <code>Class.getResource()</code> or <code>Class.getResourc
 }
 </code></pre>
 
-<p>Alternatively, bundles can be specified directly as options to the native image builder as follows:</p>
-<pre><code>native-image -H:IncludeResourceBundles=your.pgk.Bundle,another.pkg.Resource,etc.Bundle ...
+<p>Alternatively, bundles can be specified directly as options to <code>native-image</code> as follows:</p>
+<pre><code class="language-shell">native-image -H:IncludeResourceBundles=your.pgk.Bundle,another.pkg.Resource,etc.Bundle ...
 </code></pre>
 
               </div>

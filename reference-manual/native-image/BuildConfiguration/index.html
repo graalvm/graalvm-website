@@ -10,7 +10,7 @@
 
   <title>
     
-      Low Latency Garbage Collection
+      Native Image Configuration
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/LowLatencyGC/">
+  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/BuildConfiguration/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -369,13 +369,31 @@ $(document).ready(function(){
         
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
-            <a href="/reference-manual/native-image/Configuration/">
+            <a href="/reference-manual/native-image/BuildConfiguration/">
               Native Image Configuration
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -519,35 +537,6 @@ $(document).ready(function(){
               Memory Management
             </a>
           </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub toc-bullets-highlight">
-          
-            
-            <a href="/reference-manual/native-image/LowLatencyGC/">
-              Low Latency Garbage Collection
-            </a>
-          </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -869,28 +858,492 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="low-latency-garbage-collection">
+                <h1 id="native-image-build-configuration">
         
         
-          Low Latency Garbage Collection
+          Native Image Build Configuration
         
         
       </h1>
 
-<p>When using GraalVM Enterprise you can enable the experimental option to use a
-lower latency garbage collection implementation. A low latency GC should
-improve the performance of the native image applications by reducing the
-stop-the-world pauses.</p>
+<ul>
+  <li><a href="#embedding-a-configuration-file">Embedding a Configuration File</a></li>
+  <li><a href="#configuration-file-format">Configuration File Format</a></li>
+  <li><a href="#memory-configuration-for-native-image-build">Memory Configuration for Native Image Build</a></li>
+  <li><a href="#runtime-vs-build-time-initialization">Runtime vs Build-Time Initialization</a></li>
+  <li><a href="#assisted-configuration-of-native-image-builds">Assisted Configuration of Native Image Builds</a></li>
+  <li><a href="#building-native-image-with-java-reflection-example">Building Native Image with Java Reflection Example</a></li>
+  <li><a href="#agent-advanced-usage">Agent Advanced Usage</a></li>
+</ul>
 
-<p>Note: This feature is available with <strong>GraalVM Enterprise</strong> only.</p>
+<p>Native Image supports a wide range of options to configure a native image build process.</p>
+    
+      <h2 id="embedding-a-configuration-file">
+        
+        
+          Embedding a Configuration File <a href="#embedding-a-configuration-file" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<p>To enable it use the <code>-H:+UseLowLatencyGC</code> option when building a native image.</p>
+<p>A recommended way to provide configuration is to embed a
+<strong>native-image.properties</strong> file into a project JAR file. The Native Image builder
+will automatically pick up all configuration options provided anywhere below the
+resource location <code>META-INF/native-image/</code> and use it to construct
+<code>native-image</code> command line arguments.</p>
 
-<p>Currently, the lower latency GC works on Linux in the AMD64 builds. One can
-configure the default run-time heap size at image build time, e.g.,
-<code>-R:MinHeapSize=256m -R:MaxHeapSize=2g -R:MaxNewSize=128m</code>.</p>
+<p>To avoid a situation when constituent parts of a project are built
+with overlapping configurations, it is recommended to use “subdirectories” within
+<code>META-INF/native-image</code>. That way a JAR file built from multiple maven projects
+cannot suffer from overlapping <code>native-image</code> configurations. For example:</p>
+<ul>
+  <li><em>foo.jar</em> has its configurations in <code>META-INF/native-image/foo_groupID/foo_artifactID</code></li>
+  <li><em>bar.jar</em> has its configurations in <code>META-INF/native-image/bar_groupID/bar_artifactID</code></li>
+</ul>
 
-<p>You can use <code>-XX:+PrintGC</code>, <code>-XX:+VerboseGC</code> to get some information about garbage collections.</p>
+<p>The JAR file that contains <code>foo</code> and <code>bar</code> will then contain both configurations
+without conflicting with one another. Therefore the recommended layout for
+storing native image configuration data in JAR files is the following:</p>
+<pre><code>META-INF/
+└── native-image
+    └── groupID
+        └── artifactID
+            └── native-image.properties
+</code></pre>
+
+<p>Note that the use of <code>${.}</code> in a <em>native-image.properties</em> file expands to the
+resource location that contains that exact configuration file. This can be
+useful if the <em>native-image.properties</em> file wants to refer to resources within
+its “subfolder”, for example, <code>-H:SubstitutionResources=${.}/substitutions.json</code>.
+Always make sure to use the option variants that take resources, i.e., use
+<code>-H:ResourceConfigurationResources</code> instead of <code>-H:ResourceConfigurationFiles</code>.
+Other options that are known to work in this context are:</p>
+<ul>
+  <li><code>-H:DynamicProxyConfigurationResources</code></li>
+  <li><code>-H:JNIConfigurationResources</code></li>
+  <li><code>-H:ReflectionConfigurationResources</code></li>
+  <li><code>-H:ResourceConfigurationResources</code></li>
+  <li><code>-H:SubstitutionResources</code></li>
+</ul>
+
+<p>By having such a composable <em>native-image.properties</em> file, building an image
+does not require any additional arguments specified on command line. It is
+sufficient to just run the following command:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/native-image -jar target/&lt;name&gt;.jar
+</code></pre>
+
+<p>To debug which configuration data gets applied for the image building, use <code>native-image --verbose</code>. This will show from where <code>native-image</code> picks up the
+configurations to construct the final composite configuration command line
+options for the native image builder.</p>
+<pre><code class="language-shell">native-image --verbose -jar build/basic-app-0.1-all.jar
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/common/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/buffer/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/transport/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/handler/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/codec-http/native-image.properties
+...
+Executing [
+    &lt;composite configuration command line options for the image builder&gt;
+]
+</code></pre>
+
+<p>Typical examples of <code>META-INF/native-image</code> based native image configuration can be found in <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image-configure-examples">Native Image configuration examples</a>.</p>
+    
+      <h2 id="configuration-file-format">
+        
+        
+          Configuration File Format <a href="#configuration-file-format" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>A <code>native-image.properties</code> file is a regular Java properties file that can be
+used to specify native image configurations. The following properties are
+supported.</p>
+
+<p><strong>Args</strong></p>
+
+<p>Use this property if your project requires custom <code>native-image</code> command line options to build correctly. For example, the <code>native-image-configure-examples/configure-at-runtime-example</code> has <code>Args = --initialize-at-build-time=com.fasterxml.jackson.annotation.JsonProperty$Access</code>  in its <code>native-image.properties</code> file to ensure the class <code>com.fasterxml.jackson.annotation.JsonProperty$Access</code> gets initialized at image build time.</p>
+
+<p><strong>JavaArgs</strong></p>
+
+<p>Sometimes it can be necessary to provide custom options to the JVM that runs the
+native image builder. The <code>JavaArgs</code> property can be used in this case.</p>
+
+<p><strong>ImageName</strong></p>
+
+<p>This property can be used to specify a user-defined name for the image. If
+<code>ImageName</code> is not used, a name gets automatically chosen:</p>
+<ul>
+  <li><code>native-image -jar &lt;name.jar&gt;</code> has a default image name <code>&lt;name&gt;</code></li>
+  <li><code>native-image -cp ... fully.qualified.MainClass</code> has a default image name <code>fully.qualified.mainclass</code></li>
+</ul>
+
+<p>Note that using <code>ImageName</code> does not prevent the user to override the name later via command line. For example, if <code>foo.bar</code> contains <code>ImageName=foo_app</code>:</p>
+<ul>
+  <li><code>native-image -jar foo.bar</code> generates the image <code>foo_app</code> but</li>
+  <li><code>native-image -jar foo.bar application</code> generates the image <code>application</code></li>
+</ul>
+    
+      <h3 id="order-of-arguments-evaluation">
+        
+        
+          Order of Arguments Evaluation <a href="#order-of-arguments-evaluation" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>The arguments passed to <code>native-image</code> are evaluated left-to-right. This also
+extends to arguments that get passed indirectly via <code>META-INF/native-image</code>
+based native image configuration. Suppose you have a JAR file that contains
+<em>native-image.properties</em> with <code>Args = -H:Optimize=0</code>. Then by using the
+<code>-H:Optimize=2</code> option after <code>-cp &lt;jar-file&gt;</code> you can override the setting that
+comes from the JAR file.</p>
+    
+      <h3 id="specifying-default-options-for-native-image">
+        
+        
+          Specifying Default Options for Native Image <a href="#specifying-default-options-for-native-image" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>If there is a need to pass some options for every image build unconditionally, for
+example, to always generate an image in verbose mode (<code>--verbose</code>), you can
+make use of the <code>NATIVE_IMAGE_CONFIG_FILE</code> environment variable.
+If it is set to a Java properties file, the Native Image builder will use the
+default setting defined in there on each invocation. Write a
+configuration file and export
+<code>NATIVE_IMAGE_CONFIG_FILE=$HOME/.native-image/default.properties</code> in
+<code>~/.bash_profile</code>. Every time <code>native-image</code> gets used, it will implicitly use
+the arguments specified as <code>NativeImageArgs</code>, plus the arguments specified on the
+command line. Here is an example of a configuration file, saved as
+<code>~/.native-image/default.properties</code>:</p>
+
+<pre><code>NativeImageArgs = --configurations-path /home/user/custom-image-configs \
+                  -O1
+</code></pre>
+    
+      <h2 id="memory-configuration-for-native-image-build">
+        
+        
+          Memory Configuration for Native Image Build <a href="#memory-configuration-for-native-image-build" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The native image build runs on the Java HotSpot VM and uses the memory management of the underlying platform.
+The usual Java HotSpot command-line options for garbage collection apply to the native image builder.</p>
+
+<p>During the native image build, the representation of a whole program is created to
+figure out which classes and methods will be used at run time. It is a
+computationally intensive process. The default values for memory usage at image build time are:</p>
+<pre><code>-Xss10M \
+-Xms1G \
+</code></pre>
+<p>These defaults can be changed by passing <code>-J + &lt;jvm option for memory&gt;</code> to the native image builder.</p>
+
+<p>The <code>-Xmx</code> value is computed by using 80% of the physical memory size, but no more than 14G per server.
+Providing a larger value for <code>-Xmx</code> on command line is possible, e.g., <code>-J-Xmx26G</code>.</p>
+
+<p>By default, image building uses of up to 32 threads (but not more than the number of processors available). For custom values <code>-H:NumberOfThreads=...</code> can be used.</p>
+
+<p>Check other related options to the native image builder from the <code>native-image --expert-options-all</code> list.</p>
+    
+      <h2 id="runtime-vs-build-time-initialization">
+        
+        
+          Runtime vs Build-Time Initialization <a href="#runtime-vs-build-time-initialization" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Building your application into a native image allows you to decide which parts
+of your application should be run at image build time and which parts have to
+run at image run time.</p>
+
+<p>All class-initialization code (static initializers and static
+field initialization) of the application you build an image for is executed
+at image run time by default. Sometimes it is beneficial to allow class
+initialization code to get executed at image build time for faster startup (e.g.,
+if some static fields get initialized to run-time independent data). This can be
+controlled with the following <code>native-image</code> options:</p>
+
+<ul>
+  <li><code>--initialize-at-build-time=&lt;comma-separated list of packages and classes&gt;</code></li>
+  <li><code>--initialize-at-run-time=&lt;comma-separated list of packages and classes&gt;</code></li>
+</ul>
+
+<p>In addition to that, arbitrary computations are allowed at build time that can be put into <code>ImageSingletons</code> that are
+accessible at image run time. For more information please have a look at <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image-configure-examples">Native Image configuration examples</a>.</p>
+
+<p>For more information, continue reading to the <a href="/reference-manual/native-image/ClassInitialization/">Class Initialization in Native Image</a> guide.</p>
+    
+      <h2 id="assisted-configuration-of-native-image-builds">
+        
+        
+          Assisted Configuration of Native Image Builds <a href="#assisted-configuration-of-native-image-builds" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Native images are built ahead of runtime and their build relies on a static analysis of which code will be reachable. However, this analysis cannot always completely predict all usages of the Java Native Interface (JNI), Java Reflection, Dynamic Proxy objects (<code>java.lang.reflect.Proxy</code>), or class path resources (<code>Class.getResource</code>). Undetected usages of these dynamic features need to be provided to the <code>native-image</code> tool in the form of configuration files.</p>
+
+<p>In order to make preparing these configuration files easier and more convenient, GraalVM provides an <em>agent</em> that tracks all usages of dynamic features of an execution on a regular Java VM. It can be enabled on the command line of the GraalVM <code>java</code> command:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-output-dir=/path/to/config-dir/ ...
+</code></pre>
+
+<p>Note that <code>-agentlib</code> must be specified <em>before</em> a <code>-jar</code> option or a class name or any application parameters in the <code>java</code> command line.</p>
+
+<p>During execution, the agent interfaces with the Java VM to intercept all calls that look up classes, methods, fields, resources, or request proxy accesses. The agent then generates the files <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code> in the specified output directory, which is <code>/path/to/config-dir/</code> in the example above. The generated files are standalone configuration files in <em>JSON</em> format which contain all intercepted dynamic accesses.</p>
+
+<p>It can be necessary to run the target application more than once with different inputs to trigger separate execution paths for a better coverage of dynamic accesses. The agent supports this with the <code>config-merge-dir</code> option which adds the intercepted accesses to an existing set of configuration files:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=/path/to/config-dir/ ...
+                                                              ^^^^^
+</code></pre>
+
+<p>If the specified target directory or configuration files in it are missing when using <code>config-merge-dir</code>, the agent creates them and prints a warning.</p>
+
+<p>By default the agent will write the configuration files after the JVM process terminates. In addition, the agent provides the following flags to write configuration files on a periodic basis:</p>
+<ul>
+  <li><code>config-write-period-secs</code>: executes a periodic write every number of seconds as specified in this configuration. Supports only integer values greater than zero.</li>
+  <li><code>config-write-initial-delay-secs</code>: the number of seconds before the first write is schedule for execution. Supports only integer values greater or equal to zero. Enabled only if <code>config-write-period-secs</code> is greater than zero.</li>
+</ul>
+
+<p>For example:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-output-dir=/path/to/config-dir/,config-write-period-secs=300,config-write-initial-delay-secs=5 ...
+</code></pre>
+
+<p>It is advisable to manually review the generated configuration files. Because the agent observes only code that was executed, the resulting configurations can be missing elements that are used in other code paths. It could also make sense to simplify the generated configurations to make any future manual maintenance easier.</p>
+
+<p>The generated configuration files can be supplied to the <code>native-image</code> tool by placing them in a <code>META-INF/native-image/</code> directory on the class path, for example, in a JAR file used in the image build. This directory (or any of its subdirectories) is searched for files with the names <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code>, which are then automatically included in the build. Not all of those files must be present. When multiple files with the same name are found, all of them are included.</p>
+    
+      <h2 id="building-native-image-with-java-reflection-example">
+        
+        
+          Building Native Image with Java Reflection Example <a href="#building-native-image-with-java-reflection-example" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>For demonstration purposes, save the following code as <em>ReflectionExample.java</em> file:</p>
+
+<pre><code class="language-java">import java.lang.reflect.Method;
+
+class StringReverser {
+    static String reverse(String input) {
+        return new StringBuilder(input).reverse().toString();
+    }
+}
+
+class StringCapitalizer {
+    static String capitalize(String input) {
+        return input.toUpperCase();
+    }
+}
+
+public class ReflectionExample {
+    public static void main(String[] args) throws ReflectiveOperationException {
+        String className = args[0];
+        String methodName = args[1];
+        String input = args[2];
+
+        Class&lt;?&gt; clazz = Class.forName(className);
+        Method method = clazz.getDeclaredMethod(methodName, String.class);
+        Object result = method.invoke(null, input);
+        System.out.println(result);
+    }
+}
+</code></pre>
+
+<p>This is a simple Java program where non-constant strings for accessing program
+elements by name must come as external inputs. The main method invokes a method
+of a particular class (<code>Class.forName</code>) whose names are passed as command line
+arguments. Providing any other class or method name on the command line leads to
+an exception.</p>
+
+<p>Having compiled the example, invoke each method:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/javac ReflectionExample.java
+$JAVA_HOME/bin/java ReflectionExample StringReverser reverse "hello"
+olleh
+$JAVA_HOME/bin/java ReflectionExample StringCapitalizer capitalize "hello"
+HELLO
+</code></pre>
+
+<p>Build a native image normally, without a reflection configuration file, and run a resulting image:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/native-image ReflectionExample
+[reflectionexample:59625]    classlist:     467.66 ms
+...
+./reflectionexample
+</code></pre>
+<p>The <code>reflectionexample</code> binary is just a launcher for the JVM. To
+build a native image with reflective lookup operations, apply the tracing
+agent to write a configuration file to be later fed into the native image
+build together.</p>
+
+<ol>
+  <li>Create a directory <code>META-INF/native-image</code> in the working directory:
+    <pre><code class="language-shell">mkdir -p META-INF/native-image
+</code></pre>
+  </li>
+  <li>Enable the agent and pass necessary command line arguments:
+    <pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-output-dir=META-INF/native-image ReflectionExample StringReverser reverse "hello"
+</code></pre>
+    <p>This command creates a <em>reflection-config.json</em> file which makes the <code>StringReverser</code> class and the <code>reverse()</code> method accessible via reflection. The <em>jni-config.json</em>, <em>proxy-config.json</em> , and <em>resource-config.json</em> configuration files are written in that directory too.</p>
+  </li>
+  <li>Build a native image:
+    <pre><code class="language-shell">$JAVA_HOME/bin/native-image --no-fallback ReflectionExample
+</code></pre>
+    <p>The native image builder automatically picks up configuration files in the
+<em>META-INF/native-image</em> directory or subdirectories. However, it is recommended
+to have <em>META-INF/native-image</em> location on the class path, either via a JAR
+file or via the <code>-cp</code> flag. It will help to avoid confusion for IDE users where a
+directory structure is defined by the tool.</p>
+  </li>
+  <li>Test the methods, but remember that you have not run the tracing agent twice to create a configuration that supports both:
+    <pre><code class="language-shell">./reflectionexample StringReverser reverse "hello"
+olleh
+./reflectionexample  StringCapitalizer capitalize "hello"
+Exception in thread "main" java.lang.ClassNotFoundException: StringCapitalizer
+ at com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:60)
+ at java.lang.Class.forName(DynamicHub.java:1161)
+ at ReflectionExample.main(ReflectionExample.java:21)
+</code></pre>
+  </li>
+</ol>
+
+<p>Neither the tracing agent nor native images generator can automatically check
+if the provided configuration files are complete. The agent only observes and
+records which values are accessed through reflection so that the same accesses
+are possible in a native image. You can either manually edit the
+<em>reflection-config.json</em> file, or re-run the tracing agent to transform the
+existing configuration file, or extend it by using <code>config-merge-dir</code> option:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=META-INF/native-image ReflectionExample StringCapitalizer capitalize "hello"
+</code></pre>
+<p>Note, the different <code>config-merge-dir</code> option instructs the agent to extend the
+existing configuration files instead of overwriting them. After re-building the
+native image, the <code>StringCapitalizer</code> class and the <code>capitalize</code> method will be
+accessible too.</p>
+
+<p><img src="https://www.graalvm.org/docs/reference-manual/native-image/reflect_config_file_merged.png" alt="" /></p>
+    
+      <h2 id="agent-advanced-usage">
+        
+        
+          Agent Advanced Usage <a href="#agent-advanced-usage" class="anchor_heading">#</a>
+        
+        
+      </h2>
+    
+      <h3 id="caller-based-filters">
+        
+        
+          Caller-based Filters <a href="#caller-based-filters" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>By default, the agent filters dynamic accesses which Native Image supports without configuration. The filter mechanism works by identifying the Java method performing the access, also referred to as <em>caller</em> method, and matching its declaring class against a sequence of filter rules. The built-in filter rules exclude dynamic accesses which originate in the JVM, or in parts of a Java class library directly supported by Native Image (such as <code>java.nio</code>) from the generated configuration files. Which item (class, method, field, resource, etc.) is being accessed is not relevant for filtering.</p>
+
+<p>In addition to the built-in filter, custom filter files with additional rules can be specified using the <code>caller-filter-file</code> option. For example: <code>-agentlib:caller-filter-file=/path/to/filter-file,config-output-dir=...</code></p>
+
+<p>Filter files have the following structure:</p>
+<pre><code class="language-json">{ "rules": [
+    {"excludeClasses": "com.oracle.svm.**"},
+    {"includeClasses": "com.oracle.svm.tutorial.*"},
+    {"excludeClasses": "com.oracle.svm.tutorial.HostedHelper"}
+  ]
+}
+</code></pre>
+
+<p>The <code>rules</code> section contains a sequence of rules. Each rule specifies either <code>includeClasses</code>, which means that lookups originating in matching classes will be included in the resulting configuration, or <code>excludeClasses</code>, which excludes lookups originating in matching classes from the configuration. Each rule defines a pattern for the set of matching classes, which can end in <code>.*</code> or <code>.**</code>: a <code>.*</code> ending matches all classes in a package and that package only, while a <code>.**</code> ending matches all classes in the package as well as in all subpackages at any depth. Without <code>.*</code> or <code>.**</code>, the rule applies only to a single class with the qualified name that matches the pattern. All rules are processed in the sequence in which they are specified, so later rules can partially or entirely override earlier ones. When multiple filter files are provided (by specifying multiple <code>caller-filter-file</code> options), their rules are chained together in the order in which the files are specified. The rules of the built-in caller filter are always processed first, so they can be overridden in custom filter files.</p>
+
+<p>In the example above, the first rule excludes lookups originating in all classes from package <code>com.oracle.svm</code> and from all of its subpackages (and their subpackages, etc.) from the generated configuration. In the next rule however, lookups from those classes that are directly in package <code>com.oracle.svm.tutorial</code> are included again. Finally, lookups from the <code>HostedHelper</code> class is excluded again. Each of these rules partially overrides the previous ones. For example, if the rules were in the reverse order, the exclusion of <code>com.oracle.svm.**</code> would be the last rule and would override all other rules.</p>
+
+<p>For testing purposes, the built-in filter for Java class library lookups can be disabled by adding the <code>no-builtin-caller-filter</code> option, but the resulting configuration files are generally unsuitable for a native image build. Similarly, the built-in filter for Java VM-internal accesses based on heuristics can be disabled with <code>no-builtin-heuristic-filter</code> and will also generally lead to less usable configuration files. For example: <code>-agentlib:native-image-agent=no-builtin-caller-filter,no-builtin-heuristic-filter,config-output-dir=...</code></p>
+    
+      <h3 id="access-filters">
+        
+        
+          Access Filters <a href="#access-filters" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Unlike the caller-based filters described above, which filter dynamic accesses based on where they originate from, <em>access filters</em> apply to the <em>target</em> of the access. Therefore, access filters enable directly excluding packages and classes (and their members) from the generated configuration.</p>
+
+<p>By default, all accessed classes (which also pass the caller-based filters and the built-in filters) are included in the generated configuration. Using the <code>access-filter-file</code> option, a custom filter file that follows the file structure described above can be added. The option can be specified more than once to add multiple filter files and can be combined with the other filter options. For example: <code>-agentlib:access-filter-file=/path/to/access-filter-file,caller-filter-file=/path/to/caller-filter-file,config-output-dir=...</code></p>
+    
+      <h3 id="specifying-configuration-files-as-native-image-arguments">
+        
+        
+          Specifying Configuration Files as Native Image Arguments <a href="#specifying-configuration-files-as-native-image-arguments" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>A directory containing configuration files that is not part of the class path can be specified to <code>native-image</code> via <code>-H:ConfigurationFileDirectories=/path/to/config-dir/</code>. This directory must directly contain all four files: <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code>. A directory with the same four configuration files that is on the class path, but not in <code>META-INF/native-image/</code>, can be provided via <code>-H:ConfigurationResourceRoots=path/to/resources/</code>. Both <code>-H:ConfigurationFileDirectories</code> and <code>-H:ConfigurationResourceRoots</code> can also take a comma-separated list of directories.</p>
+    
+      <h3 id="injecting-the-agent-via-the-process-environment">
+        
+        
+          Injecting the Agent via the Process Environment <a href="#injecting-the-agent-via-the-process-environment" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Altering the <code>java</code> command line to inject the agent can prove to be difficult if the Java process is launched by an application or script file, or if Java is even embedded in an existing process. In that case, it is also possible to inject the agent via the <code>JAVA_TOOL_OPTIONS</code> environment variable. This environment variable can be picked up by multiple Java processes which run at the same time, in which case each agent must write to a separate output directory with <code>config-output-dir</code>. (The next section describes how to merge sets of configuration files.) In order to use separate paths with a single global <code>JAVA_TOOL_OPTIONS</code> variable, the agent’s output path options support placeholders:</p>
+<pre><code class="language-shell">export JAVA_TOOL_OPTIONS="java -agentlib:native-image-agent=config-output-dir=/path/to/config-output-dir-{pid}-{datetime}/"
+</code></pre>
+
+<p>The <code>{pid}</code> placeholder is replaced with the process identifier, while <code>{datetime}</code> is replaced with the system date and time in UTC, formatted according to ISO 8601. For the above example, the resulting path could be: <code>/path/to/config-output-dir-31415-20181231T235950Z/</code>.</p>
+    
+      <h3 id="the-configuration-tool">
+        
+        
+          The Configuration Tool <a href="#the-configuration-tool" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>When using the agent in multiple processes at the same time as described in the previous section, <code>config-output-dir</code> is a safe option, but results in multiple sets of configuration files. The <code>native-image-configure</code> tool can be used to merge these configuration files. This tool must first be built with:</p>
+<pre><code class="language-shell">native-image --tool:native-image-configure
+</code></pre>
+
+<p>Then, the tool can be used to merge sets of configuration files as follows:</p>
+<pre><code class="language-shell">native-image-configure generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
+</code></pre>
+
+<p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>.</p>
+
+<p>An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure help</code> for all options.</p>
+    
+      <h3 id="trace-files">
+        
+        
+          Trace Files <a href="#trace-files" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>In the examples above, <code>native-image-agent</code> has been used to both keep track of the dynamic accesses in a Java VM and then to generate a set of configuration files from them. However, for a better understanding of the execution, the agent can also write a <em>trace file</em> in JSON format that contains each individual access:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=trace-output=/path/to/trace-file.json ...
+</code></pre>
+
+<p>The <code>native-image-configure</code> tool can transform trace files to configuration files that can be used in native image builds. The following command reads and processes <code>trace-file.json</code> and generates a set of configuration files in directory <code>/path/to/config-dir/</code>:</p>
+<pre><code class="language-shell">native-image-configure generate --trace-input=/path/to/trace-file.json --output-dir=/path/to/config-dir/
+</code></pre>
+    
+      <h3 id="interoperability">
+        
+        
+          Interoperability <a href="#interoperability" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Although the agent is distributed with GraalVM, it uses the JVM Tool Interface (JVMTI) and can potentially be used with other JVMs that support JVMTI. In this case, it is necessary to provide the absolute path of the agent:</p>
+<pre><code class="language-shell">/path/to/some/java -agentpath:/path/to/graalvm/jre/lib/amd64/libnative-image-agent.so=&lt;options&gt; ...
+</code></pre>
 
               </div>
 
