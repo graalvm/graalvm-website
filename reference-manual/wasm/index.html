@@ -727,10 +727,9 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalWasm is the GraalVM implementation of the WebAssembly (Wasm) programming
-language. It can interpret and compile WebAssembly programs in the binary format
-or be embedded into other programs. GraalWasm is in the early stages of its
-development.</p>
+<p>GraalVM can run programs compiled to WebAssembly. It can interpret and compile
+WebAssembly code in the binary format or embed it into other programs.
+The support for WebAssembly is in the early stages of its development.</p>
     
       <h2 id="installing-wasm">
         
@@ -740,14 +739,13 @@ development.</p>
         
       </h2>
 
-<p>GraalWasm is shipped as a separate installable and needs to be installed using the
-functional <code>gu</code> utility:</p>
+<p>The support is not available by default, but you can add it to GraalVM using the <a href="/reference-manual/graalvm-updater/">GraalVM Updater</a> tool:</p>
 <pre><code class="language-shell">gu install wasm
 </code></pre>
 <p>The above command will install a community version of a component from the GitHub catalog.
 For GraalVM Enterprise users, the <a href="https://www.graalvm.org/docs/reference-manual/gu/#component-installation">manual component installation</a> is required.</p>
 
-<p>The <code>wasm</code> launcher which runs WebAssembly modules becomes available.</p>
+<p>Then <code>wasm</code> launcher, that can run compiled WebAssembly binary code, becomes available.</p>
     
       <h2 id="running-webassembly-programs">
         
@@ -757,10 +755,9 @@ For GraalVM Enterprise users, the <a href="https://www.graalvm.org/docs/referenc
         
       </h2>
 
-<p>You can run WebAssembly programs in the binary format, using the <code>wasm</code>
-launcher. For example, assuming that the following C program was compiled with
-Emscripten:</p>
-<pre><code>#include &lt;stdio.h&gt;
+<p>You can run a program written in the language that compile to WebAssembly on GraalVM.
+For example, put the following C program in a file named <em>floyd.c</em>:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
 
 int main() {
   int number = 1;
@@ -776,8 +773,12 @@ int main() {
 }
 </code></pre>
 
-<p>You can run the compiled WebAssembly binary as follows:</p>
-<pre><code class="language-shell">graalvm/bin/wasm --Builtins=memory,env:emscripten floyd.wasm
+<p>Compile it using the most recent <a href="https://emscripten.org/docs/tools_reference/emcc.html">Emscripten compiler frontend</a> version. It should produce a standalone <em>floyd.wasm</em> file in the current working directory:</p>
+<pre><code class="language-shell">emcc -o floyd.wasm floyd.c
+</code></pre>
+
+<p>Then you can run the compiled WebAssembly binary on GraalVM as follows:</p>
+<pre><code class="language-shell">wasm --Builtins=wasi_snapshot_preview1 floyd.wasm
 </code></pre>
 
 <p>In this example, the flag <code>--Builtins</code> specifies builtin modules that the <a href="https://emscripten.org/index.html">Emscripten toolchain</a> requires.</p>
@@ -790,14 +791,12 @@ int main() {
         
       </h2>
 
-<p>GraalWasm can be accessed programmatically with the Polyglot API, which allows
-embedding GraalWasm into user programs. Here is a simple example of how to run a
-WebAssembly program using GraalWasm from a Java application:</p>
+<p>The compiled WebAssembly binary code can be accessed programmatically with <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">GraalVM Polyglot API</a>, which allows embedding GraalVM WebAssembly into user programs. Here is a simple example of how to call WebAssembly code from a Java application:</p>
 
-<pre><code>import org.graalvm.polyglot.*;
+<pre><code class="language-java">import org.graalvm.polyglot.*;
 import org.graalvm.polyglot.io.ByteSequence;
-
-byte[] binary = readBytes("example.wasm"); // You need to load the .wasm contents into a byte array.
+//Load the WASM contents into a byte array
+byte[] binary = readBytes("example.wasm");
 Context.Builder contextBuilder = Context.newBuilder("wasm");
 Source.Builder sourceBuilder = Source.newBuilder("wasm", ByteSequence.create(binary), "example");
 Source source = sourceBuilder.build();
@@ -805,7 +804,7 @@ Context context = contextBuilder.build();
 
 context.eval(source);
 
-Value mainFunction = context.getBindings("wasm").getMember("_main");
+Value mainFunction = context.getBindings("wasm").getMember("main").getMember("_start");
 mainFunction.execute();
 </code></pre>
 
