@@ -679,21 +679,24 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM can execute C/C++, Rust, and other languages that can be compiled to
-LLVM bitcode. As a first step, you have to compile the program to LLVM bitcode
-using an LLVM frontend such as <code>clang</code>.</p>
+<p>GraalVM can execute C/C++, Rust, and other languages that can be compiled to LLVM bitcode.
+As a first step, you have to compile a program to LLVM bitcode using some LLVM compiler front end, for example, <code>clang</code> for C and C++, <code>rust</code> for the Rust programing language, etc.</p>
     
-      <h3 id="file-format">
+      <h2 id="file-format">
         
         
           File Format <a href="#file-format" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
+
 <p>While the GraalVM LLVM runtime can execute <a href="https://llvm.org/docs/BitCodeFormat.html">plain bitcode files</a>,
-the preferred format is a <em>native executable</em> with <em>embedded bitcode</em>. The executable file formats differ on Linux and macOS.
-Linux by default uses ELF files. The bitcode is stored in a section called <code>.llvmbc</code>.
-The macOS platform uses Mach-O files. The bitcode is in the <code>__bundle</code> section of the <code>__LLVM</code> segment.</p>
+the preferred format is a <em>native executable</em> with <em>embedded bitcode</em>.
+The executable file formats differ on Linux and macOS.
+Linux by default uses ELF files.
+The bitcode is stored in a section called <code>.llvmbc</code>.
+The macOS platform uses Mach-O files.
+The bitcode is in the <code>__bundle</code> section of the <code>__LLVM</code> segment.</p>
 
 <p>Using native executables with embedded bitcode offers two advantages over plain bitcode files.
 First, build systems for native projects, for example a <code>Makefile</code>, expect the result to be an executable.
@@ -701,32 +704,30 @@ Embedding the bitcode instead of changing the output format improves compatibili
 Second, executables allow specifying library dependencies which is not possible with LLVM bitcode.
 The GraalVM LLVM runtime utilizes this information to find and load dependencies.</p>
     
-      <h3 id="llvm-toolchain-for-compiling-cc">
+      <h2 id="llvm-toolchain-for-compiling-cc">
         
         
-          LLVM Toolchain for compiling C/C++ <a href="#llvm-toolchain-for-compiling-cc" class="anchor_heading">#</a>
+          LLVM Toolchain for Compiling C/C++ <a href="#llvm-toolchain-for-compiling-cc" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>To simplify compiling C/C++ to executables with embedded bitcode, GraalVM comes with a pre-built LLVM toolchain.
-The LLVM toolchain can be installed using the <code>gu</code> command:</p>
+      </h2>
 
+<p>To simplify compiling C/C++ to executables with embedded bitcode, GraalVM comes with a pre-built LLVM toolchain.
+The LLVM toolchain can be installed with the <a href="https://www.graalvm.org/reference-manual/graalvm-updater">GraalVM Updater</a>, <code>gu</code>, tool:</p>
 <pre><code class="language-shell">$GRAALVM_HOME/bin/gu install llvm-toolchain
 </code></pre>
 
 <p>To get the location of the toolchain, use the <code>--print-toolchain-path</code> argument of <code>lli</code>:</p>
-
 <pre><code class="language-shell">export LLVM_TOOLCHAIN=$($GRAALVM_HOME/bin/lli --print-toolchain-path)
 </code></pre>
 
 <p>The toolchain contains compilers such as <code>clang</code> for C or <code>clang++</code> for C++, but also other tools that are needed
-for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries. See the content of
-the toolchain path for a list of available tools:</p>
-
+for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries.
+See the content of the toolchain path for a list of available tools:</p>
 <pre><code class="language-shell">ls $LLVM_TOOLCHAIN
 </code></pre>
 
-<p>Use those tools just as you would do for native compilation. For example, the C code file <code>hello.c</code>:</p>
+<p>Use those tools just as you would for native compilation. For example, the C code file <code>hello.c</code>:</p>
 <pre><code class="language-c">#include &lt;stdio.h&gt;
 
 int main() {
@@ -739,17 +740,18 @@ int main() {
 <pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello.c -o hello
 </code></pre>
 
-<p>The resulting executable <code>hello</code> can be executed with GraalVM using <code>lli</code>:</p>
+<p>The resulting executable <code>hello</code> can be executed on GraalVM using <code>lli</code>:</p>
 <pre><code class="language-shell">$GRAALVM_HOME/bin/lli hello
 </code></pre>
     
-      <h3 id="external-library-dependencies">
+      <h2 id="external-library-dependencies">
         
         
-          External library dependencies <a href="#external-library-dependencies" class="anchor_heading">#</a>
+          External Library Dependencies <a href="#external-library-dependencies" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
+
 <p>If the bitcode file depends on external libraries, GraalVM will automatically
 pick up the dependencies from the binary headers. For example:</p>
 <pre><code class="language-c">#include &lt;unistd.h&gt;
@@ -780,8 +782,7 @@ lli hello-curses
 
 <p>For running C++ code, the GraalVM LLVM runtime requires the
 <a href="https://libcxx.llvm.org"><code>libc++</code></a> standard library from the LLVM project. The
-LLVM toolchain shipped with GraalVM automatically links against <code>libc++</code>.</p>
-
+LLVM toolchain shipped with GraalVM automatically links against <code>libc++</code>. For example, save this code as a <em>hello-c++.cpp</em> file:</p>
 <pre><code class="language-c++">#include &lt;iostream&gt;
 
 int main() {
@@ -789,8 +790,7 @@ int main() {
 }
 </code></pre>
 
-<p>Compile the code with <code>clang++</code>:</p>
-
+<p>Compile it with <code>clang++</code> shipped with GraalVM and execute:</p>
 <pre><code class="language-shell">$LLVM_TOOLCHAIN/clang++ hello-c++.cpp -o hello-c++
 lli hello-c++
 Hello, C++ World!
@@ -810,20 +810,18 @@ onscreen instructions:</p>
 <pre><code class="language-shell">curl https://sh.rustup.rs -sSf | sh
 </code></pre>
 
-<p>Here is an example Rust program:</p>
-
-<pre><code>fn main() {
+<p>Save this example Rust code in a <em>hello-rust.rs</em> file:</p>
+<pre><code class="language-rs">fn main() {
     println!("Hello Rust!");
 }
 </code></pre>
 
-<p>This can be compiled to bitcode with the <code>--emit=llvm-bc</code> flag:</p>
+<p>This can be then compiled to bitcode with the <code>--emit=llvm-bc</code> flag:</p>
 <pre><code class="language-shell">rustc --emit=llvm-bc hello-rust.rs
 </code></pre>
 
 <p>To run the Rust program, we have to tell GraalVM where to find the Rust
-standard libraries.</p>
-
+standard libraries:</p>
 <pre><code class="language-shell">lli --lib $(rustc --print sysroot)/lib/libstd-* hello-rust.bc
 Hello Rust!
 </code></pre>

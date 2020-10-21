@@ -679,10 +679,8 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM supports several other programming languages, including JavaScript,
-Python, Ruby, and R. While LLI is designed to run LLVM bitcode, it also provides
-an API for programming language interoperability that lets you execute code from
-any other language that GraalVM supports.</p>
+<p>GraalVM supports several other programming languages including JavaScript, Python, Ruby, and R.
+While GraalVM’s implementation of <code>lli</code> is designed to run LLVM bitcode, it also provides an API for programming language interoperability that lets you execute code from any other GraalVM-suppored language.</p>
 
 <p>Dynamic languages like JavaScript usually access object members by name. Since
 normally names are not preserved in LLVM bitcode, it must be compiled with debug
@@ -692,7 +690,7 @@ debugging information).</p>
 <p>The following example demonstrates how you can use the API for interoperability
 with other programming languages.</p>
 
-<p>Let us define a C struct for points and implement allocation functions:</p>
+<p>Define a C struct for points and implement allocation functions in a file named <em>cpart.c</em>:</p>
 
 <pre><code class="language-c">// cpart.c
 #include &lt;graalvm/llvm/polyglot.h&gt;
@@ -727,32 +725,29 @@ void printPoint(struct Point *p) {
 </code></pre>
 
 <p>Make sure <code>LLVM_TOOLCHAIN</code> resolves to the GraalVM LLVM toolchain (<code>lli --print-toolchain-path</code>),
-then compile <em>cpart.c</em> with (the graalvm-llvm library defines the polyglot
+then compile <em>cpart.c</em>  (the polyglot-mock library defines the polyglot
 API functions used in the example):</p>
-<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang -shared cpart.c -lgraalvm-llvm -o cpart.so
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang -shared cpart.c -lpolyglot-mock -o cpart.so
 </code></pre>
 
-<p>You can access your C/C++ code from other languages like JavaScript:</p>
-
-<pre><code class="language-js">// jspart.js
-
-// Load and parse the LLVM bitcode into GraalVM
+<p>You can then access this C/C++ code from other languages. For example, save this JavaScript code in the <em>jspart.js</em> file:</p>
+<pre><code class="language-js">// Load and parse the LLVM bitcode into GraalVM
 var cpart = Polyglot.evalFile("llvm" ,"cpart.so");
 
 // Allocate a light-weight C struct
 var point = cpart.allocNativePoint();
 
-// Access it as if it were a JS object
+// Access it as if it was a JS object
 point.x = 5;
 point.y = 7;
 
 // Pass it back to a native function
 cpart.printPoint(point);
 
-// We can also allocate an array of structs
+// Allocate an array of structs
 var pointArray = cpart.allocNativePointArray(15);
 
-// We can access this array like it was a JS array
+// Access this array like it was a JS array
 for (var i = 0; i &lt; pointArray.length; i++) {
     var p = pointArray[i];
     p.x = i;
@@ -761,15 +756,15 @@ for (var i = 0; i &lt; pointArray.length; i++) {
 
 cpart.printPoint(pointArray[3]);
 
-// We can also pass a JS object to a native function
+// Additionally, pass a JS object to a native function
 cpart.printPoint({x: 17, y: 42});
 
-// Don't forget to free the unmanaged data objects
+// Free the unmanaged data objects
 cpart.freeNativePoint(point);
 cpart.freeNativePoint(pointArray);
 </code></pre>
 
-<p>Run this JavaScript file with:</p>
+<p>Finally, run this JavaScript file:</p>
 <pre><code class="language-shell">js --polyglot jspart.js
 Point&lt;5.000000,7.000000&gt;
 Point&lt;3.000000,6.000000&gt;
@@ -785,13 +780,12 @@ Point&lt;17.000000,42.000000&gt;
       </h2>
 
 <p>There are also lower level API functions for directly accessing polyglot values
-from C. See the <a href="https://www.graalvm.org/reference-manual/polyglot-programming/">Polyglot Programming</a> reference
-and the documentation comments in <code>graalvm/llvm/polyglot.h</code> for more details.</p>
+from C. See the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/user/graalvm.org/docs/reference-manual/polyglot-programming/">Polyglot Programming</a> reference
+and the comments in <code>polyglot.h</code> for more details.</p>
 
 <p>For example, this program allocates and accesses a Java array from C:</p>
-
 <pre><code class="language-c">#include &lt;stdio.h&gt;
-#include &lt;graalvm/llvm/polyglot.h&gt;
+#include &lt;polyglot.h&gt;
 
 int main() {
     void *arrayType = polyglot_java_type("int[]");
@@ -804,13 +798,10 @@ int main() {
 </code></pre>
 
 <p>Compile it to LLVM bitcode:</p>
-
-<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang polyglot.c -lgraalvm-llvm -o polyglot
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang polyglot.c -lpolyglot-mock -o polyglot
 </code></pre>
 
-<p>And run it, using the <code>--jvm</code> argument to run GraalVM in the JVM mode, since we are
-using a Java type:</p>
-
+<p>Then run it, using the <code>--jvm</code> argument to run in the JVM mode, since there is a Java type used:</p>
 <pre><code class="language-shell">lli --jvm polyglot
 24
 </code></pre>
@@ -825,9 +816,8 @@ using a Java type:</p>
 
 <p>GraalVM can also be used to embed LLVM bitcode in Java host programs.</p>
 
-<p>For example, let us write a Java class <code>Polyglot.java</code> that embeds GraalVM to
+<p>For example, write a Java class <code>Polyglot.java</code> that embeds GraalVM to
 run the previous example:</p>
-
 <pre><code class="language-java">import java.io.*;
 import org.graalvm.polyglot.*;
 
@@ -843,13 +833,13 @@ class Polyglot {
 }
 </code></pre>
 
-<p>Compiling and running it:</p>
+<p>Compile it and run:</p>
 <pre><code class="language-shell">javac Polyglot.java
 java Polyglot
 24
 </code></pre>
 
-<p>See the <a href="https://www.graalvm.org/reference-manual/embed-languages/">Embedding Languages</a> reference for
+<p>See the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/user/graalvm.org/docs/reference-manual/embed-languages/">Embedding Languages</a> reference for
 more information.</p>
 
               </div>
