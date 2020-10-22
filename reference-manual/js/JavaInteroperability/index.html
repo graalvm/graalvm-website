@@ -734,110 +734,103 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM JavaScript is a JavaScript (ECMAScript) language execution runtime.
-It allows interoperability with Java code.
-This document describes the features and usage of this JavaScript to Java interoperability feature.</p>
+<p>GraalVM includes a JavaScript language execution runtime and allows interoperability with Java code.
+This document describes the features and usage of this JavaScript-to-Java interoperability feature.</p>
 
-<p>For a reference of GraalVM JavaScript’s public API, see <a href="/reference-manual/js/JavaScriptCompatibility/">JavaScriptCompatibility.md</a>.
-Migration guides for <a href="/reference-manual/js/RhinoMigrationGuide/">Rhino</a> and <a href="/reference-manual/js/NashornMigrationGuide/">Nashorn</a> are available.</p>
+<p>For a reference of GraalVM public API, see <a href="/reference-manual/js/JavaScriptCompatibility/">JavaScript Compatibility</a>.
+Migration guides for <a href="/reference-manual/js/RhinoMigrationGuide/">Rhino</a> and <a href="/reference-manual/js/NashornMigrationGuide/">Nashorn</a> are also available.</p>
+
+<p>By default, GraalVM ships with <code>js</code> and <code>node</code> native launchers.
+Although other builds are possible, the following examples assume this setup is used.</p>
     
-      <h3 id="launching-graalvm-javascript">
-        
-        
-          Launching GraalVM JavaScript <a href="#launching-graalvm-javascript" class="anchor_heading">#</a>
-        
-        
-      </h3>
-<p>Depending on how you build GraalVM JavaScript, it is started in different ways.
-GraalVM CE or EE by default ships with a <code>js</code> and <code>node</code> native launcher.
-The following examples assume this setup is used.</p>
-    
-      <h3 id="enabling-java-interoperability">
+      <h2 id="enabling-java-interoperability">
         
         
           Enabling Java Interoperability <a href="#enabling-java-interoperability" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>In GraalVM Community or Enterprise Editions, the <code>js</code> and <code>node</code> binaries are started in an ahead-of-time compiled native mode by default. In that mode, Java interoperability is not available.</p>
+      </h2>
+<p>In GraalVM, the <code>js</code> and <code>node</code> launchers are started in an ahead-of-time compiled native mode by default. In that mode, Java interoperability is not available.</p>
 
 <p>To enable Java interoperability, the <code>--jvm</code> option has to be provided to the native launcher.
 This way, GraalVM JavaScript is executed on a traditional JVM and allows full Java interoperability.</p>
     
-      <h4 id="classpath">
+      <h3 id="classpath">
         
         
-          Classpath
+          Classpath <a href="#classpath" class="anchor_heading">#</a>
         
         
-      </h4>
-<p>To load Java classes you need to have them on the Java classpath.
-You can specify the classpath with the <code>--vm.classpath=&lt;classpath&gt;</code> option (or short: <code>--vm.cp=&lt;classpath&gt;</code>).</p>
-<pre><code>  node --jvm --vm.cp=/my/class/path
-  js --jvm --vm.cp=/my/class/path
+      </h3>
+<p>In order to load Java classes you need to have them on the Java classpath.
+You can specify the classpath with the <code>--vm.classpath=&lt;classpath&gt;</code> option (or short: <code>--vm.cp=&lt;classpath&gt;</code>):</p>
+<pre><code class="language-shell">node --jvm --vm.cp=/my/class/path
+js --jvm --vm.cp=/my/class/path
 </code></pre>
 <p>The method <code>Java.addToClasspath()</code> can be used to programmatically add to the classpath at runtime.</p>
     
-      <h3 id="polyglot-context">
+      <h2 id="polyglot-context">
         
         
           Polyglot Context <a href="#polyglot-context" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The preferred method of launching GraalVM JavaScript with Java interop support instance is via polyglot <code>Context</code>.
+      </h2>
+<p>The preferred method of launching GraalVM JavaScript with Java interop support is via polyglot <code>Context</code>.
 For that, a new <code>org.graalvm.polyglot.Context</code> is built with the <code>hostAccess</code> option allowing access and a <code>hostClassLookup</code> predicate defining the Java classes you allow access to:</p>
 
-<pre><code class="language-java">Context context = Context.newBuilder("js").
-    allowHostAccess(HostAccess.ALL).
-    allowHostClassLookup(className -&gt; true). //all Java classes permitted
-    build();
+<pre><code class="language-java">Context context = Context.newBuilder("js")
+    .allowHostAccess(HostAccess.ALL)
+    //allows access to all Java classes
+    .allowHostClassLookup(className -&gt; true)
+    .build();
 context.eval("js", jsSourceCode);
 </code></pre>
 
 <p>See the <a href="https://www.graalvm.org/reference-manual/polyglot-programming/">Polyglot Programming</a> reference for more details.</p>
     
-      <h3 id="scriptengine-jsr-223">
+      <h2 id="scriptengine-jsr-223">
         
         
           ScriptEngine (JSR 223) <a href="#scriptengine-jsr-223" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The <code>org.graalvm.polyglot.Context</code> is the preferred execution method for interoperability with languages and tool of the GraalVM.
-In addition, GraalVM JavaScript is fully compatible with JSR 223 and supports the <code>ScriptEngine API</code>.
-Internally, the GraalVM JavaScript ScriptEngine wraps a polyglot context instance.</p>
+      </h2>
+<p>The <code>org.graalvm.polyglot.Context</code> is the preferred execution method for interoperability with GraalVM’s languages and tools.
+In addition, JavaScript running on GraalVM is fully compatible with JSR 223 and supports the <code>ScriptEngine API</code>.
+Internally, the GraalVM’s JavaScript ScriptEngine wraps a polyglot context instance:</p>
 
-<pre><code class="language-java">ScriptEngine eng = new ScriptEngineManager().getEngineByName("graal.js");
+<pre><code class="language-java">ScriptEngine eng = new ScriptEngineManager()
+    .getEngineByName("graal.js");
 Object fn = eng.eval("(function() { return this; })");
 Invocable inv = (Invocable) eng;
 Object result = inv.invokeMethod(fn, "call", fn);
 </code></pre>
     
-      <h2 id="java-interoperability-features">
+      <h2 id="access-java-from-javascript">
         
         
-          Java Interoperability Features <a href="#java-interoperability-features" class="anchor_heading">#</a>
+          Access Java from JavaScript <a href="#access-java-from-javascript" class="anchor_heading">#</a>
         
         
       </h2>
-<p>Rhino, Nashorn and GraalVM JavaScript provide a set of features to allow interoperability from <code>JavaScript</code> to <code>Java</code>.
-While the overall feature set is mostly comparable, the engines differ in exact syntax, and partly, semantics.</p>
+<p>GraalVM provides a set of features to allow interoperability from <code>JavaScript</code> to <code>Java</code>.
+While Rhino, Nashorn, and GraalVM JavaScript have a mostly comparable overall feature set, they differ in exact syntax, and, partly, semantics.</p>
     
       <h3 id="class-access">
         
         
-          Class access <a href="#class-access" class="anchor_heading">#</a>
+          Class Access <a href="#class-access" class="anchor_heading">#</a>
         
         
       </h3>
-<p>To access a Java class, GraalVM JavaScript supports the <code>Java.type(typeName)</code> function.</p>
+<p>To access a Java class, GraalVM JavaScript supports the <code>Java.type(typeName)</code> function:</p>
 
 <pre><code class="language-js">var FileClass = Java.type('java.io.File');
 </code></pre>
 
 <p>By default, Java classes are not automatically mapped to global variables, e.g., there is no <code>java</code> global property in GraalVM JavaScript.
-Existing code accessing e.g. <code>java.io.File</code> should be rewritten to use the <code>Java.type(name)</code> function.</p>
+Existing code accessing, e.g., <code>java.io.File</code>, should be rewritten to use the <code>Java.type(name)</code> function:</p>
 
 <pre><code class="language-js">//GraalVM JavaScript compliant syntax
 var FileClass = Java.type("java.io.File");
@@ -845,11 +838,11 @@ var FileClass = Java.type("java.io.File");
 var FileClass = java.io.File;
 </code></pre>
 
-<p>GraalVM JavaScript provides a <code>Packages</code> global property and <code>java</code> and similar global properties for compatibility.
-However, explicitly accessing the required class with <code>Java.type</code> should be preferred whenever possible for two reasons:</p>
+<p>GraalVM JavaScript provides <code>Packages</code>, <code>java</code>, and similar global properties for compatibility.
+However, explicitly accessing the required class with <code>Java.type</code> is preferred whenever possible for two reasons:</p>
 <ol>
   <li>It allows resolving the class in one step rather than trying to resolve each property as a class.</li>
-  <li><code>Java.type</code> immediately throws a <code>TypeError</code> if the class cannot be found or is not accessible rather than silently treating an unresolved name as a package.</li>
+  <li><code>Java.type</code> immediately throws a <code>TypeError</code> if the class cannot be found or is not accessible, rather than silently treating an unresolved name as a package.</li>
 </ol>
 
 <p>The <code>js.java-package-globals</code> flag can be used to deactivate the global fields of Java packages (set <code>false</code> to avoid creation of the fields; default is <code>true</code>).</p>
@@ -861,7 +854,7 @@ However, explicitly accessing the required class with <code>Java.type</code> sho
         
         
       </h3>
-<p>Java objects can be constructed with JavaScript’s <code>new</code> keyword.</p>
+<p>Java objects can be constructed with JavaScript’s <code>new</code> keyword:</p>
 
 <pre><code class="language-js">var FileClass = Java.type('java.io.File');
 var file = new FileClass("myFile.md");
@@ -874,30 +867,30 @@ var file = new FileClass("myFile.md");
         
         
       </h3>
-<p>Static fields of a Java class or fields of a Java object can be accessed like JavaScript properties.</p>
+<p>Static fields of a Java class, or fields of a Java object, can be accessed like JavaScript properties:</p>
 
 <pre><code class="language-js">var JavaPI = Java.type('java.lang.Math').PI;
 </code></pre>
 
-<p>Java methods can be called like JavaScript functions.</p>
+<p>Java methods can be called like JavaScript functions:</p>
 
 <pre><code class="language-js">var file = new (Java.type('java.io.File'))("test.md");
 var fileName = file.getName();
 </code></pre>
     
-      <h4 id="conversion-of-method-arguments">
+      <h3 id="conversion-of-method-arguments">
         
         
-          Conversion of Method Arguments
+          Conversion of Method Arguments <a href="#conversion-of-method-arguments" class="anchor_heading">#</a>
         
         
-      </h4>
+      </h3>
 <p>JavaScript is defined to operate on the <code>double</code> number type.
 GraalVM JavaScript might internally use additional Java data types for performance reasons (e.g., the <code>int</code> type).</p>
 
 <p>When calling Java methods, a value conversion might be required.
-This happens when the Java method expects a <code>long</code> parameter, and a <code>int</code> is provided from GraalVM JavaScript (<code>type widening</code>).
-If this conversion caused a lossy conversion, a <code>TypeError</code> is thrown.</p>
+This happens when the Java method expects a <code>long</code> parameter, and an <code>int</code> is provided from GraalVM JavaScript (<code>type widening</code>).
+If this conversion causes a lossy conversion, a <code>TypeError</code> is thrown:</p>
 
 <pre><code class="language-java">//Java
 void longArg   (long arg1);
@@ -914,15 +907,15 @@ javaObject.doubleArg(1.1); //match, OK
 javaObject.intArg(1.1);    //lossy conversion, TypeError!
 </code></pre>
     
-      <h4 id="selection-of-method">
+      <h3 id="selection-of-method">
         
         
-          Selection of Method
+          Selection of Method <a href="#selection-of-method" class="anchor_heading">#</a>
         
         
-      </h4>
+      </h3>
 <p>Java allows overloading of methods by argument types.
-When calling from JavaScript to Java, the method with the narrowest available type that the actual argument can be converted to without loss is selected.</p>
+When calling from JavaScript to Java, the method with the narrowest available type that the actual argument can be converted to without loss is selected:</p>
 
 <pre><code class="language-java">//Java
 void foo(int arg);
@@ -937,7 +930,7 @@ javaObject.foo(1.1);            //will call foo(double arg);
 javaObject.foo(Math.pow(2,32)); //will call foo(long arg);
 </code></pre>
 
-<p>Note that there currently is no way of overriding this behavior from GraalVM JavaScript.
+<p>Note that currently there is no way of overriding this behavior from GraalVM JavaScript.
 In the example above, one might want to always call <code>foo(int arg)</code>, even when <code>foo(short arg)</code> can be reached with lossless conversion (<code>foo(1)</code>).
 Future versions of GraalVM JavaScript might lift that restriction by providing an explicit way to select the method to be called.</p>
     
@@ -948,9 +941,9 @@ Future versions of GraalVM JavaScript might lift that restriction by providing a
         
         
       </h3>
-<p>GraalVM JavaScript provides a <code>Packages</code> global property.</p>
+<p>GraalVM JavaScript provides a <code>Packages</code> global property:</p>
 
-<pre><code>&gt; Packages.java.io.File
+<pre><code class="language-shell">&gt; Packages.java.io.File
 JavaClass[java.io.File]
 </code></pre>
     
@@ -986,7 +979,7 @@ var iarr = new IntArray(5);
         
         
       </h3>
-<p>In GraalVM JavaScript you can create and access Java Maps, e.g. <code>java.util.HashMap</code>.</p>
+<p>In GraalVM JavaScript you can create and access Java Maps, e.g., <code>java.util.HashMap</code>:</p>
 
 <pre><code class="language-js">var HashMap = Java.type('java.util.HashMap');
 var map = new HashMap();
@@ -994,7 +987,7 @@ map.put(1, "a");
 map.get(1);
 </code></pre>
 
-<p>GraalVM JavaScript supports iterating over such map similar to Nashorn:</p>
+<p>GraalVM JavaScript supports iterating over such maps similar to Nashorn:</p>
 
 <pre><code class="language-js">for (var key in map) {
     print(key);
@@ -1009,7 +1002,7 @@ map.get(1);
         
         
       </h3>
-<p>In GraalVM JavaScript you can create and access Java Lists, e.g. <code>java.util.ArrayList</code>.</p>
+<p>In GraalVM JavaScript you can create and access Java Lists, e.g., <code>java.util.ArrayList</code>:</p>
 
 <pre><code class="language-js">var ArrayList = Java.type('java.util.ArrayList');
 var list = new ArrayList();
@@ -1031,14 +1024,13 @@ for (var idx in list) {
         
       </h3>
 <p>GraalVM JavaScript can create Java strings with Java interoperability.
-The length of the string can be queried with the <code>length</code> property.
-Note that <code>length</code> is a value property and cannot be called as a function.</p>
+The length of the string can be queried with the <code>length</code> property (note that <code>length</code> is a value property and cannot be called as a function):</p>
 
 <pre><code class="language-js">var javaString = new (Java.type('java.lang.String'))("Java");
 javaString.length === 4;
 </code></pre>
 
-<p>Note that GraalVM JavaScript uses Java strings internally to represent JavaScript strings, so above code and the JavaScript string literal <code>"Java"</code> are actually not distinguishable.</p>
+<p>Note that GraalVM JavaScript uses Java strings internally to represent JavaScript strings, so the above code and the JavaScript string literal <code>"Java"</code> are actually not distinguishable.</p>
     
       <h3 id="iterating-properties">
         
@@ -1047,7 +1039,7 @@ javaString.length === 4;
         
         
       </h3>
-<p>Properties (fields and methods) of Java classes and Java objects can be iterated with a JavaScript <code>for..in</code> loop.</p>
+<p>Properties (fields and methods) of Java classes and Java objects can be iterated with a JavaScript <code>for..in</code> loop:</p>
 
 <pre><code>var m = Java.type('java.lang.Math')
 for (var i in m) { print(i); }
@@ -1057,16 +1049,14 @@ for (var i in m) { print(i); }
 &gt; sin
 &gt; ...
 </code></pre>
-
-<p>This is working as in existing Rhino code.</p>
     
-      <h3 id="access-to-javascript-objects-from-java">
+      <h2 id="access-to-javascript-objects-from-java">
         
         
           Access to JavaScript Objects from Java <a href="#access-to-javascript-objects-from-java" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 <p>JavaScript objects are exposed to Java code as instances of <code>com.oracle.truffle.api.interop.java.TruffleMap</code>.
 This class implements Java’s <code>Map</code> interface.</p>
     
@@ -1088,7 +1078,7 @@ This class implements Java’s <code>Map</code> interface.</p>
       </h3>
 <p>GraalVM JavaScript provides both <code>print</code> and <code>console.log</code>.</p>
 
-<p>GraalVM JavaScript provides a <code>print</code> builtin function compatible with Nashorn.</p>
+<p>GraalVM JavaScript provides a <code>print</code> built-in function compatible with Nashorn.</p>
 
 <p>The <code>console.log</code> is provided by Node.js directly.
 It does not provide special treatment of interop objects.
@@ -1102,83 +1092,83 @@ Note that the default implementation of <code>console.log</code> on GraalVM Java
         
       </h3>
 <p>Exceptions thrown in Java code can be caught in JavaScript code.
-They are represented as Java objects.</p>
+They are represented as Java objects:</p>
 
 <pre><code class="language-js">try {
-    Java.type('java.lang.Class').forName("nonexistent");
+    Java.type('java.lang.Class')
+    .forName("nonexistent");
 } catch (e) {
     print(e.getMessage());
 }
 </code></pre>
     
-      <h3 id="promises">
+      <h2 id="promises">
         
         
           Promises <a href="#promises" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <p>GraalVM JavaScript provides support for interoperability between JavaScript <code>Promise</code> objects and Java.
 Java objects can be exposed to JavaScript code as <em>thenable</em> objects, allowing JavaScript code to <code>await</code> Java objects.
 Moreover, JavaScript <code>Promise</code> objects are regular JavaScript objects, and can be accessed from Java using the mechanisms described in this document.
 This allows Java code to be called back from JavaScript when a JavaScript promise is resolved or rejected.</p>
     
-      <h4 id="creating-javascript-promise-objects-that-can-be-resolved-from-java">
+      <h3 id="creating-javascript-promise-objects-that-can-be-resolved-from-java">
         
         
-          Creating JavaScript <code>Promise</code> Objects That Can Be Resolved from Java
+          Creating JavaScript <code>Promise</code> Objects That Can Be Resolved from Java <a href="#creating-javascript-promise-objects-that-can-be-resolved-from-java" class="anchor_heading">#</a>
         
         
-      </h4>
-
+      </h3>
 <p>JavaScript applications can create <code>Promise</code> objects delegating to Java the resolution of the <code>Promise</code> instance.
 This can be achieved from JavaScript by using a Java object as the <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">“executor”</a> function of the JavaScript <code>Promise</code>.
 For example, Java objects implementing the following functional interface can be used to create new <code>Promise</code> objects:</p>
-<pre><code>@FunctionalInterface
+<pre><code class="language-java">@FunctionalInterface
 public interface PromiseExecutor {
     void onPromiseCreation(Value onResolve, Value onReject);
 }
 </code></pre>
+
 <p>Any Java object implementing <code>PromiseExecutor</code> can be used to create a JavaScript <code>Promise</code>:</p>
-<pre><code>// `javaExecutable` is a Java object
-// implementing the `PromiseExecutor` interface
+<pre><code class="language-java">// `javaExecutable` is a Java object implementing the `PromiseExecutor` interface
 var myPromise = new Promise(javaExecutable).then(...);
 </code></pre>
+
 <p>JavaScript <code>Promise</code> objects can be created not only using functional interfaces, but also using any other Java object that can be executed by the GraalVM JavaScript engine (for example, any Java object implementing the Polyglot <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/proxy/ProxyExecutable.html">ProxyExecutable</a> interface).
 More detailed example usages are available in the GraalVM JavaScript <a href="https://github.com/graalvm/graaljs/blob/master/graal-js/src/com.oracle.truffle.js.test/src/com/oracle/truffle/js/test/interop/AsyncInteropTest.java">unit tests</a>.</p>
     
-      <h4 id="using-await-with-java-objects">
+      <h3 id="using-await-with-java-objects">
         
         
-          Using <code>await</code> with Java Objects
+          Using <code>await</code> with Java Objects <a href="#using-await-with-java-objects" class="anchor_heading">#</a>
         
         
-      </h4>
-
+      </h3>
 <p>JavaScript applications can use the <code>await</code> expression with Java objects.
 This can be useful when Java and JavaScript have to interact with asynchronous events.
 To expose a Java object to GraalVM JavaScript as a <em>thenable</em> object, the Java object should implement a method called <code>then()</code> having the following signature:</p>
-<pre><code>void then(Value onResolve, Value onReject);
+<pre><code class="language-java">void then(Value onResolve, Value onReject);
 </code></pre>
+
 <p>When <code>await</code> is used with a Java object implementing <code>then()</code>, the GraalVM JavaScript runtime will treat the object as a JavaScript <code>Promise</code>.
 The <code>onResolve</code> and <code>onReject</code> arguments are executable <code>Value</code> objects that should be used by the Java code to resume or abort the JavaScript <code>await</code> expression associated with the corresponding Java object.
 More detailed example usages are available in the GraalVM JavaScript <a href="https://github.com/graalvm/graaljs/blob/master/graal-js/src/com.oracle.truffle.js.test/src/com/oracle/truffle/js/test/interop/AsyncInteropTest.java">unit tests</a>.</p>
     
-      <h4 id="using-javascript-promises-from-java">
+      <h3 id="using-javascript-promises-from-java">
         
         
-          Using JavaScript Promises from Java
+          Using JavaScript Promises from Java <a href="#using-javascript-promises-from-java" class="anchor_heading">#</a>
         
         
-      </h4>
-
+      </h3>
 <p><code>Promise</code> objects created in JavaScript can be exposed to Java code like any other JavaScript object.
 Java code can access such objects like normal <code>Value</code> objects, with the possibility to register new promise resolution functions using the <code>Promise</code>’s default <code>then()</code> and <code>catch()</code> functions.
 As an example, the following Java code registers a Java callback to be executed when a JavaScript promise resolves:</p>
-<pre><code>Value jsPromise = context.eval(ID, "Promise.resolve(42);");
-Consumer&lt;Object&gt; javaThen =
-    (value) -&gt; System.out.println("Resolved from JavaScript: " + value);
+<pre><code class="language-java">Value jsPromise = context.eval(ID, "Promise.resolve(42);");
+Consumer&lt;Object&gt; javaThen = (value)
+    -&gt; System.out.println("Resolved from JavaScript: " + value);
 jsPromise.invokeMember("then", javaThen);
 </code></pre>
 <p>More detailed example usages are available in the GraalVM JavaScript <a href="https://github.com/graalvm/graaljs/blob/master/graal-js/src/com.oracle.truffle.js.test/src/com/oracle/truffle/js/test/interop/AsyncInteropTest.java">unit tests</a>.</p>
