@@ -679,76 +679,53 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM supports several other programming languages, including JavaScript, R,
-Ruby, and LLVM. GraalVM provides a Python API to interact with other languages
-available on the GraalVM. In fact, GraalVM uses this API internally to
-execute Python C extensions using the LLVM implementation in GraalVM.</p>
+<p>Since GraalVM supports several other programming languages including JavaScript, R,
+Ruby, and those that compile to LLVM bitcode, it also provides a Python API to interact with them.
+In fact, GraalVM uses this API internally to execute Python C extensions using the GraalVM LLVM runtime.</p>
 
-<p>You can import the <code>polyglot</code> module to interact with other languages. In order
-to use the polyglot functionality, you need to specify <code>--jvm --polyglot</code>
-arguments to the <code>graalpython</code> executable.</p>
-
+<p>You can import the <code>polyglot</code> module to interact with other languages:</p>
 <pre><code class="language-python">import polyglot
 </code></pre>
-    
-      <h2 id="evaluating-code-in-other-languages">
-        
-        
-          Evaluating code in other languages <a href="#evaluating-code-in-other-languages" class="anchor_heading">#</a>
-        
-        
-      </h2>
+
+<p>You can import a global value from the entire polyglot scope:</p>
+<pre><code class="language-python">imported_polyglot_global = polyglot.import_value("global_name")
+</code></pre>
+
+<p>This global value should then work as expected:</p>
+<ul>
+  <li>Accessing attributes assumes it reads from the <code>members</code> namespace.</li>
+  <li>Accessing items is supported both with strings and numbers.</li>
+  <li>Calling methods on the result tries to do a straight invoke and falls
+back to reading the member and trying to execute it.</li>
+</ul>
+
+<p>You can evaluate some inlined code from another language:</p>
 <pre><code class="language-python">polyglot.eval(string="1 + 1", language="ruby")
 </code></pre>
 
-<p>It also works with the path to a file:</p>
+<p>You can evaluate some code from a file, by passing the path to it:</p>
 <pre><code class="language-python">polyglot.eval(path="./my_ruby_file.rb", language="ruby")
 </code></pre>
 
-<p>If you pass a file, you can also try to rely on the file-based language detection:</p>
+<p>If you pass a file, you can also rely on the file-based language detection:</p>
 <pre><code class="language-python">polyglot.eval(path="./my_ruby_file.rb")
 </code></pre>
-    
-      <h2 id="exporting-and-importing-values">
-        
-        
-          Exporting and importing values <a href="#exporting-and-importing-values" class="anchor_heading">#</a>
-        
-        
-      </h2>
-<p>To export something from Python to other Polyglot languages so they can import
+
+<p>You can export some oblect from Python to other supported languages so they can import
 it:</p>
 <pre><code class="language-python">foo = object()
 polyglot.export_value(foo, name="python_foo")
 </code></pre>
 
-<p>The export function can be used as a decorator, in this case the function name
-is used as the globally exported name:</p>
+<p>The export function can be used as a decorator.
+In this case the function name is used as the globally exported name:</p>
 <pre><code class="language-python">@polyglot.export_value
 def python_method():
     return "Hello from Python!"
 </code></pre>
 
-<p>You can import a global value from the entire polyglot scope (exported from
-another language):</p>
-<pre><code class="language-python">imported_polyglot_global = polyglot.import_value("global_name")
-</code></pre>
-
-<p>This global should then work as expected; accessing attributes assumes it reads
-from the <code>members</code> namespace; accessing items is supported both with strings and
-numbers; calling methods on the result tries to do a straight invoke and falls
-back to reading the member and trying to execute it.</p>
-    
-      <h2 id="examples">
-        
-        
-          Examples <a href="#examples" class="anchor_heading">#</a>
-        
-        
-      </h2>
-<p>Here is an example of how to use JavaScript regular expression engine to
+<p>Here is an example of how to use the JavaScript regular expression engine to
 match Python strings. Save this code to the <code>polyglot_example.py</code> file:</p>
-
 <pre><code class="language-python">import polyglot
 
 re = polyglot.eval(string="RegExp()", language="js")
@@ -765,24 +742,21 @@ if not md:
 print("Here is what we found: '%s'" % md[1])
 </code></pre>
 
-<p>To run it, pass the <code>--jvm --polyglot</code> options to <code>graalpython</code> binary:</p>
+<p>To run it, pass the <code>--jvm --polyglot</code> option to the <code>graalpython</code> launcher:</p>
 <pre><code class="language-shell">graalpython --jvm --polyglot polyglot_example.py
 </code></pre>
 
-<p>This example matches Python strings using the JavaScript regular expression object
-and Python reads the captured group from the JavaScript result and prints: <code>Here
-is what we found: 'This string was matched by Graal.js'</code>.</p>
+<p>This program matches Python strings using the JavaScript regular expression object.
+Python reads the captured group from the JavaScript result and prints:
+<em>Here is what we found: ‘This string was matched by Graal.js’</em>.</p>
 
-<p>As a more complex example, we can read a file using R, process the data in
-Python, and use R again to display the resulting data image, using both R and
-Python libraries in conjunction. To run it, first install the
-required R library:</p>
+<p>As a more complex example, see how you can read a file using R, process the data in Python, and use R again to display the resulting data image, using both the R and Python libraries in conjunction.
+To run this example, first install the required R library:</p>
 <pre><code class="language-shell">R -e 'install.packages("https://www.rforge.net/src/contrib/jpeg_0.1-8.tar.gz", repos=NULL)'
 </code></pre>
 
 <p>This example also uses <a href="http://graalvm.org/docs/examples/image_magix.py">image_magix.py</a> and works
-on a JPEG image input (you can try with <a href="https://www.graalvm.org/resources/img/python_demo_picture.jpg">this image</a>). These files have to be in the same folder the script below is located in and executed from.</p>
-
+on a JPEG image input (you can try with <a href="https://www.graalvm.org/resources/img/python_demo_picture.jpg">this image</a>). These files have to be in the same folder that the script below is located in and executed from.</p>
 <pre><code class="language-python">import polyglot
 import sys
 import time
@@ -827,34 +801,34 @@ time.sleep(10)
         
       </h2>
 
-<p>Finally, to interoperate with Java (only when running on the JVM), you can use
-the <code>java</code> module:</p>
+<p>Finally, to interoperate with Java (only when running on the JVM), you can use the <code>java</code> module:</p>
 <pre><code class="language-python">import java
 BigInteger = java.type("java.math.BigInteger")
-myBigInt = BigInteger.valueOf(42)
-myBigInt.shiftLeft(128)            # public Java methods can just be called
-myBigInt["not"]()                  # Java method names that are keywords in
-                                   # Python can be accessed using "[]"
+myBigInt = BigInteger(42)
+myBigInt.shiftLeft(128)
+# public Java methods can just be called
+myBigInt["not"]()
+# Java method names that are keywords in Python can be accessed using "[]"
 byteArray = myBigInt.toByteArray()
-print(list(byteArray))             # Java arrays can act like Python lists
+# Java arrays can act like Python lists
+print(list(byteArray))
 </code></pre>
 
 <p>For packages under the <code>java</code> package, you can also use the normal Python import
-syntax. This syntax is limited to importing concrete classes, it doesn’t work
-on packages, unless in <a href="/reference-manual/python/Jython/">Jython Compatibility</a> mode.</p>
+syntax:</p>
 <pre><code class="language-python">import java.util.ArrayList
 from java.util import ArrayList
 
-# these are the same class
 java.util.ArrayList == ArrayList
 
 al = ArrayList()
 al.add(1)
 al.add(12)
-print(al) # prints [1, 12]
+print(al)
+# prints [1, 12]
 </code></pre>
 
-<p>In addition to the <code>type</code> builtin method, the <code>java</code> module, exposes the following
+<p>In addition to the <code>type</code> builtin method, the <code>java</code> module exposes the following
 methods as well:</p>
 
 <table>
@@ -887,15 +861,19 @@ methods as well:</p>
 <pre><code class="language-python">import java
 ArrayList = java.type('java.util.ArrayList')
 my_list = ArrayList()
-print(java.is_symbol(ArrayList))    # prints True
-print(java.is_symbol(my_list))      # prints False, my_list is not a Java host symbol
-print(java.is_object(ArrayList))    # prints True, symbols are also host objects
-print(java.is_function(my_list.add))# prints True, the add method of ArrayList
-print(java.instanceof(my_list, ArrayList)) # prints True
+print(java.is_symbol(ArrayList))
+# prints True
+print(java.is_symbol(my_list))
+# prints False, my_list is not a Java host symbol
+print(java.is_object(ArrayList))
+# prints True, symbols are also host objects
+print(java.is_function(my_list.add))
+# prints True, the add method of ArrayList
+print(java.instanceof(my_list, ArrayList))
+# prints True
 </code></pre>
 
-<p>See the <a href="https://www.graalvm.org/reference-manual/polyglot-programming/">Polyglot Programming</a> and the <a href="https://www.graalvm.org/reference-manual/embed-languages/">Embed Languages</a> reference
-for more information about interoperability with other programming languages.</p>
+<p>See <a href="https://www.graalvm.org/docs/reference-manual/polyglot-programming/">Polyglot Programming</a> and <a href="https://www.graalvm.org/reference-manual/embed-languages/">Embed Languages</a> for more information about interoperability with other programming languages.</p>
 
               </div>
 
