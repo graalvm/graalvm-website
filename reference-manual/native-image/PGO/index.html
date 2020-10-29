@@ -866,62 +866,49 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM Enterprise allows to apply profile-guided optimizations (PGO)
-for additional performance gain and higher throughput of native images. With
-PGO you can collect the profiling data in advance and then feed it to the <code>native-image</code> builder, which will use this information to optimize the performance of the resulting binary.</p>
+<p>GraalVM Enterprise allows to apply profile-guided optimizations (PGO) for additional performance gain and higher throughput of native images.
+With PGO you can collect the profiling data in advance and then feed it to the native image builder, which will use this information to optimize the performance of the resulting binary.</p>
 
 <p>Note: This feature is available with <strong>GraalVM Enterprise</strong> only.</p>
 
-<p>One approach is to gather the execution profiles at one run
-and then use them to optimize subsequent compilation(s). In other words, you create a native image with the <code>--pgo-instrument</code> option to collect the
-profile information. The <code>--pgo-instrument</code> builds an instrumented native image
-with profile-guided optimization data collected from ahead-of-time compiled code
-in the <em>default.iprof</em> file, if nothing else is specified. Then you run an
-example program, saving the result in <em>default.iprof</em>. Finally, you create a
-second native image with a <code>--pgo profile.iprof</code> flag that should be significantly
-faster. You can collect multiple profile files and add them to the image build.</p>
+<p>Here is how you can build an optimized native image, using the <em>OptimizedImage.java</em> example program.</p>
 
-<p>Here is how you can build an optimized native image following the first approach:</p>
+<p>1. Save this Java program that iterates over <code>ArrayList</code> using a lambda expression to a file and compile it:</p>
+<pre><code class="language-java">import java.util.ArrayList;
 
-<ol>
-  <li>Save this Java program that iterates over <code>ArrayList</code> using a lambda expression to an <em>OptimizedImage.java</em> file:
-```java
-import java.util.ArrayList;</li>
-</ol>
-
-<p>class OptimizedImage {
+class OptimizedImage {
   public static void main(String[] args) {
-    ArrayList<String> languages = new ArrayList&lt;&gt;();</String></p>
+    ArrayList&lt;String&gt; languages = new ArrayList&lt;&gt;();
 
-<pre><code>languages.add("JavaScript");
-languages.add("Python");
-languages.add("Ruby");
+    languages.add("JavaScript");
+    languages.add("Python");
+    languages.add("Ruby");
 
-System.out.print("ArrayList: ");
+    System.out.print("ArrayList: ");
 
-languages.forEach((e) -&gt; {
-  System.out.print(e + ", ");
-});   } } ``` 2. Compile it and build an instrumented native image with the `--pgo-instrument` option: ``` javac OptimizedImage.java native-image --pgo-instrument OptimizedImage ./optimizedimage ``` 2. Build the second native image specifying the path to the _profile.iprof_ file and execute it: ``` native-image --pgo profile.iprof OptimizedImage ./optimizedimage ```
+    languages.forEach((e) -&gt; {
+      System.out.print(e + ", ");
+    });
+  }
+}
+</code></pre>
+<pre><code class="language-shell">javac OptimizedImage.java
 </code></pre>
 
-<p>Another approach is to collect profiles while running your
-application in just-in-time mode and then use this information to generate
-a highly-optimized native binary.</p>
-
-<p>Taking the above Java program, here is how you can build an optimized native image following the second approach:</p>
-
-<ol>
-  <li>Compile <em>OptimizedImage.java</em> and run it on the JVM with a <code>-Dgraal.PGOInstrument</code> flag to gather the profiling information:
-    <pre><code>javac OptimizedImage.java
-java -Dgraal.PGOInstrument=optimizedimage.iprof OptimizedImage
+<p>2. Build an instrumented native image by appending the <code>--pgo-instrument</code> option, whose execution will collect the code-execution-frequency profiles:</p>
+<pre><code class="language-shell">native-image --pgo-instrument OptimizedImage
 </code></pre>
-  </li>
-  <li>Use the collected data to generate a native image and execute it:
-    <pre><code>native-image --pgo=optimizedimage.iprof OptimizedImage
+
+<p>3. Run this instrumented image, saving the result in a <em>profile.iprof</em> file, if nothing else is specified:</p>
+<pre><code class="language-shell">./optimizedimage
+</code></pre>
+
+<p>4. Lastly, create the second native image by specifying the path to the <em>profile.iprof</em> file and execute it.</p>
+<pre><code class="language-shell">native-image --pgo=profile.iprof OptimizedImage
 ./optimizedimage
 </code></pre>
-  </li>
-</ol>
+
+<p>You can collect multiple profile files, by specifying different names, and add them to the image build.</p>
 
               </div>
 

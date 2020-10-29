@@ -848,28 +848,21 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Native Image is a technology to ahead-of-time compile Java code to a standalone
-executable, called a <strong>native image</strong>. This executable includes the application
-classes, classes from its dependencies, runtime library classes from JDK, and
-statically linked native code from JDK. It does not run on the Java VM, but
-includes necessary components like memory management and thread scheduling from
-a different runtime system, called “Substrate VM”. Substrate VM is the name for
-the runtime components (like the deoptimizer, garbage collector, thread
-scheduling etc.). The resulting program has faster startup time and lower
-runtime memory overhead compared to a JVM.</p>
+<p>Native Image is a technology to ahead-of-time compile Java code to a standalone executable, called a <strong>native image</strong>.
+This executable includes the application classes, classes from its dependencies, runtime library classes, and statically linked native code from JDK.
+It does not run on the Java VM, but includes necessary components like memory management, thread scheduling, and so on from a different runtime system, called “Substrate VM”.
+Substrate VM is the name for the runtime components (like the deoptimizer, garbage collector, thread scheduling etc.).
+The resulting program has faster startup time and lower runtime memory overhead compared to a JVM.</p>
 
-<p>The <strong>Native Image builder</strong> or <code>native-image</code> is a utility that processes all
-the classes of your application and their dependencies, including those from the
-JDK. It statically analyzes these data to determine which classes and methods
-are reachable during application execution. Then it ahead-of-time compiles that reachable data to a
-native executable for a specific operating system and architecture. This entire
-process is called an <strong>image build time</strong> to clearly distinguish it from the
-compilation of Java source code to bytecode.</p>
+<p>The <strong>Native Image builder</strong> or <code>native-image</code> is a utility that processes all classes of an application and their dependencies, including those from the JDK.
+It statically analyzes these data to determine which classes and methods are reachable during the application execution.
+Then it ahead-of-time compiles that reachable code and data to a native executable for a specific operating system and architecture.
+This entire process is called <strong>building an image</strong> (or the <strong>image build time</strong>) to clearly distinguish it from the compilation of Java source code to bytecode.</p>
 
 <p>Native Image supports JVM-based languages, e.g., Java, Scala, Clojure, Kotlin.
 The resulting image can, optionally, execute dynamic languages like
 JavaScript, Ruby, R or Python. Polyglot embeddings can also be compiled
-ahead-of-time. To inform <code>native-image</code> of guest languages used by an
+ahead-of-time. To inform <code>native-image</code> of a guest language used by an
 application, specify <code>--language:&lt;languageId&gt;</code> for each guest language (e.g.,
 <code>--language:js</code>).</p>
 
@@ -877,7 +870,8 @@ application, specify <code>--language:&lt;languageId&gt;</code> for each guest l
   <li><a href="#install-native-image">Install Native Image</a></li>
   <li><a href="#prerequisites">Prerequisites</a></li>
   <li><a href="#build-a-native-image">Build a Native Image</a></li>
-  <li><a href="#images-and-entry-points">Images and Entry Points</a></li>
+  <li><a href="#build-a-shared-library">Build a Shared Library</a></li>
+  <li><a href="#how-to-determine-what-version-of-graalvm-a-native-image-is-generated-with">How to Determine What Version of GraalVM a Native Image is Generated with</a></li>
   <li><a href="#ahead-of-time-compilation-limitations">Ahead-of-time Compilation Limitations</a></li>
 </ul>
     
@@ -900,14 +894,16 @@ Native Image for GraalVM Community Edition is licensed under the <a href="https:
         
       </h2>
 
-<p>Native Image can be added to the core installation with the <a href="https://www.graalvm.org/docs/reference-manual/gu/">GraalVM Updater</a> tool.</p>
+<p>Native Image can be added to GraalVM with the <a href="https://www.graalvm.org/docs/reference-manual/gu/">GraalVM Updater</a> tool.</p>
 
 <p>Run this command to install Native Image:</p>
 <pre><code class="language-shell">gu install native-image
 </code></pre>
-
 <p>After this additional step, the <code>native-image</code> executable will become available in
 the <code>GRAALVM_HOME/bin</code> directory.</p>
+
+<p>The above command will install Native Image from the GitHub catalog for GraalVM Community users.
+For GraalVM Enterprise users, the <a href="https://www.graalvm.org/reference-manual/graalvm-updater/#manual-installation">manual installation</a> is required.</p>
     
       <h2 id="prerequisites">
         
@@ -965,7 +961,14 @@ SDK 7.1:</p>
         
       </h2>
 
-<p>To build a native image of a class in the current working directory, use:</p>
+<p>A native image can be built as a standalone executable, which is the default, or as a shared library (see <a href="#build-a-shared-library">Build a Shared Library</a>).
+For an image to be useful, it needs to have at least one entry point method.
+For standalone executables, Native Image supports Java main methods with a signature that takes the command line arguments as an array of strings:</p>
+<pre><code class="language-java">public static void main(String[] arg) { /* ... */ }
+</code></pre>
+<p>The executable images can have an arbitrary number of entry points, for example, to implement callbacks or APIs.</p>
+
+<p>To build a native image of a Java class file in the current working directory, use:</p>
 <pre><code class="language-shell">native-image [options] class [imagename] [options]
 </code></pre>
 
@@ -980,7 +983,7 @@ The name of the class containing the
 main method is the last argument, or you can use <code>-jar</code> and provide a JAR
 file that specifies the main method in its manifest.</p>
 
-<p>As an example, we will take a small Java program to reverse a String using recursion:</p>
+<p>As an example, take this small Java program that reverses a String using recursion:</p>
 <pre><code class="language-java">public class Example {
 
     public static void main(String[] args) {
@@ -996,7 +999,7 @@ file that specifies the main method in its manifest.</p>
     }
 }
 </code></pre>
-<p>Compile the <code>Example.java</code> program and build a native image from the Java class:</p>
+<p>Compile it and build a native image from the Java class:</p>
 <pre><code class="language-shell">javac Example.java
 native-image Example
 </code></pre>
@@ -1014,22 +1017,26 @@ signal handlers that a JVM does.</p>
 
 <p>For more complex examples, visit the <a href="https://www.graalvm.org/docs/examples/native-list-dir/">native image generation</a> or <a href="https://www.graalvm.org/docs/examples/java-kotlin-aot/">compiling a Java and Kotlin app ahead-of-time</a> pages.</p>
     
-      <h2 id="images-and-entry-points">
+      <h2 id="build-a-shared-library">
         
         
-          Images and Entry Points <a href="#images-and-entry-points" class="anchor_heading">#</a>
+          Build a Shared Library <a href="#build-a-shared-library" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>A native image can be built as a standalone executable, which is the default, or as a shared library by passing <code>--shared</code> to the native image builder. For an image to be useful, it needs to have at least one entry point method.</p>
-
-<p>For executables, Native Image supports Java main methods with a signature that takes the command line arguments as an array of strings:</p>
-
-<pre><code class="language-java">public static void main(String[] arg) { /* ... */ }
+<p>To build a native image as a shared library of a Java class file, pass  <code>--shared</code> to the native image builder.
+The created shared library will have the main method of the given Java class as its entrypoint method.</p>
+<pre><code class="language-shell">native-image class [libraryname] --shared
+</code></pre>
+<p>To build a native image as a shared library of a JAR file, use:</p>
+<pre><code class="language-shell">native-image -jar jarfile [libraryname] --shared
 </code></pre>
 
-<p>For shared libraries, Native Image provides the <code>@CEntryPoint</code> annotation to specify entry point methods that should be exported and callable from C.
+<p>Note: if you build a shared library where you do not specify a main class, you must append the <code>-H:Name=</code> flag to specify the library name: <code>-H:Name=libraryname</code>.</p>
+
+<p>As mentioned in the previous section, you need to have at least one entry point method for a native image to be useful.
+For shared libraries, Native Image provides the <code>@CEntryPoint</code> annotation to specify entry point methods that should be exported and callable from C.
 Entry point methods must be static and may only have non-object parameters and return types – this includes Java primitives, but also Word types (including pointers). One of the parameters of an entry point method has to be of type <code>IsolateThread</code> or <code>Isolate</code>. This parameter provides the current thread’s execution context for the call.</p>
 
 <p>For example:</p>
@@ -1040,22 +1047,21 @@ Entry point methods must be static and may only have non-object parameters and r
 </code></pre>
 
 <p>When building a shared library, an additional C header file is generated.
-This header file contains declarations for the <a href="/reference-manual/native-image/C-API/">C API</a>, which allows creating isolates and attaching threads from C code, as well as declarations for each entry point in user code. The generated C declaration for the above example is:</p>
+This header file contains declarations for the <a href="/reference-manual/native-image/C-API/">C API</a>, which allows creating isolates and attaching threads from C code, as well as declarations for each entry point in the source code. The generated C declaration for the above example is:</p>
 <pre><code class="language-c">int add(graal_isolatethread_t* thread, int a, int b);
 </code></pre>
 
-<p>Both executable images and shared library images can have an arbitrary number of entry points, for example, to implement callbacks or APIs.</p>
+<p>Shared library images and executable images alike can have an arbitrary number of entry points, for example, to implement callbacks or APIs.</p>
     
-      <h3 id="how-to-determine-what-version-of-graalvm-an-image-is-generated-with">
+      <h2 id="how-to-determine-what-version-of-graalvm-an-image-is-generated-with">
         
         
-          How to Determine What Version of GraalVM an Image Is Generated With? <a href="#how-to-determine-what-version-of-graalvm-an-image-is-generated-with" class="anchor_heading">#</a>
+          How to Determine What Version of GraalVM an Image Is Generated with <a href="#how-to-determine-what-version-of-graalvm-an-image-is-generated-with" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>Assuming you have a Java class file <em>EmptyHello.class</em> containing an empty main method
-and have generated an empty shared object <code>emptyhello</code> with GraalVM Native Image Generator utility of it:</p>
+<p>Assuming you have a Java class file, <em>EmptyHello.class</em> , containing an empty main method and have generated an empty shared object emptyhello with the Native Image builder:</p>
 <pre><code class="language-shell">native-image -cp hello EmptyHello
 [emptyhello:11228]    classlist:     149.59 ms
 ...
@@ -1064,7 +1070,6 @@ and have generated an empty shared object <code>emptyhello</code> with GraalVM N
 <p>If you do not know what GraalVM distribution is set to the <code>PATH</code> environment
 variable, how to determine if a native image was compiled with Community or
 Enterprise Edition? Run this command:</p>
-
 <pre><code class="language-shell">strings emptyhello | grep com.oracle.svm.core.VM
 </code></pre>
 
@@ -1073,14 +1078,12 @@ Enterprise Edition? Run this command:</p>
 </code></pre>
 
 <p><strong>Note:</strong>
-Python source code or LLVM bitcode interpreted or compiled with GraalVM
-Community Edition will not have the same security characteristics as the same
-code interpreted or compiled using GraalVM Enterprise Edition. There is a
-GraalVM string embedded in each image that allows to figure out the version and
-variant of the base (Community or Enterprise) used to build an image.
+Python source code or LLVM bitcode interpreted or compiled with GraalVM Community Edition will not have the same security characteristics as the same code interpreted or compiled using GraalVM Enterprise Edition.
+There is a GraalVM string embedded in each image that allows to figure out the version and variant of the base (Community or Enterprise) used to build an image.
 The following command will query that information from an image:</p>
 <pre><code class="language-shell">strings &lt;path to native-image exe or shared object&gt; | grep com.oracle.svm.core.VM
 </code></pre>
+
 <p>Here is an example output:</p>
 <pre><code class="language-shell">com.oracle.svm.core.VM.Target.LibC=com.oracle.svm.core.posix.linux.libc.GLibC
 com.oracle.svm.core.VM.Target.Platform=org.graalvm.nativeimage.Platform$LINUX_AMD64
@@ -1089,6 +1092,7 @@ com.oracle.svm.core.VM=GraalVM 20.2.0 Java 11
 com.oracle.svm.core.VM.Target.Libraries=pthread|dl|z|rt
 com.oracle.svm.core.VM.Target.CCompiler=gcc|redhat|x86_64|10.2.1
 </code></pre>
+
 <p>If the image was build with Oracle GraalVM Enterprise Edition the output would instead contain:</p>
 <pre><code class="language-shell">com.oracle.svm.core.VM=GraalVM 20.2.0 Java 11 EE
 </code></pre>

@@ -680,7 +680,7 @@ $(document).ready(function(){
       </h1>
 
 <p>GraalVM can execute C/C++, Rust, and other languages that can be compiled to LLVM bitcode.
-As a first step, you have to compile a program to LLVM bitcode using some LLVM compiler front end, for example, <code>clang</code> for C and C++, <code>rust</code> for the Rust programing language, etc.</p>
+As the first step, you have to compile a program to LLVM bitcode using some LLVM compiler front end, for example, <code>clang</code> for C and C++, <code>rust</code> for the Rust programing language, etc.</p>
     
       <h2 id="file-format">
         
@@ -713,21 +713,25 @@ The GraalVM LLVM runtime utilizes this information to find and load dependencies
       </h2>
 
 <p>To simplify compiling C/C++ to executables with embedded bitcode, GraalVM comes with a pre-built LLVM toolchain.
-The LLVM toolchain can be installed with the <a href="https://www.graalvm.org/reference-manual/graalvm-updater">GraalVM Updater</a>, <code>gu</code>, tool:</p>
+The toolchain contains compilers such as <code>clang</code> for C or <code>clang++</code> for C++, but also other tools that are needed
+for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries.</p>
+
+<p>The LLVM toolchain can be added to GraalVM on demand with the <a href="https://www.graalvm.org/reference-manual/graalvm-updater">GraalVM Updater</a> tool:</p>
 <pre><code class="language-shell">$GRAALVM_HOME/bin/gu install llvm-toolchain
 </code></pre>
+
+<p>The above command will install the LLVM toolchain from the GitHub catalog for GraalVM Community users.
+For GraalVM Enterprise users, the <a href="https://www.graalvm.org/reference-manual/graalvm-updater/#manual-installation">manual installation</a> is required.</p>
 
 <p>To get the location of the toolchain, use the <code>--print-toolchain-path</code> argument of <code>lli</code>:</p>
 <pre><code class="language-shell">export LLVM_TOOLCHAIN=$($GRAALVM_HOME/bin/lli --print-toolchain-path)
 </code></pre>
 
-<p>The toolchain contains compilers such as <code>clang</code> for C or <code>clang++</code> for C++, but also other tools that are needed
-for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries.
-See the content of the toolchain path for a list of available tools:</p>
+<p>See the content of the toolchain path for a list of available tools:</p>
 <pre><code class="language-shell">ls $LLVM_TOOLCHAIN
 </code></pre>
 
-<p>Use those tools just as you would for native compilation. For example, the C code file <code>hello.c</code>:</p>
+<p>Use those tools just as you would for native compilation. For example, save this C code in a file named <code>hello.c</code>:</p>
 <pre><code class="language-c">#include &lt;stdio.h&gt;
 
 int main() {
@@ -736,11 +740,11 @@ int main() {
 }
 </code></pre>
 
-<p>You can compile <code>hello.c</code> to an executable with embedded LLVM bitcode as follows:</p>
+<p>Then you can compile <code>hello.c</code> to an executable with embedded LLVM bitcode as follows:</p>
 <pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello.c -o hello
 </code></pre>
 
-<p>The resulting executable <code>hello</code> can be executed on GraalVM using <code>lli</code>:</p>
+<p>The resulting executable, <code>hello</code>, can be executed on GraalVM using <code>lli</code>:</p>
 <pre><code class="language-shell">$GRAALVM_HOME/bin/lli hello
 </code></pre>
     
@@ -767,7 +771,7 @@ int main() {
 }
 </code></pre>
 
-<p>This can be run with:</p>
+<p>This <em>hello-curses.c</em> file can be then compiled and run with:</p>
 <pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello-curses.c -lncurses -o hello-curses
 lli hello-curses
 </code></pre>
@@ -804,8 +808,8 @@ Hello, C++ World!
         
       </h2>
 
-<p>The LLVM toolchain that is bundled with GraalVM does not come with the Rust
-compiler. To install Rust, run the following in your terminal, then follow the
+<p>The LLVM toolchain, bundled with GraalVM, does not come with the Rust
+compiler. To install Rust, run the following in your command prompt, then follow the
 onscreen instructions:</p>
 <pre><code class="language-shell">curl https://sh.rustup.rs -sSf | sh
 </code></pre>
