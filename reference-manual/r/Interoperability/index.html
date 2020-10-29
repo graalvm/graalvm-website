@@ -679,19 +679,20 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM supports several other programming languages, including JavaScript, Ruby, Python, and LLVM.
-GraalVM implementation of R also provides an API for programming language interoperability that lets you execute code from any other language that GraalVM supports. Note that you must start the R script with <code>--polyglot</code> to have access to other GraalVM languages.</p>
+<p>GraalVM supports several other programming languages including JavaScript, Ruby, Python, and those that compile to LLVM bitcode.
+GraalVM’s R runtime provides an API for programming language interoperability that lets you execute code from any other GraalVM-supported language.
+Note that you must start the R script with <code>--polyglot</code> to have access to other languages.</p>
 
-<p>GraalVM execution of R provides the following interoperability primitives:</p>
+<p>GraalVM’s R runtime allows the following interoperability primitives:</p>
 <ul>
-  <li><code>eval.polyglot('languageId', 'code')</code> evaluates code in some other language, the <code>languageId</code> can be, e.g., <code>js</code>.</li>
+  <li><code>eval.polyglot('languageId', 'code')</code> evaluates code in some other language. The <code>languageId</code> can be, e.g., <code>js</code>.</li>
   <li><code>eval.polyglot(path = '/path/to/file.extension')</code> evaluates code loaded from a file. The language is recognized from the extension.</li>
   <li><code>export('polyglot-value-name', rObject)</code> exports an R object so that it can be imported by other languages.</li>
   <li><code>import('exported-polyglot-value-name')</code> imports a polyglot value exported by some other language.</li>
 </ul>
 
 <p>Use the <code>?functionName</code> syntax to learn more. The following example demonstrates the interoperability features:</p>
-<pre><code># get an array from Ruby
+<pre><code class="language-shell"># get an array from Ruby
 x &lt;- eval.polyglot('ruby', '[1,2,3]')
 print(x[[1]])
 # [1] 1
@@ -711,12 +712,13 @@ eval.polyglot('js', paste0(
 </code></pre>
 <p>(Uses <a href="https://www.graalvm.org/docs/examples/r_example.js">r_example.js</a>.)</p>
 
-<p>R vectors are presented as arrays to other languages. This includes single element vectors, e.g., <code>42L</code> or <code>NA</code>.
-However, single element vectors that do not contain <code>NA</code> can be typically used in places where the other
-languages expect a scalar value. Array subscript or similar operation can be used in other languages to access
-individual elements of an R vector. If the element of the vector is not <code>NA</code>, the actual value
-is returned as a scalar value, e.g. <code>int</code>. If the element is <code>NA</code>, then a special object that looks like <code>null</code>
-is returned. The following Ruby code demonstrates this.</p>
+<p>R vectors are presented as arrays to other languages.
+This includes single element vectors, e.g., <code>42L</code> or <code>NA</code>.
+However, single element vectors that do not contain <code>NA</code> can be typically used in places where the other languages expect a scalar value.
+An array subscript or similar operation can be used in other languages to access individual elements of an R vector.
+If the element of the vector is not <code>NA</code>, the actual value is returned as a scalar value, e.g., <code>int</code>.
+If the element is <code>NA</code>, then a special object that looks like <code>null</code> is returned.
+The following Ruby code demonstrates this:</p>
 
 <pre><code class="language-ruby">vec = Polyglot.eval("R", "c(NA, 42)")
 p vec[0].nil?
@@ -732,7 +734,8 @@ p vec[0]
 </code></pre>
 
 <p id="foreign">The foreign objects passed to R are implicitly treated as specific R types.
-The following table gives some examples.</p>
+
+The following table gives some examples:</p>
 
 <table>
   <thead>
@@ -765,16 +768,14 @@ The following table gives some examples.</p>
   </tbody>
 </table>
 
-<p>In the following code example, we can simply just pass the Ruby array to the R built-in function <code>sum</code>,
-which will work with the Ruby array as if it was integer vector.</p>
-
-<pre><code>sum(eval.polyglot('ruby', '[1,2,3]'))
+<p>In the following example, we can simply pass the Ruby array to the R built-in function <code>sum</code>, which will work with the Ruby array as if it was an integer vector.</p>
+<pre><code class="language-shell">sum(eval.polyglot('ruby', '[1,2,3]'))
 </code></pre>
 
 <p>Foreign objects can be also explicitly wrapped into adapters that make them look like the desired R type.
-In such a case, no data copying occurs if possible. The code snippet below shows the most common use cases.</p>
-
-<pre><code># gives list instead of an integer vector
+In such a case, no data copying occurs, if possible.
+The code snippet below shows the most common use cases:</p>
+<pre><code class="language-shell"># gives list instead of an integer vector
 as.list(eval.polyglot('ruby', '[1,2,3]'))
 
 # assume the following Java code:
@@ -789,16 +790,15 @@ as.list(x)
 # gives: list(c(T,F,T), c(1L,2L,3L))
 </code></pre>
 
-<p>For more details, please refer to
-<a href="https://github.com/oracle/fastr/blob/master/com.oracle.truffle.r.test/src/com/oracle/truffle/r/test/library/fastr/R/interop-array-conversion-test.R#L158">the executable specification</a>
-of the implicit and explicit foreign objects conversions.</p>
+<p>For more details, refer to the
+<a href="https://github.com/oracle/fastr/blob/master/com.oracle.truffle.r.test/src/com/oracle/truffle/r/test/library/fastr/R/interop-array-conversion-test.R#L158">executable specification</a> of the implicit and explicit foreign objects conversions.</p>
 
-<p>Note that R contexts started from other languages or Java (as opposed to via the <code>bin/R</code> script) will default to non-interactive mode, similar to <code>bin/Rscript</code>.
-This has implications on console output (results are not echoed) and graphics (output defaults to a file instead of a window), and some packages may behave differently in non-interactive mode.</p>
+<p>Note: R contexts started from other languages, or Java (as opposed to via the <code>R</code> script), will default to non interactive mode, similar to <code>Rscript</code>.
+This has implications on console output (the results are not echoed) and graphics (the output defaults to a file instead of a window), and some packages may behave differently in non-interactive mode.</p>
 
-<p>Bellow is a list of available FastR interoperability builtin functions.
-For more information see the FastR help pages or try the examples.</p>
-<pre><code>&gt; help(java.type)
+<p>Bellow is a list of available R interoperability builtin functions.
+For more information see the <code>R --help</code> message and try these examples:</p>
+<pre><code class="language-shell">&gt; help(java.type)
 &gt; ?java.type
 &gt; example(java.type)
 </code></pre>

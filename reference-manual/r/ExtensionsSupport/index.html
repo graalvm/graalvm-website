@@ -679,23 +679,20 @@ $(document).ready(function(){
         
       </h1>
 
-<p>The GraalVM R engine can run <a href="https://cran.r-project.org/doc/manuals/r-release/R-exts.html">R extensions</a> in two modes:</p>
+<p>The GraalVM R runtime can run <a href="https://cran.r-project.org/doc/manuals/r-release/R-exts.html">R extensions</a> in two modes:</p>
 
 <ul>
-  <li><strong>native</strong>: the native machine code is run directly on your CPU, this is the same as how GNU-R runs R extensions.</li>
-  <li><strong>llvm</strong>: if the LLVM bitcode is available, it can be interpreted by <a href="https://www.graalvm.org/reference-manual/llvm/">GraalVM LLVM</a>.</li>
+  <li><strong>native</strong>: the native machine code is run directly on your CPU, the same way GNU R runs R extensions.</li>
+  <li><strong>llvm</strong>: if the LLVM bitcode is available, it can be interpreted by the <a href="https://www.graalvm.org/reference-manual/llvm/">LLVM interpreter shipped with GraalVM</a>.</li>
 </ul>
 
-<p>The <em>native</em> mode is better suited for code that does not extensively interact with the R API, for example,
-plain C or Fortran numerical computations working on primitive arrays. The <em>llvm</em> mode provides significantly
-better performance for extensions that frequently call between R and the C/C++ code, because GraalVM LLVM
-engine is also partially evaluated by the <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle compiler</a> like the R code, both can be inlined and optimized
-as one compilation unit. Moreover, GraalVM LLVM is supported by
-<a href="https://www.graalvm.org/docs/graalvm-tools/">GraalVM tools</a> which allows to, for instance,
-debug R and C code together.</p>
+<p>The <em>native</em> mode is better suited for code that does not extensively interact with the R API, for example, plain C or Fortran numerical computations working on primitive arrays.
+The <em>llvm</em> mode provides significantly better performance for extensions that frequently call between R and the C/C++ code, because GraalVM’s LLVM runtime is also partially evaluated like the R code.
+Both can be inlined and optimized as one compilation unit.
+Moreover, GraalVM’s LLVM runtime is supported by <a href="https://www.graalvm.org/docs/graalvm-tools/">GraalVM tools</a> which allows users to, for instance, debug R and C code together.</p>
 
-<p>In one GraalVM R process, any R package can be loaded in either mode. That is, GraalVM R supports
-mixing packages loaded in the <em>native</em> mode with packages loaded in the <em>llvm</em> mode in one process.</p>
+<p>In one GraalVM R process, any R package can be loaded in either mode.
+That is, GraalVM’s R runtime supports mixing packages loaded in the <em>native</em> mode with packages loaded in the <em>llvm</em> mode in one process.</p>
     
       <h2 id="generating-llvm-bitcode">
         
@@ -705,42 +702,33 @@ mixing packages loaded in the <em>native</em> mode with packages loaded in the <
         
       </h2>
 
-<p>As of version 19.3.0, the GraalVM R engine is configured to use the
-<a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">LLVM toolchain</a>
-to compile R packages native code. This toolchain produces standard executable binaries for
-a given system, but it also embeds the corresponding LLVM bitcode into them.
-The binaries produced by the LLVM Toolchain can be loaded in both modes: <em>native</em> or <em>llvm</em>.</p>
+<p>As of version 19.3.0, the GraalVM R runtime is configured to use the <a href="https://github.com/oracle/graal/blob/master/sulong/docs/contributor/TOOLCHAIN.md">LLVM toolchain</a> to compile R packages’ native code.
+This toolchain produces standard executable binaries for a given system, but it also embeds the corresponding LLVM bitcode into them.
+The binaries produced by the LLVM toolchain can be loaded in both modes: <em>native</em> or <em>llvm</em>.</p>
 
-<p>The GraalVM R engine can be reconfigured to use your system default compilers
-when installing R packages by running</p>
-
+<p>The GraalVM R runtime can be reconfigured to use your system default compilers when installing R packages by running:</p>
 <pre><code class="language-shell"># use local installation of GGC:
 R -e 'fastr.setToolchain("native")'
 # to revert back to using the GraalVM's LLVM toolchain:
 R -e 'fastr.setToolchain("llvm")'
 </code></pre>
 
-<p>Using the system default compilers may be more reliable, but you loose the
-ability to load the R packages built with the LLVM toolchain in the <em>llvm</em> mode,
-because they will not contain the embedded bitcode. Moreover, mixing packages
-built by the local system default compilers and packages built by the LLVM
-toolchain in one GraalVM R process may cause linking issues.</p>
+<p>Using the system default compilers may be more reliable, but you lose the ability to load the R packages built with the LLVM toolchain in the <em>llvm</em> mode, because they will not contain the embedded bitcode.
+Moreover, mixing packages built by the local system default compilers and packages built by the LLVM toolchain in one R process may cause linking issues.</p>
     
       <h2 id="fortran-compiler">
         
         
-          Fortran compiler <a href="#fortran-compiler" class="anchor_heading">#</a>
+          Fortran Compiler <a href="#fortran-compiler" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>As of version 20.1.0, the GraalVM R engine uses <code>gfortran</code> as the default Fortran
-compiler when installing R packages. Since <code>gfortran</code> cannot produce bitcode,
-packages that contain Fortran code will not work in the LLVM mode.</p>
+<p>As of version 20.1.0, the GraalVM R runtime uses <code>gfortran</code> as the default Fortran compiler when installing R packages.
+Since <code>gfortran</code> cannot produce bitcode, packages that contain Fortran code will not work in the <em>llvm</em> mode.</p>
 
-<p>The GraalVM R engine distribution contains tool F2C, which can convert Fortran code to C
-and then compile it with the Labs LLVM Toolchain. One can configure The GraalVM R engine
-to use this tool by editing configuration file <code>R_HOME/etc/Makeconf</code>, variable <code>FC</code>.</p>
+<p>The GraalVM R runtime contains the F2C tool, which can convert Fortran code to C and then compile it with the LLVM toolchain.
+Users can configure GraalVM’s R runtime to use this tool by editing the configuration file <code>R_HOME/etc/Makeconf</code>, variable <code>FC</code>.</p>
     
       <h2 id="choosing-the-running-mode">
         
@@ -750,22 +738,20 @@ to use this tool by editing configuration file <code>R_HOME/etc/Makeconf</code>,
         
       </h2>
 
-<p>Starting from the version 19.3.0, the GraalVM R engine uses the following defaults:</p>
+<p>Starting with version 19.3.0, GraalVM’s R runtime uses the following defaults:</p>
 <ul>
   <li><strong>native</strong> mode to load the packages</li>
   <li><strong>llvm</strong> toolchain to build their sources</li>
 </ul>
 
 <p>To enable the <em>llvm</em> mode for loading the packages, use <code>--R.BackEnd=llvm</code>.
-You can also enable each mode selectively for given R packages by using:</p>
+You can also enable each mode selectively for the given R packages by using:</p>
 <ul>
   <li><code>--R.BackEndLLVM=package1,package2</code></li>
   <li><code>--R.BackEndNative=package1,package2</code></li>
 </ul>
 
-<p>Moreover, you can configure which packages will be always run in the native mode
-in file <code>R_HOME/etc/native-packages</code>. FastR comes with a default configuration that
-covers some popular R packages that are known to not work yet in the LLVM mode.</p>
+<p>Moreover, you can configure which packages will be always run in the native mode in file <code>R_HOME/etc/native-packages</code>. GraalVM’s R runtime comes with a default configuration that covers some popular R packages that are known to not work yet in the <em>llvm</em> mode.</p>
 
               </div>
 

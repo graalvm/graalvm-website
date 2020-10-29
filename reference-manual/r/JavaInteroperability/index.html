@@ -679,22 +679,27 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM R runtime provides built-in interoperability with Java. Java class objects can be obtained via <code>java.type(...)</code>. In order to run FastR with Java interoperability features the <code>R</code> or <code>Rscript</code> commands have to be started
-with the <code>--jvm</code> switch.</p>
-<pre><code>$GRAALVM_HOME/R --jvm
+<p>The GraalVM R runtime provides the built-in interoperability with Java.
+Java class objects can be obtained via <code>java.type(...)</code>.
+In order to run R with the Java interoperability features, the <code>R</code> or <code>Rscript</code> commands have to be started with the <code>--jvm</code> option.</p>
+<pre><code class="language-shell">R --jvm
 </code></pre>
 
-<p>All the following examples are meant to be executed in the R Console, no additional Java dependencies are necessary.</p>
+<p>Note: All of the following examples are meant to be executed in the R REPL; no additional Java dependencies are necessary.</p>
 
-<p>The standard <code>new</code> function interprets string arguments as a Java class if such class exists. <code>new</code> also accepts Java types returned from <code>java.type</code>.
-Fields and methods of Java objects can be accessed using the <code>$</code> operator.
-Additionally, you can use <code>awt(...)</code> to open an R drawing device
-directly on a Java Graphics surface, for more details see <a href="#java-graphics-interoperability">Java Graphics Interoperability</a>.</p>
+<ul>
+  <li>The standard <code>new</code> function interprets String arguments as a Java class if such class exists.</li>
+  <li><code>new</code> also accepts Java types returned from <code>java.type</code>.</li>
+  <li>The fields and methods of Java objects can be accessed using the <code>$</code> operator.</li>
+  <li>Additionally, you can use <code>awt(...)</code> to open an R drawing device
+directly on a Java Graphics surface. For more details see <a href="#java-graphics-interoperability">Java Graphics Interoperability</a>.</li>
+</ul>
 
 <p>The following example creates a new Java <code>BufferedImage</code> object, plots random data to it using R’s <code>grid</code> package,
-and shows the image in a window using Java’s <code>AWT</code> framework. Note that you must start the R script with <code>--jvm</code> to have access to Java interoperability.</p>
+and shows an image in a window using Java’s <code>AWT</code> framework.
+Note that you must start the R script with <code>--jvm</code> to have access to Java interoperability.</p>
 
-<pre><code>library(grid)
+<pre><code class="language-shell">library(grid)
 openJavaWindow &lt;- function () {
    # create image and register graphics
    imageClass &lt;- java.type('java.awt.image.BufferedImage')
@@ -725,191 +730,197 @@ openJavaWindow &lt;- function () {
 openJavaWindow()
 </code></pre>
 
-<p>GraalVM implementation of R provides its own rJava compatible replacement package available at <a href="https://github.com/oracle/fastr/tree/master/com.oracle.truffle.r.pkgs/rJava">GitHub</a>,
-which can be installed using:</p>
-
-<pre><code>R -e "install.fastr.packages('rJava')"
+<p>GraalVM’s R runtime provides its own rJava-compatible replacement package available at <a href="https://github.com/oracle/fastr/tree/master/com.oracle.truffle.r.pkgs/rJava">GitHub</a>, which can be installed using:</p>
+<pre><code class="language-shell">R -e "install.fastr.packages('rJava')"
 </code></pre>
 
-<p>To access third party Java libraries, they have to be placed on FastR class path.</p>
-<pre><code>&gt; java.addToClasspath("/foo/bar.jar")
+<p>In order for third party Java libraries to be accessed, they have to be placed on R’s class path:</p>
+<pre><code class="language-shell">&gt; java.addToClasspath("/foo/bar.jar")
 &gt; java.addToClasspath(c("/foo/bar.jar", "/foo/bar2.jar"))
 </code></pre>
     
-      <h3 id="get-a-java-class">
+      <h2 id="getting-a-java-class">
         
         
-          Get a Java Class <a href="#get-a-java-class" class="anchor_heading">#</a>
+          Getting a Java Class <a href="#getting-a-java-class" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The access to a Java type is done by providing the fully qualified class name to the <code>java.type</code> function:</p>
-<pre><code>&gt; calendarClass &lt;- java.type('java.util.GregorianCalendar')
+      </h2>
+
+<p>The access to a Java type is achieved by providing a fully qualified class name to the <code>java.type</code> function:</p>
+<pre><code class="language-shell">&gt; calendarClass &lt;- java.type('java.util.GregorianCalendar')
 </code></pre>
-<p>The returned value is a polyglot object representing a Java type.
-The respective Java class is then available through the <code>class</code> property:</p>
-<pre><code>&gt; calendarClass$class
+<p>The returned value is a polyglot object representing a Java type.</p>
+
+<p>The respective Java class is then available through the <code>class</code> property:</p>
+<pre><code class="language-shell">&gt; calendarClass$class
 </code></pre>
 
 <p>The same works also for static class members:</p>
-<pre><code>&gt; calendarClass$getInstance()
+<pre><code class="language-shell">&gt; calendarClass$getInstance()
 </code></pre>
 
-<p>Every requested class has to be on FastR classpath.
-Java JDK classes, like <code>GregorianCalendar</code>, used above, work out of the box.</p>
+<p>Every requested class has to be on the R classpath.
+The JDK classes, like <code>GregorianCalendar</code> used above, work out of the box.</p>
     
-      <h3 id="create-a-new-java-object">
+      <h2 id="creating-a-new-java-object">
         
         
-          Create a New Java Object <a href="#create-a-new-java-object" class="anchor_heading">#</a>
+          Creating a New Java Object <a href="#creating-a-new-java-object" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>A new Java Object can be created by providing a Java type to the <code>new</code> function:</p>
-<pre><code>&gt; calendar &lt;- new(calendarClass)
+      </h2>
+
+<p>A new Java object can be created by providing a Java type to the <code>new</code> function:</p>
+<pre><code class="language-shell">&gt; calendar &lt;- new(calendarClass)
 </code></pre>
 
 <p>It is also possible to pass over additional constructor arguments:</p>
-<pre><code>&gt; calendar &lt;- new(calendarClass, year=2042L, moth=3L, day=1L)
+<pre><code class="language-shell">&gt; calendar &lt;- new(calendarClass, year=2042L, moth=3L, day=1L)
 </code></pre>
 
-<p>or use just the class name:</p>
-
-<pre><code>calendar &lt;- new("java.util.GregorianCalendar")
+<p>Alternately, you can use just a class name:</p>
+<pre><code class="language-shell">calendar &lt;- new("java.util.GregorianCalendar")
 calendar &lt;- new("java.util.GregorianCalendar", year=2042L, moth=3L, day=1L)
 </code></pre>
     
-      <h3 id="accessing-fields-and-methods">
+      <h2 id="accessing-fields-and-methods">
         
         
           Accessing Fields and Methods <a href="#accessing-fields-and-methods" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
+
 <p>The access to static and instance fields and methods is provided by the <code>$</code> and <code>[</code> operators.</p>
 
-<p>Access Java fields:</p>
-<pre><code>&gt; calendarClass$SUNDAY
+<p>To access Java fields:</p>
+<pre><code class="language-shell">&gt; calendarClass$SUNDAY
 &gt; calendarClass["SUNDAY"]
 </code></pre>
 
-<p>Invoke Java methods:</p>
-<pre><code>&gt; currentTime &lt;- calendar$getTime()
+<p>To invoke Java methods:</p>
+<pre><code class="language-shell">&gt; currentTime &lt;- calendar$getTime()
 &gt; currentTime["toString"]()
 &gt; calendar$setTime(currentTime)
 </code></pre>
 
-<p>Polyglot objects returned from a field, method or created via <code>new</code> are either
-automatically converted into corresponding R values or they live on as polyglot
-objects in the FastR environment. If necessary, they can be passed over to Java.</p>
-
-<pre><code>&gt; cet &lt;- java.type("java.util.TimeZone")$getTimeZone("CET")
+<p>Polyglot objects returned from a field or method, or created via <code>new</code>, are either automatically converted into corresponding R values or they live on as polyglot objects in the GraalVM R runtime.
+If necessary, they can be passed over to Java:</p>
+<pre><code class="language-shell">&gt; cet &lt;- java.type("java.util.TimeZone")$getTimeZone("CET")
 &gt; cetCalendar &lt;- new(calendarClass, cet)
 </code></pre>
     
-      <h3 id="handling-of-java-primitives">
+      <h2 id="handling-of-java-primitives">
         
         
           Handling of Java Primitives <a href="#handling-of-java-primitives" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>Returned java primitives, primitive wrappers and String instances are automatically converted into corresponding R values.</p>
+      </h2>
 
-<p>R <code>integer</code> values map directly to Java <code>int</code>/<code>Integer</code>, R <code>numeric</code> to Java <code>double</code>/<code>Double</code>, R <code>logical</code>
-to Java <code>boolean</code>/<code>Boolean</code> and R <code>character</code> to Java <code>String</code>. If necessary R <code>integer</code> and <code>double</code>
-are converted to the expected Java type.</p>
+<p>The returned Java primitives, primitive wrappers, and String instances are automatically converted into corresponding R values and map as follows:</p>
+
+<ul>
+  <li>R <code>integer</code> values map directly to Java <code>int</code>/<code>Integer</code></li>
+  <li>R <code>numeric</code> to Java <code>double</code>/<code>Double</code></li>
+  <li>R <code>logical</code> to Java <code>boolean</code>/<code>Boolean</code></li>
+  <li>R <code>character</code> to Java <code>String</code></li>
+  <li>If necessary R <code>integer</code> and <code>double</code> are converted to the expected Java type</li>
+</ul>
     
-      <h3 id="inspecting-polyglot-objects">
+      <h2 id="inspecting-polyglot-objects">
         
         
           Inspecting Polyglot Objects <a href="#inspecting-polyglot-objects" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The <code>names</code> function can be used to obtain a list of instance and static members from
-a polyglot Java Object or Java Class:</p>
-<pre><code>&gt; names(calendar)
+      </h2>
+
+<p>The <code>names</code> function can be used to obtain a list of instance and static members from a polyglot Java object or Java class:</p>
+<pre><code class="language-shell">&gt; names(calendar)
 &gt; names(calendarClass)
 </code></pre>
 
 <p>Code completion works as well:</p>
-<pre><code>&gt; calendar$a&lt;TAB&gt;
+<pre><code class="language-shell">&gt; calendar$a&lt;TAB&gt;
 </code></pre>
     
-      <h3 id="working-with-java-arrays">
+      <h2 id="working-with-java-arrays">
         
         
           Working with Java Arrays <a href="#working-with-java-arrays" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The need for Java Arrays appears at the latest when they have to be passed over to <code>java</code> as arguments.</p>
+      </h2>
+
+<p>The need for Java arrays appears when they have to be passed over to <code>java</code> as arguments.</p>
 
 <p>You can create an array by creating an array class and instantiating an array from it:</p>
-<pre><code>&gt; arrayClass &lt;- java.type('int[]')
+<pre><code class="language-shell">&gt; arrayClass &lt;- java.type('int[]')
 &gt; intArray &lt;- new(arrayClass, 3)
 </code></pre>
 
-<p>The component type names of primitive arrays are <code>boolean</code>, <code>byte</code>, <code>char</code>, <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>
+<p>The component type names of primitive arrays are <code>boolean</code>, <code>byte</code>, <code>char</code>, <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>,
 and <code>short</code> – the same as in each particular primitive wrapper TYPE constant (see, e.g., <code>Integer.TYPE.getName()</code>).
-Note that it is possible to pass a R vector into a Java method in case the expected Java array is of a primitive
-component type or String. The conversion happens then automatically on the background.</p>
-<pre><code>&gt; integerArray &lt;- new(java.type('java.lang.Integer[]'), 3L)
+Note that it is possible to pass an R vector into a Java method in case the expected Java array is of a primitive component type or String.
+Then, the conversion happens automatically in the background.</p>
+<pre><code class="language-shell">&gt; integerArray &lt;- new(java.type('java.lang.Integer[]'), 3L)
 &gt; integer2DimArray &lt;- new('java.lang.Integer[][]', c(2L, 3L))
 &gt; stringArray &lt;- new(java.type('java.lang.String[]'), 3L)
 </code></pre>
 
-<p>Access to array elements is provided by the <code>[</code> operator.</p>
-<pre><code>&gt; stringArray[1] &lt;- 'a'
+<p>The access to array elements is provided by the <code>[</code> operator:</p>
+<pre><code class="language-shell">&gt; stringArray[1] &lt;- 'a'
 &gt; string2DimArray[1,1] &lt;- 'a'
 &gt; element &lt;- stringArray[1]
 &gt; element &lt;- string2DimArray[1,1]
 </code></pre>
     
-      <h3 id="converting-java-arrays-to-r-objects">
+      <h2 id="converting-java-arrays-into-r-objects">
         
         
-          Converting Java Arrays to R Objects <a href="#converting-java-arrays-to-r-objects" class="anchor_heading">#</a>
+          Converting Java Arrays into R Objects <a href="#converting-java-arrays-into-r-objects" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>Unlike Java primitives or their wrappers, Java arrays are not automatically
-converted into a R vector. Nevertheless, when appropriate they can be handled by
-FastR builtin functions the same way as native R objects.</p>
-<pre><code>&gt; sapply(intArray, function(e) { e })
+      </h2>
+
+<p>Unlike Java primitives or their wrappers, Java arrays are not automatically converted into an R vector.
+Nevertheless, when appropriate, they can be handled by R builtin functions the same way as native R objects:</p>
+<pre><code class="language-shell">&gt; sapply(intArray, function(e) { e })
 &gt; length(stringArray)
 &gt; length(string2DimArray[1])
 </code></pre>
     
-      <h3 id="explicit-java-array-conversion">
+      <h2 id="explicit-java-array-conversion">
         
         
           Explicit Java Array Conversion <a href="#explicit-java-array-conversion" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
+
 <p>A Java array conversion can be done explicitly by providing a Java array to the <code>as.vector</code> function:</p>
-<pre><code>&gt; intVec &lt;- as.vector(intArray)
+<pre><code class="language-shell">&gt; intVec &lt;- as.vector(intArray)
 </code></pre>
 
-<p>Arrays having a Java primitive component type are converted into a R vector,
-otherwise a list containing the array elements is created.
-See also:</p>
-<pre><code>&gt; characterVector &lt;- as.character(intArray)
+<p>Arrays having a Java primitive component type are converted into an R vector.
+Otherwise a list containing the array elements is created:</p>
+<pre><code class="language-shell">&gt; characterVector &lt;- as.character(intArray)
 &gt; logicalVector &lt;- as.logical(intArray)
 &gt; ...
 </code></pre>
     
-      <h3 id="the-java-iterable-interface">
+      <h2 id="java-iterable-interface">
         
         
-          The Java Iterable Interface <a href="#the-java-iterable-interface" class="anchor_heading">#</a>
+          Java Iterable Interface <a href="#java-iterable-interface" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>When appropriate, Java objects implementing <code>java.lang.Iterable</code> are handled in the same way like Java arrays when passed as arguments to functions.</p>
-<pre><code>&gt; javaList &lt;- new(java.type('java.util.ArrayList'))
+      </h2>
+
+<p>When appropriate, Java objects implementing <code>java.lang.Iterable</code> are handled in the same way as Java arrays when passed as arguments to functions:</p>
+<pre><code class="language-shell">&gt; javaList &lt;- new(java.type('java.util.ArrayList'))
 &gt; javaList$add(0);
 &gt; javaList$add(1)
 &gt; length(javaList)
@@ -917,23 +928,23 @@ See also:</p>
 &gt; as.logical(javaList)
 </code></pre>
     
-      <h3 id="compatibility-with-rjava">
+      <h2 id="compatibility-with-rjava">
         
         
           Compatibility with rJava <a href="#compatibility-with-rjava" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>FastR comes with a with a rJava compatibility layer based on FastR Java
-Interoperability features. Most of the officially documented rJava functions are
-supported. For more information, see the <a href="https://cran.r-project.org/web/packages/rJava/index.html">rJava CRAN</a> documentation.</p>
+      </h2>
+
+<p>The GraalVM R runtime comes with an rJava compatibility layer based on the Java interoperability features.
+Most of the officially documented rJava functions are supported.
+For more information, see the <a href="https://cran.r-project.org/web/packages/rJava/index.html">rJava CRAN</a> documentation.</p>
 
 <ul>
-  <li>You can install FastR’s <code>rJava</code> replacement using <code>install.packages("rJava")</code>.
-The <code>install.packages</code> function in FastR has special handling for some packages including
-<code>rJava</code> and it downloads it from FastR GitHub repository instead of from MRAN.</li>
-  <li>as with any other R package, before executing any rJava functions, the package has to be loaded first.
-    <pre><code>&gt; library(rJava)
+  <li>You can install the GraalVM R runtime’s <code>rJava</code> replacement using <code>install.packages("rJava")</code>.
+The <code>install.packages</code> function in R has special handling for some packages, including <code>rJava</code>, and it downloads rJava from the source repository on GitHub instead of from MRAN.</li>
+  <li>As with any other R package, before executing any rJava functions, the package has to be loaded first:
+    <pre><code class="language-shell">&gt; library(rJava)
 </code></pre>
   </li>
 </ul>
@@ -950,23 +961,25 @@ The <code>install.packages</code> function in FastR has special handling for som
         
         
       </h2>
-<p>The GraalVM implementation of R includes its own Java based implementation of the <code>grid</code> package and the following graphics devices: <code>png</code>, <code>jpeg</code>, <code>bmp</code>, <code>svg</code> and <code>awt</code> (<code>X11</code> is aliased to <code>awt</code>). The <code>graphics</code> package and most of its functions are not supported at the moment.</p>
 
-<p>The <code>awt</code> device is based on the Java <code>Graphics2D</code> object and users can pass it their own <code>Graphics2D</code> object instance when opening the device using the <code>awt</code> function, as shown in the Java interop example.
-When the <code>Graphics2D</code> object is not provided to <code>awt</code>, it opens a new window similarly to <code>X11</code>.</p>
+<p>The GraalVM R runtime includes its own Java-based implementation of the <code>grid</code> package and the following graphics devices: <code>png</code>, <code>jpeg</code>, <code>bmp</code>, <code>svg</code>, and <code>awt</code> (<code>X11</code> is aliased to <code>awt</code>).
+The <code>graphics</code> package and most of its functions are not supported at the moment.</p>
 
-<p>The <code>svg</code> device in GraalVM implementation of R generates more lightweight SVG code than the <code>svg</code>
-implementation in GNU R.
+<p>The <code>awt</code> device is based on the Java <code>Graphics2D</code> object and users can pass it to their own <code>Graphics2D</code> object instance when opening the device using the <code>awt</code> function, as shown in the Java interop example.
+When the <code>Graphics2D</code> object is not provided to <code>awt</code>, it opens a new window similar to <code>X11</code>.</p>
+
+<p>The <code>svg</code> device in GraalVM R runtime generates more lightweight SVG code than the <code>svg</code> implementation in GNU R.
 Moreover, functions tailored to manipulate the SVG device are provided: <code>svg.off</code> and <code>svg.string</code>.
-The SVG device is demonstrated in the following code sample. Please use the <code>?functionName</code> syntax to learn more.</p>
+The SVG device is demonstrated in the following code sample:</p>
 
-<pre><code>library(lattice)
+<pre><code class="language-shell">library(lattice)
 svg()
 mtcars$cars &lt;- rownames(mtcars)
 print(barchart(cars~mpg, data=mtcars))
 svgCode &lt;- svg.off()
 cat(svgCode)
 </code></pre>
+<p>To learn more, see the <code>?functionName</code> syntax.</p>
 
               </div>
 
