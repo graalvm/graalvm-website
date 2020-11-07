@@ -671,10 +671,10 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="jython-compatibility">
+                <h1 id="jython-migration-guide">
         
         
-          Jython Compatibility
+          Jython Migration Guide
         
         
       </h1>
@@ -682,9 +682,23 @@ $(document).ready(function(){
 <p>Most Jython code that uses Java integration will be based on a
 stable Jython release, and these only come in Python 2.x versions.
 GraalVM’s Python runtime, in contrast, is only targeting Python 3.x.
-Thus, GraalVM does not provide full compatibility with these earlier 2.x versions of Jython.</p>
+GraalVM does not provide a full compatibility with these earlier 2.x versions of Jython.
+Thus, a significant migration step will have to be taken to migrate all your code to Python 3.</p>
 
-<p>Nonetheless, there are certain features of Jython’s Java integration that we can offer similarly.
+<p>For Jython specific features, follow this document to learn about migration to GraalVM’s Python runtime.</p>
+
+<p>Note that some features of Jython have a negative impact on runtime performance, and are disabled by default.
+To make migration easier, you can enable some features with a command line flag on GraalVM: <code>--python.EmulateJython</code>.</p>
+    
+      <h2 id="importing-java-packages">
+        
+        
+          Importing Java Packages <a href="#importing-java-packages" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>There are certain features of Jython’s Java integration that are enabled by default on GraalVM’s Python runtime.
 Here is an example:</p>
 
 <pre><code>&gt;&gt;&gt; import java.awt as awt
@@ -697,27 +711,19 @@ Here is an example:</p>
 </code></pre>
 
 <p>This example works exactly the same on both Jython and Python on GraalVM.
-Some features of Jython are more expensive at runtime, and thus are hidden behind a
-command line flag on GraalVM: <code>--python.EmulateJython</code>.</p>
-    
-      <h2 id="import-java-classes">
-        
-        
-          Import Java Classes <a href="#import-java-classes" class="anchor_heading">#</a>
-        
-        
-      </h2>
+However, on GraalVM only packages in the <code>java</code> namespace can be directly imported.
+Importing classes from packages outside the <code>java</code> namespace also requires the <code>--python.EmulateJython</code> option to be active.</p>
 
-<p>Import statements allow you to import Java classes, but (unlike Jython), only
-packages in the <code>java</code> namespace can be directly imported.</p>
-
-<p>For example, this will work:</p>
+<p>Additionally, importing Java packages as Python modules is only supported under very specific circumstances.
+For example, this will work:</p>
 <pre><code class="language-python">import java.lang as lang
 </code></pre>
+
 <p>But this will not:</p>
 <pre><code class="language-python">import javax.swing as swing
 from javax.swing import *
 </code></pre>
+
 <p>Instead, you will have to import one of the classes you are interested in directly:</p>
 <pre><code class="language-python">import javax.swing.Window as Window
 </code></pre>

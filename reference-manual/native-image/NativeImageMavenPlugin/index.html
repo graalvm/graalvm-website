@@ -945,6 +945,48 @@ It is also possible to customize the plugin within a
 </code></pre>
 
 <p>If you use GraalVM Enterprise as the <code>JAVA_HOME</code> environment, the plugin builds a native image with Enterprise features enabled, e.g., an executable will automatically be built with <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">compressed references</a> and other optimizations enabled.</p>
+    
+      <h3 id="reusing-configuration-from-a-parent-pom">
+        
+        
+          Reusing configuration from a parent POM <a href="#reusing-configuration-from-a-parent-pom" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The <code>&lt;buildArgs&gt;</code> element can be combined between parent and children POM. Suppose the following parent POM definition:</p>
+
+<pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.graalvm.nativeimage&lt;/groupId&gt;
+    &lt;artifactId&gt;native-image-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;${graalvm.version}&lt;/version&gt;
+    &lt;configuration&gt;
+        &lt;imageName&gt;${project.artifactId}&lt;/imageName&gt;
+        &lt;mainClass&gt;${exec.mainClass}&lt;/mainClass&gt;
+        &lt;buildArgs&gt;
+            &lt;buildArg&gt;--no-fallback&lt;buildArg&gt;
+        &lt;/buildArgs&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;
+</code></pre>
+
+<p>Children projects have the ability to append <code>&lt;buildArg&gt;</code>s in the following way:</p>
+
+<pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.graalvm.nativeimage&lt;/groupId&gt;
+    &lt;artifactId&gt;native-image-maven-plugin&lt;/artifactId&gt;
+    &lt;configuration&gt;
+        &lt;buildArgs combine.children="append"&gt;
+            &lt;buildArg&gt;--verbose&lt;/buildArg&gt;
+        &lt;/buildArgs&gt;
+    &lt;/configuration&gt;
+&lt;/plugin&gt;
+</code></pre>
+
+<p>In this case, the arguments that will be passed to the <code>native-image</code> executable will be:</p>
+
+<pre><code>--no-fallback --verbose
+</code></pre>
 
               </div>
 
