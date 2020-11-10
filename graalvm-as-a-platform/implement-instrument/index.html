@@ -641,14 +641,14 @@ $(document).ready(function(){
                 <h1 id="getting-started-with-instruments-in-graalvm">
         
         
-          Getting started with Instruments in GraalVM
+          Getting Started with Instruments in GraalVM
         
         
       </h1>
 
 <p>Tools are sometimes referred to as <em>Instruments</em> within the GraalVM platform.
-The <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrument API</a> is used to implement such instruments.
-Instruments can track very fine-grained VM-level runtime events to profile, inspect, and analyze the runtime behavior of applications running on GraalVM.</p>
+The <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Instrument API</a> is used to implement such instruments.
+Instruments can track very fine-grained, VM-level runtime events to profile, inspect, and analyze the runtime behavior of applications running on GraalVM.</p>
     
       <h2 id="simple-tool">
         
@@ -657,82 +657,82 @@ Instruments can track very fine-grained VM-level runtime events to profile, insp
         
         
       </h2>
+
 <p>To provide an easier starting point for tool developers we have created a
 <a href="https://github.com/graalvm/simpletool">Simple Tool</a> example project. This is a
-javadoc-rich maven project which implements a simple code coverage tool. We
-recommend cloning the repository and exploring the source code as a starting
-point for tool development. The following sections will give a guided tour of
+javadoc-rich Maven project which implements a simple code coverage tool.</p>
+
+<p>We recommend cloning the repository and exploring the source code as a starting
+point for tool development. The following sections will provide a guided tour of
 the steps needed to build and run a GraalVM tool, using Simple Tool source code
-as the running example. These sections do not cover all the features of the
-<a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrumentation API</a> so we encourage you to check the javadoc for more details.</p>
+as the running example. These sections do not cover all of the features of the
+<a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Instrument API</a> so we encourage you to check the javadoc for more details.</p>
     
-      <h3 id="the-requirements">
+      <h3 id="requirements">
         
         
-          The Requirements <a href="#the-requirements" class="anchor_heading">#</a>
+          Requirements <a href="#requirements" class="anchor_heading">#</a>
         
         
       </h3>
+
 <p>As mentioned before, Simple Tool is a code coverage tool. Ultimately, it
 should provide the developer with information on what percentage of source code
 lines was executed, as well as exactly which lines were executed. With that in
-mind, we can define some high level requirements from our tool:</p>
+mind, we can define some high-level requirements from our tool:</p>
 
 <ol>
-  <li>The tool keeps track of loaded source code</li>
-  <li>The tool keeps track of executed source code</li>
-  <li>On application exit, the tool calculates and prints per line coverage information</li>
+  <li>The tool keeps track of loaded source code.</li>
+  <li>The tool keeps track of executed source code.</li>
+  <li>On application exit, the tool calculates and prints per-line coverage information.</li>
 </ol>
     
-      <h3 id="truffle-instrument">
+      <h3 id="instrument-api">
         
         
-          Truffle Instrument <a href="#truffle-instrument" class="anchor_heading">#</a>
+          Instrument API <a href="#instrument-api" class="anchor_heading">#</a>
         
         
       </h3>
-<p>The main starting point for Truffle tools is subclassing the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">TruffleInstrument</a> class.
-Unsurprisingly, the simple tool code base does exactly this creating the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L84">SimpleCoverageInstrument</a> class.</p>
+
+<p>The main starting point for tools is subclassing the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">TruffleInstrument</a> class.
+Unsurprisingly, the simple tool code base does exactly this, creating the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L84">SimpleCoverageInstrument</a> class.</p>
 
 <p>The
 <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Registration.html">Registration</a>
 annotation on the class ensures that the newly created instrument is registered
-with the Truffle Instrumentation framework, i.e., that it will be automatically
-discovered by the framework. It also provides some meta-data about the
-instrument: id, name, version, which services the instrument provides and
+with the Instrument API, i.e., that it will be automatically
+discovered by the framework. It also provides some metadata about the
+instrument: ID, name, version, which services the instrument provides, and
 whether the instrument is internal or not. In order for this annotation to be
-effective the Truffle DSL processor needs to process this class. This is, in case of Simple Tool, done automatically by having the DSL processor as a dependency in the <a href="https://github.com/graalvm/simpletool/blob/master/pom.xml#L83">maven configuration</a>.</p>
+effective the DSL processor needs to process this class. This is, in the case of Simple Tool, done automatically by having the DSL processor as a dependency in the <a href="https://github.com/graalvm/simpletool/blob/master/pom.xml#L83">Maven configuration</a>.</p>
 
-<p>Now we will look back at the implementation of the <code>SimpleCoverageInstrument</code> class, namely which methods from <code>TruffleInstrument</code> does it override.
-These are <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L130">onCreate</a>, <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L182">onDispose</a> and <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L245">getOptionDescriptors</a>.
-The <code>onCreate</code> and <code>onDispose</code> methods are quite self-explanatory: called by the framework when the instrument is created and disposed.
+<p>Now we will look back at the implementation of the <code>SimpleCoverageInstrument</code> class, namely which methods from <code>TruffleInstrument</code> it overrides.
+These are <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L130">onCreate</a>, <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L182">onDispose</a>, and <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L245">getOptionDescriptors</a>.
+The <code>onCreate</code> and <code>onDispose</code> methods are self-explanatory: they are called by the framework when the instrument is created and disposed.
 We will discuss their implementations later, but first let us discuss the remaining one: <code>getOptionDescriptors</code>.</p>
 
-<p>Truffle comes with its own system for specifying command line options.
+<p>The <a href="/graalvm-as-a-platform/language-implementation-framework/">Language Implementation framework</a> comes with its own system for specifying command-line options.
 These options allow tool users to control the tool either from the command line or when creating <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.html">polyglot contexts</a>.
-It is annotation based, and examples for such options are the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L91">ENABLED</a> and <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L97">PRINT_COVERAGE</a> fields of <code>SimpleCoverageInstrument</code>.
-Both of these are static final fields of the type <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/options/OptionKey.html">OptionKey</a> annotated with <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/Option.html">Option</a> which, similarly to the <code>Registration</code> annotation, provides some meta data for the option.
-Again, as with the <code>Registration</code> annotation, for the <code>Option</code> annotation to be effective the Truffle DSL processor is needed, which generates a subclass of <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/options/OptionDescriptors.html">OptionDescriptors</a> (in our case named <code>SimpleCoverageInstrumentOptionDescriptors</code>).
+It is annotation-based, and examples for such options are the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L91">ENABLED</a> and <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L97">PRINT_COVERAGE</a> fields of <code>SimpleCoverageInstrument</code>.
+Both of these are static final fields of the type <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/options/OptionKey.html">OptionKey</a> annotated with <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/Option.html">Option</a> which, similar to the <code>Registration</code> annotation, provides some metadata for the option.
+Again, as with the <code>Registration</code> annotation, for the <code>Option</code> annotation to be effective the DSL processor is needed, which generates a subclass of <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/options/OptionDescriptors.html">OptionDescriptors</a> (in our case named <code>SimpleCoverageInstrumentOptionDescriptors</code>).
 An instance of this class should be returned from the <code>getOptionDescriptors</code> method to let the framework know which options the instrument provides.</p>
 
-<p>Let us return to the <code>onCreate</code> method. As an argument we receive an instance of the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Env.html">Env</a> class.
+<p>Returning to the <code>onCreate</code> method, as an argument, we receive an instance of the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Env.html">Env</a> class.
 This object gives a lot of useful information, but for the <code>onCreate</code> method we are primarily interested in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.Env.html#getOptions--">getOptions</a> method, which can be used to read which options are passed to the tool.
 We use this to check whether the <code>ENABLED</code> option has been set and if so we enable our tool by calling the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L169">enable</a> method.
 Similarly, in the <code>onDispose</code> method we check the options for the state of the <code>PRINT_COVERAGE</code> option, and if it is enabled we call the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L184">printResults</a> method which will print our results.</p>
 
-<p>What does it mean “to enable a tool”?
-In general, it means that we tell the framework about the events we are
-interested in and how we want to react to them. Looking at our <code>enable</code>
-method it does the following:</p>
+<p>What does it mean “to enable a tool?”
+In general, it means that we tell the framework about the events we are interested in and how we want to react to them. Looking at our <code>enable</code> method, it does the following:</p>
 <ul>
-  <li>Firstly, it defines <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/SourceSectionFilter.html">SourceSectionFilter</a>.
-This filter is a declarative definition of the parts of the source code we are
-interested in. In our example, we care about all nodes that are considered
-expressions, and we do not care about internal language parts.</li>
-  <li>Secondly, we obtain a instance of an
+  <li>First, it defines <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/SourceSectionFilter.html">SourceSectionFilter</a>.
+This filter is a declarative definition of the parts of the source code we are interested in.
+In our example, we care about all nodes that are considered expressions, and we do not care about internal language parts.</li>
+  <li>Second, we obtain an instance of an
 <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/Instrumenter.html">Instrumenter</a>
-class which is an object allowing to specify which parts of the system we wish
-to instrument.</li>
+class which is an object allowing us to specify which parts of the system we wish to instrument.</li>
   <li>Finally, using the <code>Instrumenter</code> class, we specify a Source Section Listener and an Execution Event Factory which are both described in the next two sections.</li>
 </ul>
     
@@ -743,10 +743,11 @@ to instrument.</li>
         
         
       </h3>
-<p>Truffle API provides the notion of a <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/Source.html">Source</a> which is the source code unit, and a <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html">SourceSection</a> which is one continuous part of a <code>Source</code>, e.g., one method, one statement, one expression, and so on. More details can be found in the respective javadoc.</p>
+
+<p>The Language API provides the notion of a <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/Source.html">Source</a> which is the source code unit, and a <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html">SourceSection</a> which is one continuous part of a <code>Source</code>, e.g., one method, one statement, one expression, and so on. More details can be found in the respective javadoc.</p>
 
 <p>The first requirement for Simple Tool is to keep track of loaded source code.
-The Truffle Instrumentation API provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/LoadSourceSectionListener.html">LoadSourceSectionListener</a> which, when subclassed and registered with the instrumenter, allows to react to the runtime loading source sections.
+The Instrument API provides the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/LoadSourceSectionListener.html">LoadSourceSectionListener</a> which, when subclassed and registered with the instrumenter, allows users to react to the runtime loading source sections.
 This is exactly what we do with the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/GatherSourceSectionsListener.java#L56">GatherSourceSectionsListener</a>, which is registered in the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L172">enable</a> method of the instrument.
 The implementation of <code>GatherSourceSectionsListener</code> is quite simple: we override the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/GatherSourceSectionsListener.java#L71">onLoad</a> method to notify the instrument of each loaded source section.
 The instrument keeps a mapping from each <code>Source</code> to a <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/Coverage.java">Coverage</a> object which keeps a set of loaded source sections for each source.</p>
@@ -758,32 +759,36 @@ The instrument keeps a mapping from each <code>Source</code> to a <a href="https
         
         
       </h3>
-<p>Truffle languages are implemented as Abstract Syntax Tree (AST) interpreters.
-The language implementers annotate certain nodes with tags, which allows to
+
+<p>Guest languages are implemented as Abstract Syntax Tree (AST) interpreters.
+The language implementers annotate certain nodes with tags, which allows us to
 select which nodes we are interested in, by using the aforementioned
-<code>SourceSectionFilter</code>, in a language agnostic manner. The main power of the
-Truffle Instrumentation framework lies in its ability to insert specialised
+<code>SourceSectionFilter</code>, in a language-agnostic manner.</p>
+
+<p>The main power of the Instrument API lies in its ability to insert specialised
 nodes in the AST which “wrap” the nodes of interest. These nodes are built using
 the same infrastructure that the language developers use, and are, from the
 perspective of the runtime, indistinguishable from the language nodes. This
-means that all the techniques used to optimize Truffle languages into such high
+means that all of the techniques used to optimize guest languages into such high
 performing language implementations are available to the tool developers as
-well. More information about these techniques is available in the <a href="https://github.com/oracle/graal/tree/master/truffle/docs">language implementation documentation</a>.
+well.</p>
+
+<p>More information about these techniques is available in the <a href="https://github.com/oracle/graal/tree/master/truffle/docs">language implementation documentation</a>.
 Suffice it to say that for Simple Tool to meet its second requirement, we need to
-instrument all expressions with our own node that will notify when that
+instrument all expressions with our own node that will notify us when that
 expression is executed.</p>
 
 <p>For this task we use the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/CoverageNode.java">CoverageNode</a>.
 It is a subclass of <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/ExecutionEventNode.html">ExecutionEventNode</a> which, as the name implies, is used to instrument events during execution.
 The <code>ExecutionEventNode</code> offers many methods to override, but we are only interested in <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/CoverageNode.java#L106">onReturnValue</a>.
-This method is invoked when the “wrapped” node returns a value, i.e. is successfully executed.
+This method is invoked when the “wrapped” node returns a value, i.e., is successfully executed.
 The implementation is rather simple. We just notify the instrument that the node with this particular <code>SourceSection</code> has been executed, and the instrument updates the <code>Coverage</code> object in its coverage map.</p>
 
 <p>The instrument is notified only once per node, as the logic is guarded by the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/CoverageNode.java#L60">flag</a>.
-The fact that this flag is annotated with <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.CompilationFinal.html">CompilationFinal</a> and that the calls to the instrument is preceded by a call to <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.html#transferToInterpreterAndInvalidate--">transferToInterpreterAndInvalidate()</a> is a standard technique in Truffle which ensures that once this instrumentation is no longer needed (i.e. a node has been executed) the instrumentation is removed from further compilations removing with it any performance overhead.</p>
+The fact that this flag is annotated with <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.CompilationFinal.html">CompilationFinal</a> and that the call to the instrument is preceded by a call to <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.html#transferToInterpreterAndInvalidate--">transferToInterpreterAndInvalidate()</a> is a standard technique in Truffle which ensures that once this instrumentation is no longer needed (i.e., a node has been executed), the instrumentation is removed from further compilations, along with any performance overhead.</p>
 
 <p>In order for the framework to know how to instantiate the <code>CoverageNode</code> when it
-is needed we need to provide a factory for them.
+is needed, we need to provide a factory for it.
 The factory is the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/CoverageEventFactory.java">CoverageEventFactory</a>, a subclass of <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/ExecutionEventNodeFactory.html">ExecutionEventNodeFactory</a>.
 This class just ensures that each <code>CoverageNode</code> knows the <code>SourceSection</code> it is instrumenting by looking it up in the provided <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/EventContext.html">EventContext</a>.</p>
 
@@ -798,18 +803,19 @@ filter.</p>
         
         
       </h3>
+
 <p>The third and final requirement Simple Tool has is to actually interact with its user by printing line coverage to standard output.
 The instrument overriders the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L182">onDispose</a> method which is unsurprisingly called when the instrument is being disposed of.
 In this method we check that the proper option has been set and, if so, calculate and print the coverage as recorded by our map of <code>Coverage</code> objects.</p>
 
 <p>This is a simple way of providing useful information to a user, but it is definitely not the only one.
-A tool could dump its data directly to a file, or run a web endpoint which shows the information, etc..
-One of the mechanisms that the Truffle Instrumentation framework provides users is registering instruments as services to be looked up by other instruments.
+A tool could dump its data directly to a file, or run a web endpoint which shows the information, etc.
+One of the mechanisms that the Instrument API provides users with is registering instruments as services to be looked up by other instruments.
 If we look at the <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L83">Registration</a> annotation of our instrument we can see that it provides a <code>services</code> field where we can specify which services the instrument provides to other instruments.
 These services need to be explicitly <a href="https://github.com/graalvm/simpletool/blob/master/src/main/java/com/oracle/truffle/st/SimpleCoverageInstrument.java#L134">registered</a>.
-This allows a nicer separation of concerns among instruments so that, for example, we could have a “real time coverage” instrument which would use our <code>SimpleCoverageInstrument</code> to provide on demand coverage information to a user through a REST API, and a “aborts on low coverage” instrument which stops the execution if coverage drops bellow a threshold, both using the <code>SimpleCoverageInstrument</code> as a service.</p>
+This allows a nicer separation of concerns among instruments so that, for example, we could have a “real time coverage” instrument which would use our <code>SimpleCoverageInstrument</code> to provide on-demand coverage information to a user through a REST API, and an “aborts on low coverage” instrument which stops the execution if coverage drops below a threshold, both using the <code>SimpleCoverageInstrument</code> as a service.</p>
 
-<p>Note that, for reasons of isolation, instrument services are not available to application code, and instrument services can only be used from other instruments or Truffle languages.</p>
+<p>Note: For reasons of isolation, instrument services are not available to application code, and instrument services can only be used from other instruments or guest languages.</p>
     
       <h3 id="installing-a-tool-into-graalvm">
         
@@ -820,15 +826,15 @@ This allows a nicer separation of concerns among instruments so that, for exampl
       </h3>
 
 <p>So far, Simple Tool seems to meet all requirements but the question remains: how do we use it?
-As mentioned before, Simple Tool is a maven project.
+As mentioned before, Simple Tool is a Maven project.
 Setting <code>JAVA_HOME</code> to a GraalVM installation and running <code>mvn package</code> produces a <code>target/simpletool-&lt;version&gt;.jar</code>.
 This is the Simple Tool distribution form.</p>
 
-<p>The <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle framework</a> offers a clear separation between the language/tooling code and the application code.
-For this reason, putting the jar on the class path will not result in the framework realizing a new tool is needed.
+<p>The <a href="/graalvm-as-a-platform/language-implementation-framework/">Language Implementation framework</a> offers a clear separation between the language/tooling code and the application code.
+For this reason, putting the JAR on the class path will not result in the framework realizing a new tool is needed.
 To achieve this we use <code>--vm.Dtruffle.class.path.append=/path/to/simpletool-20.2.0.jar</code> as is illustrated in a <a href="https://github.com/graalvm/simpletool/blob/master/simpletool">launcher script for our simple tool</a>.
 This script also shows we can <a href="https://github.com/graalvm/simpletool/blob/master/simpletool#L19">set the CLI options</a> we specified for Simple Tool.
-This means that if we execute <code>./simpletool js example.js</code>, we will launch the <code>js</code> launcher of GraalVM, add the tool to the Truffle class path, and run the included <a href="https://github.com/graalvm/simpletool/blob/master/example.js">example.js</a> file with Simple Tool enabled resulting in the following output:</p>
+This means that if we execute <code>./simpletool js example.js</code>, we will launch the <code>js</code> launcher of GraalVM, add the tool to the framework class path, and run the included <a href="https://github.com/graalvm/simpletool/blob/master/example.js">example.js</a> file with Simple Tool enabled, resulting in the following output:</p>
 
 <pre><code>==
 Coverage of /path/to/simpletool/example.js is 59.42%
@@ -911,13 +917,13 @@ Coverage of /path/to/simpletool/example.js is 59.42%
         
       </h2>
 
-<p>The following examples are intended to show common use-cases that can be solved with the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Truffle Instrumentation framework</a>.</p>
+<p>The following examples are intended to show common use-cases that can be solved with the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/package-summary.html">Instrument API</a>.</p>
 
 <ul>
-  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.instrumentation.test/src/com/oracle/truffle/api/instrumentation/test/examples/CoverageExample.java">Coverage Instrument</a>: A coverage tool example which was used to build up Simple Tool. It is used as the running example in further text where appropriate.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.instrumentation.test/src/com/oracle/truffle/api/instrumentation/test/examples/CoverageExample.java">Coverage Instrument</a>: a coverage tool example which was used to build up Simple Tool. It is used as the running example in further text where appropriate.</li>
   <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.instrumentation.test/src/com/oracle/truffle/api/instrumentation/test/examples/DebuggerExample.java">Debugger Instrument</a>:
- A sketch on how a debugger can be implemented. Please note that Truffle already provides a <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/debug/package-summary.html">Debugger Instrument</a> that can be used directly.</li>
-  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.instrumentation.test/src/com/oracle/truffle/api/instrumentation/test/examples/StatementProfilerExample.java">Statement Profiler</a>: A profiler that is able to profile the execution of statements.</li>
+ a sketch on how a debugger can be implemented. Note that the Instrument API already provides a <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/debug/package-summary.html">Debugger Instrument</a> that can be used directly.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.instrumentation.test/src/com/oracle/truffle/api/instrumentation/test/examples/StatementProfilerExample.java">Statement Profiler</a>: a profiler that is able to profile the execution of statements.</li>
 </ul>
     
       <h3 id="instrumentation-event-listeners">
@@ -928,13 +934,13 @@ Coverage of /path/to/simpletool/example.js is 59.42%
         
       </h3>
 
-<p>The Truffle Instrument application programming interface is defined in the <code>com.oracle.truffle.api.instrumentation</code> package. Instrumentation agents can be developed by extending the <code>TruffleInstrument</code> class, and can be attached to a running GraalVM instance using in the <code>Instrumenter</code> class. Once attached to a running language runtime, instrumentation agents remain usable as long as the language runtime is not disposed. Instrumentation agents on GraalVM can monitor a variety of VM-level runtime events, including any of the following:</p>
+<p>The Instrument API is defined in the <code>com.oracle.truffle.api.instrumentation</code> package. Instrumentation agents can be developed by extending the <code>TruffleInstrument</code> class, and can be attached to a running GraalVM instance using the <code>Instrumenter</code> class. Once attached to a running language runtime, instrumentation agents remain usable as long as the language runtime is not disposed. Instrumentation agents on GraalVM can monitor a variety of VM-level runtime events, including any of the following:</p>
 
 <ol>
-  <li><em>Source code-related events</em>: the agent can be notified every time a new <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/Source.html">Source</a> or <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html">SourceSection</a> element is loaded by the monitored language runtime.</li>
-  <li><em>Allocation events</em>: the agent can be notified every time a new object is allocated in the memory space of the monitored language runtime.</li>
-  <li><em>Language runtime and thread creation events</em>: the agent can be notified as soon as a new <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">execution context</a> or a new thread for a monitored language runtime is created.</li>
-  <li><em>Application execution events</em>: the agent gets notified every time a monitored application executes a specific set of language operations. Examples of such operations include language statements and expressions, thus allowing an instrumentation agent to inspect running applications with very high precision.</li>
+  <li><em>Source code-related events</em>: The agent can be notified every time a new <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/Source.html">Source</a> or <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html">SourceSection</a> element is loaded by the monitored language runtime.</li>
+  <li><em>Allocation events</em>: The agent can be notified every time a new object is allocated in the memory space of the monitored language runtime.</li>
+  <li><em>Language runtime and thread creation events</em>: The agent can be notified as soon as a new <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">execution context</a> or a new thread for a monitored language runtime is created.</li>
+  <li><em>Application execution events</em>: The agent gets notified every time a monitored application executes a specific set of language operations. Examples of such operations include language statements and expressions, thus allowing an instrumentation agent to inspect running applications with very high precision.</li>
 </ol>
 
 <p>For each execution event, instrumentation agents can define <em>filtering</em> criteria that will be used by the GraalVM instrumentation runtime to monitor only the relevant execution events. Currently, GraalVM instruments accept one of the following two filter types:</p>
@@ -954,12 +960,12 @@ Coverage of /path/to/simpletool/example.js is 59.42%
 
 <p>The filter in the example can be used to monitor the execution of all JavaScript statements in a given application. Other filtering options such as line numbers or file extensions can also be provided.</p>
 
-<p>Source section filters like the one in the example can use <em>Tags</em> to specify a set of execution events to be monitored. Language-agnostic tags such as statements and expressions are defined in the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/Tag.html"><code>com.oracle.truffle.api.instrumentation.Tag</code></a> class, and are supported by all GraalVM languages. In addition to standard tags, GraalVM languages may provide other, language-specific, tags to enable fine-grained profiling of language-specific events (as an example, the GraalVM JavaScript engine provides JavaScript-specific tags to track the usages of ECMA builtin objects such as <code>Array</code>, <code>Map</code>, or <code>Math</code>).</p>
+<p>Source section filters like the one in the example can use <em>Tags</em> to specify a set of execution events to be monitored. Language-agnostic tags such as statements and expressions are defined in the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/Tag.html"><code>com.oracle.truffle.api.instrumentation.Tag</code></a> class, and are supported by all GraalVM languages. In addition to standard tags, GraalVM languages may provide other, language-specific, tags to enable fine-grained profiling of language-specific events. (As an example, the GraalVM JavaScript engine provides JavaScript-specific tags to track the usages of ECMA builtin objects such as <code>Array</code>, <code>Map</code>, or <code>Math</code>.)</p>
     
       <h3 id="monitoring-execution-events">
         
         
-          Monitoring execution events <a href="#monitoring-execution-events" class="anchor_heading">#</a>
+          Monitoring Execution Events <a href="#monitoring-execution-events" class="anchor_heading">#</a>
         
         
       </h3>
@@ -979,9 +985,9 @@ Coverage of /path/to/simpletool/example.js is 59.42%
         
       </h3>
 
-<p>A simple example of a custom instrumentation agent to perform runtime code coverage can be found in the <code>CoverageExample</code> class. What follows is an overview of the agent, of its design, and of its capabilities.</p>
+<p>A simple example of a custom instrumentation agent used to perform runtime code coverage can be found in the <code>CoverageExample</code> class. What follows is an overview of the agent, its design, and its capabilities.</p>
 
-<p>All instruments extend the <code>TruffleInstrument</code> abstract class, and are registered in the GraalVM runtime through the <code>@Registration</code> annotation:</p>
+<p>All instruments extend the <code>TruffleInstrument</code> abstract class and are registered in the GraalVM runtime through the <code>@Registration</code> annotation:</p>
 
 <pre><code class="language-java">@Registration(id = CoverageExample.ID, services = Object.class)
 public final class CoverageExample extends TruffleInstrument {
@@ -1008,7 +1014,7 @@ protected void onCreate(final Env env) {
 <p>The instrument connects itself to the running GraalVM using the <code>attachExecutionEventFactory</code> method, providing the following two arguments:</p>
 <ol>
   <li><code>SourceSectionFilter</code>: a source section filter used to inform the GraalVM about specific code sections to be tracked.</li>
-  <li><code>ExecutionEventNodeFactory</code>: a Truffle Framework AST factory that provides instrumentation AST nodes to be executed by the agent every time a runtime event (as specified by the source filter) is executed.</li>
+  <li><code>ExecutionEventNodeFactory</code>: the Language Implementation framework AST factory that provides instrumentation AST nodes to be executed by the agent every time a runtime event (as specified by the source filter) is executed.</li>
 </ol>
 
 <p>A basic <code>ExecutionEventNodeFactory</code> that instruments the AST nodes of an application can be implemented in the following way:</p>
@@ -1057,21 +1063,21 @@ public ExecutionEventNode create(final EventContext ec) {
 }
 </code></pre>
 
-<p>As the above code shows, an <code>ExecutionEventNode</code> is a valid AST node. This implies that the instrumentation code will be optimized by the GraalVM together with the instrumented application, resulting in minimal instrumentation overhead. Furthermore, this allows instrument developers to use <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.html">Truffle Framework compiler directives</a> directly from instrumentation nodes. In the example, compiler directives are used to inform the GraalVM compiler that <code>visited</code> can be considered compilation-final.</p>
+<p>As the above code shows, an <code>ExecutionEventNode</code> is a valid AST node. This implies that the instrumentation code will be optimized by the GraalVM runtime together with the instrumented application, resulting in minimal instrumentation overhead. Furthermore, this allows instrument developers to use the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/CompilerDirectives.html">Language Implementation framework compiler directives</a> directly from instrumentation nodes. In the example, compiler directives are used to inform the GraalVM compiler that <code>visited</code> can be considered compilation-final.</p>
 
 <p>Each instrumentation node is bound to a specific code location. Such locations can be accessed by the agent using the provided <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/EventContext.html"><code>EventContext</code></a> object.
 The context object gives instrumentation nodes access to a variety of information about the current AST nodes being executed. Examples of query APIs available to instrumentation agents through <code>EventContext</code> include:</p>
 
 <ol>
-  <li><code>hasTag</code> to query an instrumented node for a certain node <code>Tag</code> (e.g., to check if a statement node is also a conditional node).</li>
-  <li><code>getInstrumentedSourceSection</code> to access the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html"><code>SourceSection</code></a> associated with the current node.</li>
-  <li><code>getInstrumentedNode</code> to access the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/Node.html"><code>Node</code></a> corresponding to the current instrumentation event.</li>
+  <li><code>hasTag</code>: to query an instrumented node for a certain node <code>Tag</code> (e.g., to check if a statement node is also a conditional node).</li>
+  <li><code>getInstrumentedSourceSection</code>: to access the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/source/SourceSection.html"><code>SourceSection</code></a> associated with the current node.</li>
+  <li><code>getInstrumentedNode</code>: to access the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/Node.html"><code>Node</code></a> corresponding to the current instrumentation event.</li>
 </ol>
     
       <h3 id="fine-grained-expression-profiling">
         
         
-          Fine-grained expression profiling <a href="#fine-grained-expression-profiling" class="anchor_heading">#</a>
+          Fine-grained Expression Profiling <a href="#fine-grained-expression-profiling" class="anchor_heading">#</a>
         
         
       </h3>
@@ -1099,12 +1105,12 @@ var b = 4;
 var c = a + b;
 </code></pre>
 
-<p>By filtering on JavaScript Binary expressions, an instrumentation agent would be able to detect the following runtime events for the above code snippet:</p>
+<p>By filtering on JavaScript binary expressions, an instrumentation agent would be able to detect the following runtime events for the above code snippet:</p>
 <ol>
-  <li><code>onEnter()</code> for the binary expression at line 3.</li>
-  <li><code>onInputValue()</code> for the first operand of the binary operation at line 3. The value reported by the callback will be <code>3</code>, that is, the value of the <code>a</code> local variable.</li>
-  <li><code>onInputValue()</code> for the second operand of the binary operation. The value reported by the callback will be <code>4</code>, that is, the value of the <code>b</code> local variable.</li>
-  <li><code>onReturnValue()</code> for the binary expression. The value provided to the callback will be the value returned by the expression after it has completed its evaluation, that is, the value <code>7</code>.</li>
+  <li><code>onEnter()</code>: for the binary expression at line 3.</li>
+  <li><code>onInputValue()</code>: for the first operand of the binary operation at line 3. The value reported by the callback will be <code>3</code>, that is, the value of the <code>a</code> local variable.</li>
+  <li><code>onInputValue()</code>: for the second operand of the binary operation. The value reported by the callback will be <code>4</code>, that is, the value of the <code>b</code> local variable.</li>
+  <li><code>onReturnValue()</code>: for the binary expression. The value provided to the callback will be the value returned by the expression after it has completed its evaluation, that is, the value <code>7</code>.</li>
 </ol>
 
 <p>By extending the source section filters to <em>all</em> possible events, an instrumentation agent will observe something equivalent to the following execution trace (in pseudocode):</p>
@@ -1141,7 +1147,7 @@ onReturnValue - VariableWrite
       <h3 id="altering-the-execution-flow-of-an-application">
         
         
-          Altering the execution flow of an application <a href="#altering-the-execution-flow-of-an-application" class="anchor_heading">#</a>
+          Altering the Execution Flow of an Application <a href="#altering-the-execution-flow-of-an-application" class="anchor_heading">#</a>
         
         
       </h3>
@@ -1202,7 +1208,9 @@ public static class UniversalAnswerInstrument extends TruffleInstrument {
 }
 </code></pre>
 
-<p>When enabled, the instrument will execute its <code>onReturnValue</code> callback each time a function call returns. The callback reads the associated source section (using <code>getInstrumentedSourceSection</code>) and looks for a specific source code pattern (the function call <code>inc(c)</code>, in this case). As soon as such code pattern is found, the instrument throws a special runtime exception, called <code>UnwindException</code>, that instructs the Instrumentation framework about a change in the current application’s execution flow. The exception is intercepted by the <code>onUnwind</code> callback of the instrumentation agent, which can be used to return <em>any</em> arbitrary value to the original instrumented application. In the example, all calls to <code>inc(c)</code> will return <code>42</code> regardless of any application-specific data. A more realistic instrument might access and monitor several aspects of an application, and might not rely on source code locations, but rather on object instances or other application-specific data.</p>
+<p>When enabled, the instrument will execute its <code>onReturnValue</code> callback each time a function call returns. The callback reads the associated source section (using <code>getInstrumentedSourceSection</code>) and looks for a specific source code pattern (the function call <code>inc(c)</code>, in this case). As soon as such code pattern is found, the instrument throws a special runtime exception, called <code>UnwindException</code>, that instructs the Instrumentation framework about a change in the current application’s execution flow. The exception is intercepted by the <code>onUnwind</code> callback of the instrumentation agent, which can be used to return <em>any</em> arbitrary value to the original instrumented application.</p>
+
+<p>In the example, all calls to <code>inc(c)</code> will return <code>42</code> regardless of any application-specific data. A more realistic instrument might access and monitor several aspects of an application, and might not rely on source code locations, but rather on object instances or other application-specific data.</p>
 
               </div>
 
