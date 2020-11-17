@@ -197,7 +197,7 @@ $(document).ready(function () {
   var configProfile = {
     "profile": {"screenName": 'graalvm'},
     "domId": 'tweets',
-    "maxTweets": 10,
+    "maxTweets": 20,
     "enableLinks": true,
     "showUser": false,
     "showTime": true,
@@ -211,7 +211,7 @@ $(document).ready(function () {
       el.slick({
         dots: false,
         infinite: true,
-        slidesToShow: 4,
+        slidesToShow: 43,
         slidesToScroll: 1,
         arrows: true,
         autoplaySpeed: 3000,

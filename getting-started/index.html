@@ -20,7 +20,7 @@
         
         
         
-        <meta name="dcterms.created" content="2020-11-16T15:47:13+00:00">
+        <meta name="dcterms.created" content="2020-11-17T17:21:00+00:00">
         <meta name="dcterms.category" content="">
         <meta name="dcterms.identifier" content="">
         <meta name="dcterms.product" content="">
@@ -109,15 +109,15 @@ Having downloaded and installed GraalVM Enterprise, you can already run Java, No
 
 <p>Check the versions of the runtimes provided by default:</p>
 <pre><code class="language-shell">java -version
-java version "1.8.0_271"
-Java(TM) SE Runtime Environment (build 1.8.0_271-b09)
-Java HotSpot(TM) 64-Bit Server VM GraalVM EE 20.2.1 (build 25.271-b09-jvmci-20.2-b06, mixed mode)
+java version "11.0.9" 2020-10-20 LTS
+Java(TM) SE Runtime Environment GraalVM EE 20.3.0 (build 11.0.9+7-LTS-jvmci-20.3-b05)
+Java HotSpot(TM) 64-Bit Server VM GraalVM EE 20.3.0 (build 11.0.9+7-LTS-jvmci-20.3-b05, mixed mode, sharing)
 
 node -v
-v12.18.0
+v12.18.4
 
 lli --version
-LLVM (GraalVM EE Native 20.2.1)
+LLVM 10.0.0 (GraalVM EE Native 20.3.0)
 </code></pre>
 
 <p>The executables of all language runtimes in GraalVM Enterprise emulate the behavior of the languages’ default runtimes.
@@ -190,7 +190,7 @@ The C/C++ code can be compiled to LLVM bitcode using <code>clang</code> shipped 
 <ol>
   <li>Download <strong>GraalVM LLVM Toolchain Plugin</strong> from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network</a> page. Be sure to download the component package appropriate for your operating system and underlying Java version.</li>
   <li>Install it with the <code>gu -L install component.jar</code> command. For example:
-    <pre><code class="language-shell">gu -L install llvm-toolchain-installable-java8-darwin-amd64-20.2.1.jar
+    <pre><code class="language-shell">gu -L install llvm-toolchain-installable-java8-darwin-amd64-20.3.0.jar
 </code></pre>
   </li>
   <li>Export the <code>LLVM_TOOLCHAIN</code> variable to the toolchain location for convenience:
@@ -222,7 +222,7 @@ The support is not available by default, but you can quickly add it to GraalVM E
 <ol>
   <li>Download <strong>Oracle GraalVM Enterprise Edition Python Language Plugin</strong> from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network</a> page. Be sure to download the component package appropriate for your operating system and underlying Java version.</li>
   <li>Install it with the <code>gu -L install component.jar</code> command. For example:
-    <pre><code class="language-shell">gu -L install python-installable-svm-svmee-java8-darwin-amd64-20.2.1.jar
+    <pre><code class="language-shell">gu -L install python-installable-svm-svmee-java8-darwin-amd64-20.3.0.jar
 </code></pre>
   </li>
 </ol>
@@ -244,7 +244,7 @@ The Ruby runtime is not available by default in GraalVM Enterprise, but can be e
 <ol>
   <li>Download <strong>Oracle GraalVM Enterprise Edition Ruby Language Plugin</strong> from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network</a> page. Be sure to download the component package appropriate for your operating system and underlying Java version.</li>
   <li>Install it with the <code>gu -L install component.jar</code> command. For example:
-    <pre><code class="language-shell">gu -L install ruby-installable-svm-svmee-java8-darwin-amd64-20.2.1.jar
+    <pre><code class="language-shell">gu -L install ruby-installable-svm-svmee-java8-darwin-amd64-20.3.0.jar
 </code></pre>
   </li>
 </ol>
@@ -281,19 +281,20 @@ R version 3.6.1 (FastR)
 <p>More examples and in-depth documentation can be found in the <a href="/en/graalvm/enterprise/20/docs/reference-manual/r/">R reference manual</a>.</p>
 
 <h3 id="webassembly">WebAssembly</h3>
-<p>With GraalVM Enterprise your can run WebAssembly programs.
-The support is not available by default, but you can add it to GraalVM Enterprise using the <a href="/en/graalvm/enterprise/20/docs/reference-manual/gu/">GraalVM Updater</a> tool:</p>
+
+<p>With GraalVM Enterprise you can run programs compiled to WebAssembly.
+The support is not available by default, but you can add it to GraalVM Enterprise using the <a href="/reference-manual/graalvm-updater/">GraalVM Updater</a> tool:</p>
 
 <ol>
   <li>Download <strong>Oracle GraalVM Enterprise Edition WebAssembly Language Plugin</strong> from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network</a> page. Be sure to download the component package appropriate for your operating system and underlying Java version.</li>
   <li>Install it with the <code>gu -L install component.jar</code> command. For example:
-    <pre><code class="language-shell">gu -L install wasm-installable-svm-svmee-java8-darwin-amd64-20.2.1.jar
+    <pre><code class="language-shell">gu -L install wasm-installable-svm-svmee-java8-darwin-amd64-20.3.0.jar
 </code></pre>
     <p>Then the <code>wasm</code> launcher, that can run compiled WebAssembly binary code, becomes available.</p>
   </li>
 </ol>
 
-<p>As an example, assume the following C program has already been compiled:</p>
+<p>For example, put the following C program in a file named <em>floyd.c</em>:</p>
 <pre><code class="language-c">#include &lt;stdio.h&gt;
 
 int main() {
@@ -310,9 +311,14 @@ int main() {
 }
 </code></pre>
 
-<p>This is how you can run the compiled WebAssembly binary:</p>
-<pre><code class="language-shell">wasm --Builtins=memory,env:emscripten example.wasm
+<p>Compile it using the most recent <a href="https://emscripten.org/docs/tools_reference/emcc.html">Emscripten compiler frontend</a> version. It should produce a standalone <em>floyd.wasm</em> file in the current working directory:</p>
+<pre><code class="language-shell">emcc -o floyd.wasm floyd.c
 </code></pre>
+
+<p>Then you can run the compiled WebAssembly binary on GraalVM as follows:</p>
+<pre><code class="language-shell">wasm --Builtins=wasi_snapshot_preview1 floyd.wasm
+</code></pre>
+
 <p>More details can be found in the <a href="/en/graalvm/enterprise/20/docs/reference-manual/wasm/">WebAssembly reference manual</a>.</p>
 
 <h2 id="native-images">Native Images</h2>
@@ -323,7 +329,7 @@ The <a href="/en/graalvm/enterprise/20/docs/reference-manual/enterprise-native-i
 <ol>
   <li>Download <strong>Oracle GraalVM Enterprise Edition Native Image</strong> from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network</a> page. Be sure to download the component package appropriate for your operating system and underlying Java version.</li>
   <li>Install it with the <code>gu -L install component.jar</code> command. For example:
-    <pre><code class="language-shell">gu -L install native-image-installable-svm-svmee-java8-darwin-amd64-20.2.1.jar
+    <pre><code class="language-shell">gu -L install native-image-installable-svm-svmee-java8-darwin-amd64-20.3.0.jar
 </code></pre>
   </li>
 </ol>
