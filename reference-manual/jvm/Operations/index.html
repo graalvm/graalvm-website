@@ -654,7 +654,7 @@ $(document).ready(function(){
         
       </h2>
 
-<p>When running the GraalVM Enterprise compiler on the JVM, it goes through the same warm-up phase that the
+<p>When running the GraalVM compiler on the JVM, it goes through the same warm-up phase that the
 rest of the Java application does. That is, it is first interpreted before
 its hot methods are compiled. This can translate into slightly longer times
 until the application reaches peak performance when compared to the native compilers
@@ -678,29 +678,31 @@ operation. It can be disabled with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
         
       </h2>
 
-<p>The first thing to be sure of when measuring the performance is to ensure the JVM is using the GraalVM Enterprise compiler.
+<p>The first thing to be sure of when measuring performance is to ensure the JVM is using the GraalVM Enterprise compiler.
 In the GraalVM binary, the JVM is configured to use the GraalVM compiler
 as the top tier compiler by default. You can confirm this by adding <code>-Dgraal.ShowConfiguration=info</code>
 to the command line. It will produce a line of output similar to the one below
 when the compiler is initialized:</p>
+
 <pre><code class="language-shell">Using Graal compiler configuration 'community' provided by org.graalvm.compiler.hotspot.CommunityCompilerConfigurationFactory loaded from jar:file:/Users/dsimon/graal/graal/compiler/mxbuild/dists/graal.jar!/org/graalvm/compiler/hotspot/CommunityCompilerConfigurationFactory.class
 </code></pre>
-<p>Note that the GraalVM compiler is only initialized on the first top tier JIT compilation request
-so if your application is short lived, you may not see this output.</p>
+
+<p>Note: The GraalVM compiler is only initialized on the first top-tier JIT compilation request
+so if your application is short-lived, you may not see this output.</p>
 
 <p>Optimizing JVM-based applications is a science in itself. The compilation may not
 even be a factor in the case of poor performance as the problem may
-lie in any other part of the VM (I/O, garbage collection, threading etc) or in
+lie in any other part of the VM (I/O, garbage collection, threading, etc), or in
 a poorly written application or 3rd party library code. For this reason, it’s
-worth the <a href="https://www.oracle.com/java/technologies/jdk-mission-control.html">JDK Mission Control</a> tool chain to
+worth utilizing the <a href="https://www.oracle.com/java/technologies/jdk-mission-control.html">JDK Mission Control</a> tool chain to
 diagnose the application behavior.</p>
 
-<p>You can also compare performance against the native top tier compiler in the JVM by
+<p>You can also compare performance against the native top-tier compiler in the JVM by
 adding <code>-XX:-UseJVMCICompiler</code> to the command line.</p>
 
 <p>If you observe a significant performance regression when using the GraalVM compiler, please
 open an issue on GitHub. Attaching a Java Flight Recorder log and instructions
-to reproduce the issue makes investigation easier and thus
+to reproduce the issue makes investigation easier and thus the
 chances of a fix higher. Even better is if you can submit a <a href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a>
 benchmark that represents the hottest parts of your application (as identified
 by a profiler). This allows us to very quickly pinpoint missing optimization
@@ -731,11 +733,11 @@ but via the process outlined at <a href="https://www.oracle.com/corporate/securi
 
 <p>One advantage of the compiler being written in Java is that runtime exceptions during
 compilation are not fatal VM errors. Instead, each compilation has an exception
-handler that takes an action based on the <code>graal.CompilationFailureAction</code>
+handler that takes action based on the <code>graal.CompilationFailureAction</code>
 property.</p>
 
 <p>The default value is <code>Silent</code>. Specifying <code>Diagnose</code> causes failing compilations to be retried
-with extra diagnostics enabled. Just before the VM exits, all diagnostic output
+with extra diagnostics enabled. In this case, just before the VM exits, all diagnostic output
 captured during retried compilations is written to a <code>.zip</code> file and its location
 is printed on the console:</p>
 <pre><code class="language-shell">Graal diagnostic output saved in /Users/demo/graal-dumps/1499768882600/graal_diagnostics_64565.zip
@@ -743,11 +745,11 @@ is printed on the console:</p>
 
 <p>You can then attach the .zip file to an issue on <a href="https://github.com/oracle/graal">GitHub</a>.</p>
 
-<p>Apart from <code>Silent</code> and <code>Diagnose</code> the following values for <code>graal.CompilationFailureAction</code>
-are supported:</p>
+<p>Apart from <code>Silent</code> and <code>Diagnose</code>, the following values for <code>graal.CompilationFailureAction</code>
+are also supported:</p>
 <ul>
-  <li><code>Print</code>: Prints a message and stack trace to the console but does not do the re-compilation.</li>
-  <li><code>ExitVM</code>: Same as <code>Diagnose</code> but the VM process exits after the re-compilation.</li>
+  <li><code>Print</code>: prints a message and stack trace to the console but does not perform the re-compilation.</li>
+  <li><code>ExitVM</code>: same as <code>Diagnose</code> but the VM process exits after the re-compilation.</li>
 </ul>
     
       <h3 id="code-generation-errors">
@@ -758,7 +760,7 @@ are supported:</p>
         
       </h3>
 
-<p>The other type of error compilers can have is producing incorrect machine code.
+<p>The other type of error you might encounter with compilers is the production of incorrect machine code.
 This error can cause a VM crash, which should produce a file that starts with
 <code>hs_err_pid</code> in the current working directory of the VM process. In most cases,
 there is a section in the file that shows the stack at the time of the crash,
@@ -778,7 +780,7 @@ code produced for:</p>
 <pre><code class="language-shell">org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V
 </code></pre>
 
-<p>The next two frames in the stack were executing in the interpreter (j). The
+<p>The next two frames in the stack were executed in the interpreter (j). The
 location of the crash is also often indicated near the top of the file with
 something like this:</p>
 <pre><code class="language-shell"># Problematic frame:
@@ -851,7 +853,7 @@ directory is first used by the compiler:</p>
 -rw-r--r--  1 demo  staff  12600725 Jul 13 11:46 HotSpotCompilation-791[NodeLIRBuilder.matchComplexExpressions(List)].bgv
 -rw-r--r--  1 demo  staff   1727409 Jul 13 11:46 HotSpotCompilation-791[NodeLIRBuilder.matchComplexExpressions(List)].cfg
 </code></pre>
-<p>You should attach a zip of this directory to an issue on <a href="https://github.com/oracle/graal">GitHub</a>.</p>
+<p>You should attach a .zip of this directory to an issue on <a href="https://github.com/oracle/graal">GitHub</a>.</p>
 
               </div>
 
