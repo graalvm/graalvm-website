@@ -822,7 +822,8 @@ $(document).ready(function(){
         
       </h1>
 
-<p>It is recommended to read the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/TruffleLibraries.md">Truffle Library Tutorial</a> first, before proceeding. This document is targeted at guest language and tool implementers.</p>
+<p>This document is targeted at guest language and tool implementers.
+It is recommended to read the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/TruffleLibraries.md">Truffle Library Tutorial</a> first, before proceeding.</p>
     
       <h2 id="motivation">
         
@@ -832,23 +833,23 @@ $(document).ready(function(){
         
       </h2>
 
-<p>In Truffle Version 1.0 RC15 we introduced a new API called Truffle Libraries.
-Truffle Libraries allow using polymorphism with support for profiling/caching.
-With Interop 2.0 we plan to use Truffle Libraries for the interoperability
-protocol. The current interoperability APIs are mature and well tested and already
+<p>In Truffle Version 1.0 RC15 a new API called “Truffle Libraries” was introduced.
+Truffle Libraries allow users to use polymorphism with support for profiling/caching.
+With Interop 2.0 it is planned to use Truffle Libraries for the interoperability protocol.
+The current interoperability APIs are mature and well-tested and already
 adopted by languages and tools.</p>
 
 <p>Here is a list of arguments why current interoperability APIs were changed and Interop 2.0 was introduced:</p>
 
 <ul>
-  <li><em>Footprint:</em> In the current interop API every message send goes through a CallTarget and the arguments are boxed into an Object[]. This makes current interop inefficient for interpreter calls and it requires additional memory. Truffle Libraries use simple nodes and type specialized call signatures that don’t require argument array boxing or call targets.</li>
-  <li><em>Uncached Dispatch:</em> There is no way to execute current interop messages from the slow-path without allocating a temporary node. Truffle Libraries automatically generate an uncached version of every exported message. This allows the use of interop messages from slow-path/runtime without allocating any temporary data structures.</li>
-  <li><em>Reuse dispatch for multiple messages:</em> In current interop, the dispatch to exported messages is repeated for each message that is sent. If multiple messages need to be sent and the receiver type becomes polymorphic this produces bad code. Interop libraries instances can be specialized for input values. This allows to do the dispatch once and invoke multiple messages without repeating the dispatch. This leads to more efficient code in polymorphic cases.</li>
+  <li><em>Footprint:</em> In the current interop API every message send goes through a <code>CallTarget</code> and the arguments are boxed into an <code>Object[]</code>. This makes current interop inefficient for interpreter calls and it requires additional memory. Truffle Libraries use simple nodes and type-specialized call signatures that do not require argument array boxing or call targets.</li>
+  <li><em>Uncached dispatch:</em> There is no way to execute current interop messages from the slow-path without allocating a temporary node. Truffle Libraries automatically generate an uncached version of every exported message. This allows the use of interop messages from slow-path/runtime without allocating any temporary data structures.</li>
+  <li><em>Reuse dispatch for multiple messages:</em> In current interop, the dispatch to exported messages is repeated for each message that is sent. If multiple messages need to be sent and the receiver type becomes polymorphic, this produces bad code. Interop libraries instances can be specialized for input values. This allows users to do the dispatch once and invoke multiple messages without repeating the dispatch. This leads to more efficient code in polymorphic cases.</li>
   <li><em>Support for default implementations:</em> Current interop can only be used for implementations of <code>TruffleObject</code>. Truffle Libraries can be used with any receiver type. For example, it is possible to invoke the isExecutable message on primitive numbers and it just returns <code>false</code>.</li>
-  <li><em>Error Proneness:</em> There were some common issues with message resolutions that Truffle Libraries try to avoid by not making them possible, such as mixing up receiver types or implementing a wrong type check. The new assertion feature for Truffle Libraries allows specifying message specific assertions that allow verifying invariants, pre, and post-conditions.</li>
-  <li><em>Redundancy in documentation:</em> Current interop documents the messages in the Message constant and in the ForeignAccess static accessor method. This leads to mostly redundant documentation. With truffle interop, there is only one place for the documentation, which is the instance method in the library class.</li>
-  <li><em>Generality:</em> Truffle Libraries can be used for language representation abstractions, as it is now efficient enough in terms of memory consumption and interpreter performance. The current interop API could not be realistically be used that way because of that.</li>
-  <li><em>Address Protocol Issues:</em> There are some design issues with the current interop API that interop 2.0 tries to address (see later).</li>
+  <li><em>Error proneness:</em> There were some common issues with message resolutions that Truffle Libraries try to avoid by not making them possible, such as mixing up receiver types or implementing a wrong type check. The new assertion feature for Truffle Libraries allows specifying message specific assertions that allow verifying invariants, pre, and post-conditions.</li>
+  <li><em>Redundancy in documentation:</em> Current interop documents the messages in the <code>Message</code> constant and in the <code>ForeignAccess</code> static accessor method. This leads to mostly redundant documentation. With Truffle interop, there is only one place for the documentation, which is the instance method in the library class.</li>
+  <li><em>Generality:</em> Truffle Libraries can be used for language representation abstractions, since it is now efficient enough in terms of memory consumption and interpreter performance. The current interop API could not realistically be used that way because of this issue.</li>
+  <li><em>Address protocol issues:</em> There are some design issues with the current interop API that interop 2.0 tries to address (see later).</li>
 </ul>
     
       <h2 id="compatibility">
@@ -859,7 +860,11 @@ adopted by languages and tools.</p>
         
       </h2>
 
-<p>The change from interop 1.0 to 2.0 was done in a compatible way. Therefore, the old interop should continue to work and adoption can be incremental. This means that if one language still calls using the old interop API and the other language has already adopted the new interop API, a compatibility bridge will map the APIs. If you are curious about how this works, look for the class <code>DefaultTruffleObjectExports</code> for new interop calls to old interop. And <code>LegacyToLibraryNode</code> for old interop calls to new interop. Note that using the compatibility bridge may cause performance regressions. That is why languages should migrate as early as possible.</p>
+<p>The change from interop 1.0 to 2.0 was done in a compatible way.
+Therefore, the old interop should continue to work and adoption can be incremental.
+This means that if one language still calls using the old interop API and the other language has already adopted the new interop API, a compatibility bridge will map the APIs.
+If you are curious about how this works, look for the class <code>DefaultTruffleObjectExports</code> for new interop calls to old interop. And <code>LegacyToLibraryNode</code> for old interop calls to new interop. Note that using the compatibility bridge may cause performance regressions.
+That is why languages should migrate as early as possible.</p>
     
       <h2 id="interop-protocol-changes">
         
@@ -869,12 +874,14 @@ adopted by languages and tools.</p>
         
       </h2>
 
-<p>Interop 2.0 comes with many protocol changes. This section is intended to provide rationales for these changes. For fully detailed reference documentation see the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/interop/InteropLibrary.html">InteropLibrary Javadoc</a>. Note that also every deprecated API describes its migration path in the Javadoc tagged by <code>@deprecated</code>.</p>
+<p>Interop 2.0 comes with many protocol changes. Th
+is section is intended to provide rationales for these changes. For fully detailed reference documentation see the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/interop/InteropLibrary.html">InteropLibrary Javadoc</a>.
+Note: Every deprecated API describes its migration path in the Javadoc tagged by <code>@deprecated</code>.</p>
     
       <h3 id="replace-is_boxed-and-unbox-with-explicit-types">
         
         
-          Replace IS_BOXED and UNBOX with explicit types <a href="#replace-is_boxed-and-unbox-with-explicit-types" class="anchor_heading">#</a>
+          Replace IS_BOXED and UNBOX with Explicit Types <a href="#replace-is_boxed-and-unbox-with-explicit-types" class="anchor_heading">#</a>
         
         
       </h3>
@@ -882,12 +889,12 @@ adopted by languages and tools.</p>
 <p>There are some problems with the IS_BOXED/UNBOX design:</p>
 
 <ul>
-  <li>In order to find out if a value is of a particular type, e.g. a String, the value needs to be unboxed first. Unboxing may be an expensive operation leading to inefficient code just to check the type of a value.</li>
-  <li>The old API cannot be used for values that did not implement TruffleObject. Therefore, the handling of primitive numbers needed to be separated from the TruffleObject case, making the UNBOX design necessary to reuse existing code. TruffleLibraries support primitive receiver types.</li>
-  <li>The design of UNBOX relies on the specified set of primitive types that it returns. It is hard to introduce additional new interop types this way, as language refers to the primitive types directly.</li>
+  <li>In order to find out if a value is of a particular type, e.g., a String, the value needs to be unboxed first. Unboxing may be an expensive operation leading to inefficient code just to check the type of a value.</li>
+  <li>The old API cannot be used for values that did not implement <code>TruffleObject</code>. Therefore, the handling of primitive numbers needed to be separated from the TruffleObject case, making the UNBOX design necessary to reuse existing code. Truffle Libraries support primitive receiver types.</li>
+  <li>The design of UNBOX relies on the specified set of primitive types that it returns. It is hard to introduce additional, new interop types this way, as language refers to the primitive types directly.</li>
 </ul>
 
-<p>The following new messages were introduced in InteropLibrary as a replacement:</p>
+<p>The following new messages were introduced in <code>InteropLibrary</code> as a replacement:</p>
 
 <pre><code>boolean isBoolean(Object)
 boolean asBoolean(Object)
@@ -908,7 +915,10 @@ float asFloat(Object)
 double asDouble(Object)
 </code></pre>
 
-<p>The InteropLibrary specifies default implementations for the receiver types <code>Boolean</code>, <code>Byte</code>, <code>Short</code>, <code>Integer</code>, <code>Long</code>, <code>Float</code>, <code>Double</code>, <code>Character</code> and <code>String</code>. This design is extendable to support new values like big numbers or a custom String abstraction as Java primitive types are no longer directly used. It is no longer recommended to use primitive types in specializations directly as the set of interop primitive types may change in the future. Instead, always use the interop library to check for a particular type, e.g. use <code>fitsInInt</code> instead of <code>instanceof Integer</code>.</p>
+<p>The <code>InteropLibrary</code> specifies default implementations for the receiver types <code>Boolean</code>, <code>Byte</code>, <code>Short</code>, <code>Integer</code>, <code>Long</code>, <code>Float</code>, <code>Double</code>, <code>Character</code>, and <code>String</code>.
+This design is extendable to support new values like big numbers or a custom String abstraction as Java primitive types are no longer directly used.
+It is no longer recommended to use primitive types in specializations directly, as the set of interop primitive types may change in the future.
+Instead, always use the interop library to check for a particular type, e.g., use <code>fitsInInt</code> instead of <code>instanceof Integer</code>.</p>
 
 <p>By using the new messages it is possible to emulate the original UNBOX message like this:</p>
 
@@ -922,21 +932,23 @@ Object doUnbox(Object value, @CachedLibrary("value") InteropLibrary interop) {
       if (interop.fitsInByte(value)) {
         return interop.asByte(value);
       } else if (interop.fitsInShort(value)) {
-        return interop.asShort(value);      
+        return interop.asShort(value);
       } else if (interop.fitsInInt(value)) {
-        return interop.asInt(value);      
+        return interop.asInt(value);
       } else if (interop.fitsInLong(value)) {
-        return interop.asLong(value);      
+        return interop.asLong(value);
       } else if (interop.fitsInFloat(value)) {
-        return interop.asFloat(value);      
+        return interop.asFloat(value);
       } else if (interop.fitsInDouble(value)) {
-        return interop.asDouble(value);      
+        return interop.asDouble(value);
       }
     }
     throw UnsupportedMessageException.create();
 }
 </code></pre>
-<p>Note that it is not recommended to unbox all primitive types like this. Instead a language should only unbox to the primitive types it actually uses. Ideally an unbox operation is not needed and the interop library is directly used to implement the operation, like this:</p>
+<p>Note: It is not recommended to unbox all primitive types like this.
+Instead a language should only unbox to the primitive types it actually uses.
+Ideally an unbox operation is not needed and the interop library is directly used to implement the operation, like this:</p>
 
 <pre><code class="language-java">@Specialization(guards = {
                 "leftValues.fitsInLong(l)",
@@ -956,9 +968,18 @@ long doAdd(Object l, Object r,
         
       </h3>
 
-<p>The generic READ and WRITE messages were originally designed with primarily JavaScript use-cases in mind. With the adoption of interop by more languages, it became apparent that there is a need for explicit namespaces for arrays and object members. Over time, the interpretation of READ and WRITE was changed to represent array accesses when used with numbers and object member accesses when used with strings. The HAS_SIZE message was reinterpreted as whether the value contains array elements with additional guarantees, e.g. that array elements were iterable between index 0 and size.</p>
+<p>The generic READ and WRITE messages were originally designed with primarily JavaScript use-cases in mind.
+With the adoption of interop by more languages, it became apparent that there is a need for explicit namespaces for arrays and object members.
+Over time, the interpretation of READ and WRITE was changed to represent array accesses when used with numbers and object member accesses when used with strings.
+The HAS_SIZE message was reinterpreted as whether the value contains array elements with additional guarantees, e.g., that array elements were iterable between index 0 and size.</p>
 
-<p>For better interop between languages, there is a need for an explicit Hash/Map/Dictionary entry namespace. Originally it was intended to reuse the generic READ/WRITE namespace for this. For JavaScript, this was possible, as the dictionary and member namespaces were equivalent. Most languages, however, separate Map entries from Object members, which leads to ambiguous keys. It is not possible for the source language (the protocol implementer) to know how this conflict needs to be resolved. Instead, by having explicit namespaces we can let the target language (the protocol caller) decide how to resolve the ambiguity. For example, whether dictionary or member elements should take precedence can now be decided in the target language operation.</p>
+<p>For better interop between languages, there is a need for an explicit Hash/Map/Dictionary entry namespace.
+Originally it was intended to reuse the generic READ/WRITE namespace for this.
+For JavaScript, this was possible, as the dictionary and member namespaces were equivalent.
+Most languages, however, separate Map entries from Object members, which leads to ambiguous keys.
+It is not possible for the source language (the protocol implementer) to know how this conflict needs to be resolved.
+Instead, by having explicit namespaces we can let the target language (the protocol caller) decide how to resolve the ambiguity.
+For example, whether dictionary or member elements should take precedence can now be decided in the target language operation.</p>
 
 <p>The following interop messages were changed:</p>
 <pre><code>READ, WRITE, REMOVE, HAS_SIZE, GET_SIZE, HAS_KEYS, KEYS
@@ -969,7 +990,7 @@ long doAdd(Object l, Object r,
       <h4 id="object-namespace">
         
         
-          Object namespace:
+          Object Namespace:
         
         
       </h4>
@@ -985,7 +1006,7 @@ invokeMember(Object, String, Object...)
       <h4 id="array-namespace">
         
         
-          Array namespace:
+          Array Namespace:
         
         
       </h4>
@@ -997,7 +1018,8 @@ writeArrayElement(Object, long, Object)
 removeArrayElement(Object, long)
 </code></pre>
 
-<p>Array access messages no longer throw <code>UnknownIdentifierException</code> but <code>InvalidArrayIndexException</code>. This was a bug in the original design, where the accessed number needed to be converted to the identifier string in the <code>UnknownIdentifierException</code>.</p>
+<p>Array access messages no longer throw <code>UnknownIdentifierException</code>; they instead throw <code>InvalidArrayIndexException</code>.
+This was a bug in the original design, where the accessed number needed to be converted to the identifier string in the <code>UnknownIdentifierException</code>.</p>
     
       <h3 id="replaced-keyinfo-with-individual-messages">
         
@@ -1007,12 +1029,16 @@ removeArrayElement(Object, long)
         
       </h3>
 
-<p>In the previous section, we did not mention the KEY_INFO message. The KEY_INFO message was useful to query all properties of a member or array element. While this was a convenient small API, it was often inefficient as it required the implementer to return all the key info properties. At the same time, it is rare that the caller really needed all key info properties. With Interop 2.0 we removed the KEY_INFO message. Instead, we introduced explicit messages for each namespace, to address this issue.</p>
+<p>In the previous section, we did not mention the KEY_INFO message.
+The KEY_INFO message was useful to query all properties of a member or array element.
+While this was a conveniently small API, it was often inefficient as it required the implementer to return all the key info properties.
+At the same time, it is rare that the caller really needed all key info properties. With Interop 2.0 we removed the KEY_INFO message.
+Instead, we introduced explicit messages for each namespace, to address this issue.</p>
     
       <h4 id="object-namespace-1">
         
         
-          Object namespace:
+          Object Namespace:
         
         
       </h4>
@@ -1032,7 +1058,7 @@ hasMemberWriteSideEffects(Object, String)
       <h4 id="array-namespace-1">
         
         
-          Array namespace:
+          Array Namespace:
         
         
       </h4>
@@ -1045,7 +1071,9 @@ isArrayElementWritable(Object, long)
 isArrayElementExisting(Object, long)
 </code></pre>
 
-<p>Note that the array namespace does no longer support querying for read or write side-effects. These messages might be reintroduced, but, at the moment, there was no use-case. Also, the array namespace does not allow invocations.</p>
+<p>Note: The array namespace no longer supports querying for read or write side-effects.
+These messages might be reintroduced but, at the moment, there was no use-case.
+Also, the array namespace does not allow invocations.</p>
     
       <h3 id="remove-return-type-for-to_native">
         
@@ -1055,7 +1083,9 @@ isArrayElementExisting(Object, long)
         
       </h3>
 
-<p>The TO_NATIVE message was renamed to toNative in the InteropLibrary with the difference that it no longer returns a value, but performs the native transition as a side-effect if supported by the receiver. This allows the caller of the message to simplify their code. No cases the <code>toNative</code> transition required to return a different value were found. The default behaviour fo <code>toNative</code> was changed to not return any value.</p>
+<p>The TO_NATIVE message was renamed to toNative in the InteropLibrary with the difference that it no longer returns a value, but performs the native transition as a side-effect if supported by the receiver.
+This allows the caller of the message to simplify their code. No cases the <code>toNative</code> transition required to return a different value were found.
+The default behaviour of <code>toNative</code> was changed to not return any value.</p>
     
       <h3 id="minor-changes">
         
@@ -1085,7 +1115,9 @@ Message.AS_POINTER      -&gt; InteropLibrary.asPointer
         
       </h3>
 
-<p>Many new assertions were introduced as part of the migration. The concrete pre-post and invariant conditions are described in the Javadoc. Unlike the old interop nodes, cached libraries can <em>only</em> be used when adopted as part of the AST.</p>
+<p>Many new assertions were introduced as part of the migration.
+ The concrete pre-post and invariant conditions are described in the Javadoc.
+ Unlike the old interop nodes, cached libraries can <em>only</em> be used when adopted as part of the AST.</p>
     
       <h3 id="no-more-uncheckedchecked-exceptions">
         
@@ -1095,9 +1127,14 @@ Message.AS_POINTER      -&gt; InteropLibrary.asPointer
         
       </h3>
 
-<p>With Interop 2.0 <code>InteropException.raise</code> was deprecated. While possible, it is considered an anti-pattern to rethrow checked exceptions as unchecked exceptions. With TruffleLibraries the target language nodes are directly inserted into the AST of the caller so there is no longer a limiting <code>CallTarget</code> that does not support checked exceptions. Together with additional support for checked Exceptions from Truffle DSL, it should no longer be necessary to use the raise methods. Instead, a new create factory method was introduced for all interop exception types.</p>
+<p>With Interop 2.0 <code>InteropException.raise</code> was deprecated.
+While possible, it is considered an anti-pattern to rethrow checked exceptions as unchecked exceptions.
+With Truffle Libraries the target language nodes are directly inserted into the AST of the caller so there is no longer a limiting <code>CallTarget</code> that does not support checked exceptions.
+Together with additional support for checked Exceptions from Truffle DSL, it should no longer be necessary to use the raise methods.
+Instead, a new create factory method was introduced for all interop exception types.</p>
 
-<p>It is planned to remove stack traces from interop exceptions in order to improve their efficiency, as interop exceptions are intended to be always immediately caught and never be rethrown. This was deferred until the compatibility layer can be removed.</p>
+<p>It is planned to remove stack traces from interop exceptions in order to improve their efficiency, as interop exceptions are intended to be always immediately caught and never be rethrown.
+This was deferred until the compatibility layer can be removed.</p>
     
       <h2 id="migration">
         
@@ -1108,7 +1145,7 @@ Message.AS_POINTER      -&gt; InteropLibrary.asPointer
       </h2>
 
 <p>With the use of Truffle Libraries for interop, most existing interop APIs had to be deprecated.
-The following comparison of Interop 1.0 with Interop 2.0 is designed to help to migrate existing uses of interop.</p>
+The following comparison of Interop 1.0 with Interop 2.0 is designed to help migrate existing uses of interop.</p>
     
       <h3 id="fast-path-sending-interop-messages">
         
@@ -1118,7 +1155,8 @@ The following comparison of Interop 1.0 with Interop 2.0 is designed to help to 
         
       </h3>
 
-<p>This is the fast-path way of sending interop messages embedded in an operation node. This is the most common way of sending interop messages.</p>
+<p>This is the fast-path way of sending interop messages embedded in an operation node.
+This is the most common way of sending interop messages.</p>
     
       <h4 id="interop-10">
         
@@ -1174,12 +1212,12 @@ abstract static class ForeignExecuteNode extends Node {
 
 <ul>
   <li>To invoke messages we call instance methods on <code>TruffleLibrary</code> instead of calling a static method on <code>ForeignAccess</code>.</li>
-  <li>The old interop required to create one node for each operation. With the new version, only one specialized interop library is created.</li>
-  <li>In the old API we needed to specialize the receiver type for <code>TruffleObject</code>. The new interop library can be invoked with any interop value. By default <code>isExecutable</code> will return <code>false</code> for values that don’t export the interop library. E.g. it is now valid to call the library with boxed primitive receiver values.</li>
+  <li>The old interop required the creation of one node for each operation. With the new version, only one specialized interop library is created.</li>
+  <li>In the old API we needed to specialize the receiver type for <code>TruffleObject</code>. The new interop library can be invoked with any interop value. By default <code>isExecutable</code> will return <code>false</code> for values that don’t export the interop library. E.g., it is now valid to call the library with boxed primitive receiver values.</li>
   <li>Instead of using <code>@Cached</code> in the old interop, in the new interop we use <code>@CachedLibrary</code>.</li>
   <li>The new <code>@CachedLibrary</code> annotation specifies the value the library specializes on. This allows the DSL to specialize the library instance to that value. This again allows the dispatch on the receiver value to be performed once for all message invocations. In the old interop version, the nodes could not be specialized to values. Therefore the dispatch needed to be repeated for every interop message send.</li>
-  <li>The specialized library instance requires to specify a <code>limit</code> for the specialization method. If this limit overflows the uncached version of the library will be used that does not perform any profiling/caching. The old interop API assumed a constant specialization limit of <code>8</code> per interop node.</li>
-  <li>The new interop API allows using a dispatched version of the library by specifying <code>@CachedLibrary(limit="2")</code> instead. This allows the interop library to be used with any value, but it has the disadvantage of duplicating the inline cache for every message invocation, like with the old interop API. It is therefore recommended to use specialized libraries whenever it is possible.</li>
+  <li>The specialized library instance requires specifying a <code>limit</code> for the specialization method. If this limit overflows, the uncached version of the library will be used that does not perform any profiling/caching. The old interop API assumed a constant specialization limit of <code>8</code> per interop node.</li>
+  <li>The new interop API allows for using a dispatched version of the library by specifying <code>@CachedLibrary(limit="2")</code> instead. This allows the interop library to be used with any value, but it has the disadvantage of duplicating the inline cache for every message invocation, like with the old interop API. It is therefore recommended to use specialized libraries whenever possible.</li>
 </ul>
     
       <h3 id="slow-path-sending-interop-messages">
@@ -1190,7 +1228,7 @@ abstract static class ForeignExecuteNode extends Node {
         
       </h3>
 
-<p>It is sometimes necessary to call interop messages from the runtime without the context of a node.</p>
+<p>It is sometimes necessary to call interop messages from the runtime without the context of a node:</p>
     
       <h4 id="interop-10-1">
         
@@ -1230,7 +1268,7 @@ abstract static class ForeignExecuteNode extends Node {
         
       </h3>
 
-<p>Sometimes Truffle DSL cannot be used and the nodes need to be written manually. Both APIs allow you to do so.</p>
+<p>Sometimes Truffle DSL cannot be used and the nodes need to be written manually. Both APIs allow you to do so:</p>
     
       <h4 id="interop-10-2">
         
@@ -1294,7 +1332,7 @@ final class ForeignExecuteNode extends Node {
 <ul>
   <li>The new interop creates nodes through the <code>LibraryFactory&lt;InteropLibrary&gt;</code> accessible through <code>InteropLibrary.getFactory()</code>. The old interop creates dispatching nodes through the <code>Message</code> instance.</li>
   <li>The dispatch limit can be specified for the new interop libraries. The old interop API always assumed a constant limit of <code>8</code>.</li>
-  <li>For the new interop we do not need to check for the type <code>TruffleObject</code> as Truffle Libraries can be used with any receiver type. For non-function values <code>isExecutable</code> will just return <code>false</code>.</li>
+  <li>For the new interop we do not need to check for the type <code>TruffleObject</code> as Truffle Libraries can be used with any receiver type. For non-function values, <code>isExecutable</code> will just return <code>false</code>.</li>
 </ul>
     
       <h3 id="implementingexporting-interop-messages">
@@ -1305,7 +1343,7 @@ final class ForeignExecuteNode extends Node {
         
       </h3>
 
-<p>To implement / export interop library messages see the following example.</p>
+<p>To implement/export interop library messages, see the following example:</p>
     
       <h4 id="interop-10-3">
         
@@ -1371,6 +1409,7 @@ final class KeysArray implements TruffleObject {
         
         
       </h4>
+
 <pre><code>@ExportLibrary(InteropLibrary.class)
 final class KeysArray implements TruffleObject {
 
@@ -1410,11 +1449,11 @@ final class KeysArray implements TruffleObject {
 <ul>
   <li>Instead of @MessageResolution we use @ExportLibrary.</li>
   <li>Both versions need to implement TruffleObject. The new interop API only requires a TruffleObject type for compatibility reasons.</li>
-  <li>Instead of @Resolve the @ExportMessage annotation is used. The latter annotation can infer the name of the message from the method name. If the method name is ambiguous, e.g. when multiple libraries are exported, then the name and library can be specified explicitly.</li>
-  <li>There is no need to specify classes for exports/resolves. However, it is still possible to do so if an export needs multiple specializations. See the TruffleLibrary tutorial for details.</li>
+  <li>Instead of @Resolve, the @ExportMessage annotation is used. The latter annotation can infer the name of the message from the method name. If the method name is ambiguous, e.g., when multiple libraries are exported, then the name and library can be specified explicitly.</li>
+  <li>There is no need to specify classes for exports/resolves. However, it is still possible to do so if an export needs multiple specializations. See the Truffle Library tutorial for details.</li>
   <li>Exceptions are now thrown as checked exceptions.</li>
   <li>It is no longer needed to implement getForeignAccess(). The implementation discovers implementations for receiver types automatically.</li>
-  <li>It is no longer needed to implement <code>isInstance</code>. The implementation can is now derived from the class signature. Note that the check can be more efficient if the receiver type is declared final. For non-final receiver types, it is recommended to specify exported methods as <code>final</code>.</li>
+  <li>It is no longer needed to implement <code>isInstance</code>. The implementation is now derived from the class signature. Note that the check can be more efficient if the receiver type is declared final. For non-final receiver types, it is recommended to specify exported methods as <code>final</code>.</li>
 </ul>
     
       <h3 id="integration-with-dynamicobject">
@@ -1425,7 +1464,7 @@ final class KeysArray implements TruffleObject {
         
       </h3>
 
-<p>The old interop allowed to specify a foreign access factory through <code>ObjectType.getForeignAccessFactory()</code>. This method is now deprecated and a new method <code>ObjectType.dispatch()</code> was introduced. Instead of a foreign access factory, the dispatch method needs to return a class that exports the InteropLibrary with an explicit receiver.</p>
+<p>The old interop allowed for specifying a foreign access factory through <code>ObjectType.getForeignAccessFactory()</code>. This method is now deprecated and a new method, <code>ObjectType.dispatch()</code>, was introduced. Instead of a foreign access factory, the dispatch method needs to return a class that exports the InteropLibrary with an explicit receiver:</p>
     
       <h4 id="interop-10-4">
         
@@ -1491,8 +1530,7 @@ public final class SLObjectType extends ObjectType {
 
     @ExportMessage
     static boolean removeMember(DynamicObject receiver, String member) throws UnknownIdentifierException {...}
-
-    ... other exports omitted ...
+    // other exports omitted
  }
 </code></pre>
 
@@ -1501,7 +1539,7 @@ public final class SLObjectType extends ObjectType {
 <ul>
   <li>The object type can be reused as the export class.</li>
   <li>The isInstance method no longer needs to be specified.</li>
-  <li>The new interop requires to specify the receiver type to DynamicObject.</li>
+  <li>The new interop requires specifying the receiver type to DynamicObject.</li>
 </ul>
     
       <h3 id="extending-interop">
@@ -1512,7 +1550,7 @@ public final class SLObjectType extends ObjectType {
         
       </h3>
 
-<p>Truffle languages rarely need to extend interop, but they might need to extend their own language specific protocol.</p>
+<p>The languages implemented with Truffle rarely need to extend interop, but they might need to extend their own language specific protocol:</p>
     
       <h4 id="interop-10-5">
         

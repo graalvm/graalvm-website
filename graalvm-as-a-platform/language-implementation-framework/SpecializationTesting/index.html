@@ -822,18 +822,18 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This document is about tools for testing Truffle DSL specializations.</p>
+<p>This document discusses the tools for testing Truffle DSL specializations.</p>
     
-      <h3 id="slow-path-specializations-only-compilation-mode">
+      <h2 id="slow-path-specializations-in-only-compilation-mode">
         
         
-          Slow path specializations only compilation mode <a href="#slow-path-specializations-only-compilation-mode" class="anchor_heading">#</a>
+          Slow Path Specializations in Only Compilation Mode <a href="#slow-path-specializations-in-only-compilation-mode" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>Let us start with a small motivating example:</p>
-<pre><code>abstract class PowNode extends Node {
+<p>The following example will be used in this guide:</p>
+<pre><code class="language-java">abstract class PowNode extends Node {
   public abstract double execute(double a, int exp);
 
   @Specialization(guards = "exp==1")
@@ -850,30 +850,27 @@ $(document).ready(function(){
   }
 }
 </code></pre>
-<p>In order to test that <code>doGeneric</code> produces correct result for argument <code>exp == 1</code>,
-we first need to execute this node with a different value, for example, <code>exp == 2</code>,
-to activate the <code>doGeneric</code> specialization and only then with <code>1</code>, which will now
+
+<p>In order to test that <code>doGeneric</code> produces the correct result for argument <code>exp == 1</code>, you first need to execute this node with a different value.
+For example, you can use <code>exp == 2</code> to activate the <code>doGeneric</code> specialization and only then with <code>1</code>, which will now
 be handled by the <code>doGeneric</code> specialization instead of the <code>doOne</code> specialization.
-With a real-world code, writing a test that covers specializations that replace other
-specializations can be much more complicated and it leads to fragile tests – changes
-in the production code may cause the test to suddenly cover different specializations
-and this can easily come unnoticed.</p>
+With a real-world code, writing a test that covers specializations that replace other specializations can be much more complicated and it leads to fragile tests.
+Changes in the production code may cause the test to suddenly cover different specializations.
+This can easily happen unnoticed.</p>
 
-<p>Truffle DSL provides a mode where the “fast-path” specializations (those that are “replaced”
-by some other specialization, <code>doOne</code> in our example) are ignored. This allows us to simply
-increase test coverage by running the same tests, which now may cover different code-paths.</p>
+<p>Truffle DSL provides a mode where the “fast-path” specializations (those that are “replaced” by some other specialization, <code>doOne</code> in our example) are ignored.
+This allows you to simply increase test coverage by running the same tests, which now may cover different code paths.</p>
 
-<p>When building your languages with <code>mx</code> pass additional option:</p>
-<pre><code>$ mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true
+<p>When building a language with <code>mx</code>, pass the additional option:</p>
+<pre><code class="language-shell">mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true
 </code></pre>
 
-<p>After the rebuild the generated code will call only “slow-path” specializations.
+<p>After the rebuild, the generated code will call only “slow-path” specializations.
 Make sure that your IDE does not recompile the sources automatically in the meantime.
-Note that if you compile your dependencies (e.g., Truffle) from source as part of your build,
-this option will apply to the code of those dependencies as well. You may choose to apply this
-option only to some classes by using a filter:</p>
+Note that if you compile your dependencies (e.g., Truffle) from source as part of your build, this option will apply to the code of those dependencies as well.
+You may choose to apply this option only to some classes by using a filter:</p>
 
-<pre><code>$ mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true -A-Atruffle.dsl.GenerateSlowPathOnlyFilter=org.my.truffle.language.package
+<pre><code class="language-shell">mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true -A-Atruffle.dsl.GenerateSlowPathOnlyFilter=org.my.truffle.language.package
 </code></pre>
 
               </div>

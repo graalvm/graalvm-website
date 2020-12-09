@@ -822,56 +822,50 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Truffle includes a way to call native functions, called the Native Function
-Interface (NFI). It is implemented as an internal Truffle language that
-language implementors can access via the standard polyglot eval interface and
-Truffle interoperability. NFI is intended to be used, for example, to implement a
-language’s FFI, or to call native runtime routines that aren’t available in
-Java.</p>
+<p>Truffle includes a way to call native functions, called the Native Function Interface (NFI).
+It is implemented as an internal language on top of Truffle that language implementors can access via the standard polyglot eval interface and Truffle interoperability.
+NFI is intended to be used, for example, to implement a language’s FFI, or to call native runtime routines that are not available in Java.</p>
 
-<p>NFI uses <code>libffi</code>. On a standard JVM it calls it using JNI, and on the GraalVM
-Native Image it uses System Java. In the future it may be optimised by the
-GraalVM Compiler in native images so that native calls are made directly from
-the compiled code.</p>
+<p>NFI uses <code>libffi</code>.
+On a standard JVM it calls it using JNI, and on GraalVM Native Image it uses system Java.
+In the future it may be optimised by the GraalVM compiler in native executables so that native calls are made directly from the compiled code.</p>
     
-      <h3 id="stability">
+      <h2 id="stability">
         
         
           Stability <a href="#stability" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>The NFI is an internal language designed for language implementors. It is not
-considered stable and the interface and behaviour may change without warning.
+<p>The NFI is an internal language designed for language implementors.
+It is not considered stable and the interface and behavior may change without warning.
 It is not intended to be used directly by end-users.</p>
     
-      <h3 id="basic-concepts">
+      <h2 id="basic-concepts">
         
         
           Basic Concepts <a href="#basic-concepts" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>The NFI is accessed via the polyglot interface of whatever language you are
-using. This could be Java, or could be a Truffle language. This lets you use
-the NFI from both your Java language implementation code, or from your guest
-language to reduce the amount of Java that you need to write.</p>
+<p>The NFI is accessed via the polyglot interface of whatever language you are using.
+This could be Java, or it could be a Truffle language.
+This lets you use the NFI from both your Java language implementation code, or from your guest language to reduce the amount of Java that you need to write.</p>
 
-<p>The entry point is the polyglot <code>eval</code> interface. This runs a special DSL, and
-returns Truffle interoperability objects which can then expose more methods.</p>
+<p>The entry point is the polyglot <code>eval</code> interface.
+This runs a special DSL, and returns Truffle interoperability objects which can then expose more methods.</p>
 
-<p>We’ll write examples using Ruby’s polyglot interface, but any other JVM or
-Truffle language could be used instead.</p>
+<p>Below are some examples using Ruby’s polyglot interface, but any other JVM or a language implementation could be used instead.</p>
     
-      <h3 id="basic-example">
+      <h2 id="basic-example">
         
         
           Basic Example <a href="#basic-example" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <p>Here is a basic working example, before going into the details:</p>
 
@@ -881,16 +875,16 @@ function = symbol.bind('():UINT32')                     # bind the symbol to typ
 puts function.call # =&gt; 12373                           # call the function
 </code></pre>
     
-      <h3 id="loading-libaries">
+      <h2 id="loading-libaries">
         
         
           Loading libaries <a href="#loading-libaries" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>To load a library, a script written in the ‘<code>nfi</code>’ language DSL is evaluated. It
-returns an object that represents the loaded library.</p>
+<p>To load a library, a script written in the ‘<code>nfi</code>’ language DSL is evaluated.
+It returns an object that represents the loaded library.</p>
 
 <pre><code class="language-ruby">library = Polyglot.eval('nfi', '...load command...')
 </code></pre>
@@ -903,51 +897,46 @@ returns an object that represents the loaded library.</p>
   <li><code>load (flag | flag | ...) "filename"</code></li>
 </ul>
 
-<p><code>default</code> returns a pseudo-library that contains all symbols already loaded in
+<p>The <code>default</code> command returns a pseudo-library that contains all symbols already loaded in
 the process, equivalent to <code>RTLD_DEFAULT</code> in the Posix interface.</p>
 
-<p><code>load "filename"</code> loads a library from a file. You are responsible for any
-cross-platform concerns about library naming conventions and load paths.</p>
+<p>The <code>load "filename"</code> command loads a library from a file.
+You are responsible for any cross-platform concerns about library naming conventions and load paths.</p>
 
-<p><code>load (flag | flag | ...) "filename"</code> allows you to specify flags to load the
-library. For the default backend (backends will be described later), and
-when running on a Posix platform, the flags available are <code>RTLD_GLOBAL</code>,
-<code>RTLD_LOCAL</code>, <code>RTLD_LAZY</code>, and <code>RTLD_NOW</code>, which have the conventional Posix
-semantics. The default is <code>RTLD_NOW</code> if neither <code>RTLD_LAZY</code> nor <code>RTLD_NOW</code>
-were specified.</p>
+<p>The <code>load (flag | flag | ...) "filename"</code>command allows you to specify flags to load the library.
+For the default backend (backends will be described later), and when running on a Posix platform, the flags available are <code>RTLD_GLOBAL</code>, <code>RTLD_LOCAL</code>, <code>RTLD_LAZY</code>, and <code>RTLD_NOW</code>, which have the conventional Posix semantics.
+The default is <code>RTLD_NOW</code> if neither <code>RTLD_LAZY</code> nor <code>RTLD_NOW</code> were specified.</p>
     
-      <h3 id="loading-symbols-from-libraries">
+      <h2 id="loading-symbols-from-libraries">
         
         
           Loading Symbols from Libraries <a href="#loading-symbols-from-libraries" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>To load a symbol from a library, we read the symbol as a property from the
-library object we previously loaded.</p>
+<p>To load a symbol from a library, read the symbol as a property from the library object that was previously loaded.</p>
 
 <pre><code class="language-ruby">symbol = library['symbol_name']
 </code></pre>
     
-      <h3 id="producing-native-function-objects-from-symbols">
+      <h2 id="producing-native-function-objects-from-symbols">
         
         
           Producing Native Function Objects from Symbols <a href="#producing-native-function-objects-from-symbols" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>To get an executable object that we can call in order to call the native
-function, we <em>bind</em> the symbol object that we previously loaded, by calling
-the <code>bind</code> method on it. We supply a type signature that needs to match the
+<p>To get an executable object that you can call in order to invoke the native
+function, <em>bind</em> the symbol object that was previously loaded, by calling
+the <code>bind</code> method on it. Supply a type signature that needs to match the
 native function’s actual type signature.</p>
 
 <pre><code class="language-ruby">function = symbol.bind('...signature...')
 </code></pre>
 
-<p>The format of the signature is <code>(arg, arg, ...) : return</code>, where <code>arg</code> and
-<code>return</code> are types.</p>
+<p>The format of the signature is <code>(arg, arg, ...) : return</code>, where <code>arg</code> and <code>return</code> are types.</p>
 
 <p>Types can be one of the simple types:</p>
 
@@ -969,55 +958,48 @@ native function’s actual type signature.</p>
   <li><code>ENV</code></li>
 </ul>
 
-<p>Array types are formed by placing another type in square brackets. For example
-<code>[UINT8]</code>. These are C-style arrays.</p>
+<p>Array types are formed by placing another type in square brackets.
+For example <code>[UINT8]</code>. These are C-style arrays.</p>
 
-<p>Function pointer types are formed by writing a nested signature. For example
-the signature of <code>qsort</code> would be
-<code>(POINTER, UINT64, UINT64, (POINTER, POINTER) : SINT32) : VOID</code>.</p>
+<p>Function pointer types are formed by writing a nested signature.
+For example the signature of <code>qsort</code> would be <code>(POINTER, UINT64, UINT64, (POINTER, POINTER) : SINT32) : VOID</code>.</p>
 
-<p>For a function with a signature with variadic arguments, you specify <code>...</code>
-where the variadic arguments start, but then you must specify the actual types
-that you will be calling the function with. You may therefore need to bind the
-same symbol multiple times in order to call it with different types or a
-different number of arguments. For example to call <code>printf</code> with <code>%d %f</code> you
-would use the type signature <code>(STRING, ...SINT32, DOUBLE) : SINT32</code>.</p>
+<p>For a function with a signature with variadic arguments, you specify <code>...</code> where the variadic arguments start, but then you must specify the actual types that you will be calling the function with.
+You may therefore need to bind the same symbol multiple times in order to call it with different types or a different number of arguments.
+For example, to call <code>printf</code> with <code>%d %f</code> you would use the type signature <code>(STRING, ...SINT32, DOUBLE) : SINT32</code>.</p>
 
 <p>Type expressions can be nested arbitrarily deep.</p>
 
-<p>Two additional special types <code>ENV</code> and <code>OBJECT</code> are described in the section
-on the native API, later in this document.</p>
+<p>Two additional special types, <code>ENV</code> and <code>OBJECT</code>, are described in the section on the native API, later in this document.</p>
 
 <p>Types can be written in any case.</p>
 
-<p>You are responsible for any mapping of types from a foreign language such as C
-into NFI types.</p>
+<p>You are responsible for any mapping of types from a foreign language such as C into NFI types.</p>
     
-      <h3 id="calling-native-function-objects">
+      <h2 id="calling-native-function-objects">
         
         
           Calling Native Function Objects <a href="#calling-native-function-objects" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>To call a native function, we execute it.</p>
+<p>To call a native function, execute it.</p>
 
 <pre><code class="language-ruby">return_value = function.call(...arguments...)
 </code></pre>
     
-      <h3 id="calling-back-from-native-code-to-managed-functions">
+      <h2 id="calling-back-from-native-code-to-managed-functions">
         
         
           Calling back from Native Code to Managed Functions <a href="#calling-back-from-native-code-to-managed-functions" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <p>Using nested signatures, a function call can get function pointers as arguments.
-The managed caller needs to pass a Polyglot executable object, that will be
-converted to a native function pointer. When calling this function pointer from
-the native side, the <code>execute</code> message is sent to the Polyglot object.</p>
+The managed caller needs to pass a Polyglot executable object, that will be converted to a native function pointer.
+When calling this function pointer from the native side, the <code>execute</code> message is sent to the Polyglot object.</p>
 
 <pre><code class="language-C">void native_function(int32_t (*fn)(int32_t)) {
   printf("%d\n", fn(15));
@@ -1028,30 +1010,24 @@ the native side, the <code>execute</code> message is sent to the Polyglot object
 native_function.call(-&gt;(x) { x + 1 })
 </code></pre>
 
-<p>The arguments and return values of callback functions are converted the same as
-for regular function calls, with the conversion in the other direction, i.e.
-arguments are converted from native to managed, and return values are converted
-from managed to native.</p>
+<p>The arguments and return values of callback functions are converted the same as for regular function calls, with the conversion in the other direction, i.e., arguments are converted from native to managed, and return values are converted from managed to native.</p>
 
-<p>Callback function pointers can themselves have function pointer arguments. That
-works as you would expect: The function accepts a native function pointer as
-argument, and it is converted to a Truffle executable object. Sending the
-<code>execute</code> message to that object calls the native function pointer, same as
-calling a regular NFI function.</p>
+<p>Callback function pointers can themselves have function pointer arguments.
+That works as you would expect: the function accepts a native function pointer as argument, and it is converted to a Truffle executable object.
+Sending the <code>execute</code> message to that object calls the native function pointer, same as calling a regular NFI function.</p>
 
 <p>Function pointer types are also supported as return types.</p>
     
-      <h3 id="combined-loading-and-binding">
+      <h2 id="combined-loading-and-binding">
         
         
           Combined Loading and Binding <a href="#combined-loading-and-binding" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>You can optionally combine loading a library with loading symbols and binding
-them. This is achieved with an extended <code>load</code> command, which then returns an
-object with the already bound functions as methods.</p>
+<p>You can optionally combine loading a library with loading symbols and binding them.
+This is achieved with an extended <code>load</code> command, which then returns an object with the already bound functions as methods.</p>
 
 <p>These two examples are equivalent:</p>
 
@@ -1065,63 +1041,52 @@ puts function.call # =&gt; 12373
 puts library.SDL_GetRevisionNumber # =&gt; 12373
 </code></pre>
 
-<p>The definitions in the curly braces <code>{}</code> can contain multiple function
-bindings, so that many functions can be loaded from a library at once.</p>
+<p>The definitions in the curly braces <code>{}</code> can contain multiple function bindings, so that many functions can be loaded from a library at once.</p>
     
-      <h3 id="backends">
+      <h2 id="backends">
         
         
           Backends <a href="#backends" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>The load command can be prefixed by <code>with</code> in order to select a specific NFI
-backend. Multiple NFI backends are available. The default is called <code>native</code>,
-and will be used if there is no <code>with</code> prefix, or the selected backend is not
-available.</p>
+<p>The load command can be prefixed by <code>with</code> in order to select a specific NFI backend.
+Multiple NFI backends are available.
+The default is called <code>native</code>, and will be used if there is no <code>with</code> prefix, or the selected backend is not available.</p>
 
-<p>Depending on the configuration of components you are running, available
-backends may include:</p>
-
+<p>Depending on the configuration of components you are running, available backends may include:</p>
 <ul>
   <li><code>native</code></li>
-  <li><code>llvm</code>, which uses the GraalVM LLVM runtime to run the ‘native’ code</li>
+  <li><code>llvm</code>, which uses the GraalVM LLVM runtime to run the native code</li>
 </ul>
     
-      <h3 id="native-api">
+      <h2 id="native-api">
         
         
           Native API <a href="#native-api" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>The NFI can be used with unmodified, already compiled native code, but it can
-also be used with a Truffle specific API being used by the native code.</p>
+<p>The NFI can be used with unmodified, already compiled native code, but it can also be used with a Truffle-specific API being used by the native code.</p>
 
-<p>The special type <code>ENV</code> adds an additional parameter <code>TruffleEnv *env</code> to the
-signature. An additional simple type <code>OBJECT</code> translates to an opaque
+<p>The special type <code>ENV</code> adds an additional parameter <code>TruffleEnv *env</code> to the signature. An additional simple type <code>OBJECT</code> translates to an opaque
 <code>TruffleObject</code> type.</p>
 
-<p><code>trufflenfi.h</code> provides declarations for working with these types, that can
-then be used by the native code called through the NFI. See <code>trufflenfi.h</code>
-itself for more documentation on this API.</p>
+<p>The <code>trufflenfi.h</code> library provides declarations for working with these types, that can then be used by the native code called through the NFI. See <code>trufflenfi.h</code> itself for more documentation on this API.</p>
     
-      <h3 id="type-marshalling">
+      <h2 id="type-marshalling">
         
         
           Type Marshalling <a href="#type-marshalling" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>This section describes in detail how argument values and return values are
-converted for all types in the function signature.</p>
+<p>This section describes in detail how argument values and return values are converted for all types in the function signature.</p>
 
-<p>The following table shows the possible types in NFI signatures with their
-corresponding C language types on the native side, and what polyglot values
-these arguments map to on the managed side:</p>
+<p>The following table shows the possible types in NFI signatures with their corresponding C language types on the native side, and what polyglot values these arguments map to on the managed side:</p>
 
 <table>
   <thead>
@@ -1192,10 +1157,7 @@ these arguments map to on the managed side:</p>
 
 <p>The following sections describe the type conversions in detail.</p>
 
-<p>The type conversion behavior with function pointers can be slightly confusing,
-because the direction of the arguments is reversed. When in doubt, always try to
-figure out in which direction arguments or return values flow, from managed to
-native or from native to managed.</p>
+<p>The type conversion behavior with function pointers can be slightly confusing, because the direction of the arguments is reversed. When in doubt, always try to figure out in which direction arguments or return values flow, from managed to native or from native to managed.</p>
     
       <h3 id="void">
         
@@ -1205,15 +1167,11 @@ native or from native to managed.</p>
         
       </h3>
 
-<p>This type is only allowed as return type, and is used to denote functions that
-do not return a value.</p>
+<p>This type is only allowed as return type, and is used to denote functions that do not return a value.</p>
 
-<p>Since in the Polyglot API, all executable objects have to return a value, a
-Polyglot object with <code>isNull == true</code> will be returned from native functions
-that have a <code>VOID</code> return type.</p>
+<p>Since in the Polyglot API, all executable objects have to return a value, a Polyglot object with <code>isNull == true</code> will be returned from native functions that have a <code>VOID</code> return type.</p>
 
-<p>The return value of managed callback functions with return type <code>VOID</code> will
-be ignored.</p>
+<p>The return value of managed callback functions with return type <code>VOID</code> will be ignored.</p>
     
       <h3 id="primitive-numbers">
         
@@ -1223,23 +1181,17 @@ be ignored.</p>
         
       </h3>
 
-<p>The primitive number types are converted as you might expect. The argument needs
-to be a Polyglot number, and its value needs to fit in the value range of the
-specified numeric type.</p>
+<p>The primitive number types are converted as you might expect.
+The argument needs to be a Polyglot number, and its value needs to fit in the value range of the specified numeric type.</p>
 
-<p>One thing to note is the handling of the unsigned integer types. Even though the
-Polyglot API does not specify separate messages for values fitting in unsigned
-types, the conversion is still using the unsigned value ranges. For example, the
-value <code>0xFF</code> passed from native to managed through a return value of type <code>SINT8</code>
-will result in a Polyglot number <code>-1</code>, which <code>fitsInByte</code>, but the same value
-returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em>
-<code>fitsInByte</code>. Also, passing <code>-1</code> to an argument of type <code>UINT8</code> is a
-type error, but passing <code>255</code> is allowed, even though it does not <code>fitsInByte</code>.</p>
+<p>One thing to note is the handling of the unsigned integer types.
+Even though the Polyglot API does not specify separate messages for values fitting in unsigned types, the conversion is still using the unsigned value ranges.
+For example, the value <code>0xFF</code> passed from native to managed through a return value of type <code>SINT8</code> will result in a Polyglot number <code>-1</code>, which <code>fitsInByte</code>, but the same value returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em>
+<code>fitsInByte</code>.
+Also, passing <code>-1</code> to an argument of type <code>UINT8</code> is a type error, but passing <code>255</code> is allowed, even though it does not <code>fitsInByte</code>.</p>
 
-<p>Since in the current Polyglot API it is not possible to represent numbers
-outside of the signed 64-bit range, the <code>UINT64</code> type is currently handled with
-<em>signed</em> semantics. This is a known bug in the API, and will change in a future
-release.</p>
+<p>Since in the current Polyglot API it is not possible to represent numbers outside of the signed 64-bit range, the <code>UINT64</code> type is currently handled with <em>signed</em> semantics.
+This is a known bug in the API, and will change in a future release.</p>
     
       <h3 id="pointer">
         
@@ -1249,20 +1201,16 @@ release.</p>
         
       </h3>
 
-<p>This type is a generic pointer argument. On the native side, it does not matter
-what exact pointer type the argument is.</p>
+<p>This type is a generic pointer argument.
+On the native side, it does not matter what exact pointer type the argument is.</p>
 
-<p>Polyglot object passed to <code>POINTER</code> arguments will be converted to a native
-pointer if possible (using the <code>isPointer</code>, <code>asPointer</code> and <code>toNative</code> messages
-as necessary). Objects with <code>isNull == true</code> will be passed as a native <code>NULL</code>.</p>
+<p>A polyglot object passed to <code>POINTER</code> arguments will be converted to a native pointer if possible (using the <code>isPointer</code>, <code>asPointer</code> and <code>toNative</code> messages as necessary).
+An object with <code>isNull == true</code> will be passed as a native <code>NULL</code>.</p>
 
-<p><code>POINTER</code> return values will produce a Polyglot object with <code>isPointer == true</code>.
+<p><code>POINTER</code> return values will produce a polyglot object with <code>isPointer == true</code>.
 The native <code>NULL</code> pointer will additionally have <code>isNull == true</code>.</p>
 
-<p>In addition, the returned pointer object will also have a method <code>bind</code>, and
-behaves the same as symbols loaded from an NFI library. When calling <code>bind</code> on
-such a pointer, it is the user’s responsibility that to ensure that the pointer
-really points to a function with a matching signature.</p>
+<p>In addition, the returned pointer object will also have a method <code>bind</code>, and behave the same as symbols loaded from an NFI library. When calling <code>bind</code> on such a pointer, it is the user’s responsibility to ensure that the pointer really points to a function with a matching signature.</p>
     
       <h3 id="string">
         
@@ -1274,26 +1222,20 @@ really points to a function with a matching signature.</p>
 
 <p>This is a pointer type with special conversion semantics for strings.</p>
 
-<p>Polyglot strings passed from managed to native using the <code>STRING</code> type will be
-converted to a zero-terminated UTF-8 encoded string. For <code>STRING</code> arguments, the
-pointer is owned by the caller, and is guaranteed to stay alive for the duration
-of the call only. <code>STRING</code> values returned from managed function pointers to a
-native caller are also owned by the caller. They have to be freed with <code>free</code>
-after use.</p>
+<p>Polyglot strings passed from managed to native using the <code>STRING</code> type will be converted to a zero-terminated UTF-8 encoded string.
+For <code>STRING</code> arguments, the pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+The <code>STRING</code> values returned from managed function pointers to a native caller are also owned by the caller.
+They have to be freed with <code>free</code> after use.</p>
 
 <p>Polyglot pointer values or null values can also be passed to <code>STRING</code> arguments.
-The semantics is the same as for <code>POINTER</code> arguments. The user is responsible
-for ensuring that the pointer is a valid UTF-8 string.</p>
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid UTF-8 string.</p>
 
-<p><code>STRING</code> values passed from native functions to managed code behave like
-<code>POINTER</code> return values, but in addition they have <code>isString == true</code>. The user
-is responsible for the ownership of the pointer, it might be necessary to <code>free</code>
-the return value, depending on the semantics of the called native function.
-After freeing the returned pointer, the returned polyglot string is invalid and
-reading it results in undefined behavior. In that sense, the returned Polyglot
-string is not a safe object, similar to a raw pointer. It is recommented that
-the user of the NFI copies the returned string before passing it along to
-untrusted managed code.</p>
+<p>The <code>STRING</code> values passed from native functions to managed code behave like <code>POINTER</code> return values, but in addition they have <code>isString == true</code>.
+The user is responsible for the ownership of the pointer and it might be necessary to <code>free</code> the return value, depending on the semantics of the called native function.
+After freeing the returned pointer, the returned polyglot string is invalid and reading it results in undefined behavior.
+In that sense, the returned polyglot string is not a safe object, similar to a raw pointer.
+It is recommented that the user of the NFI copies the returned string before passing it along to untrusted managed code.</p>
     
       <h3 id="object">
         
@@ -1303,72 +1245,58 @@ untrusted managed code.</p>
         
       </h3>
 
-<p>This argument corresponds to the C type <code>TruffleObject</code>. This type is defined
-in <code>trufflenfi.h</code>, and is an opaque pointer type. A value of type
-<code>TruffleObject</code> represents a reference to an arbitrary managed object.</p>
+<p>This argument corresponds to the C type <code>TruffleObject</code>.
+This type is defined in <code>trufflenfi.h</code>, and is an opaque pointer type.
+A value of type <code>TruffleObject</code> represents a reference to an arbitrary managed object.</p>
 
-<p>Native code can do nothing with values of type <code>TruffleObject</code> except passing
-them back to managed code, either through return values or passing them to
-callback function pointers.</p>
+<p>Native code can do nothing with values of type <code>TruffleObject</code> except pass them back to managed code, either through return values or passing them to callback function pointers.</p>
 
-<p>The lifetime of <code>TruffleObject</code> references needs to be managed manually. See the
-documentation in <code>trufflenfi.h</code> for API functions to manage the lifetime of
-<code>TruffleObject</code> references.</p>
+<p>The lifetime of <code>TruffleObject</code> references needs to be managed manually.
+See the documentation in <code>trufflenfi.h</code> for API functions to manage the lifetime of <code>TruffleObject</code> references.</p>
 
-<p>A <code>TruffleObject</code> passed as argument is owned by the caller, and guaranteed to
-stay alive for the duration of the call. A <code>TruffleObject</code> reference returned
-from a callback function pointer is owned by the caller, and needs to be freed
-after use. Returning a <code>TruffleObject</code> from a native function does <em>not</em>
-transfer ownership (but there is an API function in <code>trufflenfi.h</code> to do that).</p>
+<p>A <code>TruffleObject</code> passed as an argument is owned by the caller, and guaranteed to stay alive for the duration of the call.
+A <code>TruffleObject</code> reference returned from a callback function pointer is owned by the caller, and needs to be freed after use. Returning a <code>TruffleObject</code> from a native function does <em>not</em> transfer ownership (but there is an API function in <code>trufflenfi.h</code> to do that).</p>
     
       <h3 id="-native-primitive-arrays">
         
         
-          <code>[...]</code> (native primitive arrays) <a href="#-native-primitive-arrays" class="anchor_heading">#</a>
+          <code>[...]</code> (Native Primitive Arrays) <a href="#-native-primitive-arrays" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>This type is only allowed as an argument from managed code to a native function,
-and only arrays of primitive numeric types are supported.</p>
+<p>This type is only allowed as an argument from managed code to a native function, and only arrays of primitive numeric types are supported.</p>
 
-<p>On the managed side, only Java host objects containing a Java primitive array
-are supported. On the native side, the type is a pointer to the contents of the
-array. It is the user’s responsibility to pass along the array length as a
-separate argument.</p>
+<p>On the managed side, only Java host objects containing a Java primitive array are supported.
+On the native side, the type is a pointer to the contents of the array.
+It is the user’s responsibility to pass along the array length as a separate argument.</p>
 
 <p>The pointer is valid for the duration of the native call only.</p>
 
-<p>Modifications to the contents are propagated back to the Java array after
-returning from the call. The effects of concurrent access to the Java array
-during the native call are unspecified.</p>
+<p>Modifications to the contents are propagated back to the Java array after returning from the call.
+The effects of concurrent access to the Java array during the native call are unspecified.</p>
     
       <h3 id="-function-pointer">
         
         
-          <code>(...):...</code> (function pointer) <a href="#-function-pointer" class="anchor_heading">#</a>
+          <code>(...):...</code> (Function Pointer) <a href="#-function-pointer" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>On the native side, a nested signature type corresponds to a function pointer
-with the given signature, calling back to managed code.</p>
+<p>On the native side, a nested signature type corresponds to a function pointer with the given signature, calling back to managed code.</p>
 
-<p>Polyglot executable objects passed from managed to native using a function
-pointer type be converted to a function pointer that can be called by the native
-code. For function pointer arguments, the function pointer is owned by the
-caller, and is guaranteed to stay alive for the duration of the call only.
-Function pointers return values are owned by the caller, and have to be freed
-manually. See <code>polyglot.h</code> for API functions to managed the lifetime of function
-pointer values.</p>
+<p>Polyglot executable objects passed from managed to native using a function pointer type must be converted to a function pointer that can be called by the native code.
+For function pointer arguments, the function pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+Function pointer return values are owned by the caller, and have to be freed manually.
+See <code>polyglot.h</code> for API functions to manage the lifetime of function pointer values.</p>
 
-<p>Polyglot pointer values or null values can also be passed to function pointer
-arguments. The semantics is the same as for <code>POINTER</code> arguments. The user is
-responsible for ensuring that the pointer is a valid function pointer.</p>
+<p>Polyglot pointer values or null values can also be passed to function pointer arguments.
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid function pointer.</p>
 
-<p>Function pointer return types are the same as regular <code>POINTER</code> return types,
-but in addition they are already <em>bound</em> to the given signature type. They
-support the <code>execute</code> message, and behave the same as regular NFI functions.</p>
+<p>Function pointer return types are the same as regular <code>POINTER</code> return types, but in addition they are already <em>bound</em> to the given signature type.
+They support the <code>execute</code> message, and behave the same as regular NFI functions.</p>
     
       <h3 id="env">
         
@@ -1378,30 +1306,25 @@ support the <code>execute</code> message, and behave the same as regular NFI fun
         
       </h3>
 
-<p>This type is a special argument of type <code>TruffleEnv *</code>. It is only valid as
-argument type, not as a return type. It is an injected argument on the native
-side, there is no corresponding argument on the managed side.</p>
+<p>This type is a special argument of type <code>TruffleEnv *</code>.
+It is only valid as argument type, not as a return type.
+It is an injected argument on the native side, there is no corresponding argument on the managed side.</p>
 
-<p>When used as argument type of a native function, the native function will get
-an environment pointer on this position. That environment pointer can be used
-to call API functions (see <code>trufflenfi.h</code>). The argument is injected, for
-example, if the signature is <code>(SINT32, ENV, SINT32):VOID</code>, this function object
-is expected to be called with two integer arguments, and the corresponding
-native function will be called with three arguments, first the first real
-argument, then the injected <code>ENV</code> argument, and then the second real argument.</p>
+<p>When used as argument type of a native function, the native function will get an environment pointer on this position.
+That environment pointer can be used to call API functions (see <code>trufflenfi.h</code>).
+The argument is injected, for example, if the signature is <code>(SINT32, ENV, SINT32):VOID</code>.
+This function object is expected to be called with two integer arguments, and the corresponding native function will be called with three arguments: first the first real argument, then the injected <code>ENV</code> argument, and then the second real argument.</p>
 
-<p>When the <code>ENV</code> type is used as argument type for a function pointer parameter,
-that function pointer must be called with a valid NFI environment as argument.
-If the caller already has an environment, threading it through to callback
-function pointers is more efficient than calling them without an <code>ENV</code> argument.</p>
+<p>When the <code>ENV</code> type is used as an argument type for a function pointer parameter, that function pointer must be called with a valid NFI environment as an argument.
+If the caller already has an environment, threading it through to callback function pointers is more efficient than calling them without an <code>ENV</code> argument.</p>
     
-      <h3 id="other-points">
+      <h2 id="other-point">
         
         
-          Other Points <a href="#other-points" class="anchor_heading">#</a>
+          Other Point <a href="#other-point" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <p>Native functions must use the system’s standard ABI.</p>
 

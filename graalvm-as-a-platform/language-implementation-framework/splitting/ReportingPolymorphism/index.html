@@ -822,18 +822,11 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This guide gives an overview of what is required of language
-implementers in order to leverage the monomorphization (splitting) strategy.
-More information on how it works can be found in the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a>
-guide.</p>
+<p>This guide gives an overview of what is required of language implementers in order to leverage the monomorphization (splitting) strategy.
+More information on how it works can be found in the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a> guide.</p>
 
-<p>In simple terms, the monomorphization heuristic relies on the language
-reporting polymorphic specializations for each node that could potentially be
-returned to a monomorphic state through splitting. In this context a
-polymorphic specialization is any node rewriting which results in the node
-changing “how polymorphic” it is. This includes, but is not limited to,
-activating another specialization, increasing the number of instances of an
-active specialization, excluding a specialization, etc..</p>
+<p>In simple terms, the monomorphization heuristic relies on the language reporting polymorphic specializations for each node that could potentially be returned to a monomorphic state through splitting.
+In this context a polymorphic specialization is any node rewriting which results in the node changing “how polymorphic” it is. This includes, but is not limited to, activating another specialization, increasing the number of instances of an active specialization, excluding a specialization, etc..</p>
     
       <h2 id="manual-reporting-of-polymorphic-specializations">
         
@@ -844,10 +837,8 @@ active specialization, excluding a specialization, etc..</p>
       </h2>
 
 <p>To facilitate reporting of polymorphic specializations, a new API was introduced
-into the <code>Node</code> class:
-<a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/Node.html#reportPolymorphicSpecialize">Node#reportPolymorphicSpecialize</a>.
-This method can be used to manually report polymorphic specializations, but only
-in cases when this cannot be automated by using the DSL.</p>
+into the <code>Node</code> class: <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/Node.html#reportPolymorphicSpecialize">Node#reportPolymorphicSpecialize</a>.
+This method can be used to manually report polymorphic specializations, but only in cases when this cannot be automated by using the DSL.</p>
     
       <h2 id="automated-reporting-of-polymorphic-specializations">
         
@@ -858,17 +849,13 @@ in cases when this cannot be automated by using the DSL.</p>
       </h2>
 
 <p>Since the Truffle DSL automates much of the transitions between specializations, the <code>@ReportPolymorphism</code> <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/dsl/ReportPolymorphism.html">annotation for automated reporting of polymorphic specializations</a> was added.
-This annotation instructs the DSL to include checks for polymorphism after
-specializations and to call <code>Node#reportPolymorphicSpecialize</code> if needed.</p>
+This annotation instructs the DSL to include checks for polymorphism after specializations and to call <code>Node#reportPolymorphicSpecialize</code> if needed.</p>
 
-<p>For an example on how to use this annotation, consider the
-<code>com.oracle.truffle.sl.nodes.SLStatementNode</code>. It is the base class for all
-Simple Language nodes and, since the <code>ReportPolymorphism</code> annotation is
-inherited, simply annotating this class will enable reporting of polymorphic
-specializations for all Simple Language nodes. Below is the diff of the change
-that adds this annotation to he <code>SLStatementNode</code></p>
+<p>For an example on how to use this annotation, consider the <code>com.oracle.truffle.sl.nodes.SLStatementNode</code>. It is the base class for all
+SimpleLanguage nodes and, since the <code>ReportPolymorphism</code> annotation is inherited, simply annotating this class will enable reporting of polymorphic specializations for all SimpleLanguage nodes.
+Below is the diff of the change that adds this annotation to <code>SLStatementNode</code>:</p>
 
-<pre><code>diff --git
+<pre><code class="language-shell">diff --git
 a/truffle/src/com.oracle.truffle.sl/src/com/oracle/truffle/sl/nodes/SLStatementNode.java
 b/truffle/src/com.oracle.truffle.sl/src/com/oracle/truffle/sl/nodes/SLStatementNode.java
 index 788cc20..89448b2 100644
@@ -904,46 +891,31 @@ InstrumentableNode {
         
       </h3>
     
-      <h2 id="excluding-particular-nodes-and-specializations">
+      <h4 id="excluding-particular-nodes-and-specializations">
         
         
-          Excluding particular nodes and specializations <a href="#excluding-particular-nodes-and-specializations" class="anchor_heading">#</a>
+          Excluding particular nodes and specializations
         
         
-      </h2>
+      </h4>
 
-<p>Applying the <code>ReportPolymorphism</code> annotation to all nodes of a language is the
-simplest way to facilitate the monomorphization, but it could cause reporting
-of polymorphic specializations in cases where that does not necessarily make
-sense. In order to give the language developer more control over which nodes
-and which specializations are taken into consideration for reporting
-polymorphism the <code>@ReportPolymorphism.Exclude</code>
-<a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/dsl/ReportPolymorphism.Exclude.html">annotation</a>
-was introduced which is applicable to classes (disabling automated reporting for the entire
-class) or to individual specializations (excluding those specializations from
-consideration when checking for polymorphism).</p>
+<p>Applying the <code>ReportPolymorphism</code> annotation to all nodes of a language is the simplest way to facilitate the monomorphization, but it could cause reporting of polymorphic specializations in cases where that does not necessarily make sense.
+In order to give the language developer more control over which nodes and which specializations are taken into consideration for reporting polymorphism, the <code>@ReportPolymorphism.Exclude</code> <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/dsl/ReportPolymorphism.Exclude.html">annotation</a> was introduced which is applicable to classes (disabling automated reporting for the entire class) or to individual specializations (excluding those specializations from consideration when checking for polymorphism).</p>
     
-      <h2 id="reporting-only-on-megamorphic-cases">
+      <h4 id="reporting-only-on-megamorphic-cases">
         
         
-          Reporting only on Megamorphic Cases <a href="#reporting-only-on-megamorphic-cases" class="anchor_heading">#</a>
+          Reporting only on Megamorphic Cases
         
         
-      </h2>
+      </h4>
 
-<p>As of version 20.3.0 a new annotation was added:
-<a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/dsl/ReportPolymorphism.Megamorphic.html">ReportPolymorphism.Megamorphic</a>.
-This annotation can only be applied to specializations, as marks that
-specialization as megamorphic as it is intented to be used on expensive
-“generic” specializations that should be fixed by monomorphization.  The effect
-of adding this annotation is that, once the annotated specialisation becomes
-active, the node will report polymorphism to the runtime independant of the
-state of other specializations.</p>
+<p>As of version 20.3.0 a new annotation was added: <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/dsl/ReportPolymorphism.Megamorphic.html">ReportPolymorphism.Megamorphic</a>.
+This annotation can only be applied to specializations, as marks that specialization as megamorphic as it is intented to be used on expensive “generic” specializations that should be fixed by monomorphization.
+The effect of adding this annotation is that, once the annotated specialisation becomes active, the node will report polymorphism to the runtime independant of the state of other specializations.</p>
 
-<p>This annotation can be used separately from <code>@ReportPolymorphism</code>, i.e. a node
-does <em>not</em> need to be annotated with <code>@ReportPolymorphism</code> for the megamorphic
-annotation to work.  If both annotations are used, then both polymorphic and
-megamorphic activations will be reported as polymorphism.</p>
+<p>This annotation can be used separately from <code>@ReportPolymorphism</code>, i.e., a node does <em>not</em> need to be annotated with <code>@ReportPolymorphism</code> for the megamorphic annotation to work.
+If both annotations are used, then both polymorphic and megamorphic activations will be reported as polymorphism.</p>
     
       <h3 id="tools-support">
         
@@ -953,12 +925,9 @@ megamorphic activations will be reported as polymorphism.</p>
         
       </h3>
 
-<p>Knowing which nodes should and should not report polymorphic specializations is
-for the language developer to conclude through either knowledge of the language
-in question, or through experimentation with the effects of including/excluding
-particular nodes/specializations. To aid language developers in better
-understanding the impact of reporting polymorphic specializations
-some tools support was provided.</p>
+<p>Knowing which nodes should and should not report polymorphic specializations is for the language developer to conclude.
+This can be done either through domain knowledge (which nodes of the language are expensive when polymorphic), or through experimentation (measuring the effects of including/excluding particular nodes/specializations).
+To aid language developers in better understanding the impact of reporting polymorphic specializations some tools support was provided.</p>
     
       <h4 id="tracing-individual-splits">
         
@@ -968,14 +937,11 @@ some tools support was provided.</p>
         
       </h4>
 
-<p>Adding the <code>--engine.TraceSplitting</code> argument to the command line
-when executing your guest language code will, in real time, print information
-about each split the runtime makes.</p>
+<p>Adding the <code>--engine.TraceSplitting</code> argument to the command line when executing your guest language code will, in real time, print information about each split the runtime makes.</p>
 
-<p>A small part of the output from running one of the JavaScript benchmarks with
-said flag enabled follows.</p>
+<p>A small part of the output from running one of the JavaScript benchmarks with the flag enabled follows.</p>
 
-<pre><code>...
+<pre><code class="language-shell">...
 [engine] split   0-37d4349f-1     multiplyScalar |ASTSize      40/   40 |Calls/Thres       2/    3 |CallsAndLoop/Thres       2/ 1000 |Inval#              0 |SourceSection octane-raytrace.js~441-444:12764-12993
 [engine] split   1-2ea41516-1     :anonymous |ASTSize       8/    8 |Calls/Thres       3/    3 |CallsAndLoop/Thres       3/ 1000 |Inval#              0 |SourceSection octane-raytrace.js~269:7395-7446
 [engine] split   2-3a44431a-1     :anonymous |ASTSize      28/   28 |Calls/Thres       4/    5 |CallsAndLoop/Thres       4/ 1000 |Inval#              0 |SourceSection octane-raytrace.js~35-37:1163-1226
@@ -991,18 +957,12 @@ said flag enabled follows.</p>
         
       </h4>
 
-<p>Adding the <code>--engine.TraceSplittingSummary</code> argument to the command
-line when executing your guest language code will, after the execution is
-complete, print out a summary of the gathered data regarding splitting. This
-includes how many splits there were, how large is the splitting budget and how
-much of it was used, how many splits were forced, a list of split target names
-and how many times they were split and a list of nodes that reported polymorphic
-specializations and how many.</p>
+<p>Adding the <code>--engine.TraceSplittingSummary</code> argument to the command line when executing your guest language code will, after the execution is complete, print out a summary of the gathered data regarding splitting.
+This includes how many splits there were, how large is the splitting budget and how much of it was used, how many splits were forced, a list of split target names and how many times they were split and a list of nodes that reported polymorphic specializations and how many.</p>
 
-<p>A slightly simplified output of running one of the JavaScript benchmarks with
-said flag enabled follows.</p>
+<p>A slightly simplified output of running one of the JavaScript benchmarks with the flag enabled follows.</p>
 
-<pre><code>[engine] Splitting Statistics
+<pre><code class="language-shell">[engine] Splitting Statistics
 Split count                             :       9783
 Split limit                             :      15342
 Split count                             :          0
@@ -1042,11 +1002,11 @@ class YetAnotherNode                    :          1
         
       </h4>
 
-<p>Consider reading the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a> guide before this section, as the
-dumped data is directly related to how splitting works.</p>
+<p>Consider reading the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a> guide before this section, as the dumped data is directly related to how splitting works.</p>
 
 <p>To better understand how reporting polymorphism impacts which call targets are considered for splitting one can use the <code>--engine.SplittingTraceEvents</code> option.
-This option will print, in real time, a log detailing which nodes are reporting polymorphism and how that is affecting the call targets. See the examples:</p>
+This option will print, in real time, a log detailing which nodes are reporting polymorphism and how that is affecting the call targets.
+See the following examples.</p>
     
       <h5 id="example-1">
         
@@ -1056,9 +1016,10 @@ This option will print, in real time, a log detailing which nodes are reporting 
         
       </h5>
 
-<pre><code>[engine] [poly-event] Polymorphic event! Source: JSObjectWriteElementTypeCacheNode@e3c0e40   WorkerTask.run
+<pre><code class="language-shell">[engine] [poly-event] Polymorphic event! Source: JSObjectWriteElementTypeCacheNode@e3c0e40   WorkerTask.run
 [engine] [poly-event] Early return: false callCount: 1, numberOfKnownCallNodes: 1            WorkerTask.run
 </code></pre>
+
 <p>This log section tells that the <code>JSObjectWriteElementTypeCacheNode</code> in the <code>WorkerTask.run</code> method turned polymorphic and reported it.
 It also tells that this is the first time that <code>WorkerTask.run</code> is being executed (<code>callCount: 1</code>), thus you do not mark it as “needs split” (<code>Early return: false</code>)</p>
     
@@ -1070,7 +1031,7 @@ It also tells that this is the first time that <code>WorkerTask.run</code> is be
         
       </h5>
 
-<pre><code>[engine] [poly-event] Polymorphic event! Source: WritePropertyNode@50313382                  Packet.addTo
+<pre><code class="language-shell">[engine] [poly-event] Polymorphic event! Source: WritePropertyNode@50313382                  Packet.addTo
 [engine] [poly-event] One caller! Analysing parent.                                          Packet.addTo
 [engine] [poly-event]   One caller! Analysing parent.                                        HandlerTask.run
 [engine] [poly-event]     One caller! Analysing parent.                                      TaskControlBlock.run
@@ -1079,6 +1040,7 @@ It also tells that this is the first time that <code>WorkerTask.run</code> is be
 [engine] [poly-event]   Return: false                                                        HandlerTask.run
 [engine] [poly-event] Return: false                                                          Packet.addTo
 </code></pre>
+
 <p>In this example the source of the polymorphic specialization is <code>WritePropertyNode</code> in <code>Packet.addTo</code>.
 Since this call target has only one known caller, you can analyse its parent in the call tree (i.e., the caller).
 This is, in the example, <code>HandlerTask.run</code> and the same applies to it as well, leading to <code>TaskControlBlock.run</code>, and by the same token to <code>Scheduler.schedule</code>.
@@ -1092,10 +1054,11 @@ This is, in the example, <code>HandlerTask.run</code> and the same applies to it
         
       </h5>
 
-<pre><code>[engine] [poly-event] Polymorphic event! Source: JSObjectWriteElementTypeCacheNode@3e44f2a5  Scheduler.addTask
+<pre><code class="language-shell">[engine] [poly-event] Polymorphic event! Source: JSObjectWriteElementTypeCacheNode@3e44f2a5  Scheduler.addTask
 [engine] [poly-event] Set needs split to true                                                Scheduler.addTask
 [engine] [poly-event] Return: true                                                           Scheduler.addTask
 </code></pre>
+
 <p>In this example the source of the polymorphic specialization is <code>JSObjectWriteElementTypeCacheNode</code> in <code>Scheduler.addTask</code>.
 This call target is immediately marked as “needs split”, since all the criteria to do so are met.</p>
     
@@ -1107,13 +1070,14 @@ This call target is immediately marked as “needs split”, since all the crite
         
       </h5>
 
-<pre><code>[engine] [poly-event] Polymorphic event! Source: WritePropertyNode@479cbee5                  TaskControlBlock.checkPriorityAdd
+<pre><code class="language-shell">[engine] [poly-event] Polymorphic event! Source: WritePropertyNode@479cbee5                  TaskControlBlock.checkPriorityAdd
 [engine] [poly-event] One caller! Analysing parent.                                          TaskControlBlock.checkPriorityAdd
 [engine] [poly-event]   Set needs split to true                                              Scheduler.queue
 [engine] [poly-event]   Return: true                                                         Scheduler.queue
 [engine] [poly-event] Set needs split to true via parent                                     TaskControlBlock.checkPriorityAdd
 [engine] [poly-event] Return: true                                                           TaskControlBlock.checkPriorityAdd
 </code></pre>
+
 <p>In this example the source of the polymorphic specialization is <code>WritePropertyNode</code> in <code>TaskControlBlock.checkPriorityAdd</code>.
 Since it has only one caller, you look at that caller (<code>Scheduler.queue</code>), and since all the criteria necessary seem to be met, you mark it as “needs split”.</p>
     
@@ -1125,14 +1089,9 @@ Since it has only one caller, you look at that caller (<code>Scheduler.queue</co
         
       </h4>
 
-<p>Consider reading the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a> guide before this section, as the
-dumped data is directly related to how splitting works.</p>
+<p>Consider reading the <a href="/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">Splitting</a> guide before this section, as the dumped data is directly related to how splitting works.</p>
 
-<p>Adding the <code>--engine.SplittingDumpDecisions</code> argument to the command line when
-executing your guest language code will, every time a call target is marked
-“needs split” dump a graph showing a chain of nodes (linked by child
-connections as well as direct call node to callee root node links) ending in
-the node that called <code>Node#reportPolymorphicSpecialize</code>.</p>
+<p>Adding the <code>--engine.SplittingDumpDecisions</code> argument to the command line when executing your guest language code will, every time a call target is marked “needs split”, dump a graph showing a chain of nodes (linked by child connections as well as direct call node to callee root node links) ending in the node that called <code>Node#reportPolymorphicSpecialize</code>.</p>
 
               </div>
 
