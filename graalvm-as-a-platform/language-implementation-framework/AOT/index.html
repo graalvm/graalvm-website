@@ -10,7 +10,7 @@
 
   <title>
     
-      Testing DSL Specializations
+      Truffle AOT Compilation
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
+  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/AOT/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -611,31 +611,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
               Testing DSL Specializations
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -662,13 +644,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/AOT/">
               Truffle AOT Compilation
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -825,64 +825,65 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="testing-truffle-dsl-specializations">
+                <h1 id="truffle-aot-tutorial">
         
         
-          Testing Truffle DSL Specializations
+          Truffle AOT Tutorial
         
         
       </h1>
 
-<p>This document discusses the tools for testing Truffle DSL specializations.</p>
+<p>Many statically compiled languages, like C are designed to be compilable without prior execution.
+By default, Truffle first interprets code before it is compiled.
+In order to improve warmup speed of static languages AOT compilation can be supported.
+The following tutorial describes how to support Truffle AOT in your language, how to trigger and test it.</p>
     
-      <h2 id="slow-path-specializations-in-only-compilation-mode">
+      <h2 id="language-support">
         
         
-          Slow Path Specializations in Only Compilation Mode <a href="#slow-path-specializations-in-only-compilation-mode" class="anchor_heading">#</a>
+          Language Support <a href="#language-support" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The following example will be used in this guide:</p>
-<pre><code class="language-java">abstract class PowNode extends Node {
-  public abstract double execute(double a, int exp);
+<p>In order for languages to support AOT compilation the language needs to implement the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#prepareForAOT--">RootNode.prepareForAOT()</a> method.
+The language implementation can indicate support for AOT by returning a non <code>null</code> value in this method.
+The goal for implementing a root node for AOT is to prepare all the AST nodes such that they no longer deoptimize when they are compiled without prior execution.</p>
 
-  @Specialization(guards = "exp==1")
-  double doOne(double a, int exp) {
-    return a;
-  }
+<p>Typical actions performed in an implementation of this method are:</p>
 
-  @Specialization(replaces = "doOne")
-  int doGeneric(double a, int exp) {
-    double res = 1;
-    for (int i = 0; i &lt; exp; i++)
-      res *= a;
-    return res;
-  }
-}
-</code></pre>
+<ul>
+  <li>Initialize local variable types in the FrameDescriptor of the root node. If a language uses local variables and their types are known, then this information must be provided to the FrameDescriptor. This step can often be done already during parsing.</li>
+  <li>Compute the expected execution signature of a root node and return it. This step requires the parser to infer expected types
+for arguments and return values.</li>
+  <li>Prepare specializing nodes with profiles that do not invalidate on first execution. Truffle DSL supports preparation of specializing nodes for AOT. See the example AOT language for details.</li>
+</ul>
+    
+      <h3 id="trigger-aot-compilation">
+        
+        
+          Trigger AOT compilation <a href="#trigger-aot-compilation" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>In order to test that <code>doGeneric</code> produces the correct result for argument <code>exp == 1</code>, you first need to execute this node with a different value.
-For example, you can use <code>exp == 2</code> to activate the <code>doGeneric</code> specialization and only then with <code>1</code>, which will now
-be handled by the <code>doGeneric</code> specialization instead of the <code>doOne</code> specialization.
-With a real-world code, writing a test that covers specializations that replace other specializations can be much more complicated and it leads to fragile tests.
-Changes in the production code may cause the test to suddenly cover different specializations.
-This can easily happen unnoticed.</p>
+<p>AOT compilation can be triggered and tested by using the <code>--engine.CompileAOTOnCreate=true</code> option.
+This will trigger AOT compilation for every created call target with a root node that supports AOT compilation.
+A root node supports AOT compilation if it returns a non null value in <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#prepareForAOT--">RootNode.prepareForAOT()</a>.
+Note that enabling this flag will also disable background compilation which makes it not suitable for production usage.</p>
+    
+      <h3 id="example-usage">
+        
+        
+          Example Usage <a href="#example-usage" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>Truffle DSL provides a mode where the “fast-path” specializations (those that are “replaced” by some other specialization, <code>doOne</code> in our example) are ignored.
-This allows you to simply increase test coverage by running the same tests, which now may cover different code paths.</p>
+<p>Use the following documented and executable Truffle language as inspiration for AOT support:
+<a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/AOTTutorial.java">AOT Tutorial</a></p>
 
-<p>When building a language with <code>mx</code>, pass the additional option:</p>
-<pre><code class="language-shell">mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true
-</code></pre>
-
-<p>After the rebuild, the generated code will call only “slow-path” specializations.
-Make sure that your IDE does not recompile the sources automatically in the meantime.
-Note that if you compile your dependencies (e.g., Truffle) from source as part of your build, this option will apply to the code of those dependencies as well.
-You may choose to apply this option only to some classes by using a filter:</p>
-
-<pre><code class="language-shell">mx build -c -A-Atruffle.dsl.GenerateSlowPathOnly=true -A-Atruffle.dsl.GenerateSlowPathOnlyFilter=org.my.truffle.language.package
-</code></pre>
+<p>The example is executable as mx unittest using <code>mx unittest AOTTutorial</code>.</p>
 
               </div>
 
