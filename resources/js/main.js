@@ -346,7 +346,7 @@ addLoadEvent(customizeTweet);
     });
   }
 
-  if (window.location.href.toString().split(window.location.host)[1] === '/docs/faq/') {
+  if (window.location.href.toString().split(window.location.host)[1] === '/faq/') {
     var contentWrapp = $('#content-wrapper');
 
     var allIds = contentWrapp.find($("*[id]:not([id='graalvm---run-any-language-anywhere'])"));

@@ -50,7 +50,7 @@ openjdk version "11.0.8" 2020-07-14
 OpenJDK Runtime Environment GraalVM CE 20.3.0 (build 11.0.8+10-jvmci-20.2-b03)
 OpenJDK 64-Bit Server VM GraalVM CE 20.3.0 (build 11.0.8+10-jvmci-20.2-b03, mixed mode, sharing)
 bash-4.4# node
-Welcome to Node.js v12.18.0.
+Welcome to Node.js v12.20.1
 Type ".help" for more information.
 > 1 + 1
 2
@@ -101,5 +101,5 @@ docker build -t ruby-demo .
 ...
 docker run -it --rm ruby-demo
 Hello from Ruby!
-Version: truffleruby 20.3.0, like ruby 2.6.6, GraalVM CE Native [x86_64-darwin]
+Version: truffleruby 21.0.0, like ruby 2.7.2, GraalVM CE Native [x86_64-darwin]
 ```
