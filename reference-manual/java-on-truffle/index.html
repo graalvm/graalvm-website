@@ -590,8 +590,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p><strong>Java on Truffle</strong> is the mode of operation for Java offered with GraalVM.
-Using GraalVM, you can run Java applications normally <a href="/reference-manual/java/">on the JVM</a>, in <a href="/reference-manual/native-image/">Native Image</a>, and now on Truffle.
+<p>Using GraalVM, you can run Java applications normally <a href="/reference-manual/java/">on the JVM</a>, in <a href="/reference-manual/native-image/">Native Image</a>, and now on Truffle.
 Java on Truffle is an implementation of the Java Virtual Machine Specification, <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/index.html">Java SE 8</a> and <a href="https://docs.oracle.com/javase/specs/jvms/se11/html/index.html">Java SE 11</a>, built upon GraalVM as a Truffle interpreter.
 It is a minified Java VM that includes all core components of a VM, implements the same API as the Java Runtime Environment library (libjvm.so), and reuses all JARs and native libraries from GraalVM.
 See the <a href="/reference-manual/java-on-truffle/implementation/">Implementation Details</a> for more information.
@@ -664,6 +663,28 @@ It will automatically switch versions regardless of the host JVM.</p>
 <pre><code class="language-shell">java -truffle --java.JavaHome=/path/to/java/home -version
 </code></pre>
     
+      <h2 id="performance-considerations">
+        
+        
+          Performance Considerations <a href="#performance-considerations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Java on Trufle is an experimental technology in GraalVM, and peak performance is currently 2-3x slower than HotSpot.</p>
+
+<p>The startup time will not match the speed offered by the regular GraalVM just-in-time (JIT) execution yet, but having created a fully working Java on Truffle runtime, the development team is now focusing on performance.
+You can still influence the performance by passing the following options to <code>java -truffle</code>:</p>
+<ul>
+  <li><code>--engine.MultiTier=true</code> to enable multi-tier compilation;</li>
+  <li><code>--engine.Inlining=false</code> in combination with <code>--java.InlineFieldAccessors=true</code> to make the compilation faster, in exchange for slower performance.</li>
+</ul>
+
+<p>The <code>--vm.XX:</code> syntax ensures the option is passed to the underlying <a href="https://www.graalvm.org/reference-manual/native-image/HostedvsRuntimeOptions">native image VM</a>.
+When using the <code>-XX:</code> syntax, the VM first checks if there is such an option in the Java on Truffle runtime.
+If there is none, it will try to apply this option to the underlying native image VM.
+This might be important for options such as <code>MaxDirectMemorySize</code> which can be set independently at both levels: <code>-XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by the Java program running on Truffle (the guest VM), while <code>--vm.XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by native image (the host VM).</p>
+    
       <h2 id="start-running-applications">
         
         
@@ -714,7 +735,7 @@ cd spring-petclinic
 </code></pre>
   </li>
   <li>Then run it from the command line by selecting the <code>-truffle</code> runtime:
-    <pre><code class="language-java">java -truffle -jar target/spring-petclinic-2.4.0.BUILD-SNAPSHOT.jar
+    <pre><code class="language-java">java -truffle -jar target/spring-petclinic-2.4.2.jar
 </code></pre>
   </li>
   <li>When the application starts, access it on <a href="http://localhost:8080/">localhost:8000</a>.</li>
@@ -761,28 +782,6 @@ To ensure you attach the debugger to your Java application in the same environme
 It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>: <code>-truffle</code> to run Java on Truffle, and <code>-XX:+IgnoreUnrecognizedVMOptions</code> as a temporary workaround since the Java on Truffle runtime does not yet support attaching Java agents.</p>
 
 <p><img src="/resources/img/debug-configuration.png" alt="" /></p>
-    
-      <h2 id="performance-considerations">
-        
-        
-          Performance Considerations <a href="#performance-considerations" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Java on Trufle is an experimental technology in GraalVM, and peak performance is currently 2-3x slower than HotSpot.</p>
-
-<p>The startup time will not match the speed offered by the regular GraalVM just-in-time (JIT) execution yet, but having created a fully working Java on Truffle runtime, the development team is now focusing on performance.
-You can still influence the performance by passing the following options to <code>java -truffle</code>:</p>
-<ul>
-  <li><code>--engine.MultiTier=true</code> to enable multi-tier compilation;</li>
-  <li><code>--engine.Inlining=false</code> in combination with <code>--java.InlineFieldAccessors=true</code> to make the compilation faster, in exchange for slower performance.</li>
-</ul>
-
-<p>The <code>--vm.XX:</code> syntax ensures the option is passed to the underlying <a href="https://www.graalvm.org/reference-manual/native-image/HostedvsRuntimeOptions">native image VM</a>.
-When using the <code>-XX:</code> syntax, the VM first checks if there is such an option in the Java on Truffle runtime.
-If there is none, it will try to apply this option to the underlying native image VM.
-This might be important for options such as <code>MaxDirectMemorySize</code> which can be set independently at both levels: <code>-XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by the Java program running on Truffle (the guest VM), while <code>--vm.XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by native image (the host VM).</p>
     
       <h2 id="what-to-read-next">
         
