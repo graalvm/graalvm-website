@@ -1,1 +1,0 @@
-define(["marked","ojs/ojhtmlutils","ojs/ojbinddom"],(function(o,i){return function(n){this.config={view:i.stringToNodeArray(o(window.atob(DOC_PAGES[n.params.topic])))}}}));
