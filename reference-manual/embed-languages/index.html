@@ -3433,17 +3433,24 @@ The following access parameters may be configured:</p>
         
       </h2>
 
-<p>Polyglot embeddings can also be compiled using <a href="/reference-manual/native-image/">Native Image</a>.
+<p>Polyglot embeddings can also be compiled ahead-of-time using <a href="/reference-manual/native-image/">Native Image</a>.
 By default, no language is included if the Polyglot API is used.
 To enable guest languages, the <code>--language:&lt;languageId&gt;</code> (e.g., <code>--language:js</code>) option needs to be specified.
-All examples on this page are also supported when compiled using the Native Image builder – <code>native-image</code>.
-Currently, it is required to set the <code>--initialize-at-build-time</code> option when building a polyglot native image.</p>
+Currently, it is required to set the <code>--initialize-at-build-time</code> option when building a polyglot native image.
+All examples on this page can be converted to native executables with the <code>native-image</code> builder.</p>
 
 <p>The following example shows how a simple HelloWorld JavaScript application can be built using <code>native-image</code>:</p>
 
 <pre><code class="language-shell">javac HelloPolyglot.java
 native-image --language:js --initialize-at-build-time -cp . HelloPolyglot
 ./HelloPolyglot
+</code></pre>
+
+<p>It should be mentioned that you can also include a guest language into the native image, but exclude the JIT compiler by passing the <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> option to the builder.
+Be aware, the flag <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> has to placed <em>after</em> all the Truffle language/tool options, so that it will override the default settings.</p>
+
+<p>You can build the above example again but this time the created image will only contain the Truffle language interpreter (the GraalVM compiler will not be included in the image) by running:</p>
+<pre><code class="language-shell">native-image --language:js -Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime --initialize-at-build-time -cp . HelloPolyglotInterpreter
 </code></pre>
     
       <h3 id="configuring-native-host-reflection">
@@ -3664,7 +3671,7 @@ public class ExecutionListenerTest {
       <footer class="footer">
   <div class="container-fluid container-fluid--custom-sm">
     <div class="row">
-      <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
         <div class="row">
           <div class="col-md-3 col-sm-12">
             <a href="/" class="logo-footer">
@@ -3716,7 +3723,7 @@ public class ExecutionListenerTest {
         <div class="row">
           <div class="col-sm-12">
             <p class="copyright">
-              Copyright © 2018, 2021, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+              Copyright © 2018, 2021, Oracle and/or its affiliates. All rights reserved.
             </p>
           </div>
         </div>
