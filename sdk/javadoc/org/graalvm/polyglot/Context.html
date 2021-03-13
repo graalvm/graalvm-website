@@ -17,7 +17,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":9,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":9,"i17":10,"i18":10,"i19":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":9,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":9,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":9,"i17":10,"i18":10,"i19":10,"i20":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../index-all.html">Index</a></li>
 <li><a href="../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM SDK Java API Reference<br>21.1.0-dev</b><br>2823c4b4abd13686747d027ed18b2fe78dbd70fa</div>
+<div class="aboutLanguage"><b>GraalVM SDK Java API Reference<br>21.1.0-dev</b><br>d895395d06edacbe1d3a307f392aa31526ce7b6a</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -512,6 +512,12 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../org/graalvm/polyglot/Context.html#resetLimits--">resetLimits</a></span>()</code>
 <div class="block">Resets all accumulators of resource limits for the associated context to zero.</div>
+</td>
+</tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../org/graalvm/polyglot/Context.html#safepoint--">safepoint</a></span>()</code>
+<div class="block">Polls safepoints events and executes them for the current thread.</div>
 </td>
 </tr>
 </table>
@@ -1112,7 +1118,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
  context is still usable after this method finishes. Please note that guest finally blocks are
  executed during interrupt. A context thread may not be interruptiple if it uses
  non-interruptible waiting or executes non-interruptible host code.
- 
+
  This method may be used as a "soft exit", meaning that it can be used before
  <a href="../../../org/graalvm/polyglot/Context.html#close-boolean-"><code>close(true)</code></a> is executed.</div>
 <dl>
@@ -1126,6 +1132,58 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
              finished within the specified time limit.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>20.3</dd>
+</dl>
+</li>
+</ul>
+<a name="safepoint--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>safepoint</h4>
+<pre>public&nbsp;void&nbsp;safepoint()</pre>
+<div class="block">Polls safepoints events and executes them for the current thread. This allows guest languages
+ to run actions between long running host method calls. Polyglot embeddings that rely on
+ cancellation should call this method whenev a potentially long running host operation is
+ executed. For example, iterating an unbounded array. Guest language code and operations
+ automatically poll safepoints regularly.
+
+ <p>
+ In this example we allow <a href="../../../org/graalvm/polyglot/Context.html#interrupt-java.time.Duration-"><code>interruption</code></a> and
+ <a href="../../../org/graalvm/polyglot/Context.html#close-boolean-"><code>cancellation</code></a> to stop the processing of our event queue.
+
+ <pre>
+ class EventProcessor {
+
+   List<Object> events = new ArrayDeque(); // list of arbitrary size
+
+   public void processEvents() {
+     Context context = Context.getCurrent();
+
+     while (Object event = events.pop()) {
+
+         // process event
+
+         // allow cancellation and interruptions
+         try {
+             context.safepoint();
+         } catch (PolyglotException e) {
+             if (e.isInterrupted() || e.isCancelled()) {
+                 // break event processing if interrupted or cancelled
+                 throw e;
+             }
+             // other handling of guest errors or rethrow
+         }
+     }
+  }
+ }
+ </pre></div>
+<dl>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="../../../org/graalvm/polyglot/PolyglotException.html" title="class in org.graalvm.polyglot">PolyglotException</a></code> - in case the close failed due to a guest language error.</dd>
+<dd><code><a href="http://docs.oracle.com/javase/8/docs/api/java/lang/IllegalStateException.html?is-external=true" title="class or interface in java.lang">IllegalStateException</a></code> - if the context is already <a href="../../../org/graalvm/polyglot/Context.html#close--"><code>closed</code></a>.</dd>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>21.1</dd>
 </dl>
 </li>
 </ul>
@@ -1227,7 +1285,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
 <li><a href="../../../index-all.html">Index</a></li>
 <li><a href="../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM SDK Java API Reference<br>21.1.0-dev</b><br>2823c4b4abd13686747d027ed18b2fe78dbd70fa</div>
+<div class="aboutLanguage"><b>GraalVM SDK Java API Reference<br>21.1.0-dev</b><br>d895395d06edacbe1d3a307f392aa31526ce7b6a</div>
 </div>
 <div class="subNav">
 <ul class="navList">
