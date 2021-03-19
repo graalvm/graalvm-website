@@ -732,6 +732,7 @@ $(document).ready(function(){
   <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
   <li><a href="#step-through-with-execution-listeners">Step Through with Execution Listeners</a></li>
   <li><a href="#build-a-shell-for-many-languages">Build a Shell for Many Languages</a></li>
+  <li><a href="#configure-sandbox-resource-limits">Configure Sandbox Resource Limits</a></li>
 </ul>
 
 <p>The GraalVM Polyglot API lets you embed and run code from guest languages in JVM-based host applications.</p>
@@ -3433,7 +3434,7 @@ The following access parameters may be configured:</p>
         
       </h2>
 
-<p>Polyglot embeddings can also be compiled ahead-of-time using <a href="/reference-manual/native-image/">Native Image</a>.
+<p>Polyglot embeddings can also be compiled ahead-of-time using <a href="native-image/README.md">Native Image</a>.
 By default, no language is included if the Polyglot API is used.
 To enable guest languages, the <code>--language:&lt;languageId&gt;</code> (e.g., <code>--language:js</code>) option needs to be specified.
 Currently, it is required to set the <code>--initialize-at-build-time</code> option when building a polyglot native image.
@@ -3462,7 +3463,7 @@ Be aware, the flag <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.De
       </h3>
 
 <p>Accessing host Java code from the guest application requires Java reflection in order to work.
-When reflection is used within a native image, the <a href="/reference-manual/native-image/Reflection/">reflection configuration file</a> is required.</p>
+When reflection is used within a native image, the <a href="native-image/Reflection.md">reflection configuration file</a> is required.</p>
 
 <p>For this example we use JavaScript to show host access with native executables.
 Copy the following code in a new file named <code>AccessJavaFromJS.java</code>.</p>
@@ -3651,6 +3652,235 @@ public class ExecutionListenerTest {
   <li>The <code>context.eval()</code> call evaluates a specified snippet of guest language code.</li>
   <li>The <code>listener.close()</code> closes a listener earlier, however execution listeners are automatically closed with the engine.</li>
 </ul>
+
+<!-- Configure Sandbox Resource Limits -->
+    
+      <h2 id="configure-sandbox-resource-limits">
+        
+        
+          Configure Sandbox Resource Limits <a href="#configure-sandbox-resource-limits" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The 20.3 release of GraalVM introduced the Sandbox Resource Limits feature that allows for the limiting of resources used by guest applications.
+Note: This feature is available with GraalVM Enterprise only. It is being actively worked on, and other options to control resource usage by guest applications are expected in future releases as well.</p>
+
+<p>Here you will learn how to configure Sandbox Resource Limits using the options in the <a href="https://docs.oracle.com/en/graalvm/enterprise/21/sdk/index.html">Polyglot API</a>.</p>
+    
+      <h2 id="sandbox-options">
+        
+        
+          Sandbox Options <a href="#sandbox-options" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>All resource-limit options are prefixed with the <code>sandbox</code> option group and can be listed using the help of any language launcher available in GraalVM, e.g., <code>js --help:tools</code>.
+Polyglot options can be provided through the language launcher, using the Polyglot Embedding API, or on the JVM using a system property.
+For more details, see <a href="/en/graalvm/enterprise/21/docs/reference-manual/polyglot-programming/#polyglot-options">Polyglot Options</a>.</p>
+
+<p>Note: All sandbox options are currently experimental. Therefore, in the examples below, it is assumed that experimental options are enabled (e.g., with <code>--experimental-options</code>).</p>
+
+<p>The resource limits may be configured using the following options:</p>
+
+<ul>
+  <li><code>--sandbox.MaxStatements=&lt;long&gt;</code>: to limit the maximum number of guest language statements</li>
+  <li><code>--sandbox.MaxStatementsIncludeInternal=&lt;boolean&gt;</code>: whether or not to include internal sources in the maximum statements computation</li>
+  <li><code>--sandbox.MaxCPUTime=1000ms</code>: to limit the total maximum CPU time spent running the application</li>
+  <li><code>--sandbox.MaxCPUTimeCheckInterval=10ms</code>: to set time interval to check the active CPU time for a context</li>
+  <li><code>--sandbox.MaxStackFrames=&lt;int&gt;</code>: to limit the maximum number of guest stack frames</li>
+  <li><code>--sandbox.MaxThreads=&lt;int&gt;</code>: to limit the number of threads that can be concurrently used by a context</li>
+  <li><code>--sandbox.MaxASTDepth=&lt;int&gt;</code>: to limit the maximum depth of AST nodes for a guest language function</li>
+</ul>
+
+<p>Different configurations may be provided for each <code>Context</code> instance.
+In addition, the limits may be reset at any point time during the execution.</p>
+    
+      <h2 id="limit-the-maximum-active-cpu-time">
+        
+        
+          Limit the Maximum Active CPU Time <a href="#limit-the-maximum-active-cpu-time" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The <code>sandbox.MaxCPUTime</code> option allows you to specify the maximum CPU time spent running the application.
+The maximum <a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.management/java/lang/management/ThreadMXBean.html#getThreadCpuTime(long)">CPU time</a> specifies how long a context can be active until it is automatically cancelled and the context is closed.
+By default the time limit is checked every 10 milliseconds.
+This can be customized using the <code>sandbox.MaxCPUTimeCheckInterval</code> option.
+Both maximum CPU time limit and check interval must be positive.</p>
+
+<p>By default, no CPU time limit is enforced.
+If the time limit is exceeded, then the polyglot context is cancelled and the execution stops by throwing a <a href="https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/polyglot/PolyglotException.html"><code>PolyglotException</code></a> which returns <code>true</code> for <code>isResourceExhausted()</code>.
+As soon as the time limit is triggered, no further application code can be executed with this context.
+It will continuously throw a <code>PolyglotException</code> for any method of the polyglot context that will be invoked.</p>
+
+<p>The used CPU time of a context typically does not include time spent waiting for synchronization or I/O.
+The CPU time of all threads will be added and checked against the CPU time limit.
+This can mean that if two threads execute the same context, then the time limit will be exceeded twice as fast.</p>
+
+<p>The time limit is enforced by a separate, high-priority thread that will be woken regularly.
+There is no guarantee that the context will be cancelled within the accuracy specified.
+The accuracy may be significantly missed, e.g., if the host VM causes a full garbage collection.
+If the time limit is never exceeded, then the throughput of the guest context is not affected.
+If the time limit is exceeded for one context, then it may slow down the throughput for other contexts with the same explicit engine temporarily.</p>
+
+<p>Available units to specify time durations are <code>ms</code> for milliseconds, <code>s</code> for seconds, <code>m</code> for minutes, <code>h</code> for hours, and <code>d</code> for days.
+Specifying negative values or no time unit in the CPU time limit option is not allowed.</p>
+
+<p>The time limit is applied to the context and all inner contexts it spawns. Therefore, new
+inner contexts cannot be used to exceed the time limit.</p>
+    
+      <h4 id="example-usage">
+        
+        
+          Example Usage
+        
+        
+      </h4>
+
+<pre><code class="language-java">try (Context context = Context.newBuilder("js")
+                           .allowExperimentalOptions(true)
+                           .option("sandbox.MaxCPUTime", "500ms")
+                           .option("sandbox.MaxCPUTimeCheckInterval", "5ms")
+                       .build();) {
+    try {
+        context.eval("js", "while(true);");
+        assert false;
+    } catch (PolyglotException e) {
+        // Triggered after 500ms;
+        // Context is closed and can no longer be used
+        // Error message: Maximum CPU time limit of 500ms exceeded.
+        assert e.isCancelled();
+        assert e.isResourceExhausted();
+    }
+}
+</code></pre>
+    
+      <h2 id="limit-the-number-of-executed-statements">
+        
+        
+          Limit the Number of Executed Statements <a href="#limit-the-number-of-executed-statements" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The <code>--sandbox.MaxStatement</code> option allows you to control the maximum number of statements a context may execute until the the context will be cancelled.
+After the statement limit has been triggered for a context, it is no longer usable and every use of the context will throw a <code>PolyglotException</code> that returns <code>true</code> for <code>PolyglotException.isCancelled()</code>.
+The statement limit is independent of the number of threads executing and is applied per context.
+It is also possible to specify this limit using the <a href="https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/polyglot/ResourceLimits.html"><code>ResourceLimits</code> API</a>.</p>
+
+<p>By default, there is no statement limit applied.
+The limit may be set to a negative number to disable it.
+Whether this limit is applied, internal sources only can be configured using <code>sandbox.MaxStatementsIncludeInternal</code>.</p>
+
+<p>By default, the limit does not include statements of sources that are marked internal.
+If a shared engine is used, then the same internal configuration must be used for all contexts of an engine.
+The maximum statement limit can be configured for each context of an engine separately.</p>
+
+<p>The statement limit is applied to the context and all inner contexts it spawns.
+Therefore, new inner contexts cannot be used to exceed the statement limit.</p>
+
+<p>Attaching a statement limit to a context reduces the throughput of all guest applications with the same engine.
+The statement counter needs to be updated with every statement that is executed.
+It is recommended to benchmark the use of the statement limit before it is used in production.</p>
+
+<p>The complexity of a single statement may not be constant time, depending on the guest language.
+For example, statements that execute JavaScript builtins, like <code>Array.sort</code>, may account for a single statement, but its execution time is dependent on the size of the array.
+The statement count limit is therefore not suitable to perform time boxing and must be combined with other more reliable measures like the CPU time limit.</p>
+
+<pre><code class="language-java">try (Context context = Context.newBuilder("js")
+                           .allowExperimentalOptions(true)
+                           .option("sandbox.MaxStatements", "2")
+                           .option("sandbox.MaxStatementsIncludeInternal", "false")
+                       .build();) {
+    try {
+        context.eval("js", "purpose = 41");
+        context.eval("js", "purpose++");
+        context.eval("js", "purpose++"); // triggers max statements
+        assert false;
+    } catch (PolyglotException e) {
+        // context is closed and can no longer be used
+        // error message: Maximum statements limit of 2 exceeded.
+        assert e.isCancelled();
+        assert e.isResourceExhausted();
+    }
+}
+</code></pre>
+    
+      <h3 id="limit-the-ast-depth-of-functions">
+        
+        
+          Limit the AST Depth of Functions <a href="#limit-the-ast-depth-of-functions" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>You can limit the maximum expression depth of a guest language function with the <code>--sandbox.MaxASTDepth</code> option.
+Only instrumentable nodes count towards the limit.
+If the limit is exceeded, evaluation of the code fails and the context is canceled.
+Inner contexts inherit the parent’s limit.</p>
+
+<p>The AST depth can give an estimate of the complexity and code size of a function as well as its stack frame size.
+Limiting the AST depth can serve as a safeguard against arbitrary stack space usage by a single function.</p>
+    
+      <h3 id="limit-the-number-of-stack-frames">
+        
+        
+          Limit the Number of Stack Frames <a href="#limit-the-number-of-stack-frames" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>With the <code>--sandbox.MaxStackFrames</code> option you can specify the maximum number of frames a context can push on the stack.
+Exceeding the limit results in cancellation of the context.
+A thread-local stack frame counter is incremented on function enter and decremented on function return.
+Also, inner contexts inherit the parent’s limit, but do not count towards it.
+Resetting resource limits does not affect the stack frame counter.</p>
+
+<p>The stack frame limit in itself can serve as a safeguard against infinite recursion.
+If used together with the AST depth limit, it can be used to estimate total stack space usage.</p>
+    
+      <h3 id="limit-the-number-of-active-threads">
+        
+        
+          Limit the Number of Active Threads <a href="#limit-the-number-of-active-threads" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>You can limit the number of threads that can be used by a context at the same point in time using the <code>--sandbox.MaxThreads</code> option.
+By default, an arbitary number of threads can be used.
+If a set limit is exceeded, entering the context fails with a PolyglotException and the polyglot context is canceled.
+Resetting resource limits does not affect thread limits.</p>
+    
+      <h3 id="reset-resource-limits">
+        
+        
+          Reset Resource Limits <a href="#reset-resource-limits" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>With the <a href="https://docs.oracle.com/en/graalvm/enterprise/21/sdk/index.html">Polyglot API</a> it is possible to reset the CPU time and statements count at any point in time using the <a href="https://docs.oracle.com/en/graalvm/enterprise/21/sdk/org/graalvm/polyglot/Context.html#resetLimits--"><code>Context.resetLimits</code></a> method.
+This can be useful if a known and trusted initialization script should be excluded from limit.</p>
+
+<pre><code class="language-java">try (Context context = Context.newBuilder("js")
+                           .allowExperimentalOptions(true)
+                           .option("sandbox.MaxCPUTime", "500ms")
+                       .build();) {
+    try {
+        context.eval("js", /* initialization script */);
+        context.resetLimits();
+        context.eval("js", /* user script */);
+        assert false;
+    } catch (PolyglotException e) {
+        assert e.isCancelled();
+        assert e.isResourceExhausted();
+    }
+}
+</code></pre>
 
               </div>
 

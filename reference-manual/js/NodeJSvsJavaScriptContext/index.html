@@ -452,6 +452,17 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
+            <a href="/reference-manual/js/Modules/">
+              Using JavaScript Modules and Packages
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
             <a href="/reference-manual/js/Multithreading/">
               Multithreading
             </a>
@@ -689,9 +700,8 @@ $(document).ready(function(){
 As such, it can run JavaScript code in a variety of embedding scenarios, including the Oracle <a href="https://www.graalvm.org/docs/examples/mle-oracle/">RDBMS</a>, any Java-based application, and Node.js.</p>
 
 <p>Depending on the GraalVM’s JavaScript embedding scenario, applications have access to different built-in capabilities.
-For example, Node.js applications running on GraalVM’s have access to all of Node.js’ APIs, including built-in Node.js modules such as <code>fs</code> and <code>http</code>, etc.</p>
-
-<p>Conversely, JavaScript code embedded in a Java application has access to limited capabilities, as specified through the <a href="https://www.graalvm.org/reference-manual/embed-languages/#compile-and-run-a-polyglot-application">Context API</a>, and do not have access to Node.js built-in modules.</p>
+For example, Node.js applications executed using GraalVM’s <code>bin/node</code> executable have access to all of Node.js’ APIs, including built-in Node.js modules such as <code>fs</code>, <code>http</code>, etc.
+Conversely, JavaScript code embedded in a Java application has access to limited capabilities, as specified through the <a href="https://www.graalvm.org/reference-manual/embed-languages/#compile-and-run-a-polyglot-application">Context API</a>, and do not have access to Node.js built-in modules.</p>
 
 <p>This guide describes the main differences between a Node.js application and a GraalVM JavaScript application embedded in Java.</p>
     
@@ -725,11 +735,11 @@ In this scenario, Java classes can be exposed to the Node.js application by usin
 The object is not available by default, and can be enabled in the following way:</p>
 
 <ol>
-  <li>In Node.js, start GraalVM using the <code>bin/node --jvm</code> command.</li>
+  <li>In Node.js mode, start GraalVM using the <code>bin/node --jvm</code> command.</li>
   <li>In Java, create a GraalVM context using the <code>withHostInterop()</code> option, e.g.:
     <pre><code class="language-java">Context.create("js").withHostInterop()
 </code></pre>
-    <p>More details on the Java interoperability capabilities of GraalVM JavaScript are available in <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/JavaInteroperability.md">Java Interoperability</a>.</p>
+    <p>More details on the Java interoperability capabilities of GraalVM JavaScript are available in <a href="https://github.com/oracle/graaljs/blob/master/docs/user/JavaInteroperability.md">Java Interoperability</a>.</p>
   </li>
 </ol>
     
@@ -745,7 +755,7 @@ The object is not available by default, and can be enabled in the following way:
 In order to leverage parallel execution, multiple contexts have to be created and executed from multiple threads:</p>
 
 <ol>
-  <li>In Node.js, multiple contexts can be created using Node.js’ <a href="https://nodejs.org/api/worker_threads.html">Worker threads</a> API.
+  <li>In Node.js mode, multiple contexts can be created using Node.js’ <a href="https://nodejs.org/api/worker_threads.html">Worker threads</a> API.
 The Worker threads API ensures that no sharing can happen between two parallel contexts.</li>
   <li>In Java, multiple contexts can be executed from multiple threads.
 As long as a context is not accessed by two threads at the same time, parallel execution happens safely.</li>
@@ -765,156 +775,31 @@ As long as a context is not accessed by two threads at the same time, parallel e
 In order for a Java library to be accessible from a <code>Context</code>, its <code>jar</code> files need to be added to the GraalVM classpath. This can be done in the following way:</p>
 
 <ol>
-  <li>In Node.js, the classpath can be modified using the <code>--jvm.cp</code> option.</li>
+  <li>In Node.js mode, the classpath can be modified using the <code>--jvm.cp</code> option.</li>
   <li>In Java, the default Java’s <code>-cp</code> option can be used.</li>
 </ol>
 
-<p>More details on GraalVM command line options are available in <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/Options.md">Options</a>.</p>
+<p>More details on GraalVM command line options are available in <a href="https://github.com/oracle/graaljs/blob/master/docs/user/Options.md">Options</a>.</p>
     
-      <h2 id="javascript-modules">
+      <h2 id="javascript-packages-and-modules">
         
         
-          JavaScript Modules <a href="#javascript-modules" class="anchor_heading">#</a>
+          JavaScript Packages and Modules <a href="#javascript-packages-and-modules" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>Many popular JavaScript modules such as those available on the <code>npm</code> package registry can be used from Node.js as well as from Java.
-GraalVM JavaScript is compatible with the latest ECMA standard, and supports ECMAScript modules (ECM).
-CommonJS (CJS) modules are supported when running with Node.js.
-CommonJS modules cannot be used <em>directly</em> from Java; to this end, any popular package bundlers (such as Parcel, Browserify, or Webpack) can be used.</p>
-    
-      <h3 id="ecmascript-modules-ecm">
-        
-        
-          ECMAScript Modules (ECM) <a href="#ecmascript-modules-ecm" class="anchor_heading">#</a>
-        
-        
-      </h3>
-<p>ECMAScript modules can be loaded in GraalVM JavaScript in the following ways:</p>
+<p>Many popular JavaScript modules such as those available on the <code>npm</code> package registry can be used from Node.js as well as from Java:</p>
 
 <ol>
-  <li>The support of ECMAScript modules in Node.js is still experimental.
-GraalVM  Enterprise supports all features supported by the Node.js version that is compatible with GraalVM.
-To check and verify the version, simply run <code>bin/node --version</code>.</li>
-  <li>ECMAScript modules can be loaded in a <code>Context</code> simply by evaluating the module sources.
-Currently, GraalVM JavaScript loads ECMAScript modules based on their file extension.
-Therefore, any ECMAScript module must have file name extension <code>.mjs</code>.
-This might change in future versions of GraalVM JavaScript.</li>
+  <li>In Node.js mode, JavaScript modules are handled by the Node.js runtime.
+Therefore, GraalVM JavaScript supports all modules supported by Node.js (including ES modules, CommonJS modules, and native modules).</li>
+  <li>In Java mode, GraalVM JavaScript can execute any JavaScript module or package that does not depend on native Node.js built-in modules (such as <code>'fs'</code>, <code>'http'</code>, etc.)
+Modules can be loaded using a package bundler, or using the available built-in mechanisms for ES modules.
+CommonJS modules are supported in Java mode under an experimental flag.</li>
 </ol>
 
-<p>More details about evaluating files using the Context API are available in the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">javadoc</a>.</p>
-    
-      <h3 id="commonjs-modules-cjs">
-        
-        
-          CommonJS Modules (CJS) <a href="#commonjs-modules-cjs" class="anchor_heading">#</a>
-        
-        
-      </h3>
-<p>CommonJS modules can be loaded in GraalVM JavaScript in the following way:</p>
-
-<ol>
-  <li>In Node.js, modules can be loaded using the <code>require()</code> built-in function, as expected.</li>
-  <li>By default, the <code>Context</code> API does not support CommonJS modules, and has no built-in <code>require()</code> function.
-In order to be loaded and used from a <code>Context</code> in Java, a CommonJS module needs to be <em>bundled</em> into a self-contained JavaScript source file.
-This can be done using one of the many popular open-source bundling tools such as Parcel, Browserify, and Webpack.
-Experimental support for CommonJS modules can be enabled through the <code>js.commonjs-require</code> option as described below.</li>
-</ol>
-    
-      <h4 id="experimental-support-for-commonjs-npm-modules-in-the-context-api">
-        
-        
-          Experimental support for CommonJS NPM modules in the <code>Context</code> API
-        
-        
-      </h4>
-<p>The <code>js.commonjs-require</code> option provides a built-in <code>require()</code> function that can be used to load NPM-compatible CommonJS modules in a JavaScript <code>Context</code>.
-Currently, this is an experimental feature not for production usage.</p>
-
-<p>To enable CommonJS support, a JavaScript context can be created in the following way:</p>
-<pre><code class="language-java">Map&lt;String, String&gt; options = new HashMap&lt;&gt;();
-// Enable CommonJS experimental support.
-options.put("js.commonjs-require", "true");
-// (optional) folder where the NPM modules to be loaded are located.
-options.put("js.commonjs-require-cwd", "/path/to/root/folder");
-// (optional) initialization script to pre-define globals.
-options.put("js.commonjs-global-properties", "./globals.js");
-// (optional) Node.js built-in replacements as a comma separated list.
-options.put("js.commonjs-core-modules-replacements",
-            "buffer:buffer/," +
-            "path:path-browserify");
-// Create context with IO support and experimental options.
-Context cx = Context.newBuilder("js")
-                            .allowExperimentalOptions(true)
-                            .allowIO(true)
-                            .options(options)
-                            .build();
-// Require a module
-Value module = cx.eval("js", "require('some-module');");
-</code></pre>
-    
-      <h5 id="differences-with-nodejs-built-in-require-function">
-        
-        
-          Differences with Node.js built-in <code>require()</code> function
-        
-        
-      </h5>
-<p>The <code>Context</code> built-in <code>require()</code> function can load regular NPM modules implemented in JavaScript, but cannot load native NPM modules.
-The built-in <code>require()</code> relies on the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem</a>, therefore I/O access needs to be enabled at context creation time using the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowIO-boolean-"><code>allowIO</code> option</a>.
-The built-in <code>require()</code> aims to be largely compatible with Node.js, and we expect it to work with any NPM module that would work in a browser (e.g., created using a package bundler).</p>
-    
-      <h5 id="installing-an-npm-module-to-be-used-via-the-context-api">
-        
-        
-          Installing an NPM module to be used via the <code>Context</code> API
-        
-        
-      </h5>
-<p>In order to be used from a JavaScript <code>Context</code>, an NPM module needs to be installed to a local folder.
-This can be done using GraalVM JavaScript’s <code>npm install</code> command like one would normally do for Node.js applications.
-At runtime, the option <code>js.commonjs-require-cwd</code> can be used to specify the main installation folder for NPM packages.
-The <code>require()</code> built-in function will resolve packages according to the default Node.js’ <a href="https://nodejs.org/api/modules.html#modules_all_together">package resolution protocol</a> starting from the directory specified via <code>js.commonjs-require-cwd</code>.
-When no directory is provided with the option, the current working directory of the application will be used.</p>
-    
-      <h5 id="nodejs-core-modules-mockups">
-        
-        
-          Node.js core modules mockups
-        
-        
-      </h5>
-<p>Some JavaScript applications or NPM modules might need functionalities that are available in Node.js’ built-in modules (e.g., <code>'fs'</code> and <code>'buffer'</code>, etc.).
-Such modules are not available in the <code>Context</code> API.
-Thankfully, the Node.js community has developed high-quality JavaScript implementations for many Node.js core modules (e.g., the <a href="https://www.npmjs.com/package/buffer">‘buffer’</a> module for the browser).
-Such alternative module implementations can be exposed to a JavaScript <code>Context</code> using the <code>js.commonjs-core-modules-replacements</code> option, in the following way:</p>
-<pre><code class="language-java">options.put("js.commonjs-core-modules-replacements", "buffer:my-buffer-implementation");
-</code></pre>
-
-<p>As the code suggests, the option instructs the GraalVM JavaScript runtime to load a module called <code>my-buffer-implementation</code> when an application attempts to load the Node.js <code>'buffer'</code> built-in module using <code>require('buffer')</code>.</p>
-    
-      <h5 id="global-symbols-pre-initialization">
-        
-        
-          Global symbols pre-initialization
-        
-        
-      </h5>
-<p>An NPM module or a JavaScript application might expect certain global properties to be defined in the global scope.
-For example, applications or modules might expect the <code>Buffer</code> global symbol to be defined in the JavaScript global object.
-The option <code>js.commonjs-global-properties</code> can be used to pre-initialize such global symbols using the <code>Context</code> API.
-The option can be used in the following way:</p>
-<pre><code class="language-java">options.put("js.commonjs-global-properties", "./globals.js");
-</code></pre>
-<p>Once specified, the file <code>globals.js</code> will be loaded at context creation time. That is, before any JavaScript source execution.
-An example <code>globals.js</code> file might perform the following initialization steps:</p>
-<pre><code class="language-java">// define an empty object called 'process'
-globalThis.process = {}
-// define the 'Buffer' global symbol
-globalThis.Buffer = require('some-buffer-implementation').Buffer;
-</code></pre>
-<p>The file will be executed at context creation time, and <code>Buffer</code> will be available as a global symbol in all new <code>Context</code> instances.</p>
+<p>More details on JavaScript modules are available in <a href="https://github.com/oracle/graaljs/blob/master/docs/user/Modules.md">Modules</a>.</p>
 
               </div>
 
