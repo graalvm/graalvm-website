@@ -636,40 +636,97 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM is a high-performance runtime that provides significant improvements in application performance and efficiency which is ideal for microservices.
-It is designed for applications written in Java, JavaScript, LLVM-based languages such as C and C++, and other dynamic languages.
-It removes the isolation between programming languages and enables interoperability in a shared runtime.</p>
+<p>GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with support for JavaScript, Ruby, Python, and a number of other popular languages.
+GraalVM’s polyglot capabilities make it possible to mix multiple programming languages in a single application while eliminating foreign language call costs.</p>
 
-<p><img src="/docs/img/graalvm_architecture.png" alt="GraalVM system diagram" /></p>
+<p>This page provides an architectural overview of GraalVM and its runtime modes, supported platforms, available distributions, core and additional functionalities, and support levels for various features.</p>
 
-<p>The preceding diagram illustrates the architecture of GraalVM as an open ecosystem.</p>
-
-<p>The virtualization layer represents programming languages, provided by GraalVM.
-The execution of guest programming languages, namely JavaScript, Ruby, R, Python and LLVM bitcode, in the same runtime as the host JVM-based application is now down-to-earth.
-The host language and guest languages can directly interoperate with each other and pass data back and forth in the same memory space.</p>
-
-<p>The bottom part demonstrates the applicability range. GraalVM can either run standalone, be embedded as part of the OpenJDK or Node.js platforms, or even execute inside <a href="https://labs.oracle.com/pls/apex/f?p=LABS:project_details:0:15">Oracle Database</a>.</p>
+<ul>
+  <li><a href="#graalvm-architecture">GraalVM Architecture</a></li>
+  <li><a href="#runtime-modes">Runtime Modes</a></li>
+  <li><a href="#available-distributions">Available Distributions</a></li>
+  <li><a href="#distribution-components-list">Distribution Components List</a></li>
+  <li><a href="#licensing-and-support">Licensing and Support</a></li>
+  <li><a href="#features-support">Features Support</a></li>
+  <li><a href="#what-to-read-next">What to Read Next</a></li>
+</ul>
     
-      <h2 id="graalvm-distributions">
+      <h2 id="graalvm-architecture">
         
         
-          GraalVM Distributions <a href="#graalvm-distributions" class="anchor_heading">#</a>
+          GraalVM Architecture <a href="#graalvm-architecture" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>GraalVM is available as <strong>GraalVM Community</strong> and <strong>GraalVM Enterprise</strong> editions.
-GraalVM Community editions are based on OpenJDK version 1.8.0_282 and on OpenJDK version 11.0.10.
-GraalVM Enterprise editions are based on Oracle JDK version 1.8.0_281 and on Oracle JDK version 11.0.10.</p>
+<p><img src="img/graalvm_architecture_community.png" alt="GraalVM architecture diagram" title="High-level architecture of GraalVM open ecosystem" /></p>
+
+<p>GraalVM adds an <a href="https://github.com/oracle/graal/tree/master/compiler">advanced just-in-time (JIT) optimizing compiler</a>, which is written in Java, to the HotSpot Java Virtual Machine.</p>
+
+<p>In addition to running Java and JVM-based languages, GraalVM’s <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a> makes it possible to run JavaScript, Ruby, Python, and a number of other popular languages on the JVM.
+With GraalVM Truffle, Java and other supported languages can directly interoperate with each other and pass data back and forth in the same memory space.</p>
+    
+      <h2 id="runtime-modes">
+        
+        
+          Runtime Modes <a href="#runtime-modes" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>GraalVM offers different ways to run Java: on HotSpot with the GraalVM JIT compiler, ahead-of-time compiled with the native image builder, or using Java on Truffle (a Truffle language implementation-based Java implementation of the Java Virtual Machine specification).</p>
+    
+      <h4 id="graalvm-jit">
+        
+        
+          GraalVM JIT
+        
+        
+      </h4>
+<p>When running programs on HotSpot, GraalVM defaults to the <a href="/reference-manual/compiler/">GraalVM compiler</a> as the top-tier JIT compiler.
+At runtime, an application is loaded and executed normally on the JVM.
+The JVM passes bytecodes for Java or any other JVM-native language to the compiler, which compiles that to the machine code and returns it to the JVM.
+Interpreters for supported languages, written on top of the <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>, are themselves Java programs that run on the JVM.</p>
+    
+      <h4 id="native-image">
+        
+        
+          Native Image
+        
+        
+      </h4>
+<p>GraalVM <a href="/reference-manual/native-image/">Native Image</a> is an innovative technology that
+compiles Java code into a standalone binary executable or a native shared library.
+The Java bytecode that is processed during the native image build includes all application classes, dependencies, third party dependent libraries,
+and any JDK classes that are required.
+A generated self-contained native executable is specific to each individual operating systems and machine architecture, but it does not require a JVM to run on.</p>
+    
+      <h4 id="java-on-truffle">
+        
+        
+          Java on Truffle
+        
+        
+      </h4>
+<p><a href="/reference-manual/java-on-truffle/">Java on Truffle</a> is an implementation of the Java Virtual Machine Specification, built with the <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a>.
+It is a complete Java VM that includes all core components, implements the same API as the Java Runtime Environment library, and reuses all JARs and native libraries from GraalVM.
+Java on Trufle is an experimental technology in GraalVM, available as of version 21.0.0.</p>
+    
+      <h2 id="available-distributions">
+        
+        
+          Available Distributions <a href="#available-distributions" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>GraalVM is available as <strong>GraalVM Enterprise</strong> and <strong>GraalVM Community</strong> editions and includes support for Java 8 and Java 11.  GraalVM Enterprise is based on Oracle JDK while GraalVM Community is based on OpenJDK.</p>
 
 <p>GraalVM distributions are available for Linux, macOS, and Windows platforms on x86 64-bit systems, and for Linux on ARM 64-bit systems.
 The GraalVM distribution for AArch64, **graalvm-ce-java11-linux-aarch64-<version>**, is currently under development and is provided for evaluation and testing use [on GitHub](https://github.com/graalvm/graalvm-ce-builds/releases).</version></p>
 
-<p>Note: The base GraalVM binary including all its components is experimental on Linux/ARM and Windows.</p>
-
-<p>All editions are shipped as a <em>.tar.gz</em> file.
-For installation, it is sufficient to unpack the respective archive and set the <code>JAVA_HOME</code> variable on the unpacked directory.
-Continue reading to <a href="/docs/getting-started/">Getting Started with GraalVM</a>.</p>
+<p>GraalVM and all included components are <strong>experimental</strong> on Linux/ARM and Windows.
+See the <a href="/docs/getting-started/">Getting Started guide</a> for installation instructions.</p>
     
       <h2 id="distribution-components-list">
         
@@ -679,8 +736,8 @@ Continue reading to <a href="/docs/getting-started/">Getting Started with GraalV
         
       </h2>
 
-<p>GraalVM cconsists of core and additional components.
-The core components enable using GraalVM Enterprise as a runtime platform for programs written in JVM-based languages or embeddable polyglot applications.</p>
+<p>GraalVM consists of core and additional components.
+The core components enable using GraalVM as a runtime platform for programs written in JVM-based languages or embeddable polyglot applications.</p>
     
       <h3 id="core-components">
         
@@ -689,7 +746,6 @@ The core components enable using GraalVM Enterprise as a runtime platform for pr
         
         
       </h3>
-
 <p><strong>Runtimes</strong></p>
 <ul>
   <li>Java HotSpot VM</li>
@@ -717,14 +773,14 @@ The core components enable using GraalVM Enterprise as a runtime platform for pr
         
         
       </h3>
-
-<p>GraalVM base installation can be extended with the <strong>additional components</strong>.</p>
+<p>GraalVM core installation can be extended with more languages runtimes and utilities.</p>
 
 <p>Tools/Utilities:</p>
 
 <ul>
   <li><a href="/reference-manual/native-image/">Native Image</a> – a technology to compile an application ahead-of-time into a native executable.</li>
   <li><a href="/reference-manual/llvm/">LLVM toolchain</a> –  a set of tools and APIs for compiling native programs to bitcode that can be executed with on the GraalVM runtime.</li>
+  <li><a href="/reference-manual/java-on-truffle/">Java on Truffle</a> – a JVM implementation built upon the <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a> to run Java via a Java bytecode interpreter.</li>
 </ul>
 
 <p>Language Runtimes:</p>
@@ -735,37 +791,124 @@ The core components enable using GraalVM Enterprise as a runtime platform for pr
   <li><a href="/reference-manual/r/">R</a> – GNU R 3.6.1 compatible</li>
   <li><a href="/reference-manual/wasm/">GraalWasm</a> – WebAssembly (Wasm)</li>
 </ul>
-
-<p>Note: Python, R, Ruby, and GraalWasm are experimental and not recommended for production use at this time.</p>
     
-      <h2 id="graalvm-documentation">
+      <h2 id="licensing-and-support">
         
         
-          GraalVM Documentation <a href="#graalvm-documentation" class="anchor_heading">#</a>
+          Licensing and Support <a href="#licensing-and-support" class="anchor_heading">#</a>
         
         
       </h2>
-<p>Whether you are here to try running an application with GraalVM for the first time or ready to start coding with the GraalVM Polyglot APIs, check out our documentation to help you on your way.</p>
 
-<ul>
-  <li><a href="/docs/getting-started/">Getting Started</a></li>
-  <li><a href="/docs/reference-manual/">Reference Manual</a></li>
-  <li><a href="/docs/tools/">Debugging and Monitoring Tools</a></li>
-  <li><a href="/docs/graalvm-as-a-platform/">GraalVM as a Platform</a></li>
-  <li><a href="/docs/security-guide/">Security Guide</a></li>
-  <li><a href="/docs/examples/">Examples</a></li>
-</ul>
+<p>GraalVM Community Edition is open source software built from the sources available on <a href="https://github.com/oracle/graal">GitHub</a> and distributed under
+<a href="https://github.com/oracle/graal/blob/master/LICENSE">version 2 of the GNU General Public  License with the “Classpath” Exception</a>, which are the same terms as for Java. Check the <a href="https://github.com/oracle/graal#license">licenses</a> of individual GraalVM components which are generally derivative of the license of a particular language and may differ.
+GraalVM Community is free to use for any purpose and comes with no strings attached, but also no guarantees or support.</p>
+    
+      <h2 id="features-support">
+        
+        
+          Features Support <a href="#features-support" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<p>Alternatively you can have a look at <a href="http://www.graalvm.org/sdk/javadoc">GraalVM SDK Java API Reference</a> and <a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Java API Reference</a>. For example:</p>
-<ul>
-  <li>The <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot Package</a> allows you to configure and run polyglot applications.</li>
-  <li>The <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/proxy/package-summary.html">Proxy Package</a> allows you to mimic the guest language objects using proxies.</li>
-  <li>The <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/package-summary.html">IO Package</a> allows you to customize the file system access of languages.</li>
-  <li>The <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/package-summary.html">Truffle API</a> allows to implement your own Truffle based language.</li>
-</ul>
+<p>GraalVM technologies are distributed as production-ready and experimental.</p>
 
-<p>If you cannot find the answer you need or have a troubleshooting query,
-<a href="/community/">get in touch with us</a>.</p>
+<p>Experimental features are being considered for future versions of GraalVM and are not meant to be used in production.
+The development team welcomes feedback on experimental features, but users should be aware that experimental features might never be included in a final version, or might change significantly before being considered production-ready.</p>
+
+<p>The following table lists production-ready and experimental features in GraalVM Community Edition 21 by platform.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Linux</th>
+      <th>macOS</th>
+      <th>Windows</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Native Image</td>
+      <td>production-ready</td>
+      <td>production-ready</td>
+      <td>experimental</td>
+    </tr>
+    <tr>
+      <td>LLVM runtime</td>
+      <td>production-ready</td>
+      <td>production-ready</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>LLVM toolchain</td>
+      <td>production-ready</td>
+      <td>production-ready</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>JavaScript</td>
+      <td>production-ready</td>
+      <td>production-ready</td>
+      <td>experimental</td>
+    </tr>
+    <tr>
+      <td>Node.js</td>
+      <td>production-ready</td>
+      <td>production-ready</td>
+      <td>experimental</td>
+    </tr>
+    <tr>
+      <td>Java on Truffle</td>
+      <td>experimental</td>
+      <td>experimental</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>Python</td>
+      <td>experimental</td>
+      <td>experimental</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>Ruby</td>
+      <td>experimental</td>
+      <td>experimental</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>R</td>
+      <td>experimental</td>
+      <td>experimental</td>
+      <td>not available</td>
+    </tr>
+    <tr>
+      <td>WebAssembly</td>
+      <td>experimental</td>
+      <td>experimental</td>
+      <td>not available</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h2 id="what-to-read-next">
+        
+        
+          What to Read Next <a href="#what-to-read-next" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Whether you are new to GraalVM or have little experience using it, continue to <a href="/docs/getting-started/">Get Started with GraalVM</a>.
+Install GraalVM on your local machine, try running the examples provided in the guide, or test GraalVM with your workload.
+After that we suggest you to look at more complex <a href="/docs/examples/">Examples Applications</a>.</p>
+
+<p>Developers who have GraalVM already installed or have experience using, can skip the getting started guide and proceed to the <a href="/docs/reference-manual/">Reference Manuals</a> for in-depth coverage of GraalVM technologies.</p>
+
+<p>To start coding with the GraalVM Polyglot APIs, check out the <a href="http://www.graalvm.org/sdk/javadoc">GraalVM SDK Java API Reference</a>.</p>
+
+<p>If you cannot find the answer you need in the available documentation or have a troubleshooting query, you can ask for help in a <a href="/slack-invitation/">slack channel</a> or <a href="https://github.com/oracle/graal/issues">submit a GitHub issue</a>.</p>
 
               </div>
 
