@@ -704,6 +704,49 @@ Applications can freely import and use NPM packages, including native ones.</p>
 
 <p>For the differences between running the <code>node</code> native launcher and accessing Node.js/npm modules/ECMAScript modules from a Java Context, see <a href="/reference-manual/js/NodeJSvsJavaScriptContext/">NodeJSVSJavaScriptContext</a>.</p>
     
+      <h2 id="installing-the-nodejs-component">
+        
+        
+          Installing the Node.js component <a href="#installing-the-nodejs-component" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Since GraalVM 21.1, the Node.js support is packaged in a separate GraalVM component.
+It can be installed with the <em>GraalVM Updater</em>.</p>
+
+<pre><code class="language-shell">$ $GRAALVM/bin/gu install nodejs
+</code></pre>
+
+<p>This installs the <code>node</code> and <code>npm</code> binaries in the <code>$GRAALVM/bin</code> directory.</p>
+    
+      <h3 id="polyglot-support-in-nodejs">
+        
+        
+          Polyglot support in Node.js <a href="#polyglot-support-in-nodejs" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The Node.js component is able to use the polyglot language interoperability (flag: <code>--polyglot</code>) with other installed polyglot languages.
+This feature is available by default in JVM mode (flag: <code>--jvm</code>).
+For polyglot access to the Ruby language, you can e.g. use this command:</p>
+
+<pre><code class="language-shell">$ $GRAALVM/bin/node --jvm --polyglot -e 'var array = Polyglot.eval("ruby", "[1,2,42,4]"); console.log(array[2]);'
+</code></pre>
+
+<p>To use the polyglot capabilities of <code>node</code> in the native mode (flag: <code>--native</code>), the <code>libpolyglot</code> needs to be rebuilt first.
+For this, the <code>native-image</code> component and the other languages need to be installed first, before the image can be rebuilt:</p>
+
+<pre><code class="language-shell">$ $GRAALVM/bin/gu install native-image
+$ $GRAALVM/bin/gu rebuild-images libpolyglot
+</code></pre>
+
+<p>After a successfull rebuild, the polyglot access is also available in the <code>--native</code> mode:</p>
+
+<pre><code class="language-shell">$ $GRAALVM/bin/node --native --polyglot -e 'var array = Polyglot.eval("ruby", "[1,2,42,4]"); console.log(array[2]);'
+</code></pre>
+    
       <h2 id="running-nodejs-applications">
         
         
