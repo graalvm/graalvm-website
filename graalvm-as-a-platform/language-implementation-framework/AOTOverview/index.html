@@ -10,7 +10,7 @@
 
   <title>
     
-      Profiling Truffle Interpreters
+      Truffle AOT Overview
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime for Java and other languages that can increase application throughput and reduce latency; compile applications into sma..."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/Profiling/">
+  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/AOTOverview/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -574,31 +574,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/Profiling/">
               Profiling Truffle Interpreters
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -713,13 +695,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/AOTOverview/">
               Truffle AOT Overview
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -909,104 +909,132 @@ $(document).ready(function(){
 
             <div class="col-sm-9 no-padding">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="profiling-truffle-interpreters">
+                <h1 id="truffle-aot-overview">
         
         
-          Profiling Truffle Interpreters
+          Truffle AOT Overview
         
         
       </h1>
 
-<p>There is no shortage of tools for profiling interpreters written using Truffle.
-When running in JVM mode you can use standard JVM tooling such as VisualVM, Java Flight Recorder, and Oracle Developer Studio. When running in Native Image you can use <code>callgrind</code> from the Valgrind tool suite, and other system tools such as <code>strace</code>.
-As a language running on GraalVM, other GraalVM tools can be used.
-For a broad enough definition of profiling, you can also use the <a href="https://docs.oracle.com/en/graalvm/enterprise/20/docs/tools/igv/">Ideal Graph Visualizer (IGV)</a> and C1 Visualizer to inspect the compiler output.</p>
+<p>There are several different flavors of AOT preinitialization, compilation, and caching supported in Truffle.
+This document is intended to provide an overview of these capabilities.</p>
 
-<p>This guide is less about how to use each tool and more about suggestions for extracting the most useful information from the tools, assuming a basic knowledge of their usage.</p>
+<p>Note that some of the features mentioned here are only supported in GraalVM EE.</p>
     
-      <h2 id="profiling-with-cpu-sampler">
+      <h3 id="preinitialization-of-the-first-context">
         
         
-          Profiling with CPU Sampler <a href="#profiling-with-cpu-sampler" class="anchor_heading">#</a>
+          Preinitialization of the First Context <a href="#preinitialization-of-the-first-context" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p>The simplest way to profile the application level, for example, to find in which guest-language function(s) most of the time is spent, is to use CPU Sampler, which is part of the <code>/tools</code> suite and part of GraalVM.
-Simply pass <code>--cpusampler</code> to your language launcher:</p>
+<p>Native image allows running Java code in static initializers at image build time.
+After static initialization was run, values referenced from static fields are snapshotted and persisted in the image.
+Context preinitialization leverages this feature by creating and initializing a language context at image build time to be used by the first context that gets created in an isolate or process at runtime.
+This typically improves the initialization time of the first context significantly.</p>
 
-<pre><code class="language-shell">language-launcher --cpusampler --cpusampler.Delay=MILLISECONDS -e 'p :hello'
-</code></pre>
+<p>Context preinitialization can be enabled by setting the system property <code>-Dpolyglot.image-build-time.PreinitializeContexts=ruby,llvm</code> at image build time.
+A language needs to implement <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#patchContext-C-com.oracle.truffle.api.TruffleLanguage.Env-">TruffleLanguage.patchContext</a> and return true to support context preinitialization.
+In addition, languages need to be careful not to bind any host-specific data or create objects that would not be allowed to be stored in a native image, like java.lang.Thread instances.</p>
 
-<p>You probably want to use a sampling delay with <code>--cpusampler.Delay=MILLISECONDS</code> to only start profiling after warmup. That way, you can easily identify which functions get compiled and which do not and yet take a significant amount of time to execute.</p>
-
-<p>See <code>language-launcher --help:tools</code> for more <code>--cpusampler</code> options.</p>
+<p>For more information see <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#patchContext-C-com.oracle.truffle.api.TruffleLanguage.Env-">TruffleLanguage.patchContext</a> javadoc.</p>
     
-      <h2 id="creating-a-flame-graph-from-cpu-sampler">
+      <h3 id="code-sharing-within-the-same-isolateprocess">
         
         
-          Creating a Flame Graph from CPU Sampler <a href="#creating-a-flame-graph-from-cpu-sampler" class="anchor_heading">#</a>
+          Code sharing within the same Isolate/Process <a href="#code-sharing-within-the-same-isolateprocess" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p>The histogram output from CPUSampler can be quite large, making it difficult to analyze.
-Additionally, as a flat format it is nto possible to analyze a call graph as that information simply is not encoded in the output.
-A flame graph shows the entire call graph.
-Its structure makes it considerably simpler to see where the application time is being spent.</p>
-
-<p>Creating the flame graph is a multi-stage process. First, we need to profile the application with the JSON formatter:</p>
-
-<pre><code class="language-shell">language-launcher --cpusampler --cpusampler.SampleInternal --cpusampler.Mode=roots --cpusampler.Output=json -e 'p :hello' &gt; simple-app.json
-</code></pre>
-
-<p>Use the <code>--cpusampler.SampleInternal=true</code> option if you want to profile internal sources, such as standard library functions.</p>
-
-<p>Using the <code>--cpusampler.Mode=roots</code> option will sample each function, including inlined functions, which is more intuitive when looking at a flame graph and can often give a better idea of what is contributing to the overall method execution time. However, <code>--cpusampler.Mode=roots</code> adds extra overhead, so you might want to try without too.
-The default is to not include inlined functions in order to minimize overhead.</p>
-
-<p>The JSON formatter encodes call graph information that isn’t available in the histogram format.
-To make a flame graph out of this output, however, we need to transform it into a format that folds the call stack samples into single lines.
-This can be done using <a href="https://github.com/eregon/FlameGraph/blob/graalvm/stackcollapse-graalvm.rb">stackcollapse-graalvm.rb</a> from Benoit Daloze’s fork of FlameGraph.</p>
-
-<p>If you have not yet, you should clone this <a href="https://github.com/eregon/FlameGraph/tree/graalvm">fork of FlameGraph</a> into the parent directory.
-Now you can run the script to transform the output and pipe it into the script that will generate the SVG data:</p>
-
-<pre><code class="language-shell">../FlameGraph/stackcollapse-graalvm.rb simple-app.json | ../FlameGraph/flamegraph.pl &gt; simple-app.svg
-</code></pre>
-
-<p>At this point, you should open the SVG file in a Chromium-based web browser.
-Your system might have a different image manipulation application configured as the default application for SVG files.
-While loading the file in such an application may render a graph, it likely will not handle the interactive components of the flame graph. Firefox may work as well, but Chromium-based browsers currently seem to have better support and performance for the flame graph files.</p>
+<p>A polyglot engine can be used in order to determine the scope of code sharing between contexts.
+An example of how that can be done can be found in the <a href="https://www.graalvm.org/reference-manual/embed-languages/#code-caching-across-multiple-contexts">reference manual</a>.
+When a language is initialized for a polyglot context, a new language instance is requested from an engine.
+If the language supports <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.ContextPolicy.html#SHARED">ContextPolicy.SHARED</a>, then the language instance will be reused for an engine instance.
+The source parsing cache is associated with a language instance, so parsing happens once per language instance.
+Languages may choose to disallow reuse of a language instance for a new additional context by implementing <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#areOptionsCompatible-org.graalvm.options.OptionValues-org.graalvm.options.OptionValues-">TruffleLanguage.areOptionsCompatible</a>.
+This allows languages to assume specific context options to be compilation final for all root nodes created by the language.
+An exception from this rule is <code>InteropLibrary</code>, where nodes may be shared unconditionally between languages instances.</p>
     
-      <h2 id="profiling-with-oracle-developer-studio">
+      <h3 id="supporting-context-independent-code">
         
         
-          Profiling with Oracle Developer Studio <a href="#profiling-with-oracle-developer-studio" class="anchor_heading">#</a>
+          Supporting Context Independent Code <a href="#supporting-context-independent-code" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p><a href="https://www.oracle.com/technetwork/server-storage/developerstudio/overview/index.html">Oracle Developer Studio</a> includes a
-<a href="https://www.oracle.com/technetwork/server-storage/solarisstudio/features/performance-analyzer-2292312.html">Performance Analyzer</a> that can be used with GraalVM.
-Developer Studio can be <a href="https://www.oracle.com/technetwork/server-storage/developerstudio/downloads/index.html">downloaded from OTN</a> and the current version at time of writing (12.6) provides a perpetual no-cost license for production use and the development of commercial applications.</p>
+<p>Codesharing requires that all code data structures are independent of their context.
+For example, code is context-independent if it can be executed with one context and then executed again with a new context without deoptimizing the code.
+A good test to verify a language implementation’s context independence is to create a context with an explicit engine, run a test application, and then verify that the second context does not cause deoptimizations when running the same deterministic application.</p>
 
-<p>Using the Developer Studio Performance Analyser is straightforward. Include the path to the Developer Studio binaries in your <code>PATH</code> and then prefix your normal command-line with <code>collect</code>.
-For example:</p>
+<p>The Truffle framework announces the potential use of a language instance in multiple contexts by calling <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#initializeMultipleContexts--">TruffleLanguage.initializeMultipleContexts</a>, typically even before the first context is created.
+The framework is able to initialize multiple contexts before the first context is created when an explicit engine is used or <code>--engine.CacheStore</code> is set to <code>true</code>.</p>
 
-<pre><code class="language-shell">collect js mybenchmark.js
-</code></pre>
+<p>The following criteria should be satisfied when supporting context independent code:</p>
 
-<p>On completion an “experiment” (.er) directory will have been created containing the profiling data for the command execution, <code>test.1.er</code> by default.
-To view the profiling results, use the <code>analyzer</code> tool:</p>
+<ul>
+  <li>All speculation on runtime value identity must be disabled with multiple contexts initialized, as they will lead to a guaranteed deoptimization when used with the second context.</li>
+  <li>Function inline caches should be modified and implemented as a two-level inline cache. The first level speculates on the function instance’s identity and the second level on the underlying CallTarget instance. The first level cache must be disabled if multiple contexts are initialized, as this would unnecessarily cause deoptimization.</li>
+  <li>The DynamicObject root Shape instance should be stored in the language instance instead of the language context. Otherwise, any inline cache on shapes will not stabilize and ultimately end up in the generic state.</li>
+  <li>All Node implementations must not store context-dependent data structures or context-dependent runtime values.</li>
+  <li>Loading and parsing of sources, even with language-internal builtins, should be performed using <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#parse-com.oracle.truffle.api.TruffleLanguage.ParsingRequest-">TruffleLanguage.Env.parse</a> to cache Source parsing per language instance.</li>
+  <li>All assumption instances should be stored in the language instance instead of the context. With multiple contexts initialized, the context instance read using context references may no longer be a constant. In this case any assumption read from the context would not be folded and they would cause significant runtime performance overhead. Assumptions from the language can be folded by the compiler in both single and multiple context mode.</li>
+</ul>
 
-<pre><code class="language-shell">analyzer test.1.er
-</code></pre>
+<p>It is expected that an AST created for multiple contexts is compiled to less efficient machine code as it does not allow for speculation on the identity of runtime values.
+For example, instead of speculating on the function instance in an inline cache, it is necessary to speculate on the contained CallTarget.
+This is slower because it requires an additional read to access the CallTarget stored in the function.
+It may be costly to create context independent code, therefore, speculation on runtime values should still be performed if multiple contexts are not initialized.</p>
 
-<p>The <code>analyzer</code> GUI allows you to view the captured profiling information in several different ways, e.g., the timeline of your application, a flat function list, the call tree, a flame graph, etc.
-There is also a command-line tool, <code>er_print</code>, which can be used for outputting the profiling information in textual form, for further analysis.</p>
+<p><a href="https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/SLLanguage.java#L196">SimpleLanguage</a> and <a href="https://github.com/oracle/graaljs/blob/master/graal-js/src/com.oracle.truffle.js/src/com/oracle/truffle/js/lang/JavaScriptLanguage.java">JavaScript</a> are two languages that already support context independent code and might be useful as a guidance on concrete problems.</p>
+    
+      <h3 id="persistent-context-independent-code-with-auxiliary-engine-caching-ee">
+        
+        
+          Persistent Context Independent Code with Auxiliary Engine Caching (EE) <a href="#persistent-context-independent-code-with-auxiliary-engine-caching-ee" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>For full details, see the <a href="https://docs.oracle.com/cd/E77782_01/html/E77798/index.html">Performance Analyzer</a> documentation.</p>
+<p>GraalVM Enterprise Edition supports persisting code data structures to disk.
+This enables to almost eliminate warmup time for the first run of an application in an isolate/process.
+The SVM auxiliary image feature is used to persist and load the necessary data structures to the disk.
+Persisting the image can take a significant amount of time as compilation needs to be performed.
+However, loading is designed to be as fast as possible, typically almost instantaneous.</p>
+
+<p>Engine caching is enabled using options and functional even if the context was created without an explicit engine.</p>
+
+<p>More information on engine caching can be found in the engine caching <a href="/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">tutorial</a>.</p>
+    
+      <h3 id="compilation-without-profiling">
+        
+        
+          Compilation without Profiling <a href="#compilation-without-profiling" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>By default, if language functions are created but never executed, they are not compiled when they are stored in an auxiliary engine cache image.
+Auxiliary engine caching supports triggering compilation for root nodes that were loaded but never executed.
+In such a case the framework calls the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#prepareForAOT--">RootNode.prepareForAOT</a> method.</p>
+
+<p>More information on making a language implementation ready for compilation without prior execution can be found in the <a href="/graalvm-as-a-platform/language-implementation-framework/AOT/">AOT tutorial</a>. 
+Note that not every language can be compiled without prior execution and produce efficient machine code. 
+Statically typed languages are typically more suitable for this.</p>
+    
+      <h3 id="application-snapshotting">
+        
+        
+          Application Snapshotting <a href="#application-snapshotting" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>It is planned to also support persisting runtime values of polyglot context instances to disk.
+More information will appear here as soon as this feature is implemented.</p>
 
               </div>
 

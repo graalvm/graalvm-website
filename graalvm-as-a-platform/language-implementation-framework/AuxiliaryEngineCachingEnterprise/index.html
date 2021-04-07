@@ -10,7 +10,7 @@
 
   <title>
     
-      Profiling Truffle Interpreters
+      Auxiliary Engine Caching
     
   </title>
   <meta name="description" content="GraalVM is a high-performance runtime for Java and other languages that can increase application throughput and reduce latency; compile applications into sma..."/>
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/Profiling/">
+  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -574,31 +574,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/Profiling/">
               Profiling Truffle Interpreters
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -735,13 +717,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
               Auxiliary Engine Caching
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -909,104 +909,255 @@ $(document).ready(function(){
 
             <div class="col-sm-9 no-padding">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="profiling-truffle-interpreters">
+                <h1 id="auxiliary-engine-caching">
         
         
-          Profiling Truffle Interpreters
+          Auxiliary Engine Caching
         
         
       </h1>
 
-<p>There is no shortage of tools for profiling interpreters written using Truffle.
-When running in JVM mode you can use standard JVM tooling such as VisualVM, Java Flight Recorder, and Oracle Developer Studio. When running in Native Image you can use <code>callgrind</code> from the Valgrind tool suite, and other system tools such as <code>strace</code>.
-As a language running on GraalVM, other GraalVM tools can be used.
-For a broad enough definition of profiling, you can also use the <a href="https://docs.oracle.com/en/graalvm/enterprise/20/docs/tools/igv/">Ideal Graph Visualizer (IGV)</a> and C1 Visualizer to inspect the compiler output.</p>
+<p>The following document describes how the auxiliary engine cache of GraalVM works.</p>
 
-<p>This guide is less about how to use each tool and more about suggestions for extracting the most useful information from the tools, assuming a basic knowledge of their usage.</p>
+<p>This feature is only available in GraalVM Enterprise Edition. In the community edition, these options are not available.</p>
     
-      <h2 id="profiling-with-cpu-sampler">
+      <h2 id="introduction">
         
         
-          Profiling with CPU Sampler <a href="#profiling-with-cpu-sampler" class="anchor_heading">#</a>
+          Introduction <a href="#introduction" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The simplest way to profile the application level, for example, to find in which guest-language function(s) most of the time is spent, is to use CPU Sampler, which is part of the <code>/tools</code> suite and part of GraalVM.
-Simply pass <code>--cpusampler</code> to your language launcher:</p>
+<p>Warmup of Truffle guest language programs can take a significant amount of time.
+Warmup consists of work that is repeated every time a program is executed until peak performance is reached.
+This includes:</p>
+<ol>
+  <li>Loading and parsing the guest application into Truffle AST data structures.</li>
+  <li>Execution and profiling of the guest application in the interpreter.</li>
+  <li>Compilation of the AST to machine code.</li>
+</ol>
 
-<pre><code class="language-shell">language-launcher --cpusampler --cpusampler.Delay=MILLISECONDS -e 'p :hello'
-</code></pre>
+<p>Within a single OS process, the work performed during warmup can be shared by specifying an <a href="https://www.graalvm.org/reference-manual/embed-languages/#code-caching-across-multiple-contexts">explicit engine</a>.
+This requires language implementations to disable context-related optimizations to avoid deoptimizations between contexts that share code.
+Auxiliary engine caching builds upon the mechanism for disabling context-related optimizations and adds the capability to persist an engine with ASTs and optimized machine code to disk.
+This way, the work performed during warmup can be significantly reduced in the first application context of a new process.</p>
 
-<p>You probably want to use a sampling delay with <code>--cpusampler.Delay=MILLISECONDS</code> to only start profiling after warmup. That way, you can easily identify which functions get compiled and which do not and yet take a significant amount of time to execute.</p>
-
-<p>See <code>language-launcher --help:tools</code> for more <code>--cpusampler</code> options.</p>
+<p>We use the SVM auxiliary image feature to persist and load the necessary data structures to the disk.
+Persisting the image can take significant time as compilation needs to be performed.
+However, loading is designed to be as fast as possible, typically almost instantaneous.
+This reduces the warmup time of an application significantly.</p>
     
-      <h2 id="creating-a-flame-graph-from-cpu-sampler">
+      <h2 id="getting-started">
         
         
-          Creating a Flame Graph from CPU Sampler <a href="#creating-a-flame-graph-from-cpu-sampler" class="anchor_heading">#</a>
+          Getting Started <a href="#getting-started" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The histogram output from CPUSampler can be quite large, making it difficult to analyze.
-Additionally, as a flat format it is nto possible to analyze a call graph as that information simply is not encoded in the output.
-A flame graph shows the entire call graph.
-Its structure makes it considerably simpler to see where the application time is being spent.</p>
+<p>Starting from a GraalVM EE installation, you first need to (re)build an image with auxiliary engine caching capabilities.
+For example, one can rebuild the JavaScript image by adding the auxiliary engine cache feature:</p>
 
-<p>Creating the flame graph is a multi-stage process. First, we need to profile the application with the JSON formatter:</p>
-
-<pre><code class="language-shell">language-launcher --cpusampler --cpusampler.SampleInternal --cpusampler.Mode=roots --cpusampler.Output=json -e 'p :hello' &gt; simple-app.json
+<pre><code>graalvm/bin/native-image --macro:js-launcher -H:+AuxiliaryEngineCache -H:ReservedAuxiliaryImageBytes=1073741824
 </code></pre>
 
-<p>Use the <code>--cpusampler.SampleInternal=true</code> option if you want to profile internal sources, such as standard library functions.</p>
+<p>The <code>--macro</code> argument value depends on the guest language 
+By default, auxiliary images of up to 1GB are possible. 
+The maximum size can be increased or decreased as needed.
+The amount of reserved bytes does not actually impact the memory consumed by the application.
+In future versions, the auxiliary engine cache will be enabled by default when the <code>--macro:js-launcher</code> macro is used.</p>
 
-<p>Using the <code>--cpusampler.Mode=roots</code> option will sample each function, including inlined functions, which is more intuitive when looking at a flame graph and can often give a better idea of what is contributing to the overall method execution time. However, <code>--cpusampler.Mode=roots</code> adds extra overhead, so you might want to try without too.
-The default is to not include inlined functions in order to minimize overhead.</p>
+<p>After rebuilding the JavaScript launcher, the feature is used as follows:</p>
 
-<p>The JSON formatter encodes call graph information that isn’t available in the histogram format.
-To make a flame graph out of this output, however, we need to transform it into a format that folds the call stack samples into single lines.
-This can be done using <a href="https://github.com/eregon/FlameGraph/blob/graalvm/stackcollapse-graalvm.rb">stackcollapse-graalvm.rb</a> from Benoit Daloze’s fork of FlameGraph.</p>
+<p>Create a new file <code>fib.js</code>:</p>
 
-<p>If you have not yet, you should clone this <a href="https://github.com/eregon/FlameGraph/tree/graalvm">fork of FlameGraph</a> into the parent directory.
-Now you can run the script to transform the output and pipe it into the script that will generate the SVG data:</p>
-
-<pre><code class="language-shell">../FlameGraph/stackcollapse-graalvm.rb simple-app.json | ../FlameGraph/flamegraph.pl &gt; simple-app.svg
+<pre><code>function fib(n) {
+   if (n == 1 || n == 2) {
+       return 1;
+   }
+   return fib(n - 1) + fib(n - 2);
+}
+console.log(fib(32))
 </code></pre>
 
-<p>At this point, you should open the SVG file in a Chromium-based web browser.
-Your system might have a different image manipulation application configured as the default application for SVG files.
-While loading the file in such an application may render a graph, it likely will not handle the interactive components of the flame graph. Firefox may work as well, but Chromium-based browsers currently seem to have better support and performance for the flame graph files.</p>
+<p>In order to persist the engine of a profiling run to disk use the following command line:</p>
+
+<pre><code>graalvm/bin/js --experimental-options --engine.TraceCache=true --engine.CacheStore=fib.image fib.js
+</code></pre>
+
+<p>The ` –engine.TraceCache=true` option is optional and allows you to see what is going on.</p>
+
+<p>The output is as follows:</p>
+
+<pre><code>[engine] [cache] No load engine cache configured.
+2178309
+[engine] [cache] Preparing engine for store (compile policy hot)...
+[engine] [cache] Force compile targets mode: hot
+[engine] [cache] Prepared engine in 1 ms.
+[engine] [cache] Persisting engine for store ...
+[engine] [cache] Persisted engine in 20 ms.
+[engine] [cache] Detecting changes (update policy always)...
+[engine] [cache]     New image contains         1 sources and  82 function roots.
+[engine] [cache]     Always persist policy.
+[engine] [cache] Writing image to fib.image...
+[engine] [cache] Finished writing 1,871,872 bytes in 4 ms.
+</code></pre>
+
+<p>The engine can now be loaded from disk using the following command:</p>
+
+<pre><code>graalvm/bin/js --experimental-options --engine.TraceCache --engine.CacheLoad=fib.image fib.js
+</code></pre>
+
+<p>which prints:</p>
+
+<pre><code>[engine] [cache] Try loading image './fib.image'...
+[engine] [cache] Loaded image in 0 ms. 1,871,872 bytes   1 sources  82 roots
+[engine] [cache] Engine from image successfully patched with new options.
+2178309
+[engine] [cache] No store engine cache configured.
+</code></pre>
+
+<p>Since there is no need to warm up the application, the application’s execution time should be significantly improved.</p>
     
-      <h2 id="profiling-with-oracle-developer-studio">
+      <h2 id="usage">
         
         
-          Profiling with Oracle Developer Studio <a href="#profiling-with-oracle-developer-studio" class="anchor_heading">#</a>
+          Usage <a href="#usage" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p><a href="https://www.oracle.com/technetwork/server-storage/developerstudio/overview/index.html">Oracle Developer Studio</a> includes a
-<a href="https://www.oracle.com/technetwork/server-storage/solarisstudio/features/performance-analyzer-2292312.html">Performance Analyzer</a> that can be used with GraalVM.
-Developer Studio can be <a href="https://www.oracle.com/technetwork/server-storage/developerstudio/downloads/index.html">downloaded from OTN</a> and the current version at time of writing (12.6) provides a perpetual no-cost license for production use and the development of commercial applications.</p>
+<p>The cache store and load operations can be controlled using the following options:</p>
 
-<p>Using the Developer Studio Performance Analyser is straightforward. Include the path to the Developer Studio binaries in your <code>PATH</code> and then prefix your normal command-line with <code>collect</code>.
-For example:</p>
+<ul>
+  <li><code>--engine.Cache=&lt;path&gt;</code> Loads and stores the cached engine from/to  <code>path</code>.</li>
+  <li><code>--engine.CacheStore=&lt;path&gt;</code> Stores the cached engine to  <code>path</code>.</li>
+  <li><code>--engine.CacheLoad=&lt;path&gt;</code> Loads the cached engine from <code>path</code>.</li>
+  <li><code>--engine.CachePreinitializeContext=&lt;boolean&gt;</code> Preinitialize a new context in the image (default <code>true</code>).</li>
+  <li><code>--engine.TraceCache=&lt;boolean&gt;</code> Enables debug output.</li>
+  <li><code>--engine.TraceCompilation=&lt;boolean&gt;</code> Prints forced compilations.</li>
+</ul>
 
-<pre><code class="language-shell">collect js mybenchmark.js
+<p>The compilation of roots may be forced when an image is stored using the <code>--engine.CacheCompile=&lt;policy&gt;</code> option. The supported policies are:</p>
+
+<ul>
+  <li><code>none</code>: No compilations will be persisted, and existing compilations will be invalidated.</li>
+  <li><code>compiled</code>: No compilations will be forced, but finished compilations will be persisted.</li>
+  <li><code>hot</code>: All started compilations will be completed and then persisted. (default)</li>
+  <li><code>aot</code>: All started, and AOT compilable roots will be forced to compile and persisted.</li>
+  <li><code>executed</code>: All executed and all AOT compilable roots will be forced to compile.</li>
+</ul>
+
+<p>By default, all started compilations in the compile queue will be completed and then persisted.
+Whether a function root is AOT compilable is determined by the language.
+A language supports AOT by implementing <code>RootNode.prepareForAOT()</code>.</p>
+
+<p>An update policy can be specified if both load and store operations are set using the <code>--engine.UpdatePolicy=&lt;policy&gt;</code> option.
+Available policies are:</p>
+
+<ul>
+  <li><code>always</code> Always persist.</li>
+  <li><code>newsource</code> Store if new source was loaded that was not contained in the previously loaded image.</li>
+  <li><code>newroot</code> Store if a new root was loaded and not contained in the previously loaded image.</li>
+  <li><code>never</code> Never persist.</li>
+</ul>
+    
+      <h2 id="known-restrictions">
+        
+        
+          Known Restrictions <a href="#known-restrictions" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<ul>
+  <li>
+    <p>There are generally no restrictions on the kind of applications that can be persisted.
+If the language supports a shared context policy, auxiliary engine caching should work.
+If the language does not support it, then no data will be persisted.</p>
+  </li>
+  <li>
+    <p>The persisted auxiliary engine image can only be used with the same SVM native image that it was created with.
+Using the engine image with any other native-image will fail.</p>
+  </li>
+  <li>
+    <p>There can only be one active auxiliary image per native-image isolate. 
+Trying to load multiple auxiliary images at the same time will fail.
+Currently, auxiliary images can also not be unloaded, but it is planned to lift this restriction in the future.</p>
+  </li>
+</ul>
+    
+      <h2 id="security-considerations">
+        
+        
+          Security Considerations <a href="#security-considerations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>All data that is persisted to disk represents code only and no application context-specific data like global variables.
+However, profiled ASTs and code may contain artifacts of the optimizations performed in a Truffle AST.
+For example, it is possible that runtime strings are used for optimizations and therefore persisted to an engine image.</p>
+    
+      <h2 id="development-and-debugging-on-nativeimage">
+        
+        
+          Development and Debugging on NativeImage <a href="#development-and-debugging-on-nativeimage" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>There are several options useful for debugging auxiliary engines caching when running on NativeImage:</p>
+
+<ul>
+  <li><code>-XX:+TraceAuxiliaryImageClassHistogram</code> Prints a class histogram of all the objects contained in an image when persisting.</li>
+  <li><code>-XX:+TraceAuxiliaryImageReferenceTree</code> Prints a class reference tree of all the objects contained in an image when persisting.</li>
+</ul>
+    
+      <h2 id="development-and-debugging-on-hotspot">
+        
+        
+          Development and Debugging on HotSpot <a href="#development-and-debugging-on-hotspot" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>It can be useful to debug language implementation issues related to auxiliary image on HotSpot.
+On GraalVM EE in JVM mode, we have additional options that can be used to help debug issues with this feature:
+Since storing partial heaps on HotSpot is not supported, these debug features do not work on HotSpot.</p>
+
+<ul>
+  <li><code>--engine.DebugCacheStore=&lt;boolean&gt;</code> Prepares the engine for caching and stores it to a static field instead of writing it to disk.</li>
+  <li><code>--engine.DebugCacheLoad=&lt;boolean&gt;</code> Prepares the engine to use the engine stored in the static field instead of reading it from disk.</li>
+  <li><code>--engine.DebugCacheCompile=&lt;boolean&gt;</code> Policy to use to force compilation for executed call targets before persisting the engine. This supports the same values as <code>--engine.CacheCompile</code>.</li>
+  <li><code>--engine.DebugCacheTrace=&lt;boolean&gt;</code> Enables tracing for the engine cache debug feature.</li>
+</ul>
+
+<p>For example:</p>
+
+<pre><code>js --jvm  --experimental-options --engine.TraceCompilation --engine.DebugCacheTrace --engine.DebugCacheStore --engine.DebugCacheCompile=executed fib.js
 </code></pre>
 
-<p>On completion an “experiment” (.er) directory will have been created containing the profiling data for the command execution, <code>test.1.er</code> by default.
-To view the profiling results, use the <code>analyzer</code> tool:</p>
+<p>Prints the following output:</p>
 
-<pre><code class="language-shell">analyzer test.1.er
+<pre><code>[engine] opt done         fib                                                         |ASTSize            32 |Time   231( 147+84  )ms |Tier             Last |DirectCallNodes I    6/D    8 |GraalNodes   980/ 1857 |CodeSize         7611 |CodeAddress 0x10e20e650 |Source       fib.js:2
+2178309
+[engine] [cache] Preparing debug engine for storage...
+[engine] [cache] Force compile targets mode: executed
+[engine] [cache] Force compiling 4 roots for engine caching.
+[engine] opt done         @72fa3b00                                                   |ASTSize             3 |Time   211( 166+45  )ms |Tier             Last |DirectCallNodes I    2/D    1 |GraalNodes   500/ 1435 |CodeSize         4658 |CodeAddress 0x10e26c8d0 |Source            n/a
+[engine] opt done         :program                                                    |ASTSize            25 |Time   162( 123+39  )ms |Tier             Last |DirectCallNodes I    1/D    1 |GraalNodes   396/ 1344 |CodeSize         4407 |CodeAddress 0x10e27fd50 |Source       fib.js:1
+[engine] opt done         Console.log                                                 |ASTSize             3 |Time    26(  11+15  )ms |Tier             Last |DirectCallNodes I    0/D    0 |GraalNodes    98/  766 |CodeSize         2438 |CodeAddress 0x10e285710 |Source    &lt;builtin&gt;:1
+[engine] [cache] Stored debug engine in memory.
 </code></pre>
 
-<p>The <code>analyzer</code> GUI allows you to view the captured profiling information in several different ways, e.g., the timeline of your application, a flat function list, the call tree, a flame graph, etc.
-There is also a command-line tool, <code>er_print</code>, which can be used for outputting the profiling information in textual form, for further analysis.</p>
+<p>This allows rapidly iterating on problems related to the compilation as well as to attach a Java debugger.
+A Java debugger can be attached using <code>--vm.Xdebug --vm.Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000</code>.</p>
 
-<p>For full details, see the <a href="https://docs.oracle.com/cd/E77782_01/html/E77798/index.html">Performance Analyzer</a> documentation.</p>
+<p>Debugging the loading of persisted engines is more difficult as writing an engine to disk is not supported on HotSpot.
+However, it is possible to use the polyglot embedding API to simulate this use-case in a unit test.
+See the <code>com.oracle.truffle.enterprise.test.DebugEngineCacheTest</code> class as an example.</p>
 
               </div>
 
