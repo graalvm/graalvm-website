@@ -1231,7 +1231,7 @@ $("a").each(function() {
 // Automatic slideshow with manual navigation for announcements banner
 var slideIndex = 0;
 var slides = document.getElementsByClassName("adSlides");
-var dots = document.getElementsByClassName("dot");
+var dots = document.getElementsByClassName("dotnav");
 
 showSlides();
 
