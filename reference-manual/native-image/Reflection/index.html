@@ -1007,7 +1007,7 @@ For these situations a manual configuration as described below can be provided.<
   {
     "name" : "java.lang.String",
     "fields" : [
-      { "name" : "value", "allowWrite" : true },
+      { "name" : "value" },
       { "name" : "hash" }
     ],
     "methods" : [
@@ -1030,8 +1030,7 @@ The <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <c
 
 <p>However, <code>allPublicClasses</code> and <code>allDeclaredClasses</code> do not automatically register the inner classes for reflective access.
 They just make them available via <code>Class.getClasses()</code> and <code>Class.getDeclaredClasses()</code> when called on the declaring class.
-In order to write a field that is declared <code>final</code>, the <code>allowWrite</code> attribute must be specified for that field (but is not required for non-final fields).
-However, code accessing final fields might not observe changes of final field values in the same way as for non-final fields because of optimizations.</p>
+Code may also write non-static final fields like <code>String.value</code> in this example, but other code might not observe changes of final field values in the same way as for non-final fields because of optimizations. Static final fields may never be written.</p>
 
 <p>More than one configuration can be used by specifying multiple paths for <code>ReflectionConfigurationFiles</code> and separating them with <code>,</code>.
 Also, <code>-H:ReflectionConfigurationResources</code> can be specified to load one or several configuration files from the native image build’s class path, such as from a JAR file.</p>
@@ -1042,7 +1041,7 @@ class RuntimeReflectionRegistrationFeature implements Feature {
   public void beforeAnalysis(BeforeAnalysisAccess access) {
     try {
       RuntimeReflection.register(String.class);
-      RuntimeReflection.register(/* finalIsWritable: */ true, String.class.getDeclaredField("value"));
+      RuntimeReflection.register(String.class.getDeclaredField("value"));
       RuntimeReflection.register(String.class.getDeclaredField("hash"));
       RuntimeReflection.register(String.class.getDeclaredConstructor(char[].class));
       RuntimeReflection.register(String.class.getDeclaredMethod("charAt", int.class));
@@ -1071,11 +1070,7 @@ At this point, code can collect information about methods and fields and store t
         
         
       </h3>
-<p>The <code>Unsafe</code> class, although its use is discouraged, provides direct access to memory of Java objects. The <code>Unsafe.objectFieldOffset()</code> method provides the offset of a field within a Java object. This information is not available by default, but can be enabled with the <code>allowUnsafeAccess</code> attribute in the reflection configuration. For example:</p>
-<pre><code class="language-json">"fields" : [ { "name" : "hash", "allowUnsafeAccess" : true }, ... ]
-</code></pre>
-
-<p>Note: The offsets that are queried during a native image generation can be different from the offsets at run time.</p>
+<p>The <code>Unsafe</code> class, although its use is discouraged, provides direct access to the memory of Java objects. The <code>Unsafe.objectFieldOffset()</code> method provides the offset of a field within a Java object. Note that the offsets that are queried during native image generation can be different from the offsets at run time.</p>
 
               </div>
 
