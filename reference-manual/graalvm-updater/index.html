@@ -761,9 +761,9 @@ The source code of GraalVM Updater is located in the <code>&lt;graalvm&gt;/lib/i
   <li><a href="/reference-manual/java-on-truffle/">Java on Truffle</a> – a Java Virtual Machine implementation based on a Truffle interpreter for GraalVM</li>
 </ul>
 
-<p>Language Runtimes:</p>
-
+<p>Runtimes:</p>
 <ul>
+  <li><a href="/reference-manual/js/">Node.js</a> – Node.js 14.16.1 compatible</li>
   <li><a href="/reference-manual/python/">Python</a> – Python 3.8.5-compatible</li>
   <li><a href="/reference-manual/ruby/">Ruby</a> – Ruby 2.7.2-compatible</li>
   <li><a href="/reference-manual/r/">R</a> – GNU R 3.6.1-compatible</li>
@@ -814,6 +814,9 @@ the environment variable <code>GRAALVM_CATALOG</code> pointing to the custom cat
 GraalVM Updater will use the URL defined by <code>GRAALVM_CATALOG</code> in preference to
 the builtin ones. You may setup the environment variable in startup or profile
 scripts.</p>
+
+<p>Note: If you need, for some reason to set the <code>GRAALVM_HOME</code> environment variable, it may affect <code>gu</code> operation.
+If it is set, it should point to the intended GraalVM installation, same as <code>JAVA_HOME</code> and <code>PATH</code>.</p>
     
       <h3 id="manual-installation">
         
@@ -824,21 +827,15 @@ scripts.</p>
       </h3>
 
 <ol>
-  <li>Download a component from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle GraalVM Downloads</a> page. The following pre-built components are available for download:
-    <ul>
-      <li>Oracle GraalVM Enterprise Edition Native Image Early Adopter</li>
-      <li>GraalVM LLVM Toolchain Plugin</li>
-      <li>Oracle GraalVM Enterprise Edition Ruby Language Plugin</li>
-      <li>Oracle GraalVM Enterprise Edition Python Language Plugin</li>
-      <li>Oracle GraalVM Enterprise Edition WebAssembly Language Plugin</li>
-    </ul>
+  <li>
+    <p>Download a component from the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle GraalVM Downloads</a> page in consideration of the operating system, the Java version, and architecture (if applicable).</p>
   </li>
-  <li>Having downloaded the appropriate JAR file in consideration of the operating system
-and underlying Java SE version, install it with:
+  <li>
+    <p>Having downloaded the appropriate JAR file, install it with:</p>
     <pre><code class="language-shell">gu -L install component.jar
 </code></pre>
     <p>For example, to install Native Image for Java 11 GraalVM Enterprise distribution on macOS, run:</p>
-    <pre><code class="language-shell">gu -L install native-image-installable-svm-java11-darwin-amd64-21.0.0.jar
+    <pre><code class="language-shell">gu -L install native-image-installable-svm-java11-darwin-amd64-&lt;version&gt;.jar
 </code></pre>
   </li>
 </ol>
@@ -859,9 +856,8 @@ If all dependencies are downloaded into the same directory, you can run:</p>
         
       </h3>
 
-<p>Components can be downloaded manually in advance to a local file folder, or to a
-folder shared on the local network. GraalVM Updater can then use that folder
-instead of the catalog:</p>
+<p>Components can be downloaded manually in advance to a local file folder, or to a folder shared on the local network.
+GraalVM Updater can then use that folder instead of the catalog:</p>
 <pre><code class="language-shell">gu install -C /path/to/downloads/directory ComponentId
 </code></pre>
 
@@ -870,7 +866,7 @@ a component’s name (like <code>ruby</code>) instead of a filename. GraalVM Upd
 attempt to find required dependencies in the local component collection.</p>
 
 <p>When installing components from a given directory, you can allow installing all
-components which have the correct version number for GraalVM Enterprise using wildcards:</p>
+components which have the correct version number for GraalVM using wildcards:</p>
 <pre><code class="language-shell">./gu install -C ~/Download/Components/ native*
 </code></pre>
 
@@ -888,10 +884,8 @@ components which have the correct version number for GraalVM Enterprise using wi
 <pre><code class="language-shell">gu list
 </code></pre>
 
-<p>Generic support for R, Ruby, Python, and WebAssembly languages will work out of
-the box in most cases. It is recommended to fine-tune system-dependent
-configurations, following the recommendations in the component post-installation
-messages.</p>
+<p>Generic support for Node.js, R, Ruby, Python, and WebAssembly will work out of the box in most cases.
+It is recommended to fine-tune system-dependent configurations, following the recommendations in the component post-installation messages.</p>
     
       <h2 id="component-uninstallation">
         
@@ -901,18 +895,16 @@ messages.</p>
         
       </h2>
 
-<p>Components may be uninstalled from GraalVM when no longer needed. To uninstall a
-specific component, use its <code>ComponentId</code>. Run <code>gu list</code> to find out the exact
-<code>ComponentId</code>. The command to uninstall the component is:</p>
+<p>Components may be uninstalled from GraalVM when no longer needed.
+To uninstall a specific component, use its <code>ComponentId</code>. Run <code>gu list</code> to find out the exact <code>ComponentId</code>.
+The command to uninstall the component is:</p>
 <pre><code class="language-shell">gu remove ruby
 </code></pre>
-<p>If more components end with, for example, <code>ruby</code>, the installer will print an
-error message that a component’s full name is required (<code>org.graalvm.ruby</code>).
-The uninstallation removes the files created during the installation. If a file
-belongs to multiple components, it will be removed when the last component using
-it is removed.</p>
+<p>If more components end with, for example, <code>ruby</code>, the installer will print an error message that a component’s full name is required (<code>org.graalvm.ruby</code>).
+The uninstallation removes the files created during the installation.
+If a file belongs to multiple components, it will be removed when the last component using it is removed.</p>
 
-<p>Please be informed that the LLVM toolchain component may fail uninstallation invoked from the command line or the Visual Studio Code user interface if its dependent component(s) remain installed.
+<p>Note that the LLVM toolchain component may fail uninstallation invoked from the command line or the Visual Studio Code user interface if its dependent component(s) remain installed.
 In this case, remove the dependent component first, or add the <code>-D</code> option, which would remove dependent components in addition to those explicitly selected:</p>
 <pre><code class="language-shell">gu -D remove llvm-toolchain
 </code></pre>
@@ -934,7 +926,8 @@ Besides that, it can also upgrade the edition from Community to Enterprise.</p>
 <p>GraalVM Updater will attempt to download the latest version of either GraalVM Enterprise or GraalVM Community Edition, if available.
 It will not rewrite the existing installation, but unpack it into a new directory and print out the location path.
 It will also verify if you have any optional components installed in the current GraalVM installation and update those as well.
-If the “parent” installation contains a symlink to the currrent GraalVM installation, that symlink will be updated. If your setup involves some environment variables (e.g., <code>PATH</code>) pointing to a selected GraalVM installation, those variables should be updated manually.</p>
+If the “parent” installation contains a symlink to the currrent GraalVM installation, that symlink will be updated.
+If your setup involves some environment variables (e.g., <code>PATH</code>) pointing to a selected GraalVM installation, those variables should be updated manually.</p>
 
 <p>By appending the <code>--edition</code> switch, you can switch editions.
 For example, to upgrade GraalVM Community Edition to Enterprise, run:</p>
@@ -1097,13 +1090,12 @@ to look for potential dependencies in the directory next to the
 installable file. Additionally, <code>gu -C /path/to/download/dir install component</code> can be used, with the specified
 directory contents acting as a catalog of components.</p>
 
-<p>Note that with <code>gu -L</code> you need to specify the component’s file name, while
-when using <code>gu -C &lt;dir&gt;</code>, the component name must be used:</p>
+<p>Note that with <code>gu -L</code> you need to specify the component’s file name, while when using <code>gu -C &lt;dir&gt;</code>, the component name must be used:</p>
 <pre><code class="language-shell"># Specify file location
-gu -LD install /tmp/installables/fastr.jar
+gu -LD install /tmp/installables/ruby.jar
 
 # Specify component name
-gu -C /tmp/instalables install r
+gu -C /tmp/instalables install ruby
 </code></pre>
     
       <h2 id="replace-components-and-files">
