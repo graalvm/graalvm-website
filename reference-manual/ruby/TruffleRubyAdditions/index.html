@@ -867,6 +867,70 @@ You can find the version number of GraalVM and TruffleRuby using the standard <c
   </li>
 </ul>
     
+      <h3 id="concurrent-maps">
+        
+        
+          Concurrent Maps <a href="#concurrent-maps" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><code>TruffleRuby::ConcurrentMap</code> is a key-value data structure, like a <code>Hash</code> and using <code>#hash</code> and <code>#eql?</code> to compare keys and identity to compare values. Unlike <code>Hash</code> it is unordered. All methods on <code>TruffleRuby::ConcurrentMap</code> are thread-safe but should have higher concurrency than a fully syncronized implementation. It is intended to be used by gems such as <a href="https://github.com/ruby-concurrency/concurrent-ruby"><code>concurrent-ruby</code></a> - please use via this gem rather than using directly.</p>
+
+<ul>
+  <li>
+    <p><code>map = TruffleRuby::ConcurrentMap.new([initial_capacity: ...], [load_factor: ...])</code></p>
+  </li>
+  <li>
+    <p><code>map[key] = new_value</code></p>
+  </li>
+  <li>
+    <p><code>map[key]</code></p>
+  </li>
+  <li>
+    <p><code>map.compute_if_absent(key) { computed_value }</code> if the key is not found, run the block and store the result. The block is run at most once. Returns the computed value.</p>
+  </li>
+  <li>
+    <p><code>map.compute_if_present(key) { |current_value| computed_value }</code> if the key is found, run the block and store the result. If the block returns <code>nil</code> the entry for that key is removed. The block is run at most once. Returns the final value, or <code>nil</code> if the block returned <code>nil</code>.</p>
+  </li>
+  <li>
+    <p><code>map.compute(key) { |current_value| computed_value }</code> run the block, passing the current value if there is one or <code>nil</code>, and store the result. If the block returns <code>nil</code> the entry for that key is removed. Returns the computed value.</p>
+  </li>
+  <li>
+    <p><code>map.merge_pair(key, new_value) { |existing_value| merged_value }</code> if key is not found or is <code>nil</code>, store the new value, otherwise call the block and store the result, or remove the entry if the block returns <code>nil</code>. Returns the final value for that entry, or <code>nil</code> if the block returned <code>nil</code>.</p>
+  </li>
+  <li>
+    <p><code>map.replace_pair(key, expected_value, new_value)</code> replace the value for key but only if the existing value for it is the same as <code>expected_value</code> (compared by identity). Returns if the value was replaced or not.</p>
+  </li>
+  <li>
+    <p><code>map.replace_if_exists(key, value)</code> replace the value for key but only if it was found. Returns <code>value</code> if the key exists or <code>nil</code>.</p>
+  </li>
+  <li>
+    <p><code>map.get_and_set(key, new_value)</code> sets the value for a key and returns the previous value.</p>
+  </li>
+  <li>
+    <p><code>map.key?(key)</code> returns if a key is in the map.</p>
+  </li>
+  <li>
+    <p><code>map.delete(key)</code> removes a key from the map if it exists, returning the value or <code>nil</code> if it did not exist.</p>
+  </li>
+  <li>
+    <p><code>map.delete_pair(key, expected_value)</code> removes a key but only if the existing value for it is the same as <code>expected_value</code> (compared by identity). Returns if the key was deleted.</p>
+  </li>
+  <li>
+    <p><code>map.clear</code> removes all entries from the map.</p>
+  </li>
+  <li>
+    <p><code>map.size</code> gives the number of entries in the map.</p>
+  </li>
+  <li>
+    <p><code>map.get_or_default(key, default_value)</code></p>
+  </li>
+  <li>
+    <p><code>map.each_pair { |key, value| ... }</code></p>
+  </li>
+</ul>
+    
       <h2 id="ffi">
         
         
