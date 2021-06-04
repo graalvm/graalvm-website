@@ -917,7 +917,9 @@ For more details see the following guides: <a href="https://docs.oracle.com/java
 To achieve algorithm independence and extensibility it relies on reflection, therefore it requires a custom configuration in Native Image.
 By default the Native Image builder uses static analysis to discover which of these services are used (see next section for details).
 The automatic registration of security services can be disabled with <code>-H:-EnableSecurityServicesFeature</code>.
-Then a custom reflection configuraion file or feature can be used to register the security services required by a specific application.</p>
+Then a custom reflection configuraion file or feature can be used to register the security services required by a specific application.
+Note that when automatic registration of security providers is disabled, all providers are, by default, filtered from special JDK caches that are necessary for security functionality.
+In this case, you must manually mark used providers with <code>-H:AdditionalSecurityProviders</code>.</p>
     
       <h1 id="security-services-automatic-registration">
         
@@ -951,6 +953,20 @@ The report will detail all registered service classes, the API methods that trig
 The provider order is specified in the <code>java.security</code> file under <code>&lt;java-home&gt;/lib/security/java.security</code>.
 New security providers cannot be registered at run time; all providers must be statically configured during a native image building.</p>
     
+      <h2 id="provider-reordering-at-runtime">
+        
+        
+          Provider Reordering At Runtime <a href="#provider-reordering-at-runtime" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<p>It is possible to reorder security providers at runtime, however only existing provider instances can be used.
+For example, if the BouncyCastle provider was registered at build time and we wish to insert it at position 1 at runtime:</p>
+<pre><code class="language-java">Provider bcProvider = Security.getProvider("BC");
+Security.removeProvider("BC");
+Security.insertProviderAt(bcProvider, 1);
+</code></pre>
+    
       <h2 id="securerandom">
         
         
@@ -962,6 +978,19 @@ New security providers cannot be registered at run time; all providers must be s
 <p>The SecureRandom implementations open the <code>/dev/random</code> and <code>/dev/urandom</code> files which are used as sources for entropy.
 These files are usually opened in class initializers.
 To avoid capturing state from the machine that runs the Native Image builder these classes need to be initialized at run time.</p>
+    
+      <h2 id="custom-service-types">
+        
+        
+          Custom Service Types <a href="#custom-service-types" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>By default, only services specified in the JCA are automatically registered. To automatically register custom service types, you can use <code>-H:AdditionalSecurityServiceTypes</code>.
+Note that for automatic registration to work, the service interface must have a <code>getInstance</code> method and have the same simple name as the service type.
+If relying on third party code that doesn’t comply to the above requirements, manual configuration will be required. In that case, providers for such services must explicitly be registered using <code>-H:AdditionalSecurityProviders</code>.
+Note that these options are only required in very specific cases and should not normally be needed.</p>
 
               </div>
 
