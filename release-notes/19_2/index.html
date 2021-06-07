@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/release-notes/">
+  <link rel="canonical" href="https://www.graalvm.org/release-notes/19_2/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -536,7 +536,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/release-notes/">
@@ -639,13 +639,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/release-notes/19_2/">
               GraalVM 19.2.x
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -774,19 +792,270 @@ $(document).ready(function(){
 
             <div class="col-sm-9 no-padding">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-community-release-notes">
+                <h2 id="1921">
         
         
-          GraalVM Community Release Notes
+          19.2.1 <a href="#1921" class="anchor_heading">#</a>
         
         
-      </h1>
+      </h2>
+<p>(2019-10-15)</p>
 
-<p>This section highlights changes to GraalVM Community Edition between releases.
-GraalVM Community is comprised of different components, changes to which are listed separately.
-Release notes are grouped in descending order for usability reasons.</p>
+<p>This is a Critical Patch Update (CPU) for GraalVM Enterprise and Community
+Editions following a regular Oracle CPUs cycle. The update
+is to address security vulnerabilities announced in the <a href="https://www.oracle.com/technetwork/security-advisory/cpuoct2019-5072832.html">October 2019 Oracle Critical Patch Update Advisory</a>. The 19.2.1 version is a full distribution and and it is recommended to upgrade to it from older GraalVM versions.</p>
 
-<p>Consult the <a href="/release-notes/version-roadmap/">GraalVM Community Version Roadmap</a> for information on the updates cadence and release dates.</p>
+<p>Oracle GraalVM Enterprise Edition 19.2.1 includes all the Java security fixes released as part of that CPU and mentioned in the <a href="https://www.oracle.com/technetwork/java/javase/8u231-relnotes-5592812.html">Java SE 8 Release notes</a>.  It also includes the following:</p>
+<ul>
+  <li>Update GraalVM Enterprise base Java to the 8u231 Oracle JDK version</li>
+  <li>Update GraalVM Community base Java to the 8u232 OpenJDK version</li>
+  <li>Update Node.js to 10.16.3</li>
+</ul>
+
+<p>Listed below are critical fixes that also went into this version:</p>
+<ul>
+  <li>Fixed a problem that prevented creating a native image including the GraalVM JavaScript engine combined with <code>java.lang.CharSequence</code> implementations that have non-trivial implementations of the <code>length</code> and <code>charAt</code> methods (see <a href="https://github.com/oracle/graal/issues/1625">#1625</a>).</li>
+  <li>Fixed a problem that could allow an exception to propagate past a <code>catch</code> clause that should handle it.</li>
+</ul>
+
+<p>Oracle Cloud Infrastructure customers can use GraalVM Enterprise environment in their cloud instances by simply installing it with <code>yum</code>. For more details, please see
+<a href="https://docs.oracle.com/en/graalvm/enterprise/19/guide/overview/oci/create-instance.html">GraalVM on OCI</a>. </p>
+
+<p>Note: We currently do not recommend macOS users to upgrade to Catalina – a next major
+release of macOS desktop operating system. We can not guarantee complete
+compatibility with GraalVM 19.2.1 or older versions yet.</p>
+    
+      <h2 id="19201">
+        
+        
+          19.2.0.1 <a href="#19201" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<p>(2019-09-13)</p>
+
+<p>We prepared a high severity update for GraalVM to address the following issues:</p>
+
+<ul>
+  <li>Fixed a critical compiler bug that caused <code>String.indexOf</code> to be executed incorrectly on older machines that <a href="https://stackoverflow.com/questions/43880227/why-does-tzcnt-work-for-my-sandy-bridge-processor">do not support the <code>TZCNT</code></a> instruction. The problem causes incorrect string operations and typically shows up as truncated string values.</li>
+  <li>Fixed a bug causing the bounds check in Native Image’s implementation of <code>System.arraycopy</code> to overflow with large indices which typically causes process termination.</li>
+  <li>Fixed a bounds check for <code>System.arraycopy</code> in cases where the array is “virtualized” (i.e., can be in registers and stack slots instead of on the heap).</li>
+  <li>Removed declaration of otherwise unused SIOCGSTAMP symbol in Native Image. This allows use of Native Image on any Linux distro using a 5.2.x kernel such as the latest versions of Fedora, Ubuntu (except LTS release users), Arch, openSUSE (tumbleweed).</li>
+</ul>
+    
+      <h2 id="1920">
+        
+        
+          19.2.0 <a href="#1920" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<p>(2019-08-20)</p>
+
+<p>This is a GraalVM feature release, we recommend upgrading to it from the 19.1.x or older releases.</p>
+    
+      <h3 id="native-image">
+        
+        
+          Native Image <a href="#native-image" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>We simplified the process of collecting data for profile-guided optimizations (PGO) for GraalVM Enterprise native images. PGO allows to optimize performance of native images by analyzing collected profiles during the image generation process. Since 19.2.0 you can collect data for PGO while running your application in a just-in-time (JIT) compiled mode:</p>
+<pre><code>$ /graal-ee-19.2.0/bin/java -Dgraal.PGOInstrument=myclass.iprof MyClass
+$ /graal-ee-19.2.0/bin/native-image --pgo=myclass.iprof MyClass
+$ ./myclass
+</code></pre>
+    
+      <h3 id="performance">
+        
+        
+          Performance <a href="#performance" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>We improved throughput for native image in GraalVM Enterprise when no profiles are available. Running the <a href="https://guides.micronaut.io/micronaut-creating-first-graal-app/guide/index.html">Micronaut GraalVM example</a> shows spending ~10% less CPU time and achieving a ~10% higher throughput of requests per CPU second in 19.2.</p>
+
+<p>We also solved a common usability problem when a class marked for
+initialization at runtime gets inadvertently initialized at build time. The flag <code>-H:+TraceClassInitialization</code> was introduced to help tracing what classes got initialized at runtime.</p>
+    
+      <h3 id="javascript">
+        
+        
+          JavaScript <a href="#javascript" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<ul>
+  <li>We added support for date, time, timezone, instant and duration interoperability
+types to distinguish date-like objects from multiple
+languages in polyglot contexts (see changes to GraalVM SDK and Truffle APIs).</li>
+  <li>Added <code>Context.Builder.timeZone</code> to set the time zone.</li>
+  <li>We implemented the <a href="https://github.com/tc39/proposal-numeric-separator">Numeric separators</a> TC39 proposal. It is
+available in ECMAScript 2020 mode (<code>--js.ecmascript-version=2020</code>).</li>
+  <li>We moved ICU data for internationalization APIs, e.g., date and time formatting, number formatting, collation for each individual supported language, previously distributed as separate files in <code>&lt;GRAALVM_HOME&gt;/jre/languages/js/icu4j/icudt</code> to the executable of JavaScript (<code>js</code>).</li>
+</ul>
+
+<p>More changes are listed in the JavaScript component <a href="https://github.com/graalvm/graaljs/blob/master/CHANGELOG.md#version-1920">changelog</a>.</p>
+    
+      <h3 id="llvm-interpreter">
+        
+        
+          LLVM Interpreter <a href="#llvm-interpreter" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>We added preliminary support for compiling native programs to bitcode using
+the LLVM toolchain. The LLVM toolchain is a set of tools and APIs for compiling
+native projects, such as C and C++, to bitcode that can be executed with the
+GraalVM LLVM runtime. It is aimed to simplify ahead-of-time compilation for
+users and language implementers who want to use the GraalVM LLVM runtime. To do
+so, we provide launchers that invoke the C/C++ compiler with special flags to
+produce results that can be executed by the GraalVM LLVM runtime. For more
+details, please consult the <a href="/reference-manual/llvm/">LLVM reference documentation</a>.</p>
+
+<p>The toolchain is an <a href="https://docs.oracle.com/en/graalvm/enterprise/21/docs/overview/licensing-information.html">experimental</a> feature in this release.
+A complete list of changes to GraalVM LLVM runtime can be found in the
+<a href="https://github.com/oracle/graal/blob/master/sulong/CHANGELOG.md#version-1920">changelog</a>.</p>
+    
+      <h3 id="ruby">
+        
+        
+          Ruby <a href="#ruby" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>A comprehensive list of changes to Ruby language component is available on <a href="https://github.com/oracle/truffleruby/blob/master/CHANGELOG.md#1920">GitHub</a>. Major changes include:</p>
+
+<ul>
+  <li>Implemented support for Fiddle – an extension to translate a foreign function interface (FFI) and <a href="http://sourceware.org/libffi/">libffi</a> wrapper for Ruby.</li>
+  <li>In terms of compatibility, <code>Thread.report_on_exception</code> is now <code>true</code> by default
+like MRI 2.5+; <code>BigDecimal</code> compatibility has been generally improved in several
+ways.</li>
+  <li>Improved the performance by optimizing <code>String</code> methods to use the vector
+instructions when searching for a single-byte character in a <code>String</code>.</li>
+  <li>Fixed several bugs reported by community:
+    <ul>
+      <li>Set <code>RbConfig::CONFIG['ruby_version']</code> to the same value as the TruffleRuby version. This fixes reusing C extensions between different versions of TruffleRuby with Bundler (<a href="https://github.com/oracle/truffleruby/issues/1715">#1715</a>).</li>
+      <li>Improved errors when interacting with single-threaded languages (<a href="https://github.com/oracle/truffleruby/issues/1709">#1709</a>).</li>
+    </ul>
+  </li>
+</ul>
+    
+      <h3 id="r">
+        
+        
+          R <a href="#r" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<ul>
+  <li>Added a new <code>fastRCluster</code> package that allows to run FastR inside GNU-R:
+    <ol>
+      <li>install in GNU-R or RStudio with: <code>devtools::install_github('oracle/fastr/com.oracle.truffle.r.pkgs/fastRCluster')</code>;</li>
+      <li>use <code>?fastRCluster</code> to learn more.</li>
+    </ol>
+  </li>
+  <li>The problem that <code>SET_ATTRIB</code> does not validate the attributes as expected was resolved.</li>
+</ul>
+
+<p>The <a href="https://github.com/oracle/fastr/blob/master/CHANGELOG.md">changelog</a> is available on GitHub.</p>
+    
+      <h3 id="python">
+        
+        
+          Python <a href="#python" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>The GraalVM Python implementation is still experimental and we are working towards improving completeness.</p>
+<ul>
+  <li>Implemented <code>PyStructSequence_*</code> C API – standard structured prediction functions.</li>
+  <li>Added support for more C API functions as <code>PyEval_InitThreads</code> and <code>PyEval_ThreadsInitialized</code>, type attributes i.e. <code>nb_remainder</code>, <code>nb_subtract</code>, <code>overflowed</code> and <code>recursion_depth</code> thread state fields.</li>
+  <li>Fixed printing of errors in the REPL and full paths in tracebacks.</li>
+</ul>
+
+<p>More details are available in the project <a href="https://github.com/graalvm/graalpython/blob/master/CHANGELOG.md#version-1920">changelog</a> on GitHub.</p>
+    
+      <h3 id="api-changes-for-graalvm-integrators-sdk--truffle">
+        
+        
+          API Changes for GraalVM Integrators (SDK + Truffle) <a href="#api-changes-for-graalvm-integrators-sdk--truffle" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>We implemented the ability to configure custom polyglot access configuration with
+<code>PolyglotAccess.newBuilder()</code>. It allows to configure fine-grained access
+control for polyglot bindings and between polyglot languages. For example, given
+a <code>TruffleObject</code> as a value, there is a need to determine language and type of
+that object. This feature is significant for GraalVM execution inside <a href="https://labs.oracle.com/pls/apex/f?p=LABS:project_details:0:15">Oracle
+RDBMS</a>.</p>
+
+<p>GraalVM 19.2.0 release also added support for date, time, timezone, duration
+values in polyglot APIs, and introduced the <code>Context.Builder.timeZone(ZoneId)</code>
+class to configure the default timezone of polyglot contexts.</p>
+
+<p>The major GraalVM SDK and Truffle APIs changes between the versions are summarized in:</p>
+<ul>
+  <li><a href="https://github.com/oracle/graal/blob/master/sdk/CHANGELOG.md#version-1920">GraalVM SDK changelog</a></li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/CHANGELOG.md#version-1920">GraalVM Truffle changelog</a></li>
+</ul>
+    
+      <h3 id="tools">
+        
+        
+          Tools <a href="#tools" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>A preview version of Java Flight Recorder (JFR) support has been released as a plugin for the VisualVM tool bundled with GraalVM 19.2.0. The plugin reads all JFR snapshots created from Java 7 and newer and presents the data in typical VisualVM views familiar for its users.</p>
+
+<p><img src="/docs/img/visualvm_jfr.png" alt="" /></p>
+
+<p>To install the JFR support, download GraalVM 19.2.0 from <a href="/downloads/">graalvm.org/downloads</a>, unzip it and run <GRAALVM_HOME>/bin/jvisualvm to start VisualVM.
+Use `Tools | Plugins | Available Plugins` to list all available plugins and install the VisualVM-JFR and VisualVM-JFR-Generic modules.
+The JFR snapshots can be opened using either the File | Load… action or by double-clicking the JFR Snapshots node and adding the snapshot into the JFR repository permanently.
+Please follow the documentation of your Java installation how to create JFR snapshots.</GRAALVM_HOME></p>
+
+<p>JFR support is currently an
+<a href="https://docs.oracle.com/en/graalvm/enterprise/21/docs/overview/licensing-information.html">experimental</a>
+feature. Some advanced features like analyzing JVM internals, showing event
+stack traces or support for creating JFR snapshots from live processes are not
+available in the preview version and will be addressed incrementally in the
+following releases.</p>
+    
+      <h3 id="graalvm-updater-utility">
+        
+        
+          GraalVM Updater Utility <a href="#graalvm-updater-utility" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>We fixed an issue where GraalVM Enterprise would by default download the GraalVM Community components from GitHub. If you are using GraalVM Community – nothing changes, you can still install the components as before, and the <code>gu</code> will locate the necessary jar files on GitHub and correctly install them:</p>
+<pre><code>gu install native-image ruby R python
+</code></pre>
+
+<p>If you are using GraalVM Enterprise, you can install <code>R</code> and <code>llvm-toolchain</code> components from GitHub, for example:</p>
+<pre><code>gu install R
+</code></pre>
+
+<p>The other components are available from <a href="https://www.oracle.com/technetwork/graalvm/downloads/index.html">the OTN page</a>, and can be installed from a manually downloaded file, for example to install <code>native-image</code> support run:</p>
+<pre><code>gu -L install native-image-installable-svm-svmee-darwin-amd64-19.2.0.jar
+</code></pre>
+    
+      <h3 id="version-calendar">
+        
+        
+          Version Calendar <a href="#version-calendar" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>You can now refer to <a href="/release-notes/version-roadmap/">GraalVM version calendar</a> to learn more about the GraalVM release model and prepare for upcoming releases.</p>
+
+<p><img src="/docs/img/graalvm_version_calendar.png" alt="" /></p>
 
               </div>
 
