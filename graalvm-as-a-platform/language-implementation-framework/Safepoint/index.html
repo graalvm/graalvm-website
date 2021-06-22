@@ -10,10 +10,10 @@
 
   <title>
     
-      Truffle Language Safepoint Tutorial
+      GraalVM
     
   </title>
-  <meta name="description" content="GraalVM is a high-performance runtime for Java and other languages that can increase application throughput and reduce latency; compile applications into sma..."/>
+  <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
   <link rel="apple-touch-icon" sizes="180x180" href="/resources/img/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/resources/img/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/resources/img/favicon/favicon-16x16.png">
@@ -457,7 +457,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/examples/">
+          <a href="/examples/">
             Examples
           </a>
         </li>
@@ -475,7 +475,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/reference-manual/">
+          <a href="/reference-manual/">
             Reference Manuals
           </a>
         </li>
@@ -493,7 +493,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/tools/">
+          <a href="/tools/">
             Debugging and Monitoring Tools
           </a>
         </li>
@@ -511,7 +511,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/graalvm-as-a-platform/">
+          <a href="/graalvm-as-a-platform/">
             GraalVM as a Platform
           </a>
         </li>
@@ -687,8 +687,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
-              Truffle Approach to the Compilation Queue
+            <a href="">
+              
             </a>
           </li>
 
@@ -818,7 +818,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/security-guide/">
+          <a href="/security-guide/">
             Security Guide
           </a>
         </li>
@@ -836,7 +836,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/reference-manual/compatibility/">
+          <a href="/compatibility/">
             Compatibility
           </a>
         </li>
@@ -928,8 +928,8 @@ $(document).ready(function(){
         
       </h1>
 
-<p>As of 21.1 Truffle has support for guest language safepoints. 
-Truffle safepoints allow to interrupt the guest language execution to perform thread local actions submitted by a language or tool. 
+<p>As of 21.1 Truffle has support for guest language safepoints.
+Truffle safepoints allow to interrupt the guest language execution to perform thread local actions submitted by a language or tool.
 A safepoint is a location during the guest language execution where the state is consistent and other operations can read its state.</p>
 
 <p>This replaces previous instrumentation or assumption-based approaches to safepoints, which required the code to be invalidated for a thread local action to be performed.
@@ -963,11 +963,11 @@ This means that for every loop back-edge and method exit we perform an additiona
         
       </h2>
 
-<p>Safepoints are explicitly polled by invoking the <code>TruffleSafepoint.poll(Node)</code> method. 
-A Truffle guest language implementation must ensure that a safepoint is polled repeatedly within a constant time interval. 
-For example, a single arithmetic expression completes within a constant number of CPU cycles. 
-However, a loop that summarizes values over an array uses a non-constant time dependent on the actual array size. 
-This typically means that safepoints are best polled at the end of loops and at the end of function or method calls to cover recursion. 
+<p>Safepoints are explicitly polled by invoking the <code>TruffleSafepoint.poll(Node)</code> method.
+A Truffle guest language implementation must ensure that a safepoint is polled repeatedly within a constant time interval.
+For example, a single arithmetic expression completes within a constant number of CPU cycles.
+However, a loop that summarizes values over an array uses a non-constant time dependent on the actual array size.
+This typically means that safepoints are best polled at the end of loops and at the end of function or method calls to cover recursion.
 In addition, any guest language code that blocks the execution, like guest language locks, need to use the  <code>TruffleSafepoint.setBlocked(Interrupter)</code> API to allow cooperative polling of safepoints while the thread is waiting.</p>
 
 <p>Please read more details on what steps language implementations need to take to support thread local actions in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleSafepoint.html">javadoc</a>.</p>
@@ -1006,11 +1006,11 @@ env.submitThreadLocal(null, new ThreadLocalAction(true /*side-effecting*/, true 
         
       </h2>
 
-<p>There is currently no way to run thread local actions while the thread is executing in boundary annotated methods unless the method cooperatively polls safepoints or uses the blocking API. 
-Unfortunately it is not always possible to cooperatively poll safepoints, for example, if the code currently executes third party native code. 
-A future improvement will allow to run code for other threads while they are blocked. 
+<p>There is currently no way to run thread local actions while the thread is executing in boundary annotated methods unless the method cooperatively polls safepoints or uses the blocking API.
+Unfortunately it is not always possible to cooperatively poll safepoints, for example, if the code currently executes third party native code.
+A future improvement will allow to run code for other threads while they are blocked.
 This is one of the reasons why it is recommended to use <code>ThreadLocalAction.Access.getThread()</code> instead of directly using <code>Thread.currentThread()</code>.
-When the native call returns it needs to wait for any thread local action that is currently executing for this thread. 
+When the native call returns it needs to wait for any thread local action that is currently executing for this thread.
 This will enable to collect guest language stack traces from other threads while they are blocked by uncooperative native code.
 Currently the action will be performed on the next safepoint location when the native code returns.</p>
     
@@ -1053,7 +1053,7 @@ Currently the action will be performed on the next safepoint location when the n
    All threads           48384054 |            0.425 us           0.1 us       42281.1 us
 </code></pre>
 
-<p>It is recommended for guest language implementations to try to stay below 1ms on average. 
+<p>It is recommended for guest language implementations to try to stay below 1ms on average.
 Note that precise timing can depend on CPU and interruptions by the GC.
 Since GC times are included in the safepoint interval times, it is expected that the maximum is close to the maximum GC interruption time.
 Future versions of this tool will be able to exclude GC interruption times from this statistic.</p>
@@ -1151,8 +1151,8 @@ Note that the stack trace is printed on the next safepoint poll and therefore mi
         
       </h2>
 
-<p>Daloze, Benoit, Chris Seaton, Daniele Bonetta, and Hanspeter Mössenböck. 
-“Techniques and applications for guest-language safepoints.” 
+<p>Daloze, Benoit, Chris Seaton, Daniele Bonetta, and Hanspeter Mössenböck.
+“Techniques and applications for guest-language safepoints.”
 In Proceedings of the 10th Workshop on Implementation, Compilation, Optimization of Object-Oriented Languages, Programs and Systems, pp. 1-10. 2015.</p>
 
 <p><a href="https://dl.acm.org/doi/abs/10.1145/2843915.2843921">https://dl.acm.org/doi/abs/10.1145/2843915.2843921</a></p>

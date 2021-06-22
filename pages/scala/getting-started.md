@@ -1,6 +1,5 @@
 <!--  ---
 layout: docs
-title: Scala
 link_title: Get Started with Scala
 permalink: /docs/scala/getting-started/
 toc_group: docs
