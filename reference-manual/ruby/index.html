@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/reference-manual/ruby/Tools/">
+  <link rel="canonical" href="https://www.graalvm.org/reference-manual/ruby/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -464,7 +464,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main">
+          <li class="toc-bullets-main toc-bullets-highlight">
         
           
           <a href="/reference-manual/ruby/">
@@ -611,31 +611,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/reference-manual/ruby/Tools/">
               Development Tools for Ruby
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -771,291 +753,344 @@ $(document).ready(function(){
                 <img src="/resources/img/experimental_label.png" alt="Experimental feature in GraalVM">
               </div>
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="development-tools-for-ruby">
+                <h1 id="truffleruby">
         
         
-          Development Tools for Ruby
+          TruffleRuby
         
         
       </h1>
 
-<p>TruffleRuby ships with tools automatically provided by GraalVM. Run <code>--help:tools</code> to see a full list of options.</p>
+<p><img src="/docs/reference-manual/ruby/logo/png/truffleruby_logo_horizontal_medium.png" alt="TruffleRuby logo" /></p>
 
-<p>The following program is used for illustration:</p>
-
-<pre><code class="language-ruby">require 'chunky_png'
-
-a = ChunkyPNG::Image.from_file('a.png')
-b = ChunkyPNG::Image.from_file('b.png')
-c = a.compose(b, 0, 0)
-c.save('c.png')
-</code></pre>
+<p>TruffleRuby is the <a href="http://graalvm.org/">GraalVM</a> high-performance implementation
+of the <a href="https://www.ruby-lang.org/en/">Ruby programming language</a>.</p>
     
-      <h2 id="visualvm">
+      <h2 id="getting-started">
         
         
-          VisualVM <a href="#visualvm" class="anchor_heading">#</a>
+          Getting Started <a href="#getting-started" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>You need to use the <code>--jvm</code> runtime configuration and <a href="/reference-manual/ruby/InstallingGraalVM/">install GraalVM</a> to use VisualVM.</p>
-
-<p>VisualVM is a GUI with many tools:</p>
+<p>There are four ways to install TruffleRuby releases and nightly builds:</p>
 
 <ul>
-  <li>monitoring such as CPU usage, heap size, time spent in GC, etc (tab: Monitor)</li>
-  <li>capturing and exploring heap dumps (tab: Monitor)</li>
-  <li>a list of threads and their status, and thread dumps (tab: Threads)</li>
-  <li>CPU and memory sampling profilers at the Java level (tab: Sampler)</li>
-  <li>a CPU sampling profiler at the <strong>Ruby</strong> level (tab: Polyglot Sampler)</li>
+  <li>
+    <p>Via <a href="/reference-manual/ruby/InstallingGraalVM/">GraalVM</a>, which includes support for
+other languages such as JavaScript, R, and Python, and supports both the
+<a href="#truffleruby-runtime-configurations">Native and JVM configurations</a>.
+Inside GraalVM will then be a <code>bin/ruby</code> command that runs TruffleRuby.
+We recommend that you use a <a href="/reference-manual/ruby/RubyManagers/#configuring-ruby-managers-for-the-full-graalvm-distribution">Ruby manager</a>
+to use TruffleRuby inside GraalVM.</p>
+  </li>
+  <li>
+    <p>Via your <a href="/reference-manual/ruby/RubyManagers/">Ruby manager/installer</a> (RVM, rbenv,
+chruby, ruby-build, ruby-install). This contains only TruffleRuby, in the
+<a href="#truffleruby-runtime-configurations">Native configuration</a>, making it a smaller
+download. It is meant for users who only want a Ruby implementation and are already
+using a Ruby manager.</p>
+  </li>
+  <li>
+    <p>Via Docker: <a href="https://github.com/graalvm/container/pkgs/container/truffleruby">Oracle Linux-based images</a>
+and <a href="https://hub.docker.com/r/flavorjones/truffleruby">Debian-based images</a>.</p>
+  </li>
+  <li>
+    <p>Via the <a href="/reference-manual/ruby/StandaloneDistribution/">standalone distribution</a>
+as a simple binary tarball.</p>
+  </li>
 </ul>
 
-<p>There is more documentation about VisualVM on the <a href="https://www.graalvm.org/tools/visualvm/">GraalVM website</a>.</p>
+<p>We recommend trying TruffleRuby nightly builds which contain the latest fixes and improvements:</p>
+
+<pre><code class="language-bash">RVM:    $ rvm install truffleruby-head
+rbenv:  $ rbenv install truffleruby-dev
+chruby: $ ruby-build truffleruby-dev ~/.rubies/truffleruby-dev
+</code></pre>
+
+<p>See the <a href="/reference-manual/ruby/RubyManagers/">Ruby installers</a> documentation for more details.</p>
+
+<p>Testing TruffleRuby in CI is easy.
+On GitHub Actions, you can use:</p>
+
+<pre><code class="language-yaml">- uses: ruby/setup-ruby@v1
+  with:
+    ruby-version: truffleruby # or truffleruby-head
+</code></pre>
+
+<p>See <a href="/reference-manual/ruby/StandaloneDistribution/">Testing TruffleRuby in CI</a> for more details and other CIs.</p>
+
+<p>You can use <code>gem</code> and <code>bundle</code> to install gems, as usual.</p>
+
+<p>Please report any issues you might find on <a href="https://github.com/oracle/truffleruby/issues">GitHub</a>.</p>
     
-      <h2 id="profiling">
+      <h2 id="aim">
         
         
-          Profiling <a href="#profiling" class="anchor_heading">#</a>
+          Aim <a href="#aim" class="anchor_heading">#</a>
         
         
       </h2>
+
+<p>TruffleRuby aims to:</p>
+
+<ul>
+  <li>Run idiomatic Ruby code faster.
+    <ul>
+      <li>TruffleRuby is the fastest Ruby implementation for many CPU-intensive benchmarks.</li>
+    </ul>
+  </li>
+  <li>Run Ruby code in parallel.
+    <ul>
+      <li>TruffleRuby does not have a global interpreter lock and runs Ruby code in parallel.</li>
+    </ul>
+  </li>
+  <li>Support C extensions.
+    <ul>
+      <li>Many C extensions work out of the box, including database drivers.</li>
+    </ul>
+  </li>
+  <li>Add fast and low-overhead interoperability with languages like Java, JavaScript, Python, and R.
+    <ul>
+      <li>Provided by GraalVM, see the <a href="/reference-manual/ruby/Polyglot/">Polyglot documentation</a>.</li>
+    </ul>
+  </li>
+  <li>Provide new tooling, such as debuggers and monitoring, that works across languages.
+    <ul>
+      <li>Includes a profiler, debugger, VisualVM, and more. See the <a href="/reference-manual/ruby/Tools/">Tools documentation</a>.</li>
+    </ul>
+  </li>
+  <li>Provide all of the above while maintaining very high compatibility with the standard implementation of Ruby.</li>
+</ul>
     
-      <h3 id="cpu-tracer">
+      <h2 id="truffleruby-runtime-configurations">
         
         
-          CPU Tracer <a href="#cpu-tracer" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The CPU tracer records the number of times methods, blocks, or statements that are run, and prints a histogram.
-Enable it with <code>--cputracer</code>:</p>
-
-<pre><code class="language-shell">-----------------------------------------------------------------------------------------------------------------------------------
-Tracing Histogram. Counted a total of 41663 element executions.
-  Total Count: Number of times the element was executed and percentage of total executions.
-  Interpreted Count: Number of times the element was interpreted and percentage of total executions of this element.
-  Compiled Count: Number of times the compiled element was executed and percentage of total executions of this element.
------------------------------------------------------------------------------------------------------------------------------------
- Name                                               |          Total Count |    Interpreted Count |       Compiled Count | Location
------------------------------------------------------------------------------------------------------------------------------------
- ChunkyPNG::Color#a                                 |          6474  15.5% |          6474 100.0% |             0   0.0% | chunky_png/color.rb~296-298:12189-12237
- block in ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_paeth |          5248  12.6% |          5248 100.0% |             0   0.0% | chunky_png/canvas/png_decoding.rb~476:25098-25131
- ChunkyPNG::Color#int8_mult                         |          3619   8.7% |          3619 100.0% |             0   0.0% | chunky_png/color.rb~344-347:13821-13900
- ChunkyPNG::Canvas#width                            |          3205   7.7% |          3205 100.0% |             0   0.0% | chunky_png/canvas.rb~50:1853-1874
- block in ChunkyPNG::Canvas::PNGEncoding#encode_png_str_scanline_up |          3072   7.4% |          3072 100.0% |             0   0.0% | chunky_png/canvas/png_encoding.rb~404:20111-20145
- ChunkyPNG::Canvas#get_pixel                        |          2048   4.9% |          2048 100.0% |             0   0.0% | chunky_png/canvas.rb~184-186:7144-7203
- ChunkyPNG::Color#opaque?                           |          1872   4.5% |          1872 100.0% |             0   0.0% | chunky_png/color.rb~304-306:12410-12468
- ChunkyPNG::Color#fully_transparent?                |          1500   3.6% |          1500 100.0% |             0   0.0% | chunky_png/color.rb~327-329:13138-13207
- block in ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_up |          1408   3.4% |          1408 100.0% |             0   0.0% | chunky_png/canvas/png_decoding.rb~453:24009-24042
- block in ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_sub |          1280   3.1% |          1280 100.0% |             0   0.0% | chunky_png/canvas/png_decoding.rb~443:23517-23550
- ChunkyPNG::Color#b                                 |          1037   2.5% |          1037 100.0% |             0   0.0% | chunky_png/color.rb~288-290:11969-12024
- ChunkyPNG::Color#r                                 |          1036   2.5% |          1036 100.0% |             0   0.0% | chunky_png/color.rb~272-274:11534-11590
- ChunkyPNG::Color#g                                 |          1035   2.5% |          1035 100.0% |             0   0.0% | chunky_png/color.rb~280-282:11752-11808
- ChunkyPNG::Color#compose_quick                     |          1024   2.5% |          1024 100.0% |             0   0.0% | chunky_png/color.rb~358-368:14300-14740
- ChunkyPNG::Canvas#set_pixel                        |          1024   2.5% |          1024 100.0% |             0   0.0% | chunky_png/canvas.rb~149-151:5706-5780
- block (2 levels) in ChunkyPNG::Canvas::Operations#compose! |          1024   2.5% |          1024 100.0% |             0   0.0% | chunky_png/canvas/operations.rb~58:2331-2367
- block in ChunkyPNG::Palette#opaque?                |           848   2.0% |           848 100.0% |             0   0.0% | chunky_png/palette.rb~89:3319-3361
- SortedSet#add                                      |           848   2.0% |           848 100.0% |             0   0.0% | lib/mri/set.rb~741-745:1000-1169
- ChunkyPNG::Color#rgba                              |           518   1.2% |           518 100.0% |             0   0.0% | chunky_png/color.rb~100-102:3905-3973
- block in ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_average |           256   0.6% |           256 100.0% |             0   0.0% | chunky_png/canvas/png_decoding.rb~464:24513-24546
- rb_str_new                                         |           199   0.5% |           199 100.0% |             0   0.0% | src/main/c/cext/ruby.c~837:23634-23684
- is_managed_rstring_ptr                             |           193   0.5% |           193 100.0% |             0   0.0% | src/main/c/cext/ruby.c~832:23499-23538
- is_rstring_ptr                                     |           193   0.5% |           193 100.0% |             0   0.0% | src/main/c/cext/ruby.c~828:23430-23461
- strlen                                             |           190   0.5% |           190 100.0% |             0   0.0% | string.c~56:0
- rb_str_new_cstr                                    |           190   0.5% |           190 100.0% |             0   0.0% | src/main/c/cext/ruby.c~858:24268-24310
- RB_NIL_P                                           |           138   0.3% |           138 100.0% |             0   0.0% | src/main/c/cext/ruby.c~413:11068-11094
-</code></pre>
-
-<p>Note how the C function <code>strlen</code> and the C preprocessor macro <code>RB_NIL_P</code> show up, being called by the <code>zlib</code> C extension.</p>
-    
-      <h3 id="cpu-sampler">
-        
-        
-          CPU Sampler <a href="#cpu-sampler" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The CPU tracer records the cumulative time spent executing methods, blocks, or statements, and prints a histogram. Enable it with <code>--cpusampler</code>:</p>
-
-<pre><code class="language-shell">---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Sampling Histogram. Recorded 3895 samples with period 1ms.
-  Self Time: Time spent on the top of the stack.
-  Total Time: Time spent somewhere on the stack.
-  Opt %: Percent of time spent in compiled and therefore non-interpreted code.
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Thread: Thread[main,5,main]
- Name                                                                                |      Total Time     |  Opt % ||       Self Time     |  Opt % | Location
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- &lt;main&gt;                                                                              |       3635ms  93.3% |   0.0% ||       1086ms  27.9% |   0.0% | test.rb~1-6:0-140
- &lt;top (required)&gt;                                                                    |       1068ms  27.4% |   0.0% ||        708ms  18.2% |   0.0% | chunky_png.rb~1-179:0-5528
- block in ChunkyPNG::Canvas::PNGEncoding#encode_png_str_scanline_up                  |        643ms  16.5% |   0.0% ||        643ms  16.5% |   0.0% | chunky_png/canvas/png_encoding.rb~404:20111-20145
- __sulong_dispose_context                                                            |        260ms   6.7% |   0.0% ||        257ms   6.6% |   0.0% | sulong_dispose_context.c~33:0
- block in ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_paeth               |         58ms   1.5% |   0.0% ||         58ms   1.5% |   0.0% | chunky_png/canvas/png_decoding.rb~476:25098-25131
- do_checksum                                                                         |         77ms   2.0% |   0.0% ||         47ms   1.2% |   0.0% | src/main/c/zlib/zlib.c~389:12721-12796
- ChunkyPNG::Palette#initialize                                                       |         52ms   1.3% |   0.0% ||         41ms   1.1% |   0.0% | chunky_png/palette.rb~21-24:954-1074
- block in Gem::Specification.load                                                    |         39ms   1.0% |   0.0% ||         39ms   1.0% |   0.0% | bigdecimal-1.4.1.gemspec~5:126-154
- rb_define_method                                                                    |         50ms   1.3% |   0.0% ||         36ms   0.9% |   0.0% | src/main/c/cext/ruby.c~2185:61849-61941
- rb_tr_init                                                                          |         44ms   1.1% |   0.0% ||         34ms   0.9% |   0.0% | src/main/c/cext/ruby.c~93:2351-2384
- &lt;top (required)&gt;                                                                    |         42ms   1.1% |   0.0% ||         33ms   0.8% |   0.0% | chunky_png/canvas.rb~1-372:0-13593
- __sulong_byte_array_to_native                                                       |         30ms   0.8% |   0.0% ||         30ms   0.8% |   0.0% | crt0.c~59:0
- rb_str_new                                                                          |         33ms   0.8% |   0.0% ||         29ms   0.7% |   0.0% | src/main/c/cext/ruby.c~837:23634-23684
- __sulong_init_context                                                               |         68ms   1.7% |   0.0% ||         26ms   0.7% |   0.0% | crt0.c~80:0
- Init_zlib                                                                           |        145ms   3.7% |   0.0% ||         24ms   0.6% |   0.0% | src/main/c/zlib/zlib.c~4465:112360-112374
- rb_zlib_crc32                                                                       |        101ms   2.6% |   0.0% ||         24ms   0.6% |   0.0% | src/main/c/zlib/zlib.c~473:14760-14808
- rb_data_typed_object_wrap                                                           |         21ms   0.5% |   0.0% ||         21ms   0.5% |   0.0% | src/main/c/cext/ruby.c~2834:79544-79639
- rb_tr_load_library                                                                  |         22ms   0.6% |   0.0% ||         20ms   0.5% |   0.0% | src/main/c/cext/ruby.c~2906:81858-81897
- ChunkyPNG::Canvas::PNGEncoding#encode_png_str_scanline_up                           |        662ms  17.0% |   0.0% ||         19ms   0.5% |   0.0% | chunky_png/canvas/png_encoding.rb~403-409:20027-20347
- rb_define_class_id_under                                                            |         18ms   0.5% |   0.0% ||         18ms   0.5% |   0.0% | src/main/c/cext/ruby.c~2165:61106-61178
- ChunkyPNG::Chunk.read                                                               |        137ms   3.5% |   0.0% ||         17ms   0.4% |   0.0% | chunky_png/chunk.rb~18-26:783-1054
- Datastream                                                                          |         15ms   0.4% |   0.0% ||         15ms   0.4% |   0.0% | chunky_png/datastream.rb~11:364-381
- ChunkyPNG::Color#compose_quick                                                      |         37ms   0.9% |   0.0% ||         14ms   0.4% |   0.0% | chunky_png/color.rb~358-368:14300-14740
- rb_deflate_s_deflate                                                                |         27ms   0.7% |   0.0% ||         13ms   0.3% |   0.0% | src/main/c/zlib/zlib.c~1622:44042-44097
- ChunkyPNG::Canvas::PNGDecoding#decode_png_str_scanline_paeth                        |         71ms   1.8% |   0.0% ||         13ms   0.3% |   0.0% | chunky_png/canvas/png_decoding.rb~475-488:25010-25650
- ChunkyPNG::Palette.from_canvas                                                      |         64ms   1.6% |   0.0% ||         12ms   0.3% |   0.0% | chunky_png/palette.rb~63-68:2377-2629
- __sulong_byte_arrays_to_native                                                      |         42ms   1.1% |   0.0% ||         12ms   0.3% |   0.0% | crt0.c~69:0
- ChunkyPNG::Chunk::ImageData.combine_chunks                                          |        167ms   4.3% |   0.0% ||         12ms   0.3% |   0.0% | chunky_png/chunk.rb~247-253:9766-9980
- rb_inflate_initialize                                                               |         19ms   0.5% |   0.0% ||         12ms   0.3% |   0.0% | src/main/c/zlib/zlib.c~1887:51522-51576
- strlen                                                                              |         12ms   0.3% |   0.0% ||         12ms   0.3% |   0.0% | string.c~56:0
- zstream_run                                                                         |         76ms   2.0% |   0.0% ||         12ms   0.3% |   0.0% | src/main/c/zlib/zlib.c~1024:27867-27929
-</code></pre>
-
-<p>By default you see this histogram, but you can also see a call tree with <code>--cpusampler.Output=calltree</code>.</p>
-
-<pre><code class="language-shell">-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Sampling CallTree. Recorded 3102 samples with period 1ms.
-  Self Time: Time spent on the top of the stack.
-  Total Time: Time spent somewhere on the stack.
-  Opt %: Percent of time spent in compiled and therefore non-interpreted code.
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
- Thread: Thread[main,5,main]
- Name                                                                                        |      Total Time     |  Opt % ||       Self Time     |  Opt % | Location
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-  ChunkyPNG::Canvas::PNGEncoding#save                                                        |        582ms  18.8% |   0.0% ||          5ms   0.2% |   0.0% | chunky_png/canvas/png_encoding.rb~42-44:1754-1871
-   block in ChunkyPNG::Canvas::PNGEncoding#save                                              |        577ms  18.6% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~43:1797-1861
-    ChunkyPNG::Canvas::PNGEncoding#write                                                     |        577ms  18.6% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~34-36:1430-1521
-     ChunkyPNG::Image#to_datastream                                                          |        571ms  18.4% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/image.rb~61-65:2314-2447
-      ChunkyPNG::Canvas::PNGEncoding#to_datastream                                           |        569ms  18.3% |   0.0% ||          1ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~74-89:3715-4561
-       ChunkyPNG::Canvas::PNGEncoding#encode_png_pixelstream                                 |        489ms  15.8% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~153-165:7702-8570
-        ChunkyPNG::Canvas::PNGEncoding#encode_png_image_without_interlacing                  |        489ms  15.8% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~172-176:8925-9195
-         ChunkyPNG::Canvas::PNGEncoding#encode_png_image_pass_to_stream                      |        489ms  15.8% |   0.0% ||          3ms   0.1% |   0.0% | chunky_png/canvas/png_encoding.rb~203-231:10502-11685
-          block in ChunkyPNG::Canvas::PNGEncoding#encode_png_image_pass_to_stream            |        481ms  15.5% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~225:11418-11456
-           ChunkyPNG::Canvas::PNGEncoding#encode_png_str_scanline_up                         |        481ms  15.5% |   0.0% ||         11ms   0.4% |   0.0% | chunky_png/canvas/png_encoding.rb~403-409:20027-20347
-            block in ChunkyPNG::Canvas::PNGEncoding#encode_png_str_scanline_up               |        470ms  15.2% |   0.0% ||        470ms  15.2% |   0.0% | chunky_png/canvas/png_encoding.rb~404:20111-20145
-          block in ChunkyPNG::Canvas::PNGEncoding#encode_png_image_pass_to_stream            |          5ms   0.2% |   0.0% ||          1ms   0.0% |   0.0% | chunky_png/canvas/png_encoding.rb~219:11252-11284
-           ChunkyPNG::Canvas::PNGEncoding#encode_png_pixels_to_scanline_truecolor_8bit       |          4ms   0.1% |   0.0% ||          4ms   0.1% |   0.0% | chunky_png/canvas/png_encoding.rb~236-238:11896-12009
-       ChunkyPNG::Canvas::PNGEncoding#determine_png_encoding                                 |         60ms   1.9% |   0.0% ||          2ms   0.1% |   0.0% | chunky_png/canvas/png_encoding.rb~102-145:5085-7303
-        ChunkyPNG::Canvas#palette                                                            |         51ms   1.6% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/canvas.rb~268-270:10089-10154
-         ChunkyPNG::Palette.from_canvas                                                      |         51ms   1.6% |   0.0% ||          9ms   0.3% |   0.0% | chunky_png/palette.rb~63-68:2377-2629
-          ChunkyPNG::Palette#initialize                                                      |         42ms   1.4% |   0.0% ||         30ms   1.0% |   0.0% | chunky_png/palette.rb~21-24:954-1074
-           SortedSet#initialize                                                              |         12ms   0.4% |   0.0% ||          0ms   0.0% |   0.0% | lib/mri/set.rb~726-729:725-819
-            SortedSet#merge                                                                  |         12ms   0.4% |   0.0% ||          6ms   0.2% |   0.0% | lib/mri/set.rb~770-773:1759-1847
-             SortedSet#add                                                                   |          6ms   0.2% |   0.0% ||          6ms   0.2% |   0.0% | lib/mri/set.rb~741-745:1000-1169
-        ChunkyPNG::Palette#best_color_settings                                               |          7ms   0.2% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/palette.rb~195-211:7150-7613
-         ChunkyPNG::Palette#opaque?                                                          |          3ms   0.1% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/palette.rb~88-90:3303-3369
-          SortedSet#each                                                                     |          3ms   0.1% |   0.0% ||          2ms   0.1% |   0.0% | lib/mri/set.rb~775-779:1850-2004
-           block in ChunkyPNG::Palette#opaque?                                               |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/palette.rb~89:3319-3361
-            ChunkyPNG::Color#opaque?                                                         |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/color.rb~304-306:12410-12468
-             ChunkyPNG::Color#a                                                              |          1ms   0.0% |   0.0% ||          1ms   0.0% |   0.0% | chunky_png/color.rb~296-298:12189-12237
-         ChunkyPNG::Palette#black_and_white?                                                 |          3ms   0.1% |   0.0% ||          1ms   0.0% |   0.0% | chunky_png/palette.rb~104-106:3841-3940
-          SortedSet#each                                                                     |          2ms   0.1% |   0.0% ||          1ms   0.0% |   0.0% | lib/mri/set.rb~775-779:1850-2004
-           SortedSet#to_a                                                                    |          1ms   0.0% |   0.0% ||          1ms   0.0% |   0.0% | lib/mri/set.rb~781-784:2007-2116
-         ChunkyPNG::Palette#grayscale?                                                       |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | chunky_png/palette.rb~96-98:3570-3642
-          SortedSet#each                                                                     |          1ms   0.0% |   0.0% ||          1ms   0.0% |   0.0% | lib/mri/set.rb~775-779:1850-2004
-       ChunkyPNG::Chunk::ImageData.split_in_chunks                                           |         19ms   0.6% |   0.0% ||          7ms   0.2% |   0.0% | chunky_png/chunk.rb~255-259:9983-10267
-        rb_deflate_s_deflate                                                                 |         12ms   0.4% |   0.0% ||          4ms   0.1% |   0.0% | src/main/c/zlib/zlib.c~1622:44042-44097
-         rb_ensure                                                                           |          5ms   0.2% |   0.0% ||          1ms   0.0% |   0.0% | src/main/c/cext/ruby.c~2107:59266-59360
-          deflate_run                                                                        |          4ms   0.1% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/zlib/zlib.c~1589:43218-43240
-           zstream_run                                                                       |          4ms   0.1% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/zlib/zlib.c~1024:27867-27929
-            zstream_append_input                                                             |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/zlib/zlib.c~827:23738-23804
-             rb_str_buf_cat                                                                  |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/cext/ruby.c~981:27520-27591
-              rb_str_cat                                                                     |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/cext/ruby.c~882:24901-24968
-               rb_enc_str_new                                                                |          1ms   0.0% |   0.0% ||          0ms   0.0% |   0.0% | src/main/c/cext/ruby.c~1301:37035-37101
-</code></pre>
-    
-      <h3 id="coverage">
-        
-        
-          Coverage <a href="#coverage" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The coverage tool reports coverage by statement, line, and root.
-<em>Root</em> means the root of a function, i.e., how many methods and blocks were covered.
-Enable it with <code>--coverage</code>:</p>
-
-<pre><code class="language-shell">-------------------------------------------------------------------------------------------------------------------------------------
-Code coverage histogram.
-  Shows what percent of each element was covered during execution
--------------------------------------------------------------------------------------------------------------------------------------
- Path                                                                                            |  Statements |    Lines |    Roots
--------------------------------------------------------------------------------------------------------------------------------------
- chunky_png-1.3.11/lib/chunky_png.rb                                                             |     100.00% |  100.00% |  100.00%
- chunky_png-1.3.11/lib/chunky_png/canvas.rb                                                      |      58.40% |   69.41% |   35.90%
- chunky_png-1.3.11/lib/chunky_png/canvas/adam7_interlacing.rb                                    |      28.57% |   50.00% |   28.57%
- chunky_png-1.3.11/lib/chunky_png/canvas/data_url_exporting.rb                                   |      80.00% |   83.33% |   80.00%
- chunky_png-1.3.11/lib/chunky_png/canvas/data_url_importing.rb                                   |      57.14% |   70.00% |   80.00%
- chunky_png-1.3.11/lib/chunky_png/canvas/drawing.rb                                              |       8.28% |   44.02% |   13.33%
- chunky_png-1.3.11/lib/chunky_png/canvas/masking.rb                                              |      28.57% |   51.72% |   44.44%
- chunky_png-1.3.11/lib/chunky_png/canvas/operations.rb                                           |      42.42% |   65.07% |   21.95%
- chunky_png-1.3.11/lib/chunky_png/canvas/png_decoding.rb                                         |      52.84% |   68.27% |   26.98%
- chunky_png-1.3.11/lib/chunky_png/canvas/png_encoding.rb                                         |      44.44% |   62.07% |   40.43%
- chunky_png-1.3.11/lib/chunky_png/canvas/resampling.rb                                           |      17.46% |   48.51% |   25.00%
- chunky_png-1.3.11/lib/chunky_png/canvas/stream_exporting.rb                                     |      61.54% |   72.22% |   44.44%
- chunky_png-1.3.11/lib/chunky_png/canvas/stream_importing.rb                                     |      31.82% |   45.83% |   40.00%
- chunky_png-1.3.11/lib/chunky_png/chunk.rb                                                       |      82.84% |   86.32% |   68.42%
- chunky_png-1.3.11/lib/chunky_png/color.rb                                                       |      41.82% |   59.00% |   33.93%
- chunky_png-1.3.11/lib/chunky_png/compatibility.rb                                               |      75.00% |   66.67% |   75.00%
- chunky_png-1.3.11/lib/chunky_png/datastream.rb                                                  |      83.56% |   87.50% |   80.00%
- chunky_png-1.3.11/lib/chunky_png/dimension.rb                                                   |      42.11% |   62.07% |   23.08%
- chunky_png-1.3.11/lib/chunky_png/image.rb                                                       |      85.00% |   90.32% |   90.00%
- chunky_png-1.3.11/lib/chunky_png/palette.rb                                                     |      41.18% |   63.46% |   42.31%
- chunky_png-1.3.11/lib/chunky_png/point.rb                                                       |      42.86% |   62.96% |   25.00%
- chunky_png-1.3.11/lib/chunky_png/vector.rb                                                      |      40.98% |   63.10% |   10.34%
- chunky_png-1.3.11/lib/chunky_png/version.rb                                                     |     100.00% |  100.00% |  100.00%
--------------------------------------------------------------------------------------------------------------------------------------
-</code></pre>
-    
-      <h2 id="debugging">
-        
-        
-          Debugging <a href="#debugging" class="anchor_heading">#</a>
+          TruffleRuby Runtime Configurations <a href="#truffleruby-runtime-configurations" class="anchor_heading">#</a>
         
         
       </h2>
+
+<p>There are two main runtime configurations of TruffleRuby, Native and JVM, which have different trade-offs.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Configuration:</th>
+      <th style="text-align: right">Native (<code>--native</code>, default)</th>
+      <th style="text-align: right">JVM (<code>--jvm</code>)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Time to start TruffleRuby</td>
+      <td style="text-align: right">about as fast as MRI startup</td>
+      <td style="text-align: right">slower</td>
+    </tr>
+    <tr>
+      <td>Time to reach peak performance</td>
+      <td style="text-align: right">faster</td>
+      <td style="text-align: right">slower</td>
+    </tr>
+    <tr>
+      <td>Peak performance (also considering GC)</td>
+      <td style="text-align: right">good</td>
+      <td style="text-align: right">best</td>
+    </tr>
+    <tr>
+      <td>Java host interoperability</td>
+      <td style="text-align: right">needs reflection configuration</td>
+      <td style="text-align: right">just works</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>To find out which runtime configuration is being used, run <code>ruby --version</code> on the command line,
+or check the value of <code>RUBY_DESCRIPTION</code> or <code>TruffleRuby.native?</code> in Ruby code.
+Runtime configurations are further detailed in <a href="/reference-manual/ruby/RuntimeConfigurations/">Deploying TruffleRuby</a>.</p>
     
-      <h3 id="chrome-inspector">
+      <h2 id="system-compatibility">
         
         
-          Chrome Inspector <a href="#chrome-inspector" class="anchor_heading">#</a>
+          System Compatibility <a href="#system-compatibility" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>GraalVM lets you debug Ruby programs, and any other language supported by GraalVM, using the <a href="https://chromedevtools.github.io/devtools-protocol/">Chrome DevTools Protocol</a> to attach to debuggers such as <a href="https://developers.google.com/web/tools/chrome-devtools/">Chrome Developer Tools</a>.</p>
+<p>TruffleRuby is actively tested on the following systems:</p>
 
-<p>Run with <code>--inspect</code>, open the given URL in Chrome, drag your file system into the sources list, and then set a breakpoint and resume execution.
-Having the debugger attached and simple breakpoints set should not reduce performance.</p>
+<ul>
+  <li>Oracle Linux 7</li>
+  <li>Ubuntu 18.04 LTS</li>
+  <li>Ubuntu 16.04 LTS</li>
+  <li>Fedora 28</li>
+  <li>macOS 10.14 (Mojave)</li>
+  <li>macOS 10.15 (Catalina)</li>
+</ul>
 
-<p><img src="/docs/reference-manual/ruby/images/chrome.png" alt="Chrome Developer Tools debugger session" /></p>
+<p>Architectures:</p>
+
+<ul>
+  <li>AMD64 (aka <code>x86_64</code>): Supported</li>
+  <li>AArch64 (aka <code>arm64</code>): Supported on Linux (from 20.2)</li>
+</ul>
+
+<p>You may find that TruffleRuby will not work if you severely restrict the
+environment, for example, by unmounting system filesystems such as <code>/dev/shm</code>.</p>
     
-      <h3 id="netbeans">
+      <h2 id="dependencies">
         
         
-          NetBeans <a href="#netbeans" class="anchor_heading">#</a>
+          Dependencies <a href="#dependencies" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>You can also debug GraalVM languages using NetBeans.
-Run with <code>--jvm --vm.agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y</code> and attach to the process as if you were debugging a Java program.
-Then click <em>Toggle pause in GraalVM script</em> (the pause icon with a <em>G</em> superimposed) and break, and you will break into the Ruby code.
-You will see Ruby stack frames and local variables rather than Java stack frames and local variables.</p>
+<ul>
+  <li><a href="/reference-manual/ruby/InstallingLLVM/">make and gcc</a> for building C and C++ extensions</li>
+  <li><a href="/reference-manual/ruby/Installinglibssl/">libssl</a> for the <code>openssl</code> C extension</li>
+  <li><a href="/reference-manual/ruby/Installingzlib/">zlib</a> for the <code>zlib</code> C extension</li>
+</ul>
 
-<p><img src="/docs/reference-manual/ruby/images/netbeans.png" alt="NetBeans debugger session" /></p>
+<p>Without these dependencies, many libraries including RubyGems will not work.
+TruffleRuby will try to print a nice error message if a dependency is missing, but this can only be done on a best effort basis.</p>
+
+<p>You may also need to set up a <a href="/reference-manual/ruby/UTF8Locale/">UTF-8 locale</a>.</p>
+
+<p>See the <a href="https://github.com/oracle/truffleruby/blob/master/doc/contributor/workflow.md">contributor workflow</a> document if you wish to build TruffleRuby from source.</p>
+    
+      <h2 id="current-status">
+        
+        
+          Current Status <a href="#current-status" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>We recommend that people trying TruffleRuby on their gems and applications <a href="#contact">get in touch with us</a> for help.</p>
+
+<p>TruffleRuby can run Rails and is compatible with many gems, including C extensions.
+However, TruffleRuby is not 100% compatible with MRI 2.7 yet. Please report any compatibility issues you might find.
+TruffleRuby <a href="https://eregon.me/blog/2020/06/27/ruby-spec-compatibility-report.html">passes around 97% of ruby/spec</a>,
+more than any other alternative Ruby implementation.</p>
+
+<p>TruffleRuby might not be fast yet on Rails applications and large programs.
+Notably, large programs currently take a long time to warmup on TruffleRuby and
+this is something the TruffleRuby team is currently working on.
+Large programs often involve more performance-critical code
+so there is a higher chance of hitting an area of TruffleRuby which has not been optimized yet.</p>
+    
+      <h2 id="releases">
+        
+        
+          Releases <a href="#releases" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>TruffleRuby has the same version, and is released at the same time as GraalVM.
+There is a release every 3 months. See the <a href="https://www.graalvm.org/release-notes/version-roadmap/">release roadmap</a>.</p>
+    
+      <h2 id="migration-from-mri">
+        
+        
+          Migration from MRI <a href="#migration-from-mri" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>TruffleRuby should in most cases work as a drop-in replacement for MRI, but you
+should read about our <a href="/reference-manual/ruby/Compatibility/">compatibility</a>.</p>
+    
+      <h2 id="migration-from-jruby">
+        
+        
+          Migration from JRuby <a href="#migration-from-jruby" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>For many use cases TruffleRuby should work as a drop-in replacement for JRuby.
+However, our approach to integration with Java is different to JRuby so you
+should read our <a href="/reference-manual/ruby/JRubyMigration/">migration guide</a>.</p>
+    
+      <h2 id="contact">
+        
+        
+          Contact <a href="#contact" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The best way to get in touch with us is to join the <code>#truffleruby</code> channel on
+<a href="https://www.graalvm.org/community/#community-support">GraalVM Slack</a>.
+You can also Tweet to <a href="https://twitter.com/truffleruby">@TruffleRuby</a>, or email
+<em>benoit.daloze@oracle.com</em>.</p>
+
+<p>Please report security vulnerabilities via the process outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">reporting vulnerabilities guide</a>, rather than by something public such as a GitHub issue or a Gitter conversation.</p>
+    
+      <h2 id="mailing-list">
+        
+        
+          Mailing List <a href="#mailing-list" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Announcements about GraalVM, including TruffleRuby, are made on the
+<a href="http://mail.openjdk.java.net/mailman/listinfo/graal-dev">graal-dev</a> mailing list.</p>
+    
+      <h2 id="authors">
+        
+        
+          Authors <a href="#authors" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The main authors of TruffleRuby ordered by first contribution are:
+Chris Seaton, Benoit Daloze, Kevin Menard, Petr Chalupa, Brandon Fish, Duncan MacGregor, Christian Wirth, Rafael França, Alan Wu, Nicolas Laurent, Carol Chen, Nikolay Sverchkov, and Lillian Zhang.</p>
+    
+      <h2 id="security">
+        
+        
+          Security <a href="#security" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>See <a href="https://github.com/oracle/truffleruby/blob/master/SECURITY.md">SECURITY</a> for how to report security vulnerabilities to Oracle.
+For known vulnerabilities in Ruby, please refer to the <a href="/reference-manual/ruby/KnownCVEs/">known-cves</a> file.</p>
+    
+      <h2 id="licence">
+        
+        
+          Licence <a href="#licence" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>TruffleRuby is copyright (c) 2013-2021 Oracle and/or its affiliates, and is made
+available to you under the terms of any one of the following three licenses:</p>
+
+<ul>
+  <li>Eclipse Public License version 2.0, or</li>
+  <li>GNU General Public License version 2, or</li>
+  <li>GNU Lesser General Public License version 2.1.</li>
+</ul>
+
+<p>For further licensing information, see <a href="https://github.com/oracle/truffleruby/blob/master/LICENCE.md">LICENCE</a>, <a href="https://github.com/oracle/truffleruby/blob/master/3rd_party_licenses.txt">3rd_party_licenses</a>, and <a href="https://github.com/oracle/truffleruby/blob/master/doc/legal/legal.md">doc/legal/legal</a>.</p>
+    
+      <h2 id="attribution">
+        
+        
+          Attribution <a href="#attribution" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>TruffleRuby includes infrastructure code from <a href="https://github.com/jruby/jruby">JRuby</a> (e.g. parser, JCodings, Joni), core library code from the <a href="https://github.com/rubinius/rubinius">Rubinius</a> project, as well as code from the standard implementation of Ruby, <a href="https://github.com/ruby/ruby">MRI</a>.</p>
 
               </div>
 
