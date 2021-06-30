@@ -10,10 +10,10 @@
 
   <title>
     
-      Java Performance Examples
+      GraalVM
     
   </title>
-  <meta name="description" content="GraalVM is a high-performance runtime for Java and other languages that can increase application throughput and reduce latency; compile applications into sma..."/>
+  <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
   <link rel="apple-touch-icon" sizes="180x180" href="/resources/img/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/resources/img/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/resources/img/favicon/favicon-16x16.png">
@@ -429,7 +429,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/examples/">
+          <a href="/examples/">
             Examples
           </a>
         </li>
@@ -520,7 +520,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/reference-manual/">
+          <a href="/reference-manual/">
             Reference Manuals
           </a>
         </li>
@@ -538,7 +538,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/tools/">
+          <a href="/tools/">
             Debugging and Monitoring Tools
           </a>
         </li>
@@ -556,7 +556,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/graalvm-as-a-platform/">
+          <a href="/graalvm-as-a-platform/">
             GraalVM as a Platform
           </a>
         </li>
@@ -574,7 +574,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/security-guide/">
+          <a href="/security-guide/">
             Security Guide
           </a>
         </li>
@@ -592,7 +592,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/docs/reference-manual/compatibility/">
+          <a href="/compatibility/">
             Compatibility
           </a>
         </li>
@@ -740,82 +740,26 @@ simulate a large load, the same sentence is processed 10 million times:</p>
 
 <p>1. Save the following code snippet to a file named <code>CountUppercase.java</code>:</p>
 
-<div class="snippet-container">
-  <div>
-    <span href="" class="copy-button" onclick="copySnippet(this);">
-      <img src="/resources/img/copy.svg" title="Copy" />
-    </span>
-  </div>
-
-  <!--
-  java
-  jvm/CountUppercase.java
-  -->
-
-  
-
-  
-<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// BEGIN-SNIPPET</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">CountUppercase</span> <span class="o">{</span>
-    <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ITERATIONS</span> <span class="o">=</span> <span class="n">Math</span><span class="o">.</span><span class="na">max</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">getInteger</span><span class="o">(</span><span class="s">"iterations"</span><span class="o">,</span> <span class="mi">1</span><span class="o">),</span> <span class="mi">1</span><span class="o">);</span>
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">String</span> <span class="n">sentence</span> <span class="o">=</span> <span class="n">String</span><span class="o">.</span><span class="na">join</span><span class="o">(</span><span class="s">" "</span><span class="o">,</span> <span class="n">args</span><span class="o">);</span>
-        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">iter</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">iter</span> <span class="o">&lt;</span> <span class="n">ITERATIONS</span><span class="o">;</span> <span class="n">iter</span><span class="o">++)</span> <span class="o">{</span>
-            <span class="k">if</span> <span class="o">(</span><span class="n">ITERATIONS</span> <span class="o">!=</span> <span class="mi">1</span><span class="o">)</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"-- iteration "</span> <span class="o">+</span> <span class="o">(</span><span class="n">iter</span> <span class="o">+</span> <span class="mi">1</span><span class="o">)</span> <span class="o">+</span> <span class="s">" --"</span><span class="o">);</span>
-            <span class="kt">long</span> <span class="n">total</span> <span class="o">=</span> <span class="mi">0</span><span class="o">,</span> <span class="n">start</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">(),</span> <span class="n">last</span> <span class="o">=</span> <span class="n">start</span><span class="o">;</span>
-            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="n">_000_000</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
-                <span class="n">total</span> <span class="o">+=</span> <span class="n">sentence</span><span class="o">.</span><span class="na">chars</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="nl">Character:</span><span class="o">:</span><span class="n">isUpperCase</span><span class="o">).</span><span class="na">count</span><span class="o">();</span>
-                <span class="k">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">%</span> <span class="mi">1</span><span class="n">_000_000</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-                    <span class="kt">long</span> <span class="n">now</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">();</span>
-                    <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"%d (%d ms)%n"</span><span class="o">,</span> <span class="n">i</span> <span class="o">/</span> <span class="mi">1</span><span class="n">_000_000</span><span class="o">,</span> <span class="n">now</span> <span class="o">-</span> <span class="n">last</span><span class="o">);</span>
-                    <span class="n">last</span> <span class="o">=</span> <span class="n">now</span><span class="o">;</span>
-                <span class="o">}</span>
-            <span class="o">}</span>
-            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">printf</span><span class="o">(</span><span class="s">"total: %d (%d ms)%n"</span><span class="o">,</span> <span class="n">total</span><span class="o">,</span> <span class="n">System</span><span class="o">.</span><span class="na">currentTimeMillis</span><span class="o">()</span> <span class="o">-</span> <span class="n">start</span><span class="o">);</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-<span class="c1">// END-SNIPPET</span>
-
-  </code></pre></figure>
-
-
-  
-
-  <script>
-  var beginPattern = "BEGIN-SNIPPET";
-  var endPattern = "END-SNIPPET";
-  var parent = document.currentScript.parentElement;
-  var dropMode = true;
-  function cleanWhitespace(element) {
-    textNodes = element.contents().filter(
-      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
-    ).replaceWith("\n\n");
-    return element;
-  }
-  $(parent).find("figure > pre > code > span").each(function() {
-    var span = $(this);
-    if (dropMode) {
-      this.parentElement.removeChild(this);
-      if (span.text().includes(beginPattern)) {
-        dropMode = false;
-      }
-    } else {
-      if (span.text().includes(endPattern)) {
-        dropMode = true;
-      }
-      if (dropMode) {
-        this.parentElement.removeChild(this);
-      }
+<pre><code class="language-java">public class CountUppercase {
+    static final int ITERATIONS = Math.max(Integer.getInteger("iterations", 1), 1);
+    public static void main(String[] args) {
+        String sentence = String.join(" ", args);
+        for (int iter = 0; iter &lt; ITERATIONS; iter++) {
+            if (ITERATIONS != 1) System.out.println("-- iteration " + (iter + 1) + " --");
+            long total = 0, start = System.currentTimeMillis(), last = start;
+            for (int i = 1; i &lt; 10_000_000; i++) {
+                total += sentence.chars().filter(Character::isUpperCase).count();
+                if (i % 1_000_000 == 0) {
+                    long now = System.currentTimeMillis();
+                    System.out.printf("%d (%d ms)%n", i / 1_000_000, now - last);
+                    last = now;
+                }
+            }
+            System.out.printf("total: %d (%d ms)%n", total, System.currentTimeMillis() - start);
+        }
     }
-  });
-  $(parent).find("figure > pre > code").each(function() {
-    $(this).html($(this).html().trim());
-    cleanWhitespace($(this));
-  });
-  </script>
-
-</div>
+}
+</code></pre>
 
 <p>2. Compile it and run as follows:</p>
 <pre><code class="language-shell">javac CountUppercase.java
@@ -882,130 +826,73 @@ It performs calculations to blend various values for a point of light in a
 rendered scene.</p>
 
 <p>1. Save the following code snippet to a file named <code>Blender.java</code>:</p>
+<pre><code class="language-java">public class Blender {
 
-<div class="snippet-container">
-  <div>
-    <span href="" class="copy-button" onclick="copySnippet(this);">
-      <img src="/resources/img/copy.svg" title="Copy" />
-    </span>
-  </div>
+    private static class Color {
+        double r, g, b;
 
-  <!--
-  java
-  jvm/Blender.java
-  -->
+        private Color(double r, double g, double b) {
+            this.r = r;
+            this.g = g;
+            this.b = b;
+        }
 
-  
+        public static Color color() {
+            return new Color(0, 0, 0);
+        }
 
-  
-<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// BEGIN-SNIPPET</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Blender</span> <span class="o">{</span>
+        public void add(Color other) {
+            r += other.r;
+            g += other.g;
+            b += other.b;
+        }
 
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Color</span> <span class="o">{</span>
-        <span class="kt">double</span> <span class="n">r</span><span class="o">,</span> <span class="n">g</span><span class="o">,</span> <span class="n">b</span><span class="o">;</span>
+        public void add(double nr, double ng, double nb) {
+            r += nr;
+            g += ng;
+            b += nb;
+        }
 
-        <span class="kd">private</span> <span class="nf">Color</span><span class="o">(</span><span class="kt">double</span> <span class="n">r</span><span class="o">,</span> <span class="kt">double</span> <span class="n">g</span><span class="o">,</span> <span class="kt">double</span> <span class="n">b</span><span class="o">)</span> <span class="o">{</span>
-            <span class="k">this</span><span class="o">.</span><span class="na">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">;</span>
-            <span class="k">this</span><span class="o">.</span><span class="na">g</span> <span class="o">=</span> <span class="n">g</span><span class="o">;</span>
-            <span class="k">this</span><span class="o">.</span><span class="na">b</span> <span class="o">=</span> <span class="n">b</span><span class="o">;</span>
-        <span class="o">}</span>
-
-        <span class="kd">public</span> <span class="kd">static</span> <span class="n">Color</span> <span class="nf">color</span><span class="o">()</span> <span class="o">{</span>
-            <span class="k">return</span> <span class="k">new</span> <span class="nf">Color</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
-        <span class="o">}</span>
-
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">add</span><span class="o">(</span><span class="n">Color</span> <span class="n">other</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">r</span> <span class="o">+=</span> <span class="n">other</span><span class="o">.</span><span class="na">r</span><span class="o">;</span>
-            <span class="n">g</span> <span class="o">+=</span> <span class="n">other</span><span class="o">.</span><span class="na">g</span><span class="o">;</span>
-            <span class="n">b</span> <span class="o">+=</span> <span class="n">other</span><span class="o">.</span><span class="na">b</span><span class="o">;</span>
-        <span class="o">}</span>
-
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">add</span><span class="o">(</span><span class="kt">double</span> <span class="n">nr</span><span class="o">,</span> <span class="kt">double</span> <span class="n">ng</span><span class="o">,</span> <span class="kt">double</span> <span class="n">nb</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">r</span> <span class="o">+=</span> <span class="n">nr</span><span class="o">;</span>
-            <span class="n">g</span> <span class="o">+=</span> <span class="n">ng</span><span class="o">;</span>
-            <span class="n">b</span> <span class="o">+=</span> <span class="n">nb</span><span class="o">;</span>
-        <span class="o">}</span>
-
-        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">multiply</span><span class="o">(</span><span class="kt">double</span> <span class="n">factor</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">r</span> <span class="o">*=</span> <span class="n">factor</span><span class="o">;</span>
-            <span class="n">g</span> <span class="o">*=</span> <span class="n">factor</span><span class="o">;</span>
-            <span class="n">b</span> <span class="o">*=</span> <span class="n">factor</span><span class="o">;</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Color</span><span class="o">[][][]</span> <span class="n">colors</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Color</span><span class="o">[</span><span class="mi">100</span><span class="o">][</span><span class="mi">100</span><span class="o">][</span><span class="mi">100</span><span class="o">];</span>
-
-    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span>
-            <span class="kt">long</span> <span class="n">t</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">();</span>
-            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
-                <span class="n">initialize</span><span class="o">(</span><span class="k">new</span> <span class="n">Color</span><span class="o">(</span><span class="n">j</span> <span class="o">/</span> <span class="mi">20</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">));</span>
-            <span class="o">}</span>
-            <span class="kt">long</span> <span class="n">d</span> <span class="o">=</span> <span class="n">System</span><span class="o">.</span><span class="na">nanoTime</span><span class="o">()</span> <span class="o">-</span> <span class="n">t</span><span class="o">;</span>
-            <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">d</span> <span class="o">/</span> <span class="mi">1</span><span class="n">_000_000</span> <span class="o">+</span> <span class="s">" ms"</span><span class="o">);</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-
-    <span class="kd">private</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">initialize</span><span class="o">(</span><span class="n">Color</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">colors</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">x</span><span class="o">++)</span> <span class="o">{</span>
-            <span class="n">Color</span><span class="o">[][]</span> <span class="n">plane</span> <span class="o">=</span> <span class="n">colors</span><span class="o">[</span><span class="n">x</span><span class="o">];</span>
-            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">plane</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">y</span><span class="o">++)</span> <span class="o">{</span>
-                <span class="n">Color</span><span class="o">[]</span> <span class="n">row</span> <span class="o">=</span> <span class="n">plane</span><span class="o">[</span><span class="n">y</span><span class="o">];</span>
-                <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">z</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">row</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">z</span><span class="o">++)</span> <span class="o">{</span>
-                    <span class="n">Color</span> <span class="n">color</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Color</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">,</span> <span class="n">z</span><span class="o">);</span>
-                    <span class="n">color</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">id</span><span class="o">);</span>
-                    <span class="k">if</span> <span class="o">((</span><span class="n">color</span><span class="o">.</span><span class="na">r</span> <span class="o">+</span> <span class="n">color</span><span class="o">.</span><span class="na">g</span> <span class="o">+</span> <span class="n">color</span><span class="o">.</span><span class="na">b</span><span class="o">)</span> <span class="o">%</span> <span class="mi">42</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-                         <span class="c1">// PEA only allocates a color object here.</span>
-                         <span class="n">row</span><span class="o">[</span><span class="n">z</span><span class="o">]</span> <span class="o">=</span> <span class="n">color</span><span class="o">;</span>
-                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-                         <span class="c1">// In this branch the color object is not allocated at all.</span>
-                    <span class="o">}</span>
-                <span class="o">}</span>
-            <span class="o">}</span>
-        <span class="o">}</span>
-    <span class="o">}</span>
-<span class="o">}</span>
-<span class="c1">// END-SNIPPET</span>
-
-  </code></pre></figure>
-
-
-  
-
-  <script>
-  var beginPattern = "BEGIN-SNIPPET";
-  var endPattern = "END-SNIPPET";
-  var parent = document.currentScript.parentElement;
-  var dropMode = true;
-  function cleanWhitespace(element) {
-    textNodes = element.contents().filter(
-      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
-    ).replaceWith("\n\n");
-    return element;
-  }
-  $(parent).find("figure > pre > code > span").each(function() {
-    var span = $(this);
-    if (dropMode) {
-      this.parentElement.removeChild(this);
-      if (span.text().includes(beginPattern)) {
-        dropMode = false;
-      }
-    } else {
-      if (span.text().includes(endPattern)) {
-        dropMode = true;
-      }
-      if (dropMode) {
-        this.parentElement.removeChild(this);
-      }
+        public void multiply(double factor) {
+            r *= factor;
+            g *= factor;
+            b *= factor;
+        }
     }
-  });
-  $(parent).find("figure > pre > code").each(function() {
-    $(this).html($(this).html().trim());
-    cleanWhitespace($(this));
-  });
-  </script>
 
-</div>
+    private static final Color[][][] colors = new Color[100][100][100];
+
+    public static void main(String[] args) {
+        for (int j = 0; j &lt; 10; j++) {
+            long t = System.nanoTime();
+            for (int i = 0; i &lt; 100; i++) {
+                initialize(new Color(j / 20, 0, 1));
+            }
+            long d = System.nanoTime() - t;
+            System.out.println(d / 1_000_000 + " ms");
+        }
+    }
+
+    private static void initialize(Color id) {
+        for (int x = 0; x &lt; colors.length; x++) {
+            Color[][] plane = colors[x];
+            for (int y = 0; y &lt; plane.length; y++) {
+                Color[] row = plane[y];
+                for (int z = 0; z &lt; row.length; z++) {
+                    Color color = new Color(x, y, z);
+                    color.add(id);
+                    if ((color.r + color.g + color.b) % 42 == 0) {
+                         // PEA only allocates a color object here
+                         row[z] = color;
+                    } else {
+                         // Here the color object is not allocated at all
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
 
 <p>2. Compile it and run as follows:</p>
 <pre><code class="language-shell">javac Blender.java

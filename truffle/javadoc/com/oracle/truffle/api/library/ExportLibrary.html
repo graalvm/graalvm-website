@@ -38,11 +38,11 @@
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>21.2.0-dev</b><br>aaa86f7fc03977542f33359c323576de3eb9a49a</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>21.3.0-dev</b><br>44d3ba029ef261aefaf3371e8fee9403c5e88ab4</div>
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../com/oracle/truffle/api/library/DynamicDispatchLibrary.html" title="class in com.oracle.truffle.api.library"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../com/oracle/truffle/api/library/EagerExportProvider.html" title="interface in com.oracle.truffle.api.library"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.Repeat.html" title="annotation in com.oracle.truffle.api.library"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
@@ -266,6 +266,19 @@ public @interface <span class="memberNameLabel">ExportLibrary</span></pre>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.html#transitionLimit--">transitionLimit</a></span></code>
 <div class="block">By default export libraries don't allow changes in the behavior of accepts for a receiver
  instance.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.html#useForAOT--">useForAOT</a></span></code>
+<div class="block">Enables <a href="../../../../../com/oracle/truffle/api/dsl/AOTSupport.html#prepareForAOT-com.oracle.truffle.api.nodes.RootNode-"><code>AOT
+ preparation</code></a> for this export.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.html#useForAOTPriority--">useForAOTPriority</a></span></code>
+<div class="block">Specifies the priority for the export when used for AOT preparation.</div>
 </td>
 </tr>
 </table>
@@ -499,7 +512,7 @@ public @interface <span class="memberNameLabel">ExportLibrary</span></pre>
 <li class="blockList"><a name="transitionLimit--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>transitionLimit</h4>
 <pre>public abstract&nbsp;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;transitionLimit</pre>
@@ -542,6 +555,65 @@ public @interface <span class="memberNameLabel">ExportLibrary</span></pre>
 </ul>
 </li>
 </ul>
+<ul class="blockList">
+<li class="blockList"><a name="useForAOT--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>useForAOT</h4>
+<pre>public abstract&nbsp;boolean&nbsp;useForAOT</pre>
+<div class="block">Enables <a href="../../../../../com/oracle/truffle/api/dsl/AOTSupport.html#prepareForAOT-com.oracle.truffle.api.nodes.RootNode-"><code>AOT
+ preparation</code></a> for this export. An exported library must use the <a href="../../../../../com/oracle/truffle/api/dsl/GenerateAOT.html" title="annotation in com.oracle.truffle.api.dsl"><code>GenerateAOT</code></a> annotation
+ on the library class to allow exports to enable AOT. Multiple AOT exports may be specified
+ for each library. The library may be used for implicit and explicit receivers, dynamic
+ dispatch and default exports. Merged libraries are currently not supported for AOT enabled
+ exports. A <a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.html#useForAOTPriority--"><code>priority</code></a> must be set in order to resolve a
+ deterministic order for AOT initialized exports.
+ <p>
+ All exported libraries with AOT enabled are loaded and initialized eagerly when a library
+ that supports AOT is used for the first time. In order for this to work the exported library
+ automatically generates subclass of <a href="../../../../../com/oracle/truffle/api/library/EagerExportProvider.html" title="interface in com.oracle.truffle.api.library"><code>EagerExportProvider</code></a> and registers it in the
+ meta-inf directory as a service provider. When the language is compiled using native-image
+ then this is not necessary as native-image compilation discovers all AOT exports for a
+ library during native image generation.</div>
+<dl>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>21.2</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>false</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="useForAOTPriority--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>useForAOTPriority</h4>
+<pre>public abstract&nbsp;int&nbsp;useForAOTPriority</pre>
+<div class="block">Specifies the priority for the export when used for AOT preparation. A higher priority
+ indicates that this export should be ordered earlier in the code rather than later. For
+ example if a library has two exports and one has a higher priority then the export with the
+ higher priority with be inserted first in the inline cache. Consequently, the library export
+ accepts method will be invoked earlier for a higher priority.</div>
+<dl>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>21.2</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>0</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 </ul>
 </div>
@@ -564,11 +636,11 @@ public @interface <span class="memberNameLabel">ExportLibrary</span></pre>
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>21.2.0-dev</b><br>aaa86f7fc03977542f33359c323576de3eb9a49a</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>21.3.0-dev</b><br>44d3ba029ef261aefaf3371e8fee9403c5e88ab4</div>
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../com/oracle/truffle/api/library/DynamicDispatchLibrary.html" title="class in com.oracle.truffle.api.library"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../com/oracle/truffle/api/library/EagerExportProvider.html" title="interface in com.oracle.truffle.api.library"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../com/oracle/truffle/api/library/ExportLibrary.Repeat.html" title="annotation in com.oracle.truffle.api.library"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
