@@ -409,6 +409,17 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
+            <a href="/reference-manual/native-image/Agent/">
+              Tracing Agent
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
             <a href="/reference-manual/native-image/Limitations/">
               Native Image Compatibility and Optimization Guide
             </a>
@@ -928,6 +939,53 @@ Thus if you execute the image above it will not contain <code>foo</code> in the 
   <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> to <code>native-image</code> affects properties seen at image build time.</li>
   <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> to an image execution affects properties seen at image run time.</li>
 </ul>
+    
+      <h2 id="access-environment-variables-at-run-time">
+        
+        
+          Access Environment Variables at Run Time <a href="#access-environment-variables-at-run-time" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Native image can also access environment variables at runtime.
+Consider the following example.</p>
+
+<ol>
+  <li>Save this Java code into <em>EnvMap.java</em> file:
+  ```java
+  import java.util.Map;</li>
+</ol>
+
+<p>public class EnvMap {
+      public static void main (String[] args) {
+          var filter = args.length &gt; 0 ? args[0] : “”;
+          Map&lt;String, String&gt; env = System.getenv();
+          for (String envName : env.keySet()) {
+              if(envName.contains(filter)) continue;
+              System.out.format(“%s=%s%n”,
+                                envName,
+                                env.get(envName));
+          }
+      }
+  }</p>
+<pre><code>  This code iterates over the environment variables and prints out the ones passing through the filter, passed as the command line argument.
+
+2. Compile and build a native image:
+  ```shell
+  javac EnvMap.java
+  native-image EnvMap
+</code></pre>
+<ol>
+  <li>Run the resulting native image and pass some argument. It will correctly print out the values of the environment variables. For example:
+    <pre><code class="language-shell">  ./envmap HELLO
+  HELLOWORLD=hello world
+  export HELLOWORLD="world"
+  ./envmap HELLO
+  HELLOWORLD=world
+</code></pre>
+  </li>
+</ol>
 
               </div>
 
