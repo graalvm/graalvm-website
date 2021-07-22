@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/AOT/">
+  <link rel="canonical" href="https://www.graalvm.org/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -684,13 +684,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
               Truffle Approach to the Compilation Queue
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -717,31 +735,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/graalvm-as-a-platform/language-implementation-framework/AOT/">
               Truffle AOT Compilation
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -920,65 +920,161 @@ $(document).ready(function(){
 
             <div class="col-sm-9 no-padding">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="truffle-aot-tutorial">
+                <h1 id="truffle-approach-to-the-compilation-queue">
         
         
-          Truffle AOT Tutorial
+          Truffle Approach to the Compilation Queue
         
         
       </h1>
 
-<p>Many statically compiled languages, like C are designed to be compilable without prior execution.
-By default, Truffle first interprets code before it is compiled.
-In order to improve warmup speed of static languages AOT compilation can be supported.
-The following tutorial describes how to support Truffle AOT in your language, how to trigger and test it.</p>
+<p>As of version 21.2.0 Truffle has a new approach to compilation queueing.
+This document gives motivation and an overview of this approach.</p>
     
-      <h2 id="language-support">
+      <h2 id="what-is-a-compilation-queue">
         
         
-          Language Support <a href="#language-support" class="anchor_heading">#</a>
+          What is a Compilation queue? <a href="#what-is-a-compilation-queue" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>In order for languages to support AOT compilation the language needs to implement the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#prepareForAOT--">RootNode.prepareForAOT()</a> method.
-The language implementation can indicate support for AOT by returning a non <code>null</code> value in this method.
-The goal for implementing a root node for AOT is to prepare all the AST nodes such that they no longer deoptimize when they are compiled without prior execution.</p>
+<p>During execution of guest code each Truffle call target counts how many times it was executed as well as how many loop iterations happened during those executions (i.e. the target’s “call and loop count”).
+Once this counter reaches a certain threshold the call target is deemed “hot” and scheduled for compilation.
+In order to minimize the impact this has on the execution of the guest code the notion that the target should be compiled is made concrete as a <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.runtime/src/org/graalvm/compiler/truffle/runtime/CompilationTask.java">compilation task</a> and placed into a <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.runtime/src/org/graalvm/compiler/truffle/runtime/BackgroundCompileQueue.java">compilation queue</a> to await compilation.
+The Truffle runtime spawns several compiler threads (<code>--engine.CompilerThreads</code>) that take tasks from the queue and compile the specified call targets.</p>
 
-<p>Typical actions performed in an implementation of this method are:</p>
+<p>The initial implementation of the compilation queue in Truffle was a straightforward FIFO queue.
+This approach has important limitations with respect to warmup characteristics of the guest code execution.
+Namely, not all call targets are equally important to compile.
+The aim is to identify targets which account for more execution time and compile them first, thus reaching better performance sooner.
+Since call targets are queued for compilation when a counter reaches a certain threshold a FIFO queue would compile targets in order of reaching that threshold, which in practise does not correlate to actual execution time.</p>
 
-<ul>
-  <li>Initialize local variable types in the FrameDescriptor of the root node. If a language uses local variables and their types are known, then this information must be provided to the FrameDescriptor. This step can often be done already during parsing.</li>
-  <li>Compute the expected execution signature of a root node and return it. This step requires the parser to infer expected types
-for arguments and return values.</li>
-  <li>Prepare specializing nodes with profiles that do not invalidate on first execution. Truffle DSL supports preparation of specializing nodes for AOT. See the example AOT language for details.</li>
-</ul>
+<p>Consider the following toy JavaScript example:</p>
+
+<pre><code class="language-js">function lowUsage() {
+    for (i = 0; i &lt; COMPILATION_THRESHOLD; i++) {
+        // Do something
+    }
+}
+
+function highUsage() {
+    for (i = 0; i &lt; 100 * COMPILATION_THRESHOLD; i++) {
+        // Do something
+    }
+}
+
+while(true) {
+    lowUsage();
+    highUsage();
+}
+</code></pre>
+
+<p>Both the <code>lowUsage</code> and the <code>highUsage</code> function will reach a high enough call and loop count threshold even on the first execution, but the <code>lowUsage</code> function will reach it first.
+Using a FIFO queue, we would compile the <code>lowUsage</code> function first, even though this example illustrates that the <code>highUsage</code> function should be compiled first in order to reach better performance sooner.</p>
     
-      <h3 id="trigger-aot-compilation">
+      <h2 id="traversing-compilation-queue">
         
         
-          Trigger AOT compilation <a href="#trigger-aot-compilation" class="anchor_heading">#</a>
+          Traversing Compilation Queue <a href="#traversing-compilation-queue" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>AOT compilation can be triggered and tested by using the <code>--engine.CompileAOTOnCreate=true</code> option.
-This will trigger AOT compilation for every created call target with a root node that supports AOT compilation.
-A root node supports AOT compilation if it returns a non null value in <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#prepareForAOT--">RootNode.prepareForAOT()</a>.
-Note that enabling this flag will also disable background compilation which makes it not suitable for production usage.</p>
+<p>The new compilation queue in Truffle, colloquially called <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.runtime/src/org/graalvm/compiler/truffle/runtime/TraversingBlockingQueue.java">“Traversing Compilation Queue”</a>, takes a more dynamic approach to selecting the order in which targets are compiled.
+Every time a compiler thread requests the next compilation task the queue will traverse all the entries in the queue and pick the one with the highest priority.</p>
+
+<p>A task’s priority is <a href="https://github.com/oracle/graal/blob/c7c061b3230852e9582badf788b3dab74a809ca9/compiler/src/org.graalvm.compiler.truffle.runtime/src/org/graalvm/compiler/truffle/runtime/CompilationTask.java#L209">determined based on several factors</a>.</p>
+
+<p>For starters, targets scheduled for <a href="https://medium.com/graalvm/multi-tier-compilation-in-graalvm-5fbc65f92402">first-tier compilation</a> (i.e. first-tier tasks) always have higher priority than second-tier tasks.
+The rational behind this is that performance difference between executing code in the interpreter and executing it in first-tier compiled code is much greater then the difference between tier-one and tier-two compiled code, meaning that we get more benefit from compiling these targets sooner.
+Also, first-tier compilations are usually take less time, thus one compiler thread can finish multiple first-tier compilations in the same time it takes to complete one second-tier compilation.
+This approach has been shown to underperform in certain scenarios and might be improved upon in the coming versions.</p>
+
+<p>When comparing two tasks of the same tier, we first consider their compilation history and give priority to tasks which were previously compiled with a higher compiler tier.
+For example, if a call target get first-tier compiled, then gets invalidated for some reason and then gets queued for a first-tier compilation again, it takes priority over all other first tier targets that have never before been compiled.
+The reasoning is that if it was previously compiled, it is obviously important and should not be penalized more than necessary by its invalidation.</p>
+
+<p>Finally, if the two previous conditions can’t differentiate the priority between two tasks we give priority to the task with the higher “weight”.
+The weight is a function of the target’s call and loop count and time.
+It is defined as a product of the target’s call and loop count with the rate at which that call and loop count has grown in the past 1ms.
+Using the target’s call and loop count as a proxy for amount of time spent executing that call target, this metric aims to balance total time spent executing that call target with the recent growth of that time.
+This gives a priority boost to targets that are currently “very hot” when comparing to targets that were “hot” but are not being executed a lot currently.</p>
+
+<p>For performance reasons the weight for tasks is cached and reused for a period of 1ms. If the cached value is older than 1ms, it is recalculated.</p>
+
+<p>The traversing compilation queue is on by default as of version 21.2.0 and can be disabled using <code>--engine.TraversingCompilationQueue=false</code>.</p>
     
-      <h3 id="example-usage">
+      <h2 id="dynamic-compilation-thresholds">
         
         
-          Example Usage <a href="#example-usage" class="anchor_heading">#</a>
+          Dynamic Compilation Thresholds <a href="#dynamic-compilation-thresholds" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>Use the following documented and executable Truffle language as inspiration for AOT support:
-<a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/AOTTutorial.java">AOT Tutorial</a></p>
+<p>One problem of the traversing compilation queue is that it needs to traverse all the entries in the queue to get up-to-date weights and choose the highest priority task.
+This does not have a significant performance impact as long as the size of the queue remains reasonable.
+This means that in order to always choose the highest priority task in a reasonable about of time we need to ensure that the queue does not grow indefinitely.</p>
 
-<p>The example is executable as mx unittest using <code>mx unittest AOTTutorial</code>.</p>
+<p>This is achieved by an approach we call <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.runtime/src/org/graalvm/compiler/truffle/runtime/DynamicThresholdsQueue.java">“dynamic compilation thresholds”</a>.
+Simply put, dynamic compilation thresholds means that the compilation threshold (the one each call target’s call and loop count is compared against when determining whether to compile it) may change over time depending on the state of the queue.
+If the queue is overloaded we aim to increase the compilation thresholds to reduce the number of incoming compilation tasks, i.e. targets need to be “more hot” to get scheduled for compilation.
+On the other hand, if the queue is close to empty, we can reduce the compilation thresholds to allow more targets to get scheduled for compilation, i.e. the compilation threads are in danger of idling so let’s give them even “less hot” targets to compile.</p>
+
+<p>We call this changing of the thresholds “scaling” as the thresholds are in practice just multiple by a “scale factor” determined by a <code>scale</code> function.
+The scale function takes as input the “load” of the queue, which is the number of tasks in the queue divided by the number of compiler threads.
+We intentionally control for the number of compiler threads since the raw number of tasks in the queue is not a good proxy of how much compilation pressure there is.
+For example, let’s assume that an average compilation takes 100ms and that there are 160 tasks in the queue.
+A runtime with 16 threads will finish all the tasks in approximately <code>10 * 100ms</code> i.e. 1 second.
+On the other hand, a runtime with 2 compiler thread will take approximately <code>80 * 100ms</code>, i.e. 8 seconds.</p>
+
+<p>The scale function is defined by 3 parameters: <code>--engine.DynamicCompilationThresholdsMinScale</code>, <code>--engine.DynamicCompilationThresholdsMinNormalLoad</code> and <code>DynamicCompilationThresholdsMaxNormalLoad</code>.</p>
+
+<p>The <code>--engine.DynamicCompilationThresholdsMinScale</code> option defines how low we are willing to scale the thresholds.
+It has a default value of 0.1, meaning that the compilation thresholds will never be scaled below 10% of their default value.
+This in practice means that, by definition, <code>scale(0) = DynamicCompilationThresholdsMinScale</code> or for default values <code>scale(0) = 0.1</code></p>
+
+<p>The <code>--engine.DynamicCompilationThresholdsMinNormalLoad</code> option defines the minimal load at which compilation thresholds will not be scaled.
+This means that as long as the load of the queue is above this value the runtime will not <em>scale down</em> the compilation thresholds.
+This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMinScale) = 1</code> or for default values <code>scale(10) = 1</code></p>
+
+<p>The <code>--engine.DynamicCompilationThresholdsMaxNormalLoad</code> option defines the maximal load at which compilation thresholds will not be scaled.
+This means that as long as the load of the queue is below this value the runtime will not <em>scale up</em> the compilation thresholds.
+This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMaxScale) = 1</code> or for default values <code>scale(90) = 1</code></p>
+
+<p>So far we’ve defined the <code>scale</code> function at 3 points.
+For all values between those points the <code>scale</code> function is a straight line connecting those two points.
+This means that for all values between the minimal and maximal normal load the scale function is 1 by definition.
+For values between 0 and the minimal normal load the <code>scale</code> function grows linearly between the minimal scale and 1.
+Let’s define the slope of this function as <code>s</code>.
+Now, for the remainder of the functions domain, i.e. the values greater than the maximum normal load, we define <code>scale</code> to be a linear function with slope <code>s</code> passing through the point <code>(DynamicCompilationThresholdsMaxNormalLoad, 1)</code>.</p>
+
+<p>The following is an ASCII art plot of the scale function which should illustrate how it’s defined.</p>
+
+<pre><code>          ^ scale
+          |
+          |                                            /
+          |                                           /
+          |                                          /
+          |                                         /
+          |                                        /
+          |                                       /
+        1 |..... ________________________________/
+          |     /.                               .
+          |    / .                               .
+          |   /  .                               .
+          |  /   .                               .
+          | /    .                               .
+MinScale &gt;|/     .                               .
+          |      .                               .
+          |_______________________________________________________&gt; load
+         0       ^                               ^
+              MinNormalLoad                   MaxNormalLoad
+</code></pre>
+
+<p>The dynamic thresholds only work with the traversing compilation queue and are on by default as of version 21.2.0.
+They can be disabled with <code>--engine.DynamicCompilationThresholds=false</code>.</p>
 
               </div>
 
