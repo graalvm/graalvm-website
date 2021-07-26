@@ -995,7 +995,7 @@ If there are nodes you think should be there in a benchmark that are not, think 
 <pre><code class="language-shell">[engine] opt done     EqualityConstraint.execute                                  |AST   17|Tier      2|Time  152( 143+9   )ms|Inlined   2Y   0N|IR   266/  300|CodeSize   1010|Addr 0x7f60068c82d0|Src octane-deltablue.js:528
 </code></pre>
 
-<p>The <code>--engine.TraceCompilationDetail</code> command prints a line when compilation is queued, started, or completed:</p>
+<p>The <code>--engine.TraceCompilationDetails</code> command prints a line when compilation is queued, started, or completed:</p>
 
 <pre><code class="language-shell">[engine] opt queued   BinaryConstraint.output                                     |AST   19|Tier      2|Calls/Thres    1000/    3|CallsAndLoop/Thres    1000/ 1000|Src octane-deltablue.js:416|QueueSize      0|Time 1725905750
 [engine] opt start    BinaryConstraint.output                                     |AST   19|Tier      2|Calls/Thres    1000/    3|CallsAndLoop/Thres    1000/ 1000|Src octane-deltablue.js:416|QueueSize      0|Time 1734518023
@@ -1050,26 +1050,6 @@ If there are nodes you think should be there in a benchmark that are not, think 
 
 <pre><code class="language-shell">[engine] split   0-4310d43-1     Strength                                                    |ASTSize       6/    6 |Calls/Thres       2/    3 |CallsAndLoop/Thres       2/ 1000 |SourceSection /Users/christianhumer/graal/4dev/js-benchmarks/octane-deltablue.js~139:4062-4089
 [engine] split   1-4b0d79fc-1     Strength                                                    |ASTSize       6/    6 |Calls/Thres       2/    3 |CallsAndLoop/Thres       2/ 1000 |SourceSection /Users/christianhumer/graal/4dev/js-benchmarks/octane-deltablue.js~140:4119-4150
-</code></pre>
-
-<p>The <code>--engine.TraceTransferToInterpreter</code> command prints a stack trace on explicit internal invalidations:</p>
-
-<pre><code class="language-shell">[engine] transferToInterpreter at
-  BinaryConstraint.output(../../../../4dev/js-benchmarks/octane-deltablue.js:416)
-    Constraint.satisfy(../../../../4dev/js-benchmarks/octane-deltablue.js:183)
-    Planner.incrementalAdd(../../../../4dev/js-benchmarks/octane-deltablue.js:597) &lt;split-609bcfb6&gt;
-    Constraint.addConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:165) &lt;split-7d94beb9&gt;
-    UnaryConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:219) &lt;split-560348e6&gt;
-    Function.prototype.call(&lt;builtin&gt;:1) &lt;split-1df8b5b8&gt;
-    EditConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:315) &lt;split-23202fce&gt;
-    ...
-  com.oracle.truffle.api.CompilerDirectives.transferToInterpreterAndInvalidate(CompilerDirectives.java:90)
-    com.oracle.truffle.js.nodes.access.PropertyCacheNode.deoptimize(PropertyCacheNode.java:1269)
-    com.oracle.truffle.js.nodes.access.PropertyGetNode.getValueOrDefault(PropertyGetNode.java:305)
-    com.oracle.truffle.js.nodes.access.PropertyGetNode.getValueOrUndefined(PropertyGetNode.java:191)
-    com.oracle.truffle.js.nodes.access.PropertyNode.executeWithTarget(PropertyNode.java:153)
-    com.oracle.truffle.js.nodes.access.PropertyNode.execute(PropertyNode.java:140)
-    ...
 </code></pre>
 
 <p>The <code>--engine.TracePerformanceWarnings=(call|instanceof|store|all)</code> command prints code which may not be ideal for performance. The <code>call</code> enables warnings when partial evaluation cannot inline the virtual runtime call. The <code>instanceof</code> enables warnings when partial evaluation cannot resolve virtual instanceof to an exact type.
@@ -1391,32 +1371,6 @@ See <a href="/graalvm-as-a-platform/language-implementation-framework/Specializa
 |   [doObject]                                                                   7 (88%)            21 (84%)        Min=         1 Avg=        3.00 Max=          5  MaxNode= test.js~5-7:76-128
  -----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 </code></pre>
-
-<p>The <code>--vm.XX:+TraceDeoptimization</code> command prints deoptimization events, whether the code is compiled by Truffle or conventional compilers (the output of HotSpot and native images may vary for this flag):</p>
-
-<pre><code class="language-shell">Uncommon trap   bci=9 pc=0x00000001097f2235, relative_pc=501, method=com.oracle.truffle.js.nodes.access.PropertyNode.executeInt(Ljava/lang/Object;Ljava/lang/Object;)I, debug_id=0
-Uncommon trap occurred in org.graalvm.compiler.truffle.runtime.OptimizedCallTarget::profiledPERoot compiler=JVMCI compile_id=2686 (JVMCI: installed code name=BinaryConstraint.output#2)  (@0x00000001097f2235) thread=5891 reason=transfer_to_interpreter action=reinterpret unloaded_class_index=-1 debug_id=0
-</code></pre>
-
-<p>The <code>--vm.XX:+TraceDeoptimizationDetails</code> command prints more information (only available for native images):</p>
-
-<pre><code class="language-shell">[Deoptimization initiated
-    name: BinaryConstraint.output
-    sp: 0x7ffee7324d90  ip: 0x1126c51a8
-    reason: TransferToInterpreter  action: InvalidateReprofile
-    debugId: 3  speculation: jdk.vm.ci.meta.SpeculationLog$NoSpeculationReason@10f942aa0
-[Deoptimization of frame
-    name: BinaryConstraint.output
-    sp: 0x7ffee7324d90  ip: 0x1126c51a8
-    stack trace where execution continues:
-        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:475) bci 0  return address 0x10aab9e5e
-            org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:475)
-            bci: 0  deoptMethodOffset: 35524160  deoptMethod: 0x10aab9e40  return address: 0x10aab9e5e  offset: 0
-            slot 0  kind: Object  value: com.oracle.svm.truffle.api.SubstrateOptimizedCallTarget@0x112cbbaa0  offset: 64
-            slot 1  kind: Object  value: [Ljava.lang.Object;@0x1144a7db0  offset: 56
-]
-]
-</code></pre>
     
       <h2 id="controlling-what-is-compiled">
         
@@ -1448,6 +1402,127 @@ Uncommon trap occurred in org.graalvm.compiler.truffle.runtime.OptimizedCallTarg
     <p><code>--engine.Compilation=false</code> turns off Truffle compilation all together.</p>
   </li>
 </ul>
+    
+      <h2 id="debugging-deoptimizations">
+        
+        
+          Debugging Deoptimizations <a href="#debugging-deoptimizations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Sometimes compiled code deoptimizes (goes from Truffle compiled code back to the interpreter) unexpectedly.
+These are some ways to investigate why the code is deoptimized.</p>
+
+<p>When using native images, you need to build the native image with <code>-H:+IncludeNodeSourcePositions</code> to enable stack traces for deoptimizations.
+These are disabled by default to save on image size.</p>
+
+<p>On natives images, <code>--engine.TraceTransferToInterpreter</code> prints an accurate stack trace for any deoptimization, it is effectively the same as <code>--vm.XX:+TraceDeoptimization --engine.NodeSourcePositions</code>.
+This is often the most efficient way to find where a deoptimization comes from thanks to the stracktrace.</p>
+
+<pre><code class="language-shell">[Deoptimization initiated
+    name: String#[]
+    sp: 0x7ffd7b992710  ip: 0x7f26a8d8079f
+    reason: TransferToInterpreter  action: InvalidateReprofile
+    debugId: 25  speculation: jdk.vm.ci.meta.SpeculationLog$NoSpeculationReason@13dbed9e
+    stack trace that triggered deoptimization:
+        at org.truffleruby.core.string.StringNodesFactory$StringSubstringPrimitiveNodeFactory$StringSubstringPrimitiveNodeGen.execute(StringNodesFactory.java:12760)
+        at org.truffleruby.core.string.StringNodes$GetIndexNode.substring(StringNodes.java:836)
+        at org.truffleruby.core.string.StringNodes$GetIndexNode.getIndex(StringNodes.java:650)
+        at org.truffleruby.core.string.StringNodesFactory$GetIndexNodeFactory$GetIndexNodeGen.execute(StringNodesFactory.java:1435)
+        at org.truffleruby.language.RubyCoreMethodRootNode.execute(RubyCoreMethodRootNode.java:53)
+        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.executeRootNode(OptimizedCallTarget.java:632)
+        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:603)
+[Deoptimization of frame
+    name: String#[]
+    sp: 0x7ffd7b992710  ip: 0x7f26a8d8079f
+    stack trace where execution continues:
+        at org.truffleruby.core.string.StringNodesFactory$StringSubstringPrimitiveNodeFactory$StringSubstringPrimitiveNodeGen.execute(StringNodesFactory.java:12760) bci 99  return address 0x4199a1d
+        at org.truffleruby.core.string.StringNodes$GetIndexNode.substring(StringNodes.java:836) bci 32 duringCall  return address 0x41608e0
+        at org.truffleruby.core.string.StringNodes$GetIndexNode.getIndex(StringNodes.java:650) bci 25 duringCall  return address 0x415f197
+        at org.truffleruby.core.string.StringNodesFactory$GetIndexNodeFactory$GetIndexNodeGen.execute(StringNodesFactory.java:1435) bci 109 duringCall  return address 0x4182391
+        at org.truffleruby.language.RubyCoreMethodRootNode.execute(RubyCoreMethodRootNode.java:53) bci 14 duringCall  return address 0x4239a29
+        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.executeRootNode(OptimizedCallTarget.java:632) bci 9 duringCall  return address 0x3f1c4c9
+        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:603) bci 37 duringCall  return address 0x3f1d965
+]
+]
+</code></pre>
+
+<p>On HotSpot, <code>--engine.TraceTransferToInterpreter</code> prints a stack trace only for explicit deoptimizations via <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code> or <code>CompilerDirectives.transferToInterpreter()</code>.
+The reported location can be incorrect if the deoptimization was caused by something else.
+In that case it will report the stracktrace of the next <code>CompilerDirectives.transferToInterpreter*</code> call even though it is not the cause.</p>
+
+<pre><code class="language-shell">[engine] transferToInterpreter at
+  BinaryConstraint.output(../../../../4dev/js-benchmarks/octane-deltablue.js:416)
+    Constraint.satisfy(../../../../4dev/js-benchmarks/octane-deltablue.js:183)
+    Planner.incrementalAdd(../../../../4dev/js-benchmarks/octane-deltablue.js:597) &lt;split-609bcfb6&gt;
+    Constraint.addConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:165) &lt;split-7d94beb9&gt;
+    UnaryConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:219) &lt;split-560348e6&gt;
+    Function.prototype.call(&lt;builtin&gt;:1) &lt;split-1df8b5b8&gt;
+    EditConstraint(../../../../4dev/js-benchmarks/octane-deltablue.js:315) &lt;split-23202fce&gt;
+    ...
+  com.oracle.truffle.api.CompilerDirectives.transferToInterpreterAndInvalidate(CompilerDirectives.java:90)
+    com.oracle.truffle.js.nodes.access.PropertyCacheNode.deoptimize(PropertyCacheNode.java:1269)
+    com.oracle.truffle.js.nodes.access.PropertyGetNode.getValueOrDefault(PropertyGetNode.java:305)
+    com.oracle.truffle.js.nodes.access.PropertyGetNode.getValueOrUndefined(PropertyGetNode.java:191)
+    com.oracle.truffle.js.nodes.access.PropertyNode.executeWithTarget(PropertyNode.java:153)
+    com.oracle.truffle.js.nodes.access.PropertyNode.execute(PropertyNode.java:140)
+    ...
+</code></pre>
+
+<p>On HotSpot, <code>--vm.XX:+UnlockDiagnosticVMOptions --vm.XX:+DebugNonSafepoints --vm.XX:+TraceDeoptimization</code> prints all deoptimization events (but no stacktraces), whether the code is compiled by Truffle or conventional compilers.
+The <code>TraceDeoptimization</code> option might require using a <code>fastdebug</code> JDK.</p>
+
+<pre><code class="language-shell">Uncommon trap   bci=9 pc=0x00000001097f2235, relative_pc=501, method=com.oracle.truffle.js.nodes.access.PropertyNode.executeInt(Ljava/lang/Object;Ljava/lang/Object;)I, debug_id=0
+Uncommon trap occurred in org.graalvm.compiler.truffle.runtime.OptimizedCallTarget::profiledPERoot compiler=JVMCI compile_id=2686 (JVMCI: installed code name=BinaryConstraint.output#2)  (@0x00000001097f2235) thread=5891 reason=transfer_to_interpreter action=reinterpret unloaded_class_index=-1 debug_id=0
+</code></pre>
+
+<p>Finally, on native images, <code>--vm.XX:+TraceDeoptimizationDetails</code> prints additional information:</p>
+
+<pre><code class="language-shell">[Deoptimization initiated
+    name: BinaryConstraint.output
+    sp: 0x7ffee7324d90  ip: 0x1126c51a8
+    reason: TransferToInterpreter  action: InvalidateReprofile
+    debugId: 3  speculation: jdk.vm.ci.meta.SpeculationLog$NoSpeculationReason@10f942aa0
+[Deoptimization of frame
+    name: BinaryConstraint.output
+    sp: 0x7ffee7324d90  ip: 0x1126c51a8
+    stack trace where execution continues:
+        at org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:475) bci 0  return address 0x10aab9e5e
+            org.graalvm.compiler.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:475)
+            bci: 0  deoptMethodOffset: 35524160  deoptMethod: 0x10aab9e40  return address: 0x10aab9e5e  offset: 0
+            slot 0  kind: Object  value: com.oracle.svm.truffle.api.SubstrateOptimizedCallTarget@0x112cbbaa0  offset: 64
+            slot 1  kind: Object  value: [Ljava.lang.Object;@0x1144a7db0  offset: 56
+]
+]
+</code></pre>
+
+<p>You might notice the presence of a <code>debugId</code> or <code>debug_id</code> in the output of these options.
+This id might only be set if you also enable dumping, e.g., via <code>--vm.Dgraal.Dump=Truffle:1</code> (see below).
+In that case, the debug id will correspond to the id of a node in the IGV graph.
+First, open the first phase of the relevant compilation.
+That id can be searched via <code>id=NUMBER</code> in IGV’s <code>Search in Nodes</code> search box,
+then selecting <code>Open Search for node NUMBER in Node Searches window</code>,
+and then clicking the <code>Search in following phases</code> button.</p>
+    
+      <h2 id="debugging-invalidations">
+        
+        
+          Debugging Invalidations <a href="#debugging-invalidations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Invalidations happen when a compiled CallTarget is thrown away.</p>
+
+<p>The most common causes are:</p>
+<ul>
+  <li>An explicit <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code> (an internal invalidation)</li>
+  <li>One of the <code>Assumption</code> used by that CallTarget has been invalidated (an external invalidation).
+Use <code>--engine.TraceAssumptions</code> to trace those with more details.</li>
+</ul>
+
+<p>The <code>--engine.TraceCompilation</code> option also shows CallTarget invalidations with an <code>[engine] opt inv.</code> prefix.</p>
     
       <h2 id="ideal-graph-visualizer">
         
