@@ -116,10 +116,12 @@ extends <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?
 implements <a href="http://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html?is-external=true" title="class or interface in java.io">Closeable</a></pre>
 <div class="block">Implementation of a sampling based profiler for
  Truffle languages built on top of the
- Truffle instrumentation framework.
+ Truffle safepoints and
+ <code>iterateFrames()</code>.
  <p>
- The sampler keeps a shadow stack during execution. This shadow stack is sampled at regular
- intervals, i.e. the state of the stack is copied and saved into trees of <a href="../../../../../com/oracle/truffle/tools/profiler/ProfilerNode.html" title="class in com.oracle.truffle.tools.profiler">nodes</a>, which represent the profile of the execution.
+ The sampler samples the stack of each thread at regular intervals by using Truffle safepoints.
+ The state of the stack is copied and saved into trees of <a href="../../../../../com/oracle/truffle/tools/profiler/ProfilerNode.html" title="class in com.oracle.truffle.tools.profiler">nodes</a>, which
+ represent the profile of the execution.
  <p>
  Usage example: <pre><code>Context</code> context = <code>Context</code>.create();
 
@@ -163,7 +165,7 @@ sampler.close();
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/tools/profiler/CPUSampler.Payload.html" title="class in com.oracle.truffle.tools.profiler">CPUSampler.Payload</a></span></code>
-<div class="block">Wrapper for information on how many times an element was seen on the shadow stack.</div>
+<div class="block">Wrapper for information on how many times an element was seen on the stack.</div>
 </td>
 </tr>
 </table>
@@ -352,7 +354,8 @@ sampler.close();
 <pre>public&nbsp;long&nbsp;getPeriod()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>the sampling period i.e. the time between two samples of the shadow stack are taken.</dd>
+<dd>the sampling period i.e. the time between two samples of the stack are taken, in
+         milliseconds.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.30</dd>
 </dl>
@@ -365,7 +368,8 @@ sampler.close();
 <li class="blockList">
 <h4>setPeriod</h4>
 <pre>public&nbsp;void&nbsp;setPeriod(long&nbsp;samplePeriod)</pre>
-<div class="block">Sets the sampling period i.e. the time between two samples of the shadow stack are taken.</div>
+<div class="block">Sets the sampling period i.e. the time between two samples of the stack are taken, in
+ milliseconds.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>samplePeriod</code> - the new sampling period.</dd>
@@ -400,7 +404,7 @@ sampler.close();
 <pre>public&nbsp;int&nbsp;getStackLimit()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>size of the shadow stack</dd>
+<dd>the maximum amount of stack frames that are sampled.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.30</dd>
 </dl>
@@ -417,7 +421,7 @@ sampler.close();
  than the provided size during execution can be checked with <a href="../../../../../com/oracle/truffle/tools/profiler/CPUSampler.html#hasStackOverflowed--">CPUSampler.hasStackOverflowed()</a></div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>stackLimit</code> - the new size of the shadow stack</dd>
+<dd><code>stackLimit</code> - the maximum amount of stack frames that are sampled</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.30</dd>
 </dl>
@@ -464,7 +468,8 @@ sampler.close();
 <pre>public&nbsp;boolean&nbsp;hasStackOverflowed()</pre>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>was the shadow stack size insufficient for the execution.</dd>
+<dd>was the the maximum amount of stack frames that are sampled insufficient for the
+         execution.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.30</dd>
 </dl>
