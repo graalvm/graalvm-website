@@ -72,7 +72,9 @@
 <div class="docSummary">
 <div class="block">Support for generating <code>.hprof</code> files in <a target="_blank" href=
  "http://hg.openjdk.java.net/jdk6/jdk6/jdk/raw-file/tip/src/share/demo/jvmti/hprof/manual.html">
- Java Profiler Heap Dump Format</a>.</div>
+ Java Profiler Heap Dump Format</a> and a
+ <code>TruffleInstrument</code> to capture <em>heap dumps</em>
+ from Truffle languages.</div>
 </div>
 <p>See:&nbsp;<a href="#package.description">Description</a></p>
 </div>
@@ -104,7 +106,30 @@
 <h2 title="Package org.graalvm.tools.insight.heap Description">Package org.graalvm.tools.insight.heap Description</h2>
 <div class="block">Support for generating <code>.hprof</code> files in <a target="_blank" href=
  "http://hg.openjdk.java.net/jdk6/jdk6/jdk/raw-file/tip/src/share/demo/jvmti/hprof/manual.html">
- Java Profiler Heap Dump Format</a>.</div>
+ Java Profiler Heap Dump Format</a> and a
+ <code>TruffleInstrument</code> to capture <em>heap dumps</em>
+ from Truffle languages.
+ 
+ <h3>Embedding into Java Applications</h3>
+ 
+ When embedding GraalVM dynamic languages in Java applications via
+ <code>Context</code> one can enabled not only GraalVM
+ <a href="../../../../../org/graalvm/tools/insight/Insight.html" title="class in org.graalvm.tools.insight"><code>Insight</code></a> scripts. One can also enable <code>heap</code> object in the
+ Insight scripts and capture the generated heaps in supplied <a href="http://docs.oracle.com/javase/8/docs/api/java/io/OutputStream.html?is-external=true" title="class or interface in java.io"><code>OutputStream</code></a> use:
+ 
+ <pre><a href="http://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util"><code>Map</code></a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang"><code>String</code></a>, <code>Instrument</code>&gt; instruments = ctx.getEngine().getInstruments();
+<code>Instrument</code> heapInstrument = instruments.get(<em>"heap"</em>);
+
+&#064;<a href="http://docs.oracle.com/javase/8/docs/api/java/lang/SuppressWarnings.html?is-external=true" title="class or interface in java.lang"><code>SuppressWarnings</code></a>(<em>"unchecked"</em>)
+<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function"><code>Consumer</code></a>&lt;<a href="http://docs.oracle.com/javase/8/docs/api/java/io/OutputStream.html?is-external=true" title="class or interface in java.io"><code>OutputStream</code></a>&gt; consumeOutput = heapInstrument.lookup(<a href="http://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html?is-external=true" title="class or interface in java.util.function"><code>Consumer</code></a>.<b>class</b>);
+
+heapOutput = <b>new</b> <a href="http://docs.oracle.com/javase/8/docs/api/java/io/ByteArrayOutputStream.html?is-external=true" title="class or interface in java.io"><code>ByteArrayOutputStream</code></a>();
+consumeOutput.accept(heapOutput);
+</pre>
+ 
+ Whenever <code>heap.dump(...)</code> is called to <a target="_blank" href=
+ "https://github.com/oracle/graal/blob/master/tools/docs/Insight-Manual.md#heap-dumping">perform
+ cooperative heap dumping</a>, the output is sent to the registered <a href="http://docs.oracle.com/javase/8/docs/api/java/io/OutputStream.html?is-external=true" title="class or interface in java.io"><code>OutputStream</code></a></div>
 </div>
 <!-- ======= START OF BOTTOM NAVBAR ====== -->
 <div class="bottomNav"><a name="navbar.bottom">
