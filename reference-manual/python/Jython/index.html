@@ -642,7 +642,7 @@ GraalVM’s Python runtime, in contrast, is only targeting Python 3.x.
 GraalVM does not provide a full compatibility with these earlier 2.x versions of Jython.
 Thus, a significant migration step will have to be taken to migrate all your code to Python 3.</p>
 
-<p>For Jython specific features, follow this document to learn about migration to GraalVM’s Python runtime.</p>
+<p>For Jython-specific features, follow this document to learn about migration to GraalVM’s Python runtime.</p>
 
 <p>Note that some features of Jython have a negative impact on runtime performance, and are disabled by default.
 To make migration easier, you can enable some features with a command line flag on GraalVM: <code>--python.EmulateJython</code>.</p>
@@ -700,10 +700,10 @@ methods:</p>
 
 <pre><code>&gt;&gt;&gt; from java.util import Random
 &gt;&gt;&gt; rg = Random(99)
-&gt;&gt;&gt; boundNextInt = rg.nextInt
 &gt;&gt;&gt; rg.nextInt()
 1491444859
 &gt;&gt;&gt; boundNextInt = rg.nextInt
+&gt;&gt;&gt; boundNextInt()
 1672896916
 </code></pre>
     
@@ -780,9 +780,13 @@ This allows, for example, to use Pandas frames as <code>double[][]</code> or Num
         
       </h2>
 
-<p>None of the special Jython modules are available, but many of those modules functions can still be achieved.
-For example, the <code>jarray</code> module on Jython allows construction of primitive Java arrays.
-This can beachieved as follows on GraalVM’s Python runtime:</p>
+<p>The <code>jarray</code> module which is used to create primitive Java arrays is supported for compatibility.</p>
+
+<pre><code>&gt;&gt;&gt; import jarray
+&gt;&gt;&gt; jarray.array([1,2,3], 'i')
+</code></pre>
+
+<p>Note that its usage is equivalent of constructing the array types using the <code>java.type</code> function and filling the array.</p>
 
 <pre><code>&gt;&gt;&gt; import java
 &gt;&gt;&gt; java.type("int[]")(10)
@@ -803,6 +807,8 @@ However, implicitly, this may entail a copy of the array data, which can be dece
 &gt;&gt;&gt; jbuf
 [98, 97, 122]
 </code></pre>
+
+<p>Other modules than <code>jarray</code> are not supported.</p>
     
       <h2 id="exceptions-from-java">
         
@@ -831,20 +837,77 @@ However, implicitly, this may entail a copy of the array data, which can be dece
         
         
       </h2>
+<p>Java arrays and collections implementing <code>java.util.Collection</code> can be accessed using the <code>[]</code> syntax. Empty collections
+are considered false in boolean conversions. Their length is exposed by <code>len</code> builtin function.</p>
 
-<p>There is no automatic mapping of the Python syntax for accessing dictionary
-elements to the <code>java.util</code> mapping and list classes’ ` get<code>, </code>set<code>, or </code>put`
-methods. To use these mapping and list clases, you must call the Java methods:</p>
-
-<pre><code>&gt;&gt;&gt; ht = java.util.Hashtable()
-&gt;&gt;&gt; ht.put("foo", "bar")
-&gt;&gt;&gt; ht.get("foo")
-'bar'
+<pre><code>&gt;&gt;&gt; from java.util import ArrayList
+&gt;&gt;&gt; l = ArrayList()
+&gt;&gt;&gt; l.add("foo")
+True
+&gt;&gt;&gt; l.add("baz")
+True
+&gt;&gt;&gt; l[0]
+'foo'
+&gt;&gt;&gt; l[1] = "bar"
+&gt;&gt;&gt; del l[1]
+&gt;&gt;&gt; len(l)
+1
+&gt;&gt;&gt; bool(l)
+True
+&gt;&gt;&gt; del l[0]
+&gt;&gt;&gt; bool(l)
+False
 </code></pre>
 
-<p>The Python-style iteration of Java <code>java.util.Enumerable</code>,
-<code>java.util.Iterator</code>, or <code>java.lang.Iterable</code>  is not supported. For these, you will have to use a
-<code>while</code> loop and use the <code>hasNext()</code> and <code>next()</code> (or equivalent) methods. <!---this doesn't want an example?---></p>
+<p>Java iterables implementing <code>java.lang.Iterable</code> can be iterated using <code>for</code> loop or <code>iter</code> builtin function
+and are accepted by all builtins that expect iterables.</p>
+
+<pre><code>&gt;&gt;&gt; [x for x in l]
+['foo', 'bar']
+&gt;&gt;&gt; i = iter(l)
+&gt;&gt;&gt; next(i)
+'foo'
+&gt;&gt;&gt; next(i)
+'bar'
+&gt;&gt;&gt; next(i)
+Traceback (most recent call last):
+File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+StopIteration
+&gt;&gt;&gt; set(l)
+{'foo', 'bar'}
+</code></pre>
+
+<p>Iterators can be iterated as well.</p>
+
+<pre><code>&gt;&gt;&gt; from java.util import ArrayList
+&gt;&gt;&gt; l = ArrayList()
+&gt;&gt;&gt; l.add("foo")
+True
+&gt;&gt;&gt; i = l.iterator()  # Calls the Java iterator methods
+&gt;&gt;&gt; next(i)
+'foo'
+</code></pre>
+
+<p>Map collections implementing <code>java.util.Map</code> can be accessed using <code>[]</code> notation.
+Empty maps are considered false in boolean conversions. Iteration of maps yields the keys, consistent with <code>dict</code>.</p>
+
+<pre><code>&gt;&gt;&gt; from java.util import HashMap
+&gt;&gt;&gt; m = HashMap()
+&gt;&gt;&gt; m['foo'] = 5
+&gt;&gt;&gt; m['foo']
+5
+&gt;&gt;&gt; m['bar']
+Traceback (most recent call last):
+File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+KeyError: bar
+&gt;&gt;&gt; [k for k in m]
+['foo']
+&gt;&gt;&gt; bool(m)
+True
+&gt;&gt;&gt; del m['foo']
+&gt;&gt;&gt; bool(m)
+False
+</code></pre>
     
       <h2 id="inheritance-from-java">
         
@@ -854,40 +917,37 @@ methods. To use these mapping and list clases, you must call the Java methods:</
         
       </h2>
 
-<p>Python classes cannot inherit from Java classes.
-A workaround can be to create a flexible subclass in Java, compile it, and use delegation instead.
-Take this example:</p>
-<pre><code class="language-java">import java.util.logging.Handler;
+<p>Inheriting from a Java class or implementing an interface is supported with some syntactical differences from Jython. A
+class inheriting from a Java class can be created using an ordinary <code>class</code> statement where declared methods will
+override/implement the superclass methods when they match in name. Super calls are performed using a special
+attribute <code>self.__super__</code>. The created object won’t behave like a Python object but like a foreign Java object. Its
+Python-level members can be accessed using its <code>this</code> attribute. Example:</p>
 
-public class PythonHandler extends Handler {
-    private final Value pythonDelegate;
+<pre><code class="language-python">import atexit
+from java.util.logging import Logger, Handler
 
-    public PythonHandler(Value pythonDelegate) {
-        this.pythonDelegate = pythonDelegate;
-    }
 
-    public void publish(LogRecord record) {
-        pythonDelegate.invokeMember("publish", record);
-    }
+class MyHandler(Handler):
+    def __init__(self):
+        self.logged = []
 
-    public void flush() {
-        pythonDelegate.invokeMember("flush");
-    }
+    def publish(self, record):
+        self.logged.append(record)
 
-    public void close() {
-        pythonDelegate.invokeMember("close");
-    }
-}
-</code></pre>
-<p>Then you can use it like this in Python:</p>
-<pre><code class="language-python">from java.util.logging import LogManager, Logger
 
-class MyHandler():
-    def publish(self, logRecord): print("[python]", logRecord.toString())​
-    def flush(): pass​
-    def close(): pass
-​
-LogManager.getLogManager().addLogger(Logger('my.python.logger', None, MyHandler()))
+logger = Logger.getLogger("mylog")
+logger.setUseParentHandlers(False)
+handler = MyHandler()
+logger.addHandler(handler)
+# Make sure the handler is not used after the Python context has been closed
+atexit.register(lambda: logger.removeHandler(handler))
+
+logger.info("Hi")
+logger.warning("Bye")
+
+# The python attributes/methods of the object have to be accessed through 'this' attribute
+for record in handler.this.logged:
+    print(f'Python captured message "{record.getMessage()}" at level {record.getLevel().getName()}')
 </code></pre>
     
       <h2 id="embedding-python-into-java">

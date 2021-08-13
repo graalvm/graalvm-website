@@ -987,6 +987,66 @@ For example:</p>
 <pre><code class="language-shell">./javaapplication -XX:+FlightRecorder -XX:StartFlightRecording="filename=recording.jfr"
 </code></pre>
     
+      <h2 id="run-a-demo">
+        
+        
+          Run a Demo <a href="#run-a-demo" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Transform this very simple demo application into a native image and see how to use JFR events from it.
+Save the following code to the <em>Example.java</em> file.</p>
+
+<pre><code class="language-java">import jdk.jfr.Event;
+import jdk.jfr.Description;
+import jdk.jfr.Label;
+
+public class Example {
+
+  @Label("Hello World")
+  @Description("Helps programmer getting started")
+  static class HelloWorldEvent extends Event {
+      @Label("Message")
+      String message;
+  }
+
+  public static void main(String... args) {
+      HelloWorldEvent event = new HelloWorldEvent();
+      event.message = "hello, world!";
+      event.commit();
+  }
+}
+</code></pre>
+
+<p>The application consists of a simple class and some JDK library classes.
+It creates an event, labelled with the <code>@Label</code> annotation from the <code>jdk.jfr.*</code> package.
+If we run that application, it does not print anything and just runs that event.</p>
+
+<ol>
+  <li>Compile the Java file:
+    <pre><code class="language-shell">  javac Example.java
+</code></pre>
+  </li>
+  <li>Build the application into a native image with the VM inspection enabled:
+    <pre><code class="language-shell">  native-image -H:+AllowVMInspection Example
+</code></pre>
+    <p>The <code>-H:+AllowVMInspection</code> option enables optional features such as JFR that can be used to inspect the VM.</p>
+  </li>
+  <li>Run the executable and start recording:
+    <pre><code class="language-shell">  ./example -XX:+FlightRecorder -XX:StartFlightRecording="filename=recording.jfr"
+</code></pre>
+    <p>The <code>-XX:+FlightRecorder</code> flag enables the built-in Flight Recorder and starts recording to a specified file. The <code>recording.jfr</code> file is a binary.</p>
+  </li>
+  <li>Start VisualVM. Go to <strong>File</strong> &gt; <strong>Add JFR Snapshot</strong>, browse the generated file, <em>recording.jfr</em>, and open it.</li>
+</ol>
+
+<p>Once opened, there is a bunch of options you can check: Monitoring, Threads, Exceptions, etc., but you should be mostly interested in the events browsing. It will look something like this:</p>
+
+<p><img src="/docs/reference-manual/native-image/img/jfr.png" alt="" /></p>
+
+<p>In the follow-up sections learn how to further configure the recording or enable logging.</p>
+    
       <h2 id="configure-the-recording">
         
         
