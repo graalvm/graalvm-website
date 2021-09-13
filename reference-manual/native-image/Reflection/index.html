@@ -813,8 +813,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/reference-manual/js/">
-            JavaScript and Node.js Reference
+          <a href="">
+            
           </a>
         </li>
 
@@ -1050,14 +1050,15 @@ For these situations a manual configuration as described below can be provided.<
       { "name" : "format", "parameterTypes" : ["java.lang.String", "java.lang.Object[]"] }
     ]
   },
-    {
-      "name" : "java.lang.String$CaseInsensitiveComparator",
-      "methods" : [
-        { "name" : "compare" }
-      ]
-    }
+  {
+    "name" : "java.lang.String$CaseInsensitiveComparator",
+    "methods" : [
+      { "name" : "compare" }
+    ]
+  }
 ]
 </code></pre>
+
 <p>The native image builder generates reflection metadata for all classes, methods, and fields referenced in that file.
 The <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code>, and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.</p>
 
@@ -1067,6 +1068,39 @@ Code may also write non-static final fields like <code>String.value</code> in th
 
 <p>More than one configuration can be used by specifying multiple paths for <code>ReflectionConfigurationFiles</code> and separating them with <code>,</code>.
 Also, <code>-H:ReflectionConfigurationResources</code> can be specified to load one or several configuration files from the native image build’s class path, such as from a JAR file.</p>
+    
+      <h3 id="conditional-configuration">
+        
+        
+          Conditional Configuration <a href="#conditional-configuration" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>With conditional configuraiton, a class configuration entry is applied only if a provided <code>condition</code> is satisfied. The only currently supported condition is <code>typeReachable</code>, which enables the configuration entry if the specified type is reachable through other code. For example, to support reflective access to <code>sun.misc.Unsafe.theUnsafe</code> only when <code>io.netty.util.internal.PlatformDependent0</code> is reachable, the configuration should look like:</p>
+
+<pre><code class="language-json">{
+  "condition" : { "typeReachable" : "io.netty.util.internal.PlatformDependent0" },
+  "name" : "sun.misc.Unsafe",
+  "fields" : [
+    { "name" : "theUnsafe" }
+  ]
+}
+</code></pre>
+
+<p>Conditional configuration is the <em>preferred</em> way to specify reflection configuration: if code doing a reflective access is not reachable, it is unnecessary to include its corresponding reflection entry. The consistent usage of <code>condition</code> results in <em>smaller binaries</em> and <em>better build times</em> as the image builder can selectively include reflectively accessed code.</p>
+
+<p>If a <code>condition</code> is omitted, the element is always included. When the same <code>condition</code> is used for two distinct elements in two configuration entries, both elements will be included when the condition is satisfied. When a configuration entry should be enabled if one of several types are reachable, it is necessary to add two configuration entries: one entry for each condition.</p>
+
+<p>When used with <a href="/reference-manual/native-image/BuildConfiguration/#assisted-configuration-of-native-image-builds">assisted configuration</a>, conditional entries of existing configuration will not be fused with agent-collected entries as agent-collected entries.</p>
+    
+      <h3 id="configuration-with-features">
+        
+        
+          Configuration with Features <a href="#configuration-with-features" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
 <p>Alternatively, a custom <code>Feature</code> implementation can register program elements before and during the analysis phase of the native image build using the <code>RuntimeReflection</code> class. For example:</p>
 <pre><code class="language-java">class RuntimeReflectionRegistrationFeature implements Feature {

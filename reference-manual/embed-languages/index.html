@@ -730,7 +730,7 @@ $(document).ready(function(){
   <li><a href="#access-java-from-guest-languages">Access Java from Guest Languages</a></li>
   <li><a href="#lookup-java-types-from-guest-languages">Lookup Java Types from Guest Languages</a></li>
   <li><a href="#computed-arrays-using-polyglot-proxies">Computed Arrays Using Polyglot Proxies</a></li>
-  <li><a href="#access-restrictions">Access Restrictions</a></li>
+  <li><a href="#host-access">Host Access</a></li>
   <li><a href="#build-native-images-from-polyglot-applications">Build Native Images from Polyglot Applications</a></li>
   <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
   <li><a href="#embed-languages-in-guest-languages">Embed languages in Guest Languages</a></li>
@@ -3231,10 +3231,10 @@ converted to 0-based indices for proxy arrays.</li>
 <p>For more information about the polyglot proxy interfaces, see the
 <a href="http://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API JavaDoc</a>.</p>
     
-      <h2 id="access-restrictions">
+      <h2 id="host-access">
         
         
-          Access Restrictions <a href="#access-restrictions" class="anchor_heading">#</a>
+          Host Access <a href="#host-access" class="anchor_heading">#</a>
         
         
       </h2>
@@ -3244,15 +3244,15 @@ These restrictions can be lifted entirely by setting <code>allowAllAccess</code>
 
 <p>Note: The access restrictions are currently only supported with JavaScript.</p>
     
-      <h3 id="configuring-host-access">
+      <h3 id="controlling-access-to-host-functions">
         
         
-          Configuring Host Access <a href="#configuring-host-access" class="anchor_heading">#</a>
+          Controlling Access to Host Functions <a href="#controlling-access-to-host-functions" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>It might be desirable to limit the access of guest applications to the host.
+<p>It might be desireable to limit the access of guest applications to the host.
 For example, if a Java method is exposed that calls <code>System.exit</code> then the guest
 application will be able to exit the host process.
 In order to avoid accidentally exposed methods, no host access is allowed by
@@ -3405,6 +3405,99 @@ default and every public method or field needs to be annotated with
 </ul>
 
 <p>Host access is fully customizable by creating a custom <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html"><code>HostAccess</code></a> policy.</p>
+    
+      <h3 id="controlling-host-callback-parameter-scoping">
+        
+        
+          Controlling Host Callback Parameter Scoping <a href="#controlling-host-callback-parameter-scoping" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>By default, a <code>Value</code> lives as long as the corresponding <code>Context</code>.
+However, it may be desireable to change this default behavior and bind a value to a scope, such that when execution leaves the scope, the value is invalidated.
+An example for such a scope are guest-to-host callbacks, where a <code>Value</code> may be passed as a callback parameter.
+We have already seen above how this works with the default <code>HostAccess.EXPLICIT</code>:</p>
+
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+
+    @HostAccess.Export
+    public void callback(Value result) {
+        this.lastResult = result;
+    }
+
+    String getResult() {
+        return this.lastResult.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.EXPLICIT).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS');");
+        System.out.println(s.getResult());
+    }
+}
+</code></pre>
+
+<p>In this example, <code>lastResult</code> maintains a reference to the value from the guest is stored on the host and remains accessible until after the scope of <code>callback()</code> has ended.</p>
+
+<p>However, this is not always desireable, as keeping the value alive may block resources unnecessarily or not reflect the behavior of ephemeral values correctly.
+For these cases, <code>HostAccess.SCOPED</code> can be used, which changes the default behavior for all callbacks, such that values that are passed as callback parameters are only valid for the duration of the callback.</p>
+
+<p>To make the above code work with <code>HostAccess.SCOPED</code>, individual values passed as a callback parameters can be pinned to extend their validity until after the callback returns:</p>
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+
+    @HostAccess.Export
+    void callback(Value result, Value notneeded) {
+        this.lastResult = result;
+        this.lastResult.pin();
+    }
+
+    String getResult() {
+        return this.lastResult.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.SCOPED).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS', 'foobar');");
+        System.out.println(services.getResult());
+    }
+}
+</code></pre>
+
+<p>Alternatively, the entire callback method can opt out from scoping if annotated with <code>@HostAccess.DisableMethodScope</code>, maintaining regular semantics for all parameters of the callback:</p>
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+    Value metaInfo;
+
+    @HostAccess.Export
+    @HostAccess.DisableMethodScope
+    void callback(Value result, Value metaInfo) {
+        this.lastResult = result;
+        this.metaInfo = metaInfo;
+    }
+
+    String getResult() {
+        return this.lastResult.asString() + this.metaInfo.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.SCOPED).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS', 'foobar');");
+        System.out.println(services.getResult());
+    }
+}
+</code></pre>
     
       <h3 id="access-privilege-configuration">
         
