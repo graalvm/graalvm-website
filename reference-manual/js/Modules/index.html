@@ -780,6 +780,36 @@ Alternatively, the module <a href="https://www.graalvm.org/sdk/javadoc/org/graal
 Also note that the <code>allowIO()</code> option is provided to enable IO access.
 More examples of ES modules usage are available <a href="https://github.com/oracle/graaljs/blob/master/graal-js/src/com.oracle.truffle.js.test/src/com/oracle/truffle/js/test/interop/ESModuleTest.java">here</a>.</p>
     
+      <h4 id="experimental-module-namespace-exports">
+        
+        
+          Experimental module namespace exports
+        
+        
+      </h4>
+
+<p>The <code>--js.esm-eval-returns-exports</code> experimental option can be used to expose the ES module namespace exported object to a Polyglot <code>Context</code>.
+This can be handy when an ES module is used directly from Java:</p>
+<pre><code class="language-java">public static void main(String[] args) throws IOException {
+
+    String code = "export const foo = 42;";
+
+    Context cx = Context.newBuilder("js")
+                .allowIO(true)
+                .option("js.esm-eval-returns-exports", "true")
+                .build();
+
+    Source source = Source.newBuilder("js", code)
+                .mimeType("application/javascript+module")
+                .build();
+
+    Value exports = cx.eval(source);
+    // now the `exports` object contains the ES module exported symbols.
+    System.out.println(exports.getMember("foo").toString()); // prints `42`
+}
+</code></pre>
+<p>The option is disabled by default.</p>
+    
       <h3 id="truffle-filesystem">
         
         
