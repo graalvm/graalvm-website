@@ -160,12 +160,13 @@ $(document).ready(function () {
       });
     }());
 
-
+// Events carousel
   (function () {
     $('.news-carousel').slick({
       dots: false,
       accessibility: true,
-      slidesToShow: 3,
+      slidesToShow: 2,
+      // infinite: false,
       arrows: true,
       slidesToScroll: 1,
       // autoplay: true,
@@ -174,13 +175,13 @@ $(document).ready(function () {
         {
           breakpoint: 1500,
           settings: {
-            slidesToShow: 3
+            slidesToShow: 2
           }
         },
         {
           breakpoint: 768,
           settings: {
-            slidesToShow: 2,
+            slidesToShow: 1,
             adaptiveHeight: true,
           }
         },
@@ -194,47 +195,98 @@ $(document).ready(function () {
     });
   }());
 
-  var configProfile = {
-    "profile": {"screenName": 'graalvm'},
-    "domId": 'tweets',
-    "maxTweets": 20,
-    "enableLinks": true,
-    "showUser": false,
-    "showTime": true,
-    "showImages": false,
-    "lang": 'en',
-    "customCallback": function (data) {
-      var el = $("#tweets");
-      for (var i in data) {
-        el.append('<div>' + data[i] + '</div>');
-      }
-      el.slick({
-        dots: false,
-        infinite: true,
-        slidesToShow: 43,
-        slidesToScroll: 1,
-        arrows: true,
-        autoplaySpeed: 3000,
-        responsive: [
-          {
-            breakpoint: 1280,
-            settings: {
-              arrows: false
-            }
-          },
-          {
-            breakpoint: 768,
-            settings: {
-              arrows: false,
-              adaptiveHeight: true,
-              slidesToShow: 1
-            }
+  //Languages carousel
+  (function () {
+    $('.languages-carousel').slick({
+      dots: false,
+      accessibility: true,
+      slidesToShow: 6,
+      arrows: true,
+      slidesToScroll: 1,
+      // autoplay: true,
+      // autoplaySpeed: 3000,
+      responsive: [
+        {
+          breakpoint: 1500,
+          settings: {
+            slidesToShow: 4
           }
-        ]
-      });
+        },
+        {
+          breakpoint: 768,
+          settings: {
+            slidesToShow: 4,
+            adaptiveHeight: true,
+          }
+        },
+        {
+          breakpoint: 580,
+          settings: {
+            slidesToShow: 3
+          }
+        }
+      ]
+    });
+  }());
+
+// function setActive(lang) {
+//   $(lang).toggleClass('active');
+// }
+
+// $(".card #lang").click(function(){
+//   var element = $(this).parent(".card");
+//   element.removeClass("logo text-center").addClass("logo text-center active");
+// });
+
+// $('#lang').on('click', function(e){
+//     $(this).parent()
+//     .toggleClass('logo text-center')
+//     .toggleClass('logo text-center active');
+//
+// });
+
+//Embedded Tweets
+var configProfile = {
+  "profile": {"screenName": 'graalvm'},
+  "domId": 'tweets',
+  "maxTweets": 20,
+  "enableLinks": true,
+  "showUser": false,
+  "showTime": true,
+  "showImages": false,
+  "lang": 'en',
+  "customCallback": function (data) {
+    var el = $("#tweets");
+    for (var i in data) {
+      el.append('<div>' + data[i] + '</div>');
     }
-  };
-  twitterFetcher.fetch(configProfile);
+    el.slick({
+      dots: false,
+      infinite: true,
+      slidesToShow: 43,
+      slidesToScroll: 1,
+      arrows: true,
+      autoplaySpeed: 3000,
+      responsive: [
+        {
+          breakpoint: 1280,
+          settings: {
+            arrows: false
+          }
+        },
+        {
+          breakpoint: 768,
+          settings: {
+            arrows: false,
+            adaptiveHeight: true,
+            slidesToShow: 1
+          }
+        }
+      ]
+    });
+  }
+};
+twitterFetcher.fetch(configProfile);
 
 //Embedded Tweets Styling
 function customizeTweet() {
@@ -331,6 +383,7 @@ addLoadEvent(customizeTweet);
       $(".menu-btn--menu").toggleClass('menu-open').toggleClass('close');
       $('.menu__list').toggleClass('open');
       $('.menu__logo').toggleClass('open');
+      $('.menu__downloads').toggleClass('open');
       $('.menu').toggleClass('open');
       $('.overlay').fadeToggle();
     });
@@ -1228,40 +1281,40 @@ $("a").each(function() {
 });
 
 
-// Automatic slideshow with manual navigation for announcements banner
-var slideIndex = 0;
-var slides = document.getElementsByClassName("adSlides");
-var dots = document.getElementsByClassName("dotnav");
-
-showSlides();
-
-function showSlides() {
-   var i;
-   for (i = 0; i < slides.length; i++) {
-       slides[i].style.display = "none";
-   }
-   slideIndex++;
-   if (slideIndex> slides.length) {slideIndex = 1}
-   for (i = 0; i < dots.length; i++) {
-     dots[i].className = dots[i].className.replace(" active", "");
-   }
-   slides[slideIndex-1].style.display = "block";
-   dots[slideIndex-1].className += " active";
-   setTimeout(showSlides, 6000); // Change image every 8 seconds
-}
-
-function currentSlide(no) {
-   var i;
-   for (i = 0; i < slides.length; i++) {
-       slides[i].style.display = "none";
-   }
-   slideIndex = no;
-   slides[no-1].style.display = "block";
-}
-
-function plusSlides(n) {
- var newslideIndex = slideIndex + n;
- if(newslideIndex < 4 && newslideIndex > 0){
-    currentSlide(newslideIndex);
- }
-}
+// // Automatic slideshow with manual navigation for announcements banner
+// var slideIndex = 0;
+// var slides = document.getElementsByClassName("adSlides");
+// var dots = document.getElementsByClassName("dotnav");
+//
+// showSlides();
+//
+// function showSlides() {
+//    var i;
+//    for (i = 0; i < slides.length; i++) {
+//        slides[i].style.display = "none";
+//    }
+//    slideIndex++;
+//    if (slideIndex> slides.length) {slideIndex = 1}
+//    for (i = 0; i < dots.length; i++) {
+//      dots[i].className = dots[i].className.replace(" active", "");
+//    }
+//    slides[slideIndex-1].style.display = "block";
+//    dots[slideIndex-1].className += " active";
+//    setTimeout(showSlides, 6000); // Change image every 8 seconds
+// }
+//
+// function currentSlide(no) {
+//    var i;
+//    for (i = 0; i < slides.length; i++) {
+//        slides[i].style.display = "none";
+//    }
+//    slideIndex = no;
+//    slides[no-1].style.display = "block";
+// }
+//
+// function plusSlides(n) {
+//  var newslideIndex = slideIndex + n;
+//  if(newslideIndex < 4 && newslideIndex > 0){
+//     currentSlide(newslideIndex);
+//  }
+// }
