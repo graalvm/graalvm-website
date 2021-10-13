@@ -754,8 +754,16 @@ $(document).ready(function(){
         
       </h1>
 
-<p>You may need a UTF-8 locale to run some Ruby applications.
-For example we have found that Ruby Spec needs such a locale.</p>
+<p>You need a UTF-8 locale to run some Ruby applications.
+For example, we have found that RubyGems and ruby/spec need such a locale.</p>
+
+<p>This is not needed if the <code>$LANG</code> environment variable is already set and:</p>
+
+<pre><code class="language-bash">locale
+</code></pre>
+
+<p>shows no <code>="C"</code> and no warning.
+Instead, all values should be <code>"en_US.UTF-8"</code> or other regions but still <code>.UTF-8</code>.</p>
     
       <h3 id="redhat-based-fedora-oracle-linux-etc">
         
@@ -775,10 +783,46 @@ For example we have found that Ruby Spec needs such a locale.</p>
         
         
       </h3>
+    
+      <h4 id="ubuntu">
+        
+        
+          Ubuntu
+        
+        
+      </h4>
 
+<p>The Ubuntu version of <code>locale-gen</code> supports arguments, so it is easy:</p>
 <pre><code class="language-bash">sudo apt-get install -y locales
 sudo locale-gen en_US.UTF-8
 export LANG=en_US.UTF-8
+</code></pre>
+    
+      <h4 id="non-ubuntu">
+        
+        
+          Non-Ubuntu
+        
+        
+      </h4>
+
+<p>Debian and other non-Ubuntu do not support <code>locale-gen</code> arguments.
+Instead you need to modify <code>/etc/locale.gen</code>:</p>
+<pre><code class="language-bash"># Uncomment the en_US.UTF-8 line in /etc/locale.gen
+sudo sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen
+
+# locale-gen generates locales for all uncommented locales in /etc/locale.gen
+sudo locale-gen
+export LANG=en_US.UTF-8
+</code></pre>
+
+<p>For Dockerfile’s:</p>
+
+<pre><code class="language-dockerfile"># Uncomment the en_US.UTF-8 line in /etc/locale.gen
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen
+# locale-gen generates locales for all uncommented locales in /etc/locale.gen
+RUN locale-gen
+ENV LANG=en_US.UTF-8
 </code></pre>
 
               </div>
