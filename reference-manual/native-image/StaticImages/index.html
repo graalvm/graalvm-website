@@ -910,16 +910,23 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="static-native-images">
+                <h1 id="static-and-mostly-static-images">
         
         
-          Static Native Images
+          Static and Mostly Static Images
         
         
       </h1>
 
-<p>Static native images are statically linked binaries which can be used without any additional library dependencies.
-This makes them suitable for use in a Docker container.</p>
+<p>With GraalVM Native Image you can create static or mostly static images, depending on the purposes.</p>
+
+<p><strong>Static native images</strong> are statically linked binaries which can be used without any additional library dependencies.
+This makes them easier to distribute and to deploy on slim or distroless container images.
+They are created by statically linking against <a href="https://musl.libc.org/">musl-libc</a>, a lightweight, fast and simple <code>libc</code> implementation.</p>
+
+<p><strong>Mostly static native images</strong> statically link against all libraries except <code>libc</code>.
+This approach is ideal for deploying such native images on distroless container images.
+Note that it currently only works when linking against <code>glibc</code>.</p>
     
       <h2 id="prerequisites">
         
@@ -928,88 +935,101 @@ This makes them suitable for use in a Docker container.</p>
         
         
       </h2>
+
 <ul>
-  <li>Right now, this only works on Linux AMD64 on Java 11.</li>
-  <li>You will need <code>gcc</code>, <code>make</code>, and <code>configure</code>.</li>
-  <li>Create a directory that will hold the libraries you build. You will refer to this directory as <code>${RESULT_DIR}</code>.</li>
-  <li>Download the latest <code>musl</code> release <a href="https://musl.libc.org/">here</a>. This document will use <code>musl-1.2.0</code>.</li>
-  <li>Download the latest <code>zlib</code> release <a href="https://zlib.net/">here</a>. This document will use <code>zlib-1.2.11</code>.</li>
+  <li>Linux AMD64 operating system</li>
+  <li>GraalVM distribution for Java 11 with <a href="/reference-manual/native-image/#install-native-image">Native Image support</a></li>
+  <li>A 64-bit <code>musl</code> toolchain, <code>make</code>, and <code>configure</code></li>
+  <li>The latest <code>zlib</code> library</li>
 </ul>
-
-<p>## Build a Static Native Image</p>
-
-<p>If you have <code>musl-gcc</code> on the path, you can build a native image statically linked against <code>muslc</code> with the following options: <code>--static --libc=musl</code>.
-To verify that <code>musl-gcc</code> is on the path, run <code>musl-gcc -v</code>.</p>
-
-<p>To build a static native image, use:</p>
-<pre><code class="language-shell">native-image --static --libc=musl [other arguments] Class
-</code></pre>
     
-      <h2 id="build-a-mostly-static-native-image">
+      <h2 id="preparation">
         
         
-          Build a Mostly Static Native Image <a href="#build-a-mostly-static-native-image" class="anchor_heading">#</a>
+          Preparation <a href="#preparation" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>As of GraalVM version 20.2, you can build a “mostly static” native image which link statically everything except <code>libc</code>. Native images built this way are convenient to run in Docker containers, for example, based on
-<a href="https://github.com/GoogleContainerTools/distroless/blob/master/base/README.md">distroless minimal Linux, glibc-based systems</a>.</p>
+<p>You should get the <code>musl</code> toolchain first, and then compile and install <code>zlib</code> into the toolchain.</p>
 
-<p>To build a mostly-static native image native image, use:</p>
+<ol>
+  <li>Download the <code>musl</code> toolchain from <a href="https://musl.cc/">musl.cc</a>. <a href="http://musl.cc/x86_64-linux-musl-native.tgz">This one</a> is recommended. Extract the toolchain to a directory of your choice. This directory will be referred as <code>$TOOLCHAIN_DIR</code>.</li>
+  <li>Download the latest <code>zlib</code> library sources from <a href="https://zlib.net/">here</a> and extract them. This guide uses <code>zlib-1.2.11</code>.</li>
+  <li>Set the following environment variable:
+    <pre><code class="language-bash"> CC=$TOOLCHAIN_DIR/bin/gcc
+</code></pre>
+  </li>
+  <li>Change into the <code>zlib</code> directory, and then run the following commands to compile and install <code>zlib</code> into the toolchain:
+    <pre><code class="language-bash"> ./configure --prefix=$TOOLCHAIN_DIR --static
+ make
+ make install
+</code></pre>
+  </li>
+</ol>
+    
+      <h2 id="build-static-native-image">
+        
+        
+          Build Static Native Image <a href="#build-static-native-image" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<ol>
+  <li>First, ensure <code>$TOOLCHAIN_DIR/bin</code> is present on your <code>PATH</code> variable.
+ To verify this, run:
+    <pre><code class="language-bash"> x86_64-linux-musl-gcc
+</code></pre>
+    <p>You should get a similar output printed:</p>
+    <pre><code class="language-bash"> x86_64-linux-musl-gcc: fatal error: no input files
+ compilation terminated.
+</code></pre>
+  </li>
+  <li>Build a static native image by using this command:
+    <pre><code class="language-shell"> native-image --static --libc=musl [other arguments] Class
+</code></pre>
+  </li>
+</ol>
+    
+      <h2 id="build-mostly-static-native-image">
+        
+        
+          Build Mostly Static Native Image <a href="#build-mostly-static-native-image" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>As of GraalVM version 20.2, you can build a “mostly static” native image which statically links everything except <code>libc</code>.
+Statically linking all your libraries except <code>glibc</code> ensures your application has all the libraries it needs to run on any Linux <code>glibc</code>-based distribution.</p>
+
+<p>To build a mostly-static native image native image, use this command:</p>
 <pre><code class="language-shell">native-image -H:+StaticExecutableWithDynamicLibC [other arguments] Class
 </code></pre>
+
+<blockquote>
+  <p>Note: This currently only works for <code>glibc</code>.</p>
+</blockquote>
     
-      <h4 id="building-musl">
+      <h2 id="frequently-asked-questions">
         
         
-          Building musl
+          Frequently Asked Questions <a href="#frequently-asked-questions" class="anchor_heading">#</a>
         
         
-      </h4>
-<ul>
-  <li>Extract the musl release <code>tarball</code> and <code>cd</code> into the extracted directory.</li>
-  <li>Run <code>./configure --disable-shared --prefix=${RESULT_DIR}</code>.</li>
-  <li>Run <code>make</code>.</li>
-  <li>Run <code>make install</code>.
-Other than building <code>musl</code> libraries, the build also creates a <code>gcc</code> wrapper called <code>musl-gcc</code> in the <code>${RESULT_DIR}/bin</code> directory.
-You should now put this wrapper on your <code>PATH</code> by running <code>export PATH=$PATH:${RESULT_DIR}/bin</code>.</li>
-</ul>
+      </h2>
     
-      <h4 id="building-zlib">
+      <h3 id="what-is-the-recommended-base-docker-image-for-deploying-a-static-or-mostly-static-native-image">
         
         
-          Building zlib
+          What is the recommended base Docker image for deploying a static or mostly static native image? <a href="#what-is-the-recommended-base-docker-image-for-deploying-a-static-or-mostly-static-native-image" class="anchor_heading">#</a>
         
         
-      </h4>
-<ul>
-  <li>Extract the zlib release <code>tarball</code> and <code>cd</code> into the extracted directory.</li>
-  <li>You need to compile zlib and link it against musl so set <code>CC</code> to <code>musl-gcc</code>: <code>export CC=musl-gcc</code>.</li>
-  <li>Run <code>./configure --static --prefix=${RESULT_DIR}</code>.</li>
-  <li>Run <code>make</code>.</li>
-  <li>Run <code>make install</code>.</li>
-</ul>
-    
-      <h4 id="getting-libstdc">
-        
-        
-          Getting libstdc++
-        
-        
-      </h4>
-<p><code>libstdc++</code> is obtained by building gcc. There are multiple approaches to obtaining it:</p>
-<ol>
-  <li>Build gcc with <code>musl-gcc</code>.</li>
-  <li>Use <code>libstdc++.a</code> from your distribution. If you choose this path, check the <a href="https://www.musl-libc.org/faq.html">FAQs</a> page, “How do I use the musl-gcc wrapper?”:
-    <blockquote>
-      <p>The existing libstdc++ is actually compatible with musl in most cases and could be used by copying it into the musl library path, but the C++ header files are usually not compatible.
-Since you do not need C++ header files, this approach should work. If you run into issues, make sure they are not caused by your ditribution’s <code>libstdc++.a</code>.</p>
-    </blockquote>
-  </li>
-  <li>Take <code>libstdc++.a</code> from Alpine.
-In each case, <code>libstdc++.a</code> must be placed in <code>${RESULT_DIR}/lib</code>.</li>
-</ol>
+      </h3>
+
+<p>A fully static native image gives you the most flexibility to choose a base image - it can run on anything including a <code>FROM scratch</code> image.
+A mostly static native image requires a container image that provides <code>glibc</code>, but has no additional requirements.
+In both cases, choosing the base image mostly depends on what your particular native image needs without having to worry about run-time library dependencies.</p>
 
               </div>
 

@@ -698,66 +698,62 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This example demonstrates how to compile a Java and Kotlin application
-ahead-of-time into a native executable, and illustrates the advantages.</p>
+<p>This example demonstrates how to compile a Java and Kotlin application ahead-of-time into a native executable, and illustrates the advantages.</p>
     
-      <h3 id="preparation">
+      <h2 id="preparation">
         
         
           Preparation <a href="#preparation" class="anchor_heading">#</a>
         
         
-      </h3>
-
-<p>This example requires the <a href="https://maven.apache.org/">Maven</a> build tool.</p>
+      </h2>
 
 <p>1. Download or clone the repository and navigate into the <code>java-kotlin-aot</code> directory:</p>
-<pre><code class="language-shell">git clone https://github.com/graalvm/graalvm-demos
-cd graalvm-demos/java-kotlin-aot
-</code></pre>
-<p>This is a simple Java and Kotlin application showing how easy it is to
-interoperate between JVM-based languages. A Java method accesses a String from
-Kotlin and calls a Kotlin function, which later accesses a String from a Java
-class. Before running this example, you need to build the application.</p>
 
-<p>Note: You can use any JDK for building the application. However, <code>javac</code> from GraalVM
-in the build script is used to simplify the prerequisites so another JDK does not need to be installed.</p>
+<p>Note: You can use any JDK for building the application. However, <code>javac</code> from GraalVM in the build script is used to simplify the prerequisites so another JDK does not need to be installed.</p>
 
-<p>2. Having installed GraalVM, export the home directory as <code>$GRAALVM_HOME</code> and add <code>$GRAALVM_HOME/bin</code>
-to the path, using a command-line shell for Linux:</p>
-<pre><code class="language-shell">export GRAALVM_HOME=/home/${current_user}/path/to/graalvm
+<p>2. <a href="https://www.graalvm.org/downloads/">Download GraalVM</a>, unzip the archive, export the GraalVM home directory as the <code>$JAVA_HOME</code> and add <code>$JAVA_HOME/bin</code> to the <code>PATH</code> environment variable:
+  On Linux:</p>
+<pre><code class="language-bash">  export JAVA_HOME=/home/${current_user}/path/to/graalvm
+  export PATH=$JAVA_HOME/bin:$PATH
 </code></pre>
-<p>For macOS, use:</p>
-<pre><code class="language-shell">export GRAALVM_HOME=/Users/${current_user}/path/to/graalvm/Contents/Home
+<p>On macOS:</p>
+<pre><code class="language-bash">  export JAVA_HOME=/Users/${current_user}/path/to/graalvm/Contents/Home
+  export PATH=$JAVA_HOME/bin:$PATH
+</code></pre>
+<p>On Windows:</p>
+<pre><code class="language-bash">  setx /M JAVA_HOME "C:\Progra~1\Java\&lt;graalvm&gt;"
+  setx /M PATH "C:\Progra~1\Java\&lt;graalvm&gt;\bin;%PATH%"
 </code></pre>
 <p>Note that your paths are likely to be different depending on the download location.</p>
 
-<p>3. <a href="/reference-manual/native-image/#install-native-image">Install Native Image</a> to make use of the <code>native-image</code> utility.</p>
+<p>3. <a href="/reference-manual/native-image/#install-native-image">Install Native Image</a> by running.</p>
+<pre><code class="language-bash">  gu install native-image
+</code></pre>
 
 <p>4. Then execute:</p>
-<pre><code class="language-shell">./build.sh
+<pre><code class="language-shell">  ./build.sh
 </code></pre>
 
 <p>Have a look at the <code>build.sh</code> script which creates a native executable from a Java class.
 The <code>native-image</code> utility compiles the application ahead-of-time for faster startup and lower general overhead at runtime.</p>
-<pre><code class="language-shell">$GRAALVM_HOME/bin/native-image -cp ./target/mixed-code-hello-world-1.0-SNAPSHOT.jar -H:Name=helloworld -H:Class=hello.JavaHello -H:+ReportUnsupportedElementsAtRuntime --allow-incomplete-classpath
+<pre><code class="language-shell">$JAVA_HOME/bin/native-image --no-fallback -cp ./target/mixed-code-hello-world-1.0-SNAPSHOT-jar-with-dependencies.jar -H:Name=helloworld -H:Class=hello.JavaHello -H:+ReportUnsupportedElementsAtRuntime
 </code></pre>
 
-<p>It takes a few parameters: the classpath, the main class of the application with
-<code>-H:Class=...</code>, and the name of the resulting executable with <code>-H:Name=...</code>.</p>
+<p>It takes a few parameters: the classpath, the main class of the application with <code>-H:Class=...</code>, and the name of the resulting executable with <code>-H:Name=...</code>.</p>
 
-<p>After executing the <code>native-image</code> command, check the directory. It should have
-produced the executable file, <code>helloworld</code>.</p>
+<p>After executing the <code>native-image</code> command, check the directory.
+It should have produced the executable file, <code>helloworld</code>.</p>
     
-      <h3 id="running-the-application">
+      <h2 id="running-the-application">
         
         
           Running the Application <a href="#running-the-application" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>To run the application, you need to execute the JAR file in the <code>target</code> dir.
+<p>To run the application, you need to execute the JAR file in the <code>target</code> directory.
 You can run it as a normal Java application using <code>java</code>.
 Or, since we have a native executable prepared, you can run that directly.
 The <code>run.sh</code> file executes both, and times them with the <code>time</code> utility:</p>

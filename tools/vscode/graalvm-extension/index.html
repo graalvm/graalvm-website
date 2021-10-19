@@ -699,7 +699,7 @@ The extension is Technology Preview.</p>
   <li><a href="#installation-and-setup">Installation and Setup</a></li>
   <li><a href="#java-development-and-debugging">Java Development and Debugging</a></li>
   <li><a href="#native-image-agent">Native Image Agent</a></li>
-  <li><a href="#native-image-debugger">Native Image Debugger</a></li>
+  <li><a href="#native-image-debugging">Native Image Debugging</a></li>
   <li><a href="#integration-with-visualvm">Integration with VisualVM</a></li>
   <li><a href="#javascript-and-nodejs-debugging">JavaScript and Node.js Debugging</a></li>
   <li><a href="#python-debugging">Python Debugging</a></li>
@@ -847,7 +847,7 @@ Components are either installed or available for download - the context actions 
         
       </h2>
 
-<p>To start developing or debugging Java applications, ensure GraalVM is used as your Java runtime in VS Code.
+<p>To start developing Java applications, ensure GraalVM is used as your Java runtime in VS Code.
 If the current path is not pointing to the GraalVM folder, go to the User Settings window and use the <code>netbeans.jdkhome</code> value in the <em>settings.json</em> file.
 This configuration is then used to launch the Java Language Server.</p>
 
@@ -945,12 +945,12 @@ Open the <em>launch.json</em> file and click the Add Configuration… button in 
 <p>5. Generate load to the running process to invoke more code and generate the best configuration.
 Once all possible execution paths have been executed, terminate the process. At this point the Native Image agent dumps the collected configuration to the selected output directory.</p>
 
-<p>Once the configuration for Native Image has been generated, follow the documentation on how to <a href="https://www.graalvm.org/reference-manual/native-image#build-a-native-image">generate a native image for a project</a> from the command line, or how to <a href="/tools/vscode/micronaut-extension/#generate-native-images-of-micronaut-projects">build native images right from VS Code</a>.</p>
+<p>Once the configuration for Native Image has been generated, follow the documentation on how to <a href="https://www.graalvm.org/reference-manual/native-image/#build-a-native-image">generate a native image for a project</a> from the command line, or how to <a href="/tools/vscode/micronaut-extension/#generate-native-images-of-micronaut-projects">build native images right from VS Code</a>.</p>
     
-      <h2 id="native-image-debugger">
+      <h2 id="native-image-debugging">
         
         
-          Native Image Debugger <a href="#native-image-debugger" class="anchor_heading">#</a>
+          Native Image Debugging <a href="#native-image-debugging" class="anchor_heading">#</a>
         
         
       </h2>
@@ -959,8 +959,10 @@ Once all possible execution paths have been executed, terminate the process. At 
 It is provided using the GNU Debugger (GDB) and via a new Run configuration named <strong>Launch Native Image</strong>.
 GraalVM Enterprise Edition is required as it produces full debug information for a native image.</p>
 
+<p><img src="/docs/tools/vscode/graalvm/images/ni_debugging.png" alt="Native Image debugging" /></p>
+
 <blockquote>
-  <p>Note: This feature is experimental. It currently works only on Linux with GDB 7.11 or GDB 10.1+ due to known issue <a href="https://sourceware.org/bugzilla/show_bug.cgi?id=26139">#26139</a> in GDB 8 and 9.</p>
+  <p>Note: Native Image debugging requires <code>gdb</code> debugger (GDB 7.11 or GDB 10.1+), it currently works only on Linux. The feature is experimental.</p>
 </blockquote>
 
 <p>In order to debug native images of Java applications, it is necessary to build such images with debug information available.
@@ -970,7 +972,29 @@ It can be done by providing following switches for the <code>native-image</code>
   <li><code>-H:Debug=2 -H:Optimize=0</code>.</li>
 </ul>
 
-<p>The resulting images will contain debug records in a format GDB understands.</p>
+<p>The resulting images will contain debug records in a format <code>gdb</code> debugger understands.</p>
+    
+      <h3 id="debug-native-image-real-code">
+        
+        
+          Debug Native Image “Real” Code <a href="#debug-native-image-real-code" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Since recently you can attach the debugger to a Native Image process and step over the image “real” code.</p>
+
+<p>Attaching of debugger to a Native Image process is done via adding a configuration into the <em>launch.json</em> file.</p>
+
+<ol>
+  <li>Select <strong>Native Image: Attach to Process</strong> from the configurations autocompletion in <em>launch.json</em>. It generates the <strong>Attach to Native Image</strong> configuration. When that configuration is selected and executed, a list of running processes opens.</li>
+  <li>Select the running process that corresponds to the Native Image you intend to debug.</li>
+  <li>when the source file opens, start debugging:
+<img src="/docs/tools/vscode/graalvm/images/NativeImageExecutableLocations.png" alt="Native Image debugging source code" /></li>
+</ol>
+
+<p>The step over the image “real” code” is mostly about UI differentiation of code which is compiled in the native image and which is not used.
+The shaded code is not a part of the Native Image.</p>
     
       <h2 id="integration-with-visualvm">
         
@@ -980,13 +1004,13 @@ It can be done by providing following switches for the <code>native-image</code>
         
       </h2>
 
-<p>As of GraalVM 21.2.0, the GraalVM Tools for Java extension introduced a new feature in this version - the integration with <a href="https://visualvm.github.io">VisualVM</a>, which is the all-in-one Java (and polyglot) monitoring and troubleshooting tool.
+<p>As of GraalVM 21.2.0, the GraalVM Tools for Java extension introduced a new feature in this version - the integration with VisualVM (https://visualvm.github.io), which is the all-in-one Java (and polyglot) monitoring and troubleshooting tool.
 This brings the visual Java tooling to VS Code.</p>
 
 <p><img src="/docs/tools/vscode/graalvm/images/vscode_visualvm.png" alt="VisualVM and VS Code Integration" /></p>
 
-<p>To get started, you need to get the latest stable GraalVM release using the <strong>Download &amp; Install GraalVM</strong> action from the <strong>Gr</strong> activity view, as described in the <a href="#installation-and-setup">Installation and Setup</a> section.
-Make sure the GraalVM is set as <strong>active</strong>.</p>
+<p>To get started, you need to get the latest stable GraalVM release using the <strong>Download &amp; Install GraalVM</strong> action from the <strong>Gr</strong> activity view, as described in the <a href="/tools/vscode/graalvm-extension/#installation-and-setup">Installation and Setup</a> section.
+Make sure the GraalVM is set as the <strong>active</strong> installation.</p>
 
 <p>Once a GraalVM installation is set as active, the Command Palette contains the following commands related to VisualVM:</p>
 
@@ -1018,14 +1042,14 @@ Follow these steps to start VisualVM automatically from within the VS Code:</p>
   </li>
 </ol>
 
-<p>While the project is starting, the Process node in VisualVM pane displays a project name with a “pid pending” label.
+<p>While the project is starting, the Process node in VisualVM pane displays the project name with a “pid pending” label.
 Once the project process starts, the Process node is updated to show its process ID (PID) and the action defined in step 3 is performed.</p>
 
 <blockquote>
   <p>Note: This feature was introduced with the GraalVM 21.2.0 release. Please make sure to get the latest GraalVM Tools for Java extension from the VS Code Marketplace, preferably by downloading the <a href="https://marketplace.visualstudio.com/items?itemName=oracle-labs-graalvm.graalvm-pack">GraalVM Extension Pack for Java</a>.</p>
 </blockquote>
 
-<p>For a more detailed feature description, go to <a href="/tools/vscode/visualvm-integration/">this page</a>.</p>
+<p>For a more detailed feature description, go to <a href="/tools/vscode/graalvm/visualvm-integration/">this page</a>.</p>
     
       <h2 id="javascript-and-nodejs-debugging">
         
@@ -1293,7 +1317,7 @@ For example, to connect to the Chrome Dev Tools protocol port, the content of th
 <p>Alternatively, to pass the <code>--polyglot</code> option to any of the existing application launchers, add the <code>runtimeArgs</code> attribute containing the <code>--polyglot</code> value to their respective debug configurations.</p>
 
 <blockquote>
-  <p>Note: In some cases (polyglot application calls Java or R, or native launcher accesses languages installed with <code>gu</code> without <a href="https://www.graalvm.org/reference-manual/graalvm-updater#component-uninstallation">rebuilding images</a>), also passing the <code>--jvm</code> option is necessary.</p>
+  <p>Note: In some cases (polyglot application calls Java or R, or native launcher accesses languages installed with <code>gu</code> without <a href="https://www.graalvm.org/reference-manual/graalvm-updater/#component-uninstallation">rebuilding images</a>), also passing the <code>--jvm</code> option is necessary.</p>
 </blockquote>
 
 <p><img src="/docs/tools/vscode/graalvm/images/polyglot-debug-config.png" alt="Image Debug Configuration for Python" /></p>
@@ -1349,14 +1373,14 @@ This allows you to attach compatible development tools such as VS Code to GraalV
 
 <p>Currently, <a href="https://www.graalvm.org/tools/lsp/">GraalVM’s Language Server Protocol</a> implementation supports the following services:</p>
 <ul>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_synchronization">Text Document Synchronization</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_hover">Hover Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_completion">Completion Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_signatureHelp">Signature Help Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_documentHighlight">Document Highlight Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_codeAction">Code Action Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#textDocument_codeLens">Code Lens Provider</a></li>
-  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current#workspace_executeCommand">Execute Command Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_synchronization">Text Document Synchronization</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_hover">Hover Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_completion">Completion Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_signatureHelp">Signature Help Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_documentHighlight">Document Highlight Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_codeAction">Code Action Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_codeLens">Code Lens Provider</a></li>
+  <li><a href="https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_executeCommand">Execute Command Provider</a></li>
 </ul>
 
 <blockquote>
@@ -1421,7 +1445,7 @@ Enabling this option, the GraalVM Ruby installation is checked for the presence 
         
       </h3>
 
-<p>Since the easy writing of <a href="https://www.graalvm.org/reference-manual/polyglot-programming/">polyglot applications</a> is one of the defining features of GraalVM, the code completion invoked inside JavaScript sources provides items for <code>Polyglot.eval(...)</code>, <code>Polyglot.evalFile(...)</code>, and <code>Java.type(...)</code> calls.</p>
+<p>Since the easy writing of <a href="https://www.graalvm.org/docs/reference-manual/polyglot">polyglot</a> applications is one of the defining features of GraalVM, the code completion invoked inside JavaScript sources provides items for <code>Polyglot.eval(...)</code>, <code>Polyglot.evalFile(...)</code>, and <code>Java.type(...)</code> calls.</p>
 
 <p><img src="/docs/tools/vscode/graalvm/images/code-completion-js.png" alt="Image Code Completion" /></p>
 

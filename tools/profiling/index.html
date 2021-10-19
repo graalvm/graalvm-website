@@ -814,27 +814,26 @@ algorithm.</p>
     <pre><code class="language-shell"> js primes.js --cpusampler
 
  Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
- ----------------------------------------------------------------------------------------------------
- Sampling Histogram. Recorded 825 samples with period 10ms.
+ ----------------------------------------------------------------------------------------------
+ Sampling Histogram. Recorded 250 samples with period 10ms.
    Self Time: Time spent on the top of the stack.
    Total Time: Time spent somewhere on the stack.
- ----------------------------------------------------------------------------------------------------
+ ----------------------------------------------------------------------------------------------
  Thread[main,5,main]
-  Name              |             Total Time    ||              Self Time    || Location
- ----------------------------------------------------------------------------------------------------
-  accept            |             7330ms  88.8% ||             7330ms  88.8% || primes.js~13-22:191-419
-  :program          |             8250ms 100.0% ||              420ms   5.1% || primes.js~1-46:0-982
-  next              |             7820ms  94.8% ||              250ms   3.0% || primes.js~31-37:537-737
-  DivisibleByFilter |              440ms   5.3% ||              240ms   2.9% || primes.js~7-23:66-421
-  AcceptFilter      |               20ms   0.2% ||               10ms   0.1% || primes.js~1-5:0-63
-  Primes            |               20ms   0.2% ||                0ms   0.0% || primes.js~25-38:424-739
- ----------------------------------------------------------------------------------------------------
+  Name       ||             Total Time    ||              Self Time    || Location
+ ----------------------------------------------------------------------------------------------
+  accept     ||             2150ms  86.0% ||             2150ms  86.0% || primes.js~13-22:191-419
+  next       ||             2470ms  98.8% ||              320ms  12.8% || primes.js~31-37:537-737
+  :program   ||             2500ms 100.0% ||               30ms   1.2% || primes.js~1-46:0-982
+ ----------------------------------------------------------------------------------------------
 </code></pre>
-    <p>By default the sampler prints an execution time histogram for each JavaScript function.
- You can produce a flame graph in SVG format by doing</p>
+
+    <p>By default the sampler prints an execution time histogram for each JavaScript function.</p>
+
+    <p>You can produce a flame graph in SVG format by requesting that with the <code>--cpusampler.Output=flamegraph</code> option:</p>
     <pre><code class="language-shell"> js primes.js --cpusampler --cpusampler.Output=flamegraph --cpusampler.OutputFile=primes.svg
 </code></pre>
-    <p>which should produce something like this</p>
+    <p>It should produce something like this:</p>
 
     <p><img src="/docs/tools/img/profiler_flamegraph.png" alt="" /></p>
 
@@ -857,25 +856,25 @@ algorithm.</p>
     <p>Now use the CPU Tracer to collect execution counts of each statement:</p>
   </li>
   <li>Run <code>js primes.js --cputracer --cputracer.TraceStatements --cputracer.FilterRootName=*accept</code> to collect execution counts for all statements in methods ending with <code>accept</code>:
-    <pre><code class="language-shell"> js primes.js --cputracer --cputracer.TraceStatements --cputracer.FilterRootName=*accept
+    <pre><code class="language-shell"> js primes.js --cputracer --cputracer.TraceStatements --cputracer.FilterRootName=accept
  Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
  -----------------------------------------------------------------------------------------
- Tracing Histogram. Counted a total of 351278226 element executions.
+ Tracing Histogram. Counted a total of 468336895 element executions.
    Total Count: Number of times the element was executed and percentage of total executions.
    Interpreted Count: Number of times the element was interpreted and percentage of total executions of this element.
    Compiled Count: Number of times the compiled element was executed and percentage of total executions of this element.
  -----------------------------------------------------------------------------------------
   Name     |          Total Count |    Interpreted Count |       Compiled Count | Location
  -----------------------------------------------------------------------------------------
-  accept   |     117058669  33.3% |         63575   0.1% |     116995094  99.9% | primes.js~15:245-258
-  accept   |     117053670  33.3% |         63422   0.1% |     116990248  99.9% | primes.js~16-18:275-348
-  accept   |     117005061  33.3% |         61718   0.1% |     116943343  99.9% | primes.js~19:362-381
-  accept   |         53608   0.0% |          1857   3.5% |         51751  96.5% | primes.js~14:215-227
-  accept   |         53608   0.0% |          1857   3.5% |         51751  96.5% | primes.js~13-22:191-419
-  accept   |         48609   0.0% |          1704   3.5% |         46905  96.5% | primes.js~17:322-334
-  accept   |          4999   0.0% |           153   3.1% |          4846  96.9% | primes.js~21:409-412
+  accept   |     234117338  50.0% |        365660   0.2% |     233751678  99.8% | primes.js~15:245-258
+  accept   |     117053670  25.0% |        182582   0.2% |     116871088  99.8% | primes.js~16-18:275-348
+  accept   |     117005061  25.0% |        181001   0.2% |     116824060  99.8% | primes.js~19:362-381
+  accept   |         53608   0.0% |          1829   3.4% |         51779  96.6% | primes.js~14:211-227
+  accept   |         53608   0.0% |          1829   3.4% |         51779  96.6% | primes.js~13-22:191-419
+  accept   |         48609   0.0% |          1581   3.3% |         47028  96.7% | primes.js~17:322-334
+  accept   |          4999   0.0% |           248   5.0% |          4751  95.0% | primes.js~21:402-413
   accept   |             1   0.0% |             1 100.0% |             0   0.0% | primes.js~2-4:25-61
-  accept   |             1   0.0% |             1 100.0% |             0   0.0% | primes.js~3:52-55
+  accept   |             1   0.0% |             1 100.0% |             0   0.0% | primes.js~3:45-55
  -----------------------------------------------------------------------------------------
 </code></pre>
 
@@ -886,17 +885,16 @@ algorithm.</p>
     <pre><code class="language-shell"> js primes.js --experimental-options --memtracer
  Computed 5000 prime numbers. The last 5 are 48563,48571,48589,48593,48611.
  ------------------------------------------------------------
-  Location Histogram with Allocation Counts. Recorded a total of 5013 allocations.
-    Total Count: Number of allocations during the execution of this element.
-    Self Count: Number of allocations in this element alone (excluding sub calls).
- ------------------------------------------------------------
-  Name        |      Self Count |     Total Count |  Location
- ------------------------------------------------------------
-  next        |     5000  99.7% |     5000  99.7% | primes.js~31-37:537-737
-  :program    |       11   0.2% |     5013 100.0% | primes.js~1-46:0-966
-  Primes      |        1   0.0% |        1   0.0% | primes.js~25-38:454-739
- ------------------------------------------------------------
-
+ Location Histogram with Allocation Counts. Recorded a total of 5007 allocations.
+   Total Count: Number of allocations during the execution of this element.
+   Self Count: Number of allocations in this element alone (excluding sub calls).
+--------------------------------------------------------
+ Name     |      Self Count |     Total Count | Location
+--------------------------------------------------------
+ next     |     5000  99.9% |     5000  99.9% | primes.js~31-37:537-737
+ :program |        6   0.1% |     5007 100.0% | primes.js~1-46:0-982
+ Primes   |        1   0.0% |        1   0.0% | primes.js~25-38:424-739
+--------------------------------------------------------
 </code></pre>
 
     <p>This output shows the number of allocations which were recorded per function. For each prime number that was computed, the program allocates one object in <code>next</code> and one in <code>constructor</code> of <code>DivisibleByFilter</code>.
@@ -932,9 +930,11 @@ The current set of available options is as follows.</p>
 file paths, for example, <code>*program*.sl</code>. The default is ∗.</li>
   <li><code>--cpusampler.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the
 matching mime-type, for example, <code>+</code>. The default is no filter.</li>
+  <li><code>--cpusampler.FilterMimeType=&lt;String&gt;</code>: profiles languages with mime-type. There is no filter by default.</li>
   <li><code>--cpusampler.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for
 program roots, for example, <code>Math.*</code>. The default is ∗.</li>
   <li><code>--cpusampler.GatherHitTimes</code>: saves a timestamp for each taken sample. The default is false.</li>
+  <li><code>--cpusampler.MinSamples=&lt;Integer&gt;</code>: removes elements from output if they have less samples than this value (default is <code>0</code>).</li>
   <li><code>--cpusampler.Mode=&lt;Mode&gt;</code>:  describes the level of sampling detail. Please note that increased detail can lead to reduced accuracy.
     <ul>
       <li><code>exclude_inlined_roots</code>: samples roots excluding inlined functions (enabled by default)</li>
@@ -944,10 +944,9 @@ program roots, for example, <code>Math.*</code>. The default is ∗.</li>
   </li>
   <li><code>--cpusampler.Output=&lt;Output&gt;</code>: prints a <code>histogram</code>, <code>calltree</code>, <code>json</code>, or <code>flamegraph</code> as output.
 The default is <code>histogram</code>.</li>
+  <li><code>--cpusampler.OutputFile=&lt;String&gt;</code>: saves output to the given file. Output is printed to output stream by default.</li>
   <li><code>--cpusampler.Period=&lt;Long&gt;</code>: specifies the period, in milliseconds, to
 sample the stack.</li>
-  <li><code>--cpusampler.SampleInternal</code>: captures internal elements. The default is
-false.</li>
   <li><code>--cpusampler.StackLimit=&lt;Integer&gt;</code>: specifies the maximum number of stack
 elements.</li>
   <li><code>--cpusampler.SummariseThreads </code>: prints sampling output as a summary of all <code>per thread</code> profiles. The default is false.</li>
@@ -967,11 +966,12 @@ elements.</li>
 file paths, for example, <code>*program*.sl</code>. The default is ∗.</li>
   <li><code>--cputracer.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the
 matching mime-type, for example, <code>+</code>. The default is no filter.</li>
+  <li><code>--cputracer.FilterMimeType=&lt;String&gt;</code>: profiles languages with mime-type. There is no filter by default.</li>
   <li><code>--cputracer.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for
 program roots, for example, <code>Math.*</code>. The default is ∗.</li>
   <li><code>--cputracer.Output=&lt;Output&gt;</code> prints a <code>histogram</code> or <code>json</code> as output. The default is <code>histogram</code>.</li>
+  <li><code>--cpusampler.OutputFile=&lt;String&gt;</code>: saves output to the given file. Output is printed to output stream by default.</li>
   <li><code>--cputracer.TraceCalls</code>: captures calls when tracing. The default is false.</li>
-  <li><code>--cputracer.TraceInternal</code>: traces internal elements. The default is false.</li>
   <li><code>--cputracer.TraceRoots=&lt;Boolean&gt;</code>: captures roots when tracing. The default
 is true.</li>
   <li><code>--cputracer.TraceStatements</code>: captures statements when tracing. The default
@@ -992,11 +992,11 @@ is false.</li>
   <li><code>--memtracer</code>: enables the memory tracer. Disabled by default.</li>
   <li><code>--memtracer.FilterFile=&lt;Expression&gt;</code>: applies a wildcard filter for source file paths, for example, <code>*program*.sl</code>. The default is ∗.</li>
   <li><code>--memtracer.FilterLanguage=&lt;String&gt;</code>: profiles languages only with the matching mime-type, for example, <code>+</code>. The default is no filter.</li>
+  <li><code>--memtracer.FilterMimeType=&lt;String&gt;</code>: profiles languages with mime-type. There is no filter by default.</li>
   <li><code>--memtracer.FilterRootName=&lt;Expression&gt;</code>: applies a wildcard filter for program roots, for example, <code>Math.*</code>. The default is ∗.</li>
   <li><code>--memtracer.Output=&lt;Format&gt;</code>: prints a <code>typehistogram</code>, <code>histogram</code>, or <code>calltree</code> as output. The default is <code>histogram</code>.</li>
   <li><code>--memtracer.StackLimit=&lt;Integer&gt;</code>: sets the maximum number of maximum stack elements.</li>
   <li><code>--memtracer.TraceCalls</code>: captures calls when tracing. The default is false.</li>
-  <li><code>--memtracer.TraceInternal</code>: captures internal elements. The default is false.</li>
   <li><code>--memtracer.TraceRoots=&lt;Boolean&gt;</code>: captures roots when tracing. The default is true.</li>
   <li><code>--memtracer.TraceStatements</code>: captures statements when tracing. The default is false.</li>
 </ul>
