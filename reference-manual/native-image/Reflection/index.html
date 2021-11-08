@@ -1011,10 +1011,10 @@ For these situations a manual configuration as described below can be provided.<
 <pre><code class="language-json">[
   {
     "name" : "java.lang.Class",
-    "allDeclaredConstructors" : true,
-    "allPublicConstructors" : true,
-    "allDeclaredMethods" : true,
-    "allPublicMethods" : true,
+    "queryAllDeclaredConstructors" : true,
+    "queryAllPublicConstructors" : true,
+    "queryAllDeclaredMethods" : true,
+    "queryAllPublicMethods" : true,
     "allDeclaredClasses" : true,
     "allPublicClasses" : true
   },
@@ -1033,15 +1033,20 @@ For these situations a manual configuration as described below can be provided.<
   },
   {
     "name" : "java.lang.String$CaseInsensitiveComparator",
-    "methods" : [
+    "queriedMethods" : [
       { "name" : "compare" }
     ]
   }
 ]
 </code></pre>
 
+<p>The configuration distinguishes between methods and constructors that can be invoked during execution via <code>Method.invoke(Object, Object...)</code> or <code>Constructor.newInstance(Object...)</code> and those that can not.
+Including a function in the configuration without invocation capabilities helps the static analysis correctly assess its reachability status and results in smaller image sizes.
+The function metadata is then accessible at runtime like it would for any other registered reflection method or constructor, but trying to call the function will result in a runtime error.
+The configuration fields prefixed by <code>query</code> or <code>queried</code> only include the metadata, while the other ones (e.g., <code>methods</code>) enable runtime invocation.</p>
+
 <p>The native image builder generates reflection metadata for all classes, methods, and fields referenced in that file.
-The <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code>, and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.</p>
+The <code>queryAllPublicConstructors</code>, <code>queryAllDeclaredConstructors</code>, <code>queryAllPublicMethods</code>, <code>queryAllDeclaredMethods</code>, <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code>, and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.</p>
 
 <p>However, <code>allPublicClasses</code> and <code>allDeclaredClasses</code> do not automatically register the inner classes for reflective access.
 They just make them available via <code>Class.getClasses()</code> and <code>Class.getDeclaredClasses()</code> when called on the declaring class.
