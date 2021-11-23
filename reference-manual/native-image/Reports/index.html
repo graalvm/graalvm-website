@@ -918,9 +918,12 @@ $(document).ready(function(){
         
       </h1>
 
-<p>The points-to analysis produces two kinds of reports: analysis call tree and image object tree.
-This information is produced by an intermediate step in the image building process and represents the static analysis view of the call graph and heap object graph.
-These graphs are further transformed in the image building process before they are AOT compiled into the image and written into the image heap, respectively.</p>
+<p>The points-to analysis produces two kinds of reports: analysis call tree and
+image object tree. This information is produced by an intermediate step in the
+image building process and represents the static analysis view of the call graph
+and heap object graph. These graphs are further transformed in the image
+building process before they are AOT compiled into the image and written into
+the image heap, respectively.</p>
     
       <h4 id="call-tree">
         
@@ -932,8 +935,17 @@ These graphs are further transformed in the image building process before they a
 <p>The call tree is a a breadth-first tree reduction of the call graph as seen by the points-to analysis.
 The points-to analysis eliminates calls to methods that it determines cannot be reachable at runtime, based on the analysed receiver types.
 It also completely eliminates invocations in unreachable code blocks, e.g., blocks guarded by a type check that always fails.
-The call tree report is enabled using the <code>-H:+PrintAnalysisCallTree</code> option.
-It produces a file with the structure:</p>
+The call tree report is enabled using the <code>-H:+PrintAnalysisCallTree</code> option and can be formatted either as a <code>TXT</code> file (default) or as a set of <code>CSV</code> files using the <code>-H:PrintAnalysisCallTreeType=CSV</code> option.</p>
+    
+      <h5 id="txt-format">
+        
+        
+          TXT Format
+        
+        
+      </h5>
+
+<p>When using the <code>TXT</code> format a file with the following structure is generated:</p>
 
 <pre><code>VM Entry Points
 ├── entry &lt;entry-method&gt; id=&lt;entry-method-id&gt;
@@ -965,6 +977,26 @@ Each <code>id=&lt;method-id&gt;</code> and <code>id-ref=&lt;method-id&gt;</code>
 
 <p>Each invoke is tagged with the invocation bci: <code>@bci=&lt;invoke-bci&gt;</code>.
 For invokes of inline methods the <code>&lt;invoke-bci&gt;</code> is a list of bci values, separated with <code>-&gt;</code>, enumerating the inline locations, backwards to the original invocation location.</p>
+    
+      <h5 id="csv-format">
+        
+        
+          CSV Format
+        
+        
+      </h5>
+<p>When using the <code>CSV</code> format a set of files containing raw data for methods and their relationships is generated.
+The aim of these files is to enable this raw data to be easily imported into graph databases.
+Graph databases can provide the following functionality:</p>
+
+<ul>
+  <li>Sophisticated graphical visualization of the call tree graph that provide a different perspective compared to text-based formats.</li>
+  <li>Ability to execute complex queries that can for example show a subset of the tree that causes certain code path to be included in the call tree analysis.
+This querying functionality is crucial in making big analysis call trees manageable.</li>
+</ul>
+
+<p>The process to import the files into graph databases is specific to each database.
+Please follow the instructions provided by the graph database providers to find out how to import them.</p>
     
       <h4 id="image-object-tree">
         
@@ -1090,31 +1122,11 @@ The pattern accepts the <code>*</code> modifier:</p>
 <p>The reports are generated in the <code>reports</code> subdirectory, relative to the image building directory.
 When executing the <code>native-image</code> executable the image build directory defaults to the working directory and can be modified using the <code>-H:Path=&lt;dir&gt;</code> option.</p>
 
-<p>The call tree report name has the structure <code>call_tree_&lt;image_name&gt;_&lt;date_time&gt;.txt</code>.
+<p>The call tree report name has the structure <code>call_tree_&lt;image_name&gt;_&lt;date_time&gt;.txt</code> when using the <code>TXT</code> format or, when using the <code>CSV</code> format, the call tree reports’ names have the structure <code>call_tree_*_&lt;image_name&gt;_&lt;date_time&gt;.csv</code>.
+When producing <code>CSV</code> formatted call tree reports, symbolic links following the structure <code>call_tree_*.csv</code> pointing to the latest call tree CSV reports are also generated.
 The object tree report name has the structure: <code>object_tree_&lt;image_name&gt;_&lt;date_time&gt;.txt</code>.
 The image name is the name of the generated image, which can be set with the <code>-H:Name=&lt;name&gt;</code> option.
 The <code>&lt;date_time&gt;</code> is in the <code>yyyyMMdd_HHmmss</code> format.</p>
-    
-      <h4 id="csv-files">
-        
-        
-          CSV files
-        
-        
-      </h4>
-
-<p>The reports include a number of CSV files containing raw data for methods and their relationships.
-The aim of these files is to make it enable this raw data to be easily imported into graph databases.
-Graph databases can provide the following functionality:</p>
-
-<ul>
-  <li>Sophisticated graphical visualization of the call tree graph that provide a different perspective compared to text-based formats.</li>
-  <li>Ability to execute complex queries that can for example show a subset of the tree that causes certain code path to be included in the call tree analysis.
-This querying functionality is crucial in making big analysis call trees manageable.</li>
-</ul>
-
-<p>The process to import the files into graph databases is specific to each database.
-Please follow the instructions provided by the graph database providers to find out how to import them.</p>
 
               </div>
 
