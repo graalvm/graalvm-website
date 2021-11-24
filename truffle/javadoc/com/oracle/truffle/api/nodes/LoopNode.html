@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>cb490b9ee67fa964852771b7b2ea6957738d49ab</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>fa3259d594d295a07cad4122e1422734aa4af436</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -272,7 +272,7 @@ extends <a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="c
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html#reportLoopCount-com.oracle.truffle.api.nodes.Node-int-">reportLoopCount</a></span>(<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;source,
                int&nbsp;iterations)</code>
 <div class="block">
- Reports the execution count of a loop for which a no <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used.</div>
+ Reports the execution count of a loop for which no <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used.</div>
 </td>
 </tr>
 </table>
@@ -374,27 +374,51 @@ extends <a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="c
 <pre>public static&nbsp;void&nbsp;reportLoopCount(<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;source,
                                    int&nbsp;iterations)</pre>
 <div class="block"><p>
- Reports the execution count of a loop for which a no <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used. The
+ Reports the execution count of a loop for which no <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used. The
  optimization heuristics can use the loop count from non Truffle loops to guide compilation
  and inlining better. Do not use <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> and <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html#reportLoopCount-com.oracle.truffle.api.nodes.Node-int-"><code>LoopNode.reportLoopCount(Node, int)</code></a> at
- the same time for one loop.
- </p>
+ the same time for one loop. If the number of iterations needs to be counted and can overflow,
+ only count if <a href="../../../../../com/oracle/truffle/api/CompilerDirectives.html#hasNextTier--"><code>CompilerDirectives.hasNextTier()</code></a> is <code>true</code> (reporting will
+ have no effect in the last tier) and consider reporting <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true#MAX_VALUE" title="class or interface in java.lang"><code>Integer.MAX_VALUE</code></a> in case of
+ overflows. If the number is often zero and <a href="../../../../../com/oracle/truffle/api/nodes/LoopNode.html#reportLoopCount-com.oracle.truffle.api.nodes.Node-int-"><code>LoopNode.reportLoopCount(Node, int)</code></a> is called
+ frequently (e.g. in a loop), consider adding a check to avoid the overhead of redundant calls
+ with an <code>iterations</code> argument of zero in the interpreter.
 
  <p>
- Example usage with a custom loop: <code>
+ Example usage for a custom loop iterating over an array: <code>
  <pre>
  public int executeCustomLoopSum(int[] data) {
-     try {
-         int sum = 0;
-         for (int i = 0; i < data.length; i++) {
-             sum += data[i];
-         }
-         return sum;
-     } finally {
-         LoopNode.reportLoopCount(this, data.length);
+     int sum = 0;
+     for (int i = 0; i < data.length; i++) {
+         sum += data[i];
      }
+     LoopNode.reportLoopCount(this, data.length);
+     return sum;
  }
+ </pre>
+ </code>
 
+ Example usage for a custom loop with an unknown number of iterations and a potential
+ <code>int</code> overflow: <code>
+ <pre>
+ public Object executeCustomLoopWithUnknownIterations(int[] data) {
+     Object result;
+     int counter = 0;
+     while(true) {
+         if (isResultAvailable()) {
+             result = getResult();
+             break;
+         }
+         // do some work to calculate result
+         if (CompilerDirectives.hasNextTier()) {
+             counter++;
+         }
+     }
+     if (counter != 0) {
+         LoopNode.reportLoopCount(this, counter > 0 ? counter : Integer.MAX_VALUE);
+     }
+     return result;
+ }
  </pre>
  </code>
  </p></div>
@@ -431,7 +455,7 @@ extends <a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="c
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>cb490b9ee67fa964852771b7b2ea6957738d49ab</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>fa3259d594d295a07cad4122e1422734aa4af436</div>
 </div>
 <div class="subNav">
 <ul class="navList">
