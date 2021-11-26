@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../../index-all.html">Index</a></li>
 <li><a href="../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>c1ea29fede4b33e324cf5a26adc5412d7e023558</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>3fd5d5ffe788f04ffafdab41376f201d7f4aac8e</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -135,26 +135,30 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
  <p>
  Example usage: <pre><b>final</b> <b>class</b> MyNode <b>extends</b> <a href="../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> {
     <b>void</b> executeInContext(<a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.Env</code></a> env) {
-        MyContext outerLangContext = getContext();
+        MyContext outerLangContext = getContext(<b>this</b>);
 
         <a href="../../../../com/oracle/truffle/api/TruffleContext.html" title="class in com.oracle.truffle.api"><code>TruffleContext</code></a> innerContext = env.newContextBuilder().build();
         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang"><code>Object</code></a> p = innerContext.enter(<b>this</b>);
         <b>try</b> {
-            MyContext innerLangContext = getContext();
+            /*
+             * Here the <b>this</b> node cannot be passed otherwise an
+             * invalid sharing error would occur.
+             */
+            MyContext innerLangContext = getContext(<b>null</b>);
 
             <b>assert</b> outerLangContext != innerLangContext;
         } <b>finally</b> {
             innerContext.leave(<b>this</b>, p);
         }
-        <b>assert</b> outerLangContext == getContext();
+        <b>assert</b> outerLangContext == getContext(<b>this</b>);
         innerContext.close();
     }
 }
 <b>private</b> <b>static</b> <a href="../../../../com/oracle/truffle/api/TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a>&lt;MyContext&gt; REFERENCE
              = <a href="../../../../com/oracle/truffle/api/TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a>.create(MyLanguage.<b>class</b>);
 
-<b>private</b> <b>static</b> MyContext getContext() {
-    <b>return</b> REFERENCE.get(<b>null</b>);
+<b>private</b> <b>static</b> MyContext getContext(<a href="../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> node) {
+    <b>return</b> REFERENCE.get(node);
 }
 </pre></div>
 <dl>
@@ -420,26 +424,30 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
  <p>
  Example usage: <pre><b>final</b> <b>class</b> MyNode <b>extends</b> <a href="../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> {
     <b>void</b> executeInContext(<a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.Env</code></a> env) {
-        MyContext outerLangContext = getContext();
+        MyContext outerLangContext = getContext(<b>this</b>);
 
         <a href="../../../../com/oracle/truffle/api/TruffleContext.html" title="class in com.oracle.truffle.api"><code>TruffleContext</code></a> innerContext = env.newContextBuilder().build();
         <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang"><code>Object</code></a> p = innerContext.enter(<b>this</b>);
         <b>try</b> {
-            MyContext innerLangContext = getContext();
+            /*
+             * Here the <b>this</b> node cannot be passed otherwise an
+             * invalid sharing error would occur.
+             */
+            MyContext innerLangContext = getContext(<b>null</b>);
 
             <b>assert</b> outerLangContext != innerLangContext;
         } <b>finally</b> {
             innerContext.leave(<b>this</b>, p);
         }
-        <b>assert</b> outerLangContext == getContext();
+        <b>assert</b> outerLangContext == getContext(<b>this</b>);
         innerContext.close();
     }
 }
 <b>private</b> <b>static</b> <a href="../../../../com/oracle/truffle/api/TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a>&lt;MyContext&gt; REFERENCE
              = <a href="../../../../com/oracle/truffle/api/TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a>.create(MyLanguage.<b>class</b>);
 
-<b>private</b> <b>static</b> MyContext getContext() {
-    <b>return</b> REFERENCE.get(<b>null</b>);
+<b>private</b> <b>static</b> MyContext getContext(<a href="../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> node) {
+    <b>return</b> REFERENCE.get(node);
 }
 </pre></div>
 <dl>
@@ -882,7 +890,7 @@ implements <a href="http://docs.oracle.com/javase/8/docs/api/java/lang/AutoClose
 <li><a href="../../../../index-all.html">Index</a></li>
 <li><a href="../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>c1ea29fede4b33e324cf5a26adc5412d7e023558</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.0.0-dev</b><br>3fd5d5ffe788f04ffafdab41376f201d7f4aac8e</div>
 </div>
 <div class="subNav">
 <ul class="navList">
