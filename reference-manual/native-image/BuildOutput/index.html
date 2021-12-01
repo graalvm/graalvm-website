@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/Resources/">
+  <link rel="canonical" href="https://www.graalvm.org/reference-manual/native-image/BuildOutput/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -612,31 +612,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/reference-manual/native-image/Resources/">
               Accessing Resources in Native Images
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -910,130 +892,149 @@ $(document).ready(function(){
 
             <div class="col-sm-9">
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="accessing-resources-in-native-images">
+                <h1 id="native-image-build-output">
         
         
-          Accessing Resources in Native Images
+          Native Image Build Output
         
         
       </h1>
-
-<p>By default, the native image builder will not integrate any of the resources which are on the classpath during the generation into the final image.
-To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or the corresponding ClassLoader methods) return specific resources (instead of null), the resources that should be accessible at image run time need to be explicitly specified. This can be done via a configuration file such as the following:</p>
-
-<pre><code class="language-json">{
-  "resources": {
-    "includes": [
-      {"pattern": "&lt;Java regexp that matches resource(s) to be included in the image&gt;"},
-      {"pattern": "&lt;another regexp&gt;"},
-      ...
-    ],
-    "excludes": [
-      {"pattern": "&lt;Java regexp that matches resource(s) to be excluded from the image&gt;"},
-      {"pattern": "&lt;another regexp&gt;"},
-      ...
-    ]
-  }
-}
-</code></pre>
-
-<p>The configuration file’s path must be provided to <code>native-image</code> with <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>.
-Alternatively, individual resource paths can also be specified directly to <code>native-image</code>:</p>
-
-<pre><code class="language-shell">native-image -H:IncludeResources=&lt;Java regexp that matches resources to be included in the image&gt; -H:ExcludeResources=&lt;Java regexp that matches resources to be excluded from the image&gt; ...
-</code></pre>
-<p>The <code>-H:IncludeResources</code> and <code>-H:ExcludeResources</code> options can be passed several times to define more than one regexp to match or exclude resources, respectively.</p>
-
-<p>To see which resources get ultimately included into the image, you can enable the related logging info with <code>-H:Log=registerResource:</code>.</p>
     
-      <h3 id="example-usage">
+      <h2 id="glossary">
         
         
-          Example Usage <a href="#example-usage" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Given this project structure:</p>
-<pre><code>my-app-root
-└── src
-    ├── main
-    │   └── com.my.app
-    │       ├── Resource0.txt
-    │       └── Resource1.txt
-    └── resources
-        ├── Resource2.txt
-        └── Resource3.txt
-</code></pre>
-<p>Then:</p>
-
-<ul>
-  <li>All resources can be loaded with <code>.*/Resource.*txt$</code>, specified as <code>{"pattern":".*/Resource.*txt$"}</code> in a configuration file, or <code>-H:IncludeResources='.*/Resource.*txt$'</code> on the command line.</li>
-  <li><code>Resource0.txt</code> can be loaded with <code>.*/Resource0.txt$</code>.</li>
-  <li><code>Resource0.txt</code> and <code>Resource1.txt</code> can be loaded with <code>.*/Resource0.txt$</code> and <code>.*/Resource1.txt$</code>
-(or alternatively with a single <code>.*/(Resource0|Resource1).txt$</code>).</li>
-  <li>Also, if we want to include everything except the <code>Resource2.txt</code> file, we can simply exclude it with <code>-H:IncludeResources='.*/Resource.*txt$'</code> followed by <code>-H:ExcludeResources='.*/Resource2.txt$'</code>.</li>
-</ul>
-
-<p>See also the <a href="/reference-manual/native-image/BuildConfiguration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
-    
-      <h2 id="locales">
-        
-        
-          Locales <a href="#locales" class="anchor_heading">#</a>
+          Glossary <a href="#glossary" class="anchor_heading">#</a>
         
         
       </h2>
-
-<p>It is also possible to specify which locales should be included in the image and what should be the default one.
-For example, to switch the default locale to Swiss German and also include French and English, one can use the following hosted options.</p>
-<pre><code class="language-shell">native-image -Duser.country=CH -Duser.language=de -H:IncludeLocales=fr,en
-</code></pre>
-<p>The locales are specified using <a href="https://docs.oracle.com/javase/tutorial/i18n/locale/matching.html">language tags</a>. All
-locales can be included via <code>-H:+IncludeAllLocales</code>, but please note that it increases the size of the resulting
-binary.</p>
     
-      <h2 id="resource-bundles-in-native-image">
+      <h3 id="user-provided-features">
         
         
-          Resource Bundles in Native Image <a href="#resource-bundles-in-native-image" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Java localization support (<code>java.util.ResourceBundle</code>) enables Java code to load L10N resources and show the right user messages suitable for actual runtime settings like time locale and format, etc.</p>
-
-<p>Native Image needs ahead-of-time knowledge of the resource bundles your application needs so that it can load and store the appropriate bundles for usage in the generated binary.
-The bundles can be specified in the resource configuration file (see above), in the <code>bundles</code> section:</p>
-
-<pre><code class="language-json">{
-  "bundles": [
-    {"name":"your.pkg.Bundle"},
-    {"name":"another.pkg.Resource"},
-    {"name":"etc.Bundle"}
-  ],
-  "resources": &lt;see above&gt;
-}
-</code></pre>
-
-<p>Alternatively, bundles can be specified directly as options to <code>native-image</code> as follows:</p>
-<pre><code class="language-shell">native-image -H:IncludeResourceBundles=your.pgk.Bundle,another.pkg.Resource,etc.Bundle ...
-</code></pre>
-<p>By default, the requested bundles are included for all requested locales.
-In order to optimize this, it is possible to use <code>IncludeResourceBundles</code> with locale specific substring, for example <code>-H:+IncludeResourceBundles=com.company.bundles.MyBundle_fr-FR</code> will include the bundle only in French.</p>
-    
-      <h3 id="jvm-mode-of-localization">
-        
-        
-          JVM Mode of Localization <a href="#jvm-mode-of-localization" class="anchor_heading">#</a>
+          <a name="glossary-user-provided-features">User-provided features</a> <a href="#user-provided-features" class="anchor_heading">#</a>
         
         
       </h3>
-
-<p>Resource Bundle lookup is a complex and dynamic mechanism which utilizes a lot of the infrastructure of JVM.
-As a result of that, it causes image size increase for smaller applications such as Hello World.
-Therefore, an optimized mode is set by default in which this lookup is simplified utilizing the fact the all bundles are known ahead of time.
-In case you would like to use the original JVM lookup, use the <code>-H:-LocalizationOptimizedMode</code> option.</p>
+    
+      <h3 id="classes-registered-for-reflection">
+        
+        
+          <a name="glossary-reflection-classes">Classes registered for reflection</a> <a href="#classes-registered-for-reflection" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="reachable-classes-and-methods">
+        
+        
+          <a name="glossary-reachability"></a>Reachable classes and methods <a href="#reachable-classes-and-methods" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="runtime-compiled-methods">
+        
+        
+          <a name="glossary-runtime-methods"></a>Runtime compiled methods <a href="#runtime-compiled-methods" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="code-area">
+        
+        
+          <a name="glossary-code-area"></a>Code Area <a href="#code-area" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="image-heap">
+        
+        
+          <a name="glossary-image-heap"></a>Image Heap <a href="#image-heap" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="peak-rss">
+        
+        
+          <a name="glossary-peak-rss"></a>Peak RSS <a href="#peak-rss" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="cpu-load">
+        
+        
+          <a name="glossary-cpu-load"></a>CPU load <a href="#cpu-load" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h2 id="build-stages">
+        
+        
+          Build Stages <a href="#build-stages" class="anchor_heading">#</a>
+        
+        
+      </h2>
+    
+      <h3 id="initializing">
+        
+        
+          <a name="step-initializing"></a>Initializing <a href="#initializing" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="performing-analysis">
+        
+        
+          <a name="step-analysis"></a>Performing analysis <a href="#performing-analysis" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="building-universe">
+        
+        
+          <a name="step-universe"></a>Building universe <a href="#building-universe" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="parsing-methods">
+        
+        
+          <a name="step-parsing"></a>Parsing methods <a href="#parsing-methods" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="inlining-methods">
+        
+        
+          <a name="step-inlining"></a>Inlining methods <a href="#inlining-methods" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="compiling-methods">
+        
+        
+          <a name="step-compiling"></a>Compiling methods <a href="#compiling-methods" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h3 id="creating-image">
+        
+        
+          <a name="step-creation"></a>Creating image <a href="#creating-image" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
               </div>
 
