@@ -1098,7 +1098,8 @@ When calling this function pointer from the native side, the <code>execute</code
 }
 </code></pre>
 
-<pre><code class="language-ruby">native_function = library['native_function'].bind("((SINT32):SINT32):VOID")
+<pre><code class="language-ruby">signature = Polyglot.eval('nfi', '((SINT32):SINT32):VOID')
+native_function = signature.bind(library['native_function'])
 native_function.call(-&gt;(x) { x + 1 })
 </code></pre>
 
@@ -1305,8 +1306,11 @@ The argument needs to be a Polyglot number, and its value needs to fit in the va
 <p>One thing to note is the handling of the unsigned integer types.
 Even though the Polyglot API does not specify separate messages for values fitting in unsigned types, the conversion is still using the unsigned value ranges.
 For example, the value <code>0xFF</code> passed from native to managed through a return value of type <code>SINT8</code> will result in a Polyglot number <code>-1</code>, which <code>fitsInByte</code>.
-But the same value returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em> <code>fitsInByte</code>.
-Also, passing <code>-1</code> to an argument of type <code>UINT8</code> is a type error, but passing <code>255</code> is allowed, even though it does not <code>fitsInByte</code>.</p>
+But the same value returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em> <code>fitsInByte</code>.</p>
+
+<p>When passing numbers from managed code to native code, the signedness of the number is ignored, only the bits of the number are relevant.
+So for example, passing <code>-1</code> to an argument of type <code>UINT8</code> is allowed, and the result on the native side is <code>255</code>, since it has the same bits as <code>-1</code>.
+The other way round, passing <code>255</code> to an argument of type <code>SINT8</code> is also allowed, and the result on the native side is <code>-1</code>.</p>
 
 <p>Since in the current Polyglot API it is not possible to represent numbers outside of the signed 64-bit range, the <code>UINT64</code> type is currently handled with <em>signed</em> semantics.
 This is a known bug in the API, and will change in a future release.</p>

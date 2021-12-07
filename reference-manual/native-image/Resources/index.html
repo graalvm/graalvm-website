@@ -1022,6 +1022,35 @@ The bundles can be specified in the resource configuration file (see above), in 
 <p>By default, the requested bundles are included for all requested locales.
 In order to optimize this, it is possible to use <code>IncludeResourceBundles</code> with locale specific substring, for example <code>-H:+IncludeResourceBundles=com.company.bundles.MyBundle_fr-FR</code> will include the bundle only in French.</p>
     
+      <h3 id="resources-in-java-modules">
+        
+        
+          Resources in Java modules <a href="#resources-in-java-modules" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Wherever resources are specified with <code>&lt;Java regexp that matches resources to be included in the image&gt;</code> or resource bundles are specified via bundle name, it is possible to specify the exact modules these resources or bundles should be taken from. To do so, specify the module-name before the resource-regex or bundle name with <code>:</code> as separator. For example:</p>
+
+<pre><code class="language-json">{
+   "resources": {
+      "includes": [
+         {
+            "pattern": "library-module:^resource-file.txt$"
+         }
+      ]
+   },
+   "bundles": [
+      {"name":"main-module:your.pkg.Bundle"}
+   ]
+}
+</code></pre>
+
+<p>This will make native-image include <code>resource-file.txt</code> only from Java module <code>library-module</code>. So even if other modules or the classpath contains resources that would match pattern <code>^resource-file.txt$</code> only the one in module <code>library-module</code> would be registered for image-inclusion. Similar if there would be other bundles accessible with the same bundle name <code>your.pkg.Bundle</code> only the one from <code>main-module</code> would be included. Native image will also ensure that the modules are guaranteed to be accessible at image-runtime. I.e. the following code pattern:</p>
+<pre><code class="language-java">InputStream resource = ModuleLayer.boot().findModule(moduleName).getResourceAsStream(resourcePath);
+</code></pre>
+<p>will always work as expected for resources registered as described above (even if the module does not contain any code that is seen reachable by the static analysis).</p>
+    
       <h3 id="jvm-mode-of-localization">
         
         
