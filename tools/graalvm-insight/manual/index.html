@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/tools/graalvm-insight/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/graalvm-insight/manual/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -524,31 +524,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/tools/graalvm-insight/">
               GraalVM Insight
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -751,70 +733,97 @@ $(document).ready(function(){
                 <img src="/resources/img/experimental_label.png" alt="Experimental feature in GraalVM">
               </div>
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-insight">
+                <h1 id="insight-manual">
         
         
-          GraalVM Insight
+          Insight Manual
         
         
       </h1>
 
-<ul>
-  <li><a href="#get-started">Get Started</a></li>
-  <li><a href="#polyglot-tracing">Polyglot Tracing</a></li>
-  <li><a href="#inspecting-values">Inspecting Values</a></li>
-  <li><a href="#what-to-read-next">What to Read Next</a></li>
-</ul>
+<p>GraalVM Insight is multipurpose, flexible tool to write reliable applications.
+The dynamic nature of the tool allows to selectively apply tracing pointcuts on already deployed applications with no loss of performance.</p>
 
-<p>GraalVM Insight is a multipurpose, flexible tool that traces program runtime behavior and gathers insights.</p>
-
-<p>The dynamic nature of the tool helps users to selectively apply tracing pointcuts on already running applications with no loss of performance.
-GraalVM Insight also provides detailed access to runtime behavior of a program, allowing users to inspect values and types at invocation or allocation sites.
-The tool further permits users to modify computed values, interrupt execution, and quickly experiment with behavioral changes without modifying the application code.
-The implementation details of the tool can be found in the <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">API specification</a>.</p>
-
-<p>This page provides information on GraalVM Insight as of the 20.1 version.
-To learn about Insight on versions 20.0 and 19.3, proceed <a href="https://github.com/oracle/graal/blob/release/graal-vm/20.0/tools/docs/T-Trace.md">here</a>.</p>
-
-<p>Note: The GraalVM Insight tool is offered as a technology preview and requires the user to pass the <code>--experimental-options</code> option in order to enable the <code>--insight</code> instrument.</p>
+<p>Any moderately skilled hacker can easily creat so called <strong>Insight snippets</strong> and dynamically apply them to the actual programs.
+This provides ultimate insights into execution and behavior of one’s application without compromising the execution speed.</p>
     
-      <h2 id="get-started">
+      <h3 id="table-of-contents">
         
         
-          Get Started <a href="#get-started" class="anchor_heading">#</a>
+          Table of contents <a href="#table-of-contents" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<ul>
+  <li><a href="#quick-start">Quick Start</a></li>
+  <li><a href="#hotness-top-10-example">Hotness Top 10 Example</a></li>
+  <li><a href="#apply-insight-to-any-graalvm-language">Apply Insight to Any GraalVM Language</a></li>
+  <li><a href="#insights-with-javascript">Insights with JavaScript</a></li>
+  <li><a href="#insights-with-python">Insights with Python</a></li>
+  <li><a href="#insights-with-ruby">Insights with Ruby</a></li>
+  <li><a href="#insights-with-r">Insights with R</a></li>
+  <li><a href="#insight-into-c-code">Insight into C Code</a></li>
+  <li><a href="#inspecting-values">Inspecting Values</a></li>
+  <li><a href="#modifying-local-variables">Modifying Local Variables</a></li>
+  <li><a href="#delaying-insight-initialization-in-nodejs">Delaying Insight Initialization in Node.JS</a></li>
+  <li><a href="#handling-exceptions">Handling Exceptions</a></li>
+  <li><a href="#intercepting-and-altering-execution">Intercepting and Altering Execution</a></li>
+  <li><a href="#minimal-overhead">Minimal Overhead</a></li>
+  <li><a href="#minimal-overhead-when-accessing-locals">Minimal Overhead when Accessing Locals</a></li>
+  <li><a href="#accessing-execution-stack">Accessing Execution Stack</a></li>
+  <li><a href="#note-on-graalvm-insight-api">Note on GraalVM Insight API</a></li>
+  <li><a href="#heap-dumping">Heap Dumping</a></li>
+</ul>
+    
+      <h2 id="quick-start">
+        
+        
+          Quick Start <a href="#quick-start" class="anchor_heading">#</a>
         
         
       </h2>
 
-<ol>
-  <li>Create a simple <em>source-tracing.js</em> script with the following content:
-    <pre><code class="language-javascript">insight.on('source', function(ev) {
- print(`Loading ${ev.characters.length} characters from ${ev.name}`);
+<p>Get started with an obligatory <em>HelloWorld</em> example.
+Create a <code>source-tracing.js</code> script with following content:</p>
+
+<pre><code class="language-js">insight.on('source', function(ev) {
+    print(`Loading ${ev.characters.length} characters from ${ev.name}`);
 });
 </code></pre>
-  </li>
-  <li>Having set <code>JAVA_HOME</code> to the GraalVM home directory, start the <code>node</code> launcher with the <code>--insight</code> tool and observe what scripts are being loaded and evaluated:
-    <pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=source-tracing.js --js.print -e "print('The result: ' + 6 * 7)" | tail -n 10
-Loading 215 characters from internal/modules/esm/transform_source.js
-Loading 12107 characters from internal/modules/esm/translators.js
-Loading 1756 characters from internal/modules/esm/create_dynamic_module.js
-Loading 12930 characters from internal/vm/module.js
-Loading 2710 characters from internal/modules/run_main.js
-Loading 308 characters from module.js
-Loading 10844 characters from internal/source_map/source_map.js
-Loading 170 characters from [eval]-wrapper
+<p>Run it with GraalVM’s <code>node</code> launcher adding the <code>--insight</code> instrument option.
+Observe what scripts are being loaded and evaluated:</p>
+
+<pre><code class="language-bash">graalvm/bin/node --js.print --insight=source-tracing.js -e "print('The result: ' + 6 * 7)" | tail -n 10
+Loading 29938 characters from url.js
+Loading 345 characters from internal/idna.js
+Loading 12642 characters from punycode.js
+Loading 33678 characters from internal/modules/cjs/loader.js
+Loading 13058 characters from vm.js
+Loading 52408 characters from fs.js
+Loading 15920 characters from internal/fs/utils.js
+Loading 505 characters from [eval]-wrapper
 Loading 29 characters from [eval]
 The result: 42
 </code></pre>
-    <p>The <em>source-tracing.js</em> script used the provided <code>insight</code> object to attach a source listener to the runtime.
-Whenever the script was loaded, the listener got notified of it and could take an action – printing the length and name of the processed script.</p>
-  </li>
-</ol>
 
-<p>The Insight information can be collected to a print statement or a histogram.
-The following <em>function-hotness-tracing.js</em> script counts all method invocations and dumps the most frequent ones when the execution of a program is over:</p>
+<p>What has just happened? GraalVM Insight <code>source-tracing.js</code> script has used the provided <code>insight</code> object to attach a <em>source</em> listener to the runtime.
+As such, whenever <code>node</code> loaded a script, the listener got notified of it and could take an action (in this case printing the length and name of processed script).</p>
+    
+      <h2 id="hotness-top-10-example">
+        
+        
+          Hotness Top 10 Example <a href="#hotness-top-10-example" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<pre><code class="language-javascript">var map = new Map();
+<p>Collecting the insights information is not limited to a print statement.
+One can perform any Turing complete computation in your language.
+For example, a program that counts all method invocations and dumps the most frequent ones when the execution is over.</p>
+
+<p>Save the following code to <code>function-hotness-tracing.js</code>:</p>
+
+<pre><code class="language-js">var map = new Map();
 
 function dumpHotness() {
     print("==== Hotness Top 10 ====");
@@ -846,13 +855,11 @@ insight.on('enter', function(ev) {
 insight.on('close', dumpHotness);
 </code></pre>
 
-<p>The <code>map</code> is a global variable shared inside of the Insight script that allows the code to share data between the <code>insight.on('enter')</code> function and the <code>dumpHotness</code>
-function.
-The latter is executed when the node process execution is over (registered via <code>insight.on('close', dumpHotness</code>).
-A table with names and counts of function invocations is printed out when the <code>node</code> process exits.</p>
+<p>The <code>map</code> is a global variable visible for the whole Insight script that allows the code to share data between the <code>insight.on('enter')</code> function and the <code>dumpHotness</code> function.
+The latter is executed when the <code>node</code> process execution is over (registered via <code>insight.on('close', dumpHotness)</code>.
+Invoke the program:</p>
 
-<p>Invoke it as:</p>
-<pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=function-hotness-tracing.js --js.print -e "print('The result: ' + 6 * 7)"
+<pre><code class="language-bash">graalvm/bin/node --js.print --insight=function-hotness-tracing.js -e "print('The result: ' + 6 * 7)"
 The result: 42
 ==== Hotness Top 10 ====
 543 calls to isPosixPathSeparator
@@ -874,54 +881,164 @@ The result: 42
  13 calls to addReadOnlyProcessAlias
 ========================
 </code></pre>
+
+<p>Table with names and counts of function invocations is printed out when the <code>node</code> process exits.</p>
     
-      <h2 id="polyglot-tracing">
+      <h2 id="apply-insight-to-any-graalvm-language">
         
         
-          Polyglot Tracing <a href="#polyglot-tracing" class="anchor_heading">#</a>
+          Apply Insight to Any GraalVM Language <a href="#apply-insight-to-any-graalvm-language" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The previous examples were written in JavaScript, but due to GraalVM’s polyglot nature, you can take the same instrument and use it in a program written in, e.g., the Ruby language.</p>
+<p>The previous examples were written in JavaScript and used <code>node</code>, but due to the polyglot nature of GraalVM you can take the same instrument and apply it to any language GraalVM supports.
+For example, test the Ruby language with GraalVM Insight.</p>
 
-<ol>
-  <li>Create the <em>source-trace.js</em> file:
-    <pre><code class="language-javascript">insight.on('source', function(ev) {
-if (ev.uri.indexOf('gems') === -1) {
-  let n = ev.uri.substring(ev.uri.lastIndexOf('/') + 1);
-  print('JavaScript instrument observed load of ' + n);
-}
+<p>To start, create the instrument in the <code>source-trace.js</code> file:</p>
+
+<pre><code class="language-js">insight.on('source', function(ev) {
+   if (ev.uri.indexOf('gems') === -1) {
+     let n = ev.uri.substring(ev.uri.lastIndexOf('/') + 1);
+     print('JavaScript instrument observed load of ' + n);
+   }
 });
 </code></pre>
-  </li>
-  <li>Prepare the <em>helloworld.rb</em> Ruby file:
-    <pre><code class="language-ruby">puts 'Hello from GraalVM Ruby!'
+
+<p>Prepare your Ruby program in the <code>helloworld.rb</code> file:</p>
+
+<pre><code class="language-ruby">puts 'Hello from GraalVM Ruby!'
 </code></pre>
-  </li>
-  <li>Apply the JavaScript instrument to the Ruby program:
-    <pre><code class="language-shell">$JAVA_HOME/bin/ruby --jvm --polyglot --experimental-options --insight=source-trace.js helloworld.rb
+
+<p>Note: Make sure the Ruby support is added to GraalVM with <code>gu install ruby</code>.</p>
+
+<p>Apply the JavaScript instrument to the Ruby program. Here is what you should see:</p>
+
+<pre><code class="language-bash">graalvm/bin/ruby --polyglot --insight=source-trace.js helloworld.rb
 JavaScript instrument observed load of helloworld.rb
 Hello from GraalVM Ruby!
 </code></pre>
-    <p>It is necessary to start the Ruby launcher with the <code>--polyglot</code> parameter, as the <em>source-tracing.js</em> script remains written in JavaScript.</p>
-  </li>
-</ol>
 
-<p>A user can instrument any language on top of GraalVM, but also the Insight scripts can be written in any of the GraalVM supported languages (implemented with the <a href="https://github.com/oracle/graal/blob/truffle/docs/README.md">Truffle language implementation framework</a>).</p>
+<p>It is necessary to start GraalVM’s Ruby launcher with the <code>--polyglot</code> parameter as the <code>source-tracing.js</code> script remains written in JavaScript.</p>
+    
+      <h2 id="insights-with-javascript">
+        
+        
+          Insights with JavaScript <a href="#insights-with-javascript" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<ol>
-  <li>Create the <em>source-tracing.rb</em> Ruby file:
-    <pre><code class="language-ruby">puts "Ruby: Initializing GraalVM Insight script"
-insight.on('source', -&gt;(ev) {
- name = ev[:name]
- puts "Ruby: observed loading of #{name}"
-})
-puts 'Ruby: Hooks are ready!'
+<p>As stated in the previous section, GraalVM Insight is not limited to Node.js only.
+It is available in all languages runtimes GraalVM provides.
+Try the JavaScript implementation that comes with GraalVM.</p>
+
+<p>Create the <code>function-tracing.js</code> script:</p>
+
+<pre><code class="language-js">var count = 0;
+var next = 8;
+
+insight.on('enter', function(ev) {
+    if (count++ % next === 0) {
+        print(`Just called ${ev.name} as ${count} function invocation`);
+        next *= 2;
+    }
+}, {
+    roots: true
+});
 </code></pre>
-  </li>
-  <li>Launch a Node.js application and instrument it with the Ruby script:
-    <pre><code class="language-shell">$JAVA_HOME/bin/node --jvm  --polyglot --experimental-options --insight=source-tracing.rb --js.print -e "print('With Ruby: ' + 6 * 7)" | grep Ruby
+
+<p>Run it on top of <a href="https://github.com/oracle/graal/blob/vm/benchmarks/agentscript/sieve.js">sieve.js</a>.
+It is a sample script which uses a variant of the Sieve of Erathostenes to compute one hundred thousand of prime numbers:</p>
+
+<pre><code class="language-bash">graalvm/bin/js --insight=function-tracing.js sieve.js | grep -v Computed
+Just called :program as 1 function invocation
+Just called Natural.next as 17 function invocation
+Just called Natural.next as 33 function invocation
+Just called Natural.next as 65 function invocation
+Just called Natural.next as 129 function invocation
+Just called Filter as 257 function invocation
+Just called Natural.next as 513 function invocation
+Just called Natural.next as 1025 function invocation
+Just called Natural.next as 2049 function invocation
+Just called Natural.next as 4097 function invocation
+</code></pre>
+    
+      <h2 id="insights-with-python">
+        
+        
+          Insights with Python <a href="#insights-with-python" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Not only one can instrument any GraalVM language, but also the Insight scripts can be written in that language.
+In this section, you will find a Python example.</p>
+
+<p>It is possible to write GraalVM Insight scripts in Python.
+Such insights can be applied to programs written in Python or any other language.</p>
+
+<p>Here is an example of a script that prints out value of variable <code>n</code> when a function <code>minusOne</code> is called.
+Save this code to the <code>agent-fib.js</code> file:</p>
+
+<pre><code class="language-python">def onEnter(ctx, frame):
+    print(f"minusOne {frame.n}")
+
+class Roots:
+    roots = True
+
+    def sourceFilter(self, src):
+        return src.name == "agent-fib.js"
+
+    def rootNameFilter(self, n):
+        return n == "minusOne"
+
+insight.on("enter", onEnter, Roots())
+</code></pre>
+<p>Apply this script to, for example, a JavaScript application using the following command:</p>
+
+<pre><code class="language-bash">`js --polyglot --insight=agent.py agent-fib.js`
+</code></pre>
+
+<p>Note: Make sure the Python support is added to GraalVM with <code>gu install python</code>.</p>
+    
+      <h2 id="insights-with-ruby">
+        
+        
+          Insights with Ruby <a href="#insights-with-ruby" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>It is possible to write GraalVM Insight scripts in Ruby.
+Such insights can be applied to programs written in Ruby or any other language.</p>
+
+<p>Note: Make sure the Ruby support is added to GraalVM with <code>gu install ruby</code>.</p>
+
+<p>Create the <code>source-tracing.rb</code> script:</p>
+
+<pre><code class="language-ruby">puts("Ruby: Insight version #{insight.version} is launching")
+
+insight.on("source", -&gt; (env) {
+  puts "Ruby: observed loading of #{env.name}"
+})
+puts("Ruby: Hooks are ready!")
+
+insight.on("enter", -&gt; (ctx, frame) {
+    puts("minusOne #{frame.n}")
+}, {
+  roots: true,
+  rootNameFilter: "minusOne",
+  sourceFilter: -&gt; (src) {
+    return src.name == "agent-fib.js"
+  }
+})
+</code></pre>
+
+<p>The above Ruby script example prints out value of variable <code>n</code> when a function <code>minusOne</code> in the <code>agent-fib.js</code> program is called.
+Launch a Node.js application and instrument it with the Ruby script:</p>
+
+<pre><code class="language-bash">graalvm/bin/node --js.print --polyglot --insight=agent-ruby.rb agent-fib.js
 Ruby: Initializing GraalVM Insight script
 Ruby: Hooks are ready!
 Ruby: observed loading of internal/per_context/primordials.js
@@ -934,10 +1051,111 @@ Ruby: observed loading of fs.js
 Ruby: observed loading of internal/fs/utils.js
 Ruby: observed loading of [eval]-wrapper
 Ruby: observed loading of [eval]
-With Ruby: 42
+Three is the result 3
 </code></pre>
-  </li>
-</ol>
+    
+      <h2 id="insights-with-r">
+        
+        
+          Insights with R <a href="#insights-with-r" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The same instrument can be written in the R language.</p>
+
+<p>Create the <code>agent-r.R</code> script:</p>
+
+<pre><code class="language-R">cat("R: Initializing GraalVM Insight script\n")
+
+insight@on('source', function(env) {
+    cat("R: observed loading of ", env$name, "\n")
+})
+
+cat("R: Hooks are ready!\n")
+</code></pre>
+
+<p>Use it to trace a <code>test.R</code> program:</p>
+
+<pre><code class="language-bash">graalvm/bin/Rscript --insight=agent-r.R test.R
+R: Initializing GraalVM Insight script
+R: Hooks are ready!
+R: observed loading of test.R
+</code></pre>
+
+<p>The only change is the R language. All the other GraalVM Insight features and <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html#VERSION">APIs</a> remain the same.</p>
+    
+      <h2 id="insight-into-c-code">
+        
+        
+          Insight into C Code <a href="#insight-into-c-code" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Not only it is possible to interpret dynamic languages, but with the help of the <a href="https://github.com/oracle/graal/blob/reference-manual/polyglot-programming.md/llvm/README.md">GraalVM’s LLI implementation</a>, one can mix in even statically compiled programs written in <strong>C</strong>, <strong>C++</strong>, <strong>Fortran</strong>, <strong>Rust</strong>, etc.</p>
+
+<p>Take, for examle, a long running program like <a href="https://github.com/oracle/graal/blob/master/vm/tests/all/agentscript/agent-sieve.c">sieve.c</a>, which contains never-ending <code>for</code> loop in <code>main</code> method. You would like to give it some execution quota.</p>
+
+<p>First, execute the program on GraalVM:</p>
+
+<pre><code class="language-bash">export TOOLCHAIN_PATH=`graalvm/bin/lli --print-toolchain-path`
+${TOOLCHAIN_PATH}/clang agent-sieve.c -lm -o sieve
+graalvm/bin/lli sieve
+</code></pre>
+
+<p>The GraalVM <code>clang</code> wrapper adds special options instructing the regular <code>clang</code> to keep the LLVM bitcode information in the <code>sieve</code> executable along the normal native code.
+The GraalVM’s <code>lli</code> interpreter can then use the bitcode to interpret the program at full speed.
+By the way, compare the result of direct native execution via <code>./sieve</code> and interpreter speed of <code>graalvm/bin/lli sieve</code>.
+It should show quite good results as for an interpreter.</p>
+
+<p>Now focus on breaking the endless loop. You can do it with this JavaScript <code>agent-limit.js</code> Insight script:</p>
+
+<pre><code class="language-js">var counter = 0;
+
+insight.on('enter', function(ctx, frame) {
+    if (++counter === 1000) {
+        throw `GraalVM Insight: ${ctx.name} method called ${counter} times. enough!`;
+    }
+}, {
+    roots: true,
+    rootNameFilter: 'nextNatural'
+});
+</code></pre>
+
+<p>The script counts the number of invocations of the C <code>nextNatural</code> function and when the function gets invoked a thousand times, it emits an error to terminate the <code>sieve</code> execution.
+Run the program as:</p>
+
+<pre><code class="language-bash">graalvm/bin/lli --polyglot --insight=agent-limit.js sieve
+Computed 97 primes in 181 ms. Last one is 509
+GraalVM Insight: nextNatural method called 1000 times. enough!
+        at &lt;js&gt; :anonymous(&lt;eval&gt;:7:117-185)
+        at &lt;llvm&gt; nextNatural(agent-sieve.c:14:186-221)
+        at &lt;llvm&gt; nextPrime(agent-sieve.c:74:1409)
+        at &lt;llvm&gt; measure(agent-sieve.c:104:1955)
+        at &lt;llvm&gt; main(agent-sieve.c:123:2452)
+</code></pre>
+
+<p>It is possible to access primitive local variables from the native code.
+Replace the above Insight script with:</p>
+
+<pre><code class="language-js">insight.on('enter', function(ctx, frame) {
+    print(`found new prime number ${frame.n}`);
+}, {
+    roots: true,
+    rootNameFilter: (n) =&gt; n === 'newFilter'
+});
+</code></pre>
+
+<p>Print out a message everytime a new prime is added into the filter list:</p>
+
+<pre><code class="language-bash">graalvm/bin/lli --polyglot --insight=agent-limit.js sieve | head -n 3
+found new prime number 2
+found new prime number 3
+found new prime number 5
+</code></pre>
+
+<p>The mixture of <code>lli</code>, polyglot and GraalVM Insight opens enormous possibilities in tracing, controlling and interactive or batch debugging of native programs.</p>
     
       <h2 id="inspecting-values">
         
@@ -947,21 +1165,21 @@ With Ruby: 42
         
       </h2>
 
-<p>GraalVM Insight not only allows one to trace where the program execution is happening, it also offers access to values of local variables and function arguments during program execution.
-You can, for example, write an instrument that shows the value of argument <code>n</code> in the function <code>fib</code>:</p>
+<p>GraalVM Insight not only allows one to trace where the program execution is happening, but it also offers access to values of local variables and function arguments during execution.
+One can for example write instrument that shows a value of argument <code>n</code> in a function <code>fib</code>:</p>
 
-<pre><code class="language-javascript">insight.on('enter', function(ctx, frame) {
+<pre><code class="language-js">insight.on('enter', function(ctx, frame) {
    print('fib for ' + frame.n);
 }, {
    roots: true,
-   rootNameFilter: (name) =&gt; 'fib' === name
+   rootNameFilter: 'fib'
 });
 </code></pre>
 
-<p>This instrument uses the second function argument, <code>frame</code>, to get access to values of local variables inside every instrumented function.
-The above script also uses <code>rootNameFilter</code> to apply its hook only to the function named <code>fib</code>:</p>
+<p>This instrument uses the second function argument <code>frame</code> to get access to values of local variables inside of every instrumented function.
+The above Insight script also uses <code>rootNameFilter</code> to apply its hook only to function named <code>fib</code>:</p>
 
-<pre><code class="language-javascript">function fib(n) {
+<pre><code class="language-js">function fib(n) {
   if (n &lt; 1) return 0;
   if (n &lt; 2) return 1;
   else return fib(n - 1) + fib(n - 2);
@@ -969,8 +1187,9 @@ The above script also uses <code>rootNameFilter</code> to apply its hook only to
 print("Two is the result " + fib(3));
 </code></pre>
 
-<p>When the instrument is stored in a <code>fib-trace.js</code> file and the actual code is in <code>fib.js</code>, invoking the following command yields detailed information about the program execution and parameters passed between function invocations:</p>
-<pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=fib-trace.js --js.print fib.js
+<p>When the instrument is stored in a <code>fib-trace.js</code> file and the actual code in <code>fib.js</code>, then invoking following command yields detailed information about the program execution and parameters passed between function invocations:</p>
+
+<pre><code class="language-bash">graalvm/bin/node --js.print --insight=fib-trace.js fib.js
 fib for 3
 fib for 2
 fib for 1
@@ -978,63 +1197,430 @@ fib for 0
 fib for 1
 Two is the result 2
 </code></pre>
+
+<p>To summarise this section, GraalVM Insight is a useful tool for polyglot, language agnostic aspect oriented programming.</p>
     
-      <h2 id="what-to-read-next">
+      <h2 id="modifying-local-variables">
         
         
-          What to Read Next <a href="#what-to-read-next" class="anchor_heading">#</a>
+          Modifying Local Variables <a href="#modifying-local-variables" class="anchor_heading">#</a>
         
         
       </h2>
+
+<p>Not only that GraalVM Insight can access local variables, but it can also modify them.
+Take, for example, this program summing an array:</p>
+
+<pre><code class="language-js">function plus(a, b) {
+  return a + b;
+}
+
+var sum = 0;
+[1, 2, 3, 4, 5, 6, 7, 8, 9].forEach((n) =&gt; sum = plus(sum, n));
+print(sum);
+</code></pre>
+
+<p>It prints out a number <code>45</code>.
+Apply the following Insight script to “erase” non-even numbers before adding them:</p>
+
+<pre><code class="language-js">insight.on('enter', function zeroNonEvenNumbers(ctx, frame) {
+    if (frame.b % 2 === 1) {
+        frame.b = 0;
+    }
+}, {
+    roots: true,
+    rootNameFilter: 'plus'
+});
+</code></pre>
+
+<p>When launched with <code>js --insight=erase.js sumarray.js</code>, only the value <code>20</code> gets printed.</p>
+
+<p>GraalVM Insight <code>enter</code> and <code>return</code> hooks can only modify existing variables.
+They cannot introduce new ones.
+Attempts to do so yield an exception.</p>
     
-      <h3 id="insight-deep-dive">
+      <h2 id="delaying-insight-initialization-in-nodejs">
         
         
-          Insight Deep Dive <a href="#insight-deep-dive" class="anchor_heading">#</a>
+          Delaying Insight Initialization in Node.JS <a href="#delaying-insight-initialization-in-nodejs" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>Any moderately skilled developer can easily create own so called “hooks” and dynamically apply them to the actual programs.
-That provides ultimate insights into execution and behavior of one’s application without compromising the execution speed.</p>
+<p>GraalVM Insight can be used in any GraalVM language runtime, including the <code>node</code> implementation.
+However, when in <code>node</code>, one does not want to write plain Insight scripts. You would proabably want to use full power of the <code>node</code> ecosystem including its modules.
+Here is a sample <code>agent-require.js</code> script that does it:</p>
 
-<p>To continue learning and deep dive into GraalVM Insight, proceed to the <a href="/tools/graalvm-insight/manual/">Insight Manual</a> which starts with an obligatory <em>HelloWorld</em> example and then demonstrates more challenging tasks.</p>
+<pre><code class="language-js">let initialize = function (require) {
+    let http = require("http");
+    print(`${typeof http.createServer} http.createServer is available to the agent`);
+}
+
+let waitForRequire = function (event) {
+  if (typeof process === 'object' &amp;&amp; process.mainModule &amp;&amp; process.mainModule.require) {
+    insight.off('source', waitForRequire);
+    initialize(process.mainModule.require.bind(process.mainModule));
+  }
+};
+
+insight.on('source', waitForRequire, { roots: true });
+</code></pre>
+
+<p>The Insight scripts are initialized as soon as possible, and at that moment the <code>require</code> function is not yet ready.
+As such, the script first attaches a listener on loaded scripts and, when the main user script is being loaded, it obtains its <code>process.mainModule.require</code> function.
+Then it removes the probes using <code>insight.off</code> and invokes the actual <code>initialize</code> function to perform the real initialization while having access to all the node modules.
+The script can be run with:</p>
+
+<pre><code class="language-js">graalvm/bin/node --js.print --insight=agent-require.js yourScript.js
+</code></pre>
+
+<p>This initialization sequence is known to work on GraalVM’s <code>node</code> version 12.10.0 launched with the main <code>yourScript.js</code> parameter.</p>
     
-      <h3 id="embeddeding-graalvm-insight-into-applications">
+      <h2 id="handling-exceptions">
         
         
-          Embeddeding GraalVM Insight into Applications <a href="#embeddeding-graalvm-insight-into-applications" class="anchor_heading">#</a>
+          Handling Exceptions <a href="#handling-exceptions" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>GraalVM languages (languages implemented with the Truffle framework) can be embedded into custom applications via <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">Polyglot Context API</a>.
-GraalVM Insight can also be controlled via the same API.</p>
+<p>The GraalVM Insight instrument can throw exceptions which are then propagated to the surrounding user scripts.
+Imagine you have a program <code>seq.js</code> logging various messages:</p>
 
-<p>Read the <a href="/tools/graalvm-insight/embedding/">embedding documentation</a> to learn how to integrate GraalVM Insight capabilities into applications in a secure way.</p>
+<pre><code class="language-js">function log(msg) {
+    print(msg);
+}
+
+log('Hello GraalVM Insight!');
+log('How');
+log('are');
+log('You?');
+</code></pre>
+
+<p>You can register an instrument <code>term.js</code> and terminate the execution in the middle of the <code>seq.js</code> program execution, based on observing the logged message:</p>
+
+<pre><code class="language-js">insight.on('enter', (ev, frame) =&gt; {
+    if (frame.msg === 'are') {
+        throw 'great you are!';
+    }
+}, {
+    roots: true,
+    rootNameFilter: 'log'
+});
+</code></pre>
+
+<p>The <code>term.js</code> instrument waits for a call to <code>log</code> function with message <code>are</code> and, at that moment, it emits its own exception effectively interrupting the user program execution.
+As a result one gets:</p>
+
+<pre><code class="language-bash">graalvm/bin/js --polyglot --insight=term.js seq.js
+Hello GraalVM Insight!
+How
+great you are!
+        at &lt;js&gt; :=&gt;(term.js:3:75-97)
+        at &lt;js&gt; log(seq.js:1-3:18-36)
+        at &lt;js&gt; :program(seq.js:7:74-83)
+</code></pre>
+
+<p>The exceptions emitted by Insight instrument are treated as regular language exceptions.
+The <code>seq.js</code> program could use the regular <code>try { ... } catch (e) { ... }</code> block to catch them and deal with them as if they were emitted by the regular user code.</p>
     
-      <h3 id="tracing-with-graalvm-insight">
+      <h2 id="intercepting-and-altering-execution">
         
         
-          Tracing with GraalVM Insight <a href="#tracing-with-graalvm-insight" class="anchor_heading">#</a>
+          Intercepting and Altering Execution <a href="#intercepting-and-altering-execution" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>GraalVM Insight dynamically adds tracing capabilities into existing code.
-Write your application as normally and apply <a href="https://opentelemetry.io/">Open Telemetry</a> traces dynamicall when needed.
-Read more about Insight and Jaeger integration in a <a href="/tools/graalvm-insight/tracing/">dedicated guide</a>.</p>
+<p>GraalVM Insight is capable to alter the execution of a program.
+It can skip certain computations and replace them with own alternatives.
+The the following <code>plus</code> function as an example:</p>
+
+<pre><code class="language-js">function plus(a, b) {
+    return a + b;
+}
+</code></pre>
+
+<p>It is easy to change the behavior of the <code>plus</code> method.
+The following Insight script replaces the <code>+</code> operation with multiplication by using the <code>ctx.returnNow</code> functionality:</p>
+
+<pre><code class="language-js">insight.on('enter', function(ctx, frame) {
+    ctx.returnNow(frame.a * frame.b);
+}, {
+    roots: true,
+    rootNameFilter: 'plus'
+});
+</code></pre>
+
+<p>The <code>returnNow</code> method immediatelly stops execution and returns to the caller of the <code>plus</code> function.
+The body of the <code>plus</code> method is not executed at all because the insight <code>on('enter', ...)</code> was applied, e.g., before the actual body of the function was executed.
+Multiplying instead of adding two numbers may not sound very tempting, but the same approach is useful in providing add-on caching (e.g., memoization) of repeating function invocations.</p>
+
+<p>It is also possible to let the original function code run and just alter its result.
+For example, alter the result of <code>plus</code> function to be always non-negative:</p>
+
+<pre><code class="language-js">insight.on('return', function(ctx, frame) {
+    let result = ctx.returnValue(frame);
+    ctx.returnNow(Math.abs(result));
+}, {
+    roots: true,
+    rootNameFilter: 'plus'
+});
+</code></pre>
+
+<p>The Insight hook is executed on return of the <code>plus</code> function and is using the <code>returnValue</code> helper function to obtain the computed return value from the current <code>frame</code> object.
+Then it can alter the value and <code>returnNow</code> returns a new result instead.
+The <code>returnValue</code> function is always available on the provided <code>ctx</code> object, but it only returns a meaningful value when used in <code>on('return', ...)</code> hooks.</p>
     
-      <h3 id="api-specification">
+      <h2 id="minimal-overhead">
         
         
-          API Specification <a href="#api-specification" class="anchor_heading">#</a>
+          Minimal Overhead <a href="#minimal-overhead" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>If you are interested in the implementation details, check the <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">API specification</a>.
-There you will find the information on the <code>insight</code> object properties, functions, etc.</p>
+<p>If you ask whether GraalVM Insight causes any performance overhead when the scripts are applied, the answer is “No” or “Minimal”.
+The overhead depends on what your scripts do.
+When they add and spread complex computations all around your code base, then the price for the computation will be payed.
+However, that would be overhead of your code, not of the instrumentation.
+Using a simple <code>function-count.js</code> script, measure overhead.</p>
+
+<pre><code class="language-js">var count = 0;
+function dumpCount() {
+    print(`${count} functions have been executed`);
+}
+
+insight.on('enter', function(ev) {
+    count++;
+}, {
+    roots: true
+});
+
+insight.on('close', dumpCount);
+</code></pre>
+
+<p>Use the script on fifty iterations of the <a href="https://github.com/oracle/graal/blob/vm/benchmarks/agentscript/sieve.js">sieve.js</a> sample which uses a variant of the Sieve of Erathostenes to compute one hundred thousand of prime numbers.
+Repeating the computation fifty times gives the runtime a chance to warm up and properly optimize.
+Here is the optimal run:</p>
+
+<pre><code class="language-bash">graalvm/bin/js sieve.js | grep -v Computed
+Hundred thousand prime numbers in 75 ms
+Hundred thousand prime numbers in 73 ms
+Hundred thousand prime numbers in 73 ms
+</code></pre>
+
+<p>Now compare it to execution time when running with the GraalVM Insight script enabled:</p>
+
+<pre><code class="language-bash">graalvm/bin/js --insight=function-count.js sieve.js  | grep -v Computed
+Hundred thousand prime numbers in 74 ms
+Hundred thousand prime numbers in 74 ms
+Hundred thousand prime numbers in 75 ms
+72784921 functions have been executed
+</code></pre>
+
+<p>The difference is 2 milliseconds.
+GraalVM Insight blends the difference between application code and insight gathering scripts making all code work as one.
+The <code>count++</code> invocation becomes a natural part of the application at all the places representing <code>ROOT</code> of application functions.</p>
+    
+      <h2 id="minimal-overhead-when-accessing-locals">
+        
+        
+          Minimal Overhead when Accessing Locals <a href="#minimal-overhead-when-accessing-locals" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>GraalVM Insight is capable to access local variables, almost “for free”.
+GraalVM Insight code, accessing local variables, blends with the actual function code defining them and there is no visible slowdown.</p>
+
+<p>This can be demonstrated with this <a href="https://github.com/oracle/graal/blob/vm/benchmarks/agentscript/sieve.js">sieve.js</a> algorithm to compute hundred thousand of prime numbers.
+It keeps the found prime numbers in a linked list constructed via following function:</p>
+
+<pre><code class="language-js">function Filter(number) {
+    this.number = number;
+    this.next = null;
+    this.last = this;
+}
+</code></pre>
+
+<p>First, test the behavior by invoking the computation fifty times and measuring time it takes to finish the last round:</p>
+
+<pre><code class="language-bash">graalvm/bin/js -e "var count=50" --file sieve.js | grep Hundred | tail -n 1
+Hundred thousand prime numbers in 73 ms
+</code></pre>
+
+<p>Then “tease” the system by observing each allocation of a new prime number slot, e.g., the call to <code>new Filter</code> constructor:</p>
+
+<pre><code class="language-js">var sum = 0;
+var max = 0;
+
+insight.on('enter', (ctx, frame) =&gt; {
+    sum += frame.number;
+    if (frame.number &gt; max) {
+        max = frame.number;
+    }
+}, {
+  roots: true,
+  rootNameFilter: 'Filter'
+});
+
+insight.on('return', (ctx, frame) =&gt; {
+    log(`Hundred thousand prime numbers from 2 to ${max} has sum ${sum}`);
+    sum = 0;
+    max = 0;
+}, {
+    roots: true,
+    rootNameFilter: 'measure'
+});
+</code></pre>
+
+<p>Everytime a <code>new Filter(number)</code> is allocated, the maximum value of <code>number</code> is captured (e.g. the highest prime number found), and also <code>sum</code> of all prime numbers found so far.
+When the main loop in <code>measure</code> is over, e.g., there are hundred thousand prime numbers, the result is printed.</p>
+
+<p>Now try the following:</p>
+
+<pre><code class="language-bash">graalvm/bin/js  -e "var count=50" --insight=sieve-filter1.js --file sieve.js | grep Hundred | tail -n 2
+Hundred thousand prime numbers from 2 to 1299709 has sum 62260698721
+Hundred thousand prime numbers in 74 ms
+</code></pre>
+
+<p>There is no slowdown at all.
+GraalVM Insight, when combined with inlining algorithms of the GraalVM compiler, enables great instrumentation capabilities with almost no performance penalty.</p>
+    
+      <h2 id="accessing-execution-stack">
+        
+        
+          Accessing Execution Stack <a href="#accessing-execution-stack" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>There is a way for GraalVM Insight to access the whole execution stack.
+The following code snippet shows how to do that:</p>
+
+<pre><code class="language-js">insight.on("return", function(ctx, frame) {
+  print("dumping locals");
+  ctx.iterateFrames((at, vars) =&gt; {
+      for (let p in vars) {
+          print(`    at ${at.name} (${at.source.name}:${at.line}:${at.column}) ${p} has value ${vars[p]}`);
+      }
+  });
+  print("end of locals");
+}, {
+  roots: true
+});
+</code></pre>
+
+<p>Whenever the Insight hook is triggered, it prints the current execution stack with <code>name</code> of the function, <code>source.name</code>, <code>line</code> and <code>column</code>.
+Moreover, it also prints values of all local <code>vars</code> at each frame.
+It is also possible to modify values of existing variables by assigning new values to them: <code>vars.n = 42</code>.
+Accessing the whole stack is flexible, but unlike <a href="#modifying-local-variables">access to locals in the current execution frame</a>, it is not a fast operation, use it wisely, if you want your program to continue running at full speed.</p>
+    
+      <h2 id="heap-dumping">
+        
+        
+          Heap Dumping <a href="#heap-dumping" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>GraalVM Insight can be used to snapshot a region of your program heap during the execution.
+Use the <code>--heap.dump=/path/to/output.hprof</code> option together with a regular <code>--insight</code> one.
+The Insight script will get access to <code>heap</code> object with the <code>dump</code> function.
+Place your hook whereever needed and at the right moment dump the heap:</p>
+
+<pre><code class="language-js">insight.on('return', (ctx, frame) =&gt; {
+    heap.dump({
+        format: '1.0',
+        depth: 50, // set max depth for traversing object references
+        events: [
+            {
+                stack : [
+                    {
+                        at : ctx, // location of dump sieve.js:73
+                        frame : {
+                            // assemble frame content as you want
+                            primes : frame.primes, // capture primes object
+                            cnt : frame.cnt, // capture cnt value
+                        },
+                        depth : 10 // optionally override depth to ten references
+                    }, // there can be more stack elements like this one
+                ]
+            },
+            // there can be multiple events like the previous one
+        ],
+    });
+    throw 'Heap dump written!';
+}, {
+    roots: true,
+    rootNameFilter: 'measure'
+});
+</code></pre>
+
+<p>Save the code snippet as a <code>dump.js</code> file.
+Get the <a href="https://github.com/oracle/graal/blob/vm/benchmarks/agentscript/sieve.js">sieve.js</a> file and launch it as:</p>
+
+<pre><code class="language-bash">graalvm/bin/js --insight=dump.js --heap.dump=dump.hprof --file sieve.js
+</code></pre>
+
+<p><img src="/docs/tools/insight/img/Insight-HeapStack.png" alt="Heap Stack" /></p>
+
+<p>A <code>dump.hprof</code> file is going to be created at the end of the <code>measure</code> function capturing the state of your program memory.
+Inspect the generated <code>.hprof</code> file with regular tools like <a href="https://www.graalvm.org/tools/visualvm/">VisualVM</a> or <a href="http://netbeans.org">NetBeans</a>:</p>
+
+<p><img src="/docs/tools/insight/img/Insight-HeapInspect.png" alt="Heap Inspect" /></p>
+
+<p>The previous picture shows the heap dump taken at the end of the <code>measure</code> function in the <a href="https://github.com/oracle/graal/blob/vm/benchmarks/agentscript/sieve.js">sieve.js</a> script.
+The function has just computed one hundred thousand (count available in variable <code>cnt</code>) prime numbers.
+The picture shows a linked list <code>Filter</code> holding prime numbers from <code>2</code> to <code>17</code>.
+The rest of the linked list is hidden (only references up to depth <code>10</code> were requested) behind <code>unreachable</code> object.
+Last variable <code>x</code> shows the number of searched natural numbers to compute all the prime numbers.</p>
+    
+      <h2 id="note-on-graalvm-insight-api">
+        
+        
+          Note on GraalVM Insight API <a href="#note-on-graalvm-insight-api" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The compatibility of the GraalVM Insight API exposed via the <code>insight</code> object is implemented in a compatible way.
+The GraalVM Insight API can be found by <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">this link</a>.
+The <code>insight</code> object properties and functions is available as part of its <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html#VERSION">javadoc</a>.</p>
+
+<p>Future versions will add new features, but whatever has once been exposed, remains functional.
+If your script depends on some new feature, it may check version of the exposed API:</p>
+
+<pre><code class="language-js">print(`GraalVM Insight version is ${insight.version}`);
+</code></pre>
+
+<p>New elements in the <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">API</a>
+carry associated <code>@since</code> tag to describe the minimimal version the associated functionality is available since.</p>
+
+<!-- ### TODO:
+
+GraalVM comes with a unified set of prepackaged high performance **Insight**
+insights at your convenience.
+
+**Insight** is an ideal tool for practicing *aspects oriented programming*
+in a completely language agnostic way.
+- types at invocation or allocation sites, gathering useful information
+
+- powerful tools to help you write, debug, manage, and organize
+your **Insight** insights scripts. It is a matter of pressing a single button
+to enable selected **Insight** insight and a matter of another click to
+disable it cleanly, returning the application to state prior to the use
+of the insight.
+
+- *VisualVM* has been enhanced to provide a unified view of locally as well as
+remotely running applications and the **Insight** insights dynamically
+applied to each of them. Enlist available *HotSpot* or *native-image* based
+virtual machines. Connect to them on demand. Apply selected insights. Let
+them gather their data. Obtain the data and analyze them with the integrated
+graphical tools. Disable the insights and disconnect. Let the application run
+at its original full speed.
+ -->
 
               </div>
 

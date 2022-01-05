@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="/assets/main.css">
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
 
-  <link rel="canonical" href="https://www.graalvm.org/tools/graalvm-insight/">
+  <link rel="canonical" href="https://www.graalvm.org/tools/graalvm-insight/tracing/">
   <!-- <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script> -->
   <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script>
   <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css">
@@ -524,31 +524,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/tools/graalvm-insight/">
               GraalVM Insight
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -751,290 +733,183 @@ $(document).ready(function(){
                 <img src="/resources/img/experimental_label.png" alt="Experimental feature in GraalVM">
               </div>
               <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-                <h1 id="graalvm-insight">
+                <h1 id="tracing-with-insight">
         
         
-          GraalVM Insight
+          Tracing with Insight
         
         
       </h1>
 
-<ul>
-  <li><a href="#get-started">Get Started</a></li>
-  <li><a href="#polyglot-tracing">Polyglot Tracing</a></li>
-  <li><a href="#inspecting-values">Inspecting Values</a></li>
-  <li><a href="#what-to-read-next">What to Read Next</a></li>
-</ul>
+<p>It is possible to use the GraalVM Insight to implement smooth, declarative, ad hoc tracing via standard <a href="https://github.com/opentracing/opentracing-javascript"><code>OpenTracing API</code></a>.
+The traces can be added into running application and customized on the fly to extract the right information needed to investigate any misbehavior incident.</p>
 
-<p>GraalVM Insight is a multipurpose, flexible tool that traces program runtime behavior and gathers insights.</p>
+<p>The following examples will demonstrate the tracing capabilities with GraalVM Insight.
+To start, install the Jaeger’s client side instrumentation library for Node.js:</p>
 
-<p>The dynamic nature of the tool helps users to selectively apply tracing pointcuts on already running applications with no loss of performance.
-GraalVM Insight also provides detailed access to runtime behavior of a program, allowing users to inspect values and types at invocation or allocation sites.
-The tool further permits users to modify computed values, interrupt execution, and quickly experiment with behavioral changes without modifying the application code.
-The implementation details of the tool can be found in the <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">API specification</a>.</p>
-
-<p>This page provides information on GraalVM Insight as of the 20.1 version.
-To learn about Insight on versions 20.0 and 19.3, proceed <a href="https://github.com/oracle/graal/blob/release/graal-vm/20.0/tools/docs/T-Trace.md">here</a>.</p>
-
-<p>Note: The GraalVM Insight tool is offered as a technology preview and requires the user to pass the <code>--experimental-options</code> option in order to enable the <code>--insight</code> instrument.</p>
-    
-      <h2 id="get-started">
-        
-        
-          Get Started <a href="#get-started" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<ol>
-  <li>Create a simple <em>source-tracing.js</em> script with the following content:
-    <pre><code class="language-javascript">insight.on('source', function(ev) {
- print(`Loading ${ev.characters.length} characters from ${ev.name}`);
-});
+<pre><code class="language-bash">graalvm/bin/npm install jaeger-client@3.17.1
 </code></pre>
-  </li>
-  <li>Having set <code>JAVA_HOME</code> to the GraalVM home directory, start the <code>node</code> launcher with the <code>--insight</code> tool and observe what scripts are being loaded and evaluated:
-    <pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=source-tracing.js --js.print -e "print('The result: ' + 6 * 7)" | tail -n 10
-Loading 215 characters from internal/modules/esm/transform_source.js
-Loading 12107 characters from internal/modules/esm/translators.js
-Loading 1756 characters from internal/modules/esm/create_dynamic_module.js
-Loading 12930 characters from internal/vm/module.js
-Loading 2710 characters from internal/modules/run_main.js
-Loading 308 characters from module.js
-Loading 10844 characters from internal/source_map/source_map.js
-Loading 170 characters from [eval]-wrapper
-Loading 29 characters from [eval]
-The result: 42
-</code></pre>
-    <p>The <em>source-tracing.js</em> script used the provided <code>insight</code> object to attach a source listener to the runtime.
-Whenever the script was loaded, the listener got notified of it and could take an action – printing the length and name of the processed script.</p>
-  </li>
-</ol>
 
-<p>The Insight information can be collected to a print statement or a histogram.
-The following <em>function-hotness-tracing.js</em> script counts all method invocations and dumps the most frequent ones when the execution of a program is over:</p>
+<p>Now you can use the <a href="https://github.com/opentracing/opentracing-javascript">OpenTracing API</a> provided by the <code>jaeger-client</code> module in your instrument <code>agent.js</code> via the <code>tracer</code> object (once it becomes available, it will discussed later in this guide):</p>
 
-<pre><code class="language-javascript">var map = new Map();
+<pre><code class="language-js">let initialize = function(tracer) {
+    var counter = 0;
 
-function dumpHotness() {
-    print("==== Hotness Top 10 ====");
-    var digits = 3;
-    Array.from(map.entries()).sort((one, two) =&gt; two[1] - one[1]).forEach(function (entry) {
-        var number = entry[1].toString();
-        if (number.length &gt;= digits) {
-            digits = number.length;
-        } else {
-            number = Array(digits - number.length + 1).join(' ') + number;
+    insight.on('enter', function(ctx, frame) {
+        const args = frame.args;
+        if ('request' !== frame.type || args.length !== 2 || typeof args[0] !== 'object' || typeof args[1] !== 'object') {
+            return;
         }
-        if (number &gt; 10) print(`${number} calls to ${entry[0]}`);
+        const req = args[0];
+        const res = args[1];
+        const span = tracer.startSpan("request");
+        span.setTag("span.kind", "server");
+        span.setTag("http.url", req.url);
+        span.setTag("http.method", req.method);
+        res.id = ++counter;
+        res.span = span;
+        console.log(`agent: handling #${res.id} request for ${req.url}`);
+    }, {
+        roots: true,
+        rootNameFilter: 'emit',
+        sourceFilter: src =&gt; src.name === 'events.js'
     });
-    print("========================");
-}
 
-insight.on('enter', function(ev) {
-    var cnt = map.get(ev.name);
-    if (cnt) {
-        cnt = cnt + 1;
-    } else {
-        cnt = 1;
-    }
-    map.set(ev.name, cnt);
-}, {
-    roots: true
-});
-
-insight.on('close', dumpHotness);
+    insight.on('return', function(ctx, frame) {
+        var res = frame['this'];
+        if (res.span) {
+            res.span.finish();
+            console.log(`agent: finished #${res.id} request`);
+        } else {
+            //Caused, for example, by Tracer itself connecting to the Jaeger server
+        }
+    }, {
+        roots: true,
+        rootNameFilter: 'end',
+        sourceFilter: src =&gt; src.name === '_http_outgoing.js'
+    });
+    console.log('agent: ready');
+};
 </code></pre>
 
-<p>The <code>map</code> is a global variable shared inside of the Insight script that allows the code to share data between the <code>insight.on('enter')</code> function and the <code>dumpHotness</code>
-function.
-The latter is executed when the node process execution is over (registered via <code>insight.on('close', dumpHotness</code>).
-A table with names and counts of function invocations is printed out when the <code>node</code> process exits.</p>
+<p>The system hooks into <code>emit('request', ...)</code> and <code>res.end()</code> functions which are used to initialize a response to an HTTP request and finish it.
+Because the <code>res</code> object is a dynamic JavaScript object, it is possible to add <code>id</code> and <code>span</code> attributes to it in the <code>enter</code> handler of the <code>emit</code> function from the source <code>events.js</code>.
+Then it is possible to use these attributes in the <code>return</code> handler of the <code>end</code> function.</p>
 
-<p>Invoke it as:</p>
-<pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=function-hotness-tracing.js --js.print -e "print('The result: ' + 6 * 7)"
-The result: 42
-==== Hotness Top 10 ====
-543 calls to isPosixPathSeparator
-211 calls to E
-211 calls to makeNodeErrorWithCode
-205 calls to NativeModule
-198 calls to uncurryThis
-154 calls to :=&gt;
-147 calls to nativeModuleRequire
-145 calls to NativeModule.compile
- 55 calls to internalBinding
- 53 calls to :anonymous
- 49 calls to :program
- 37 calls to getOptionValue
- 24 calls to copyProps
- 18 calls to validateString
- 13 calls to copyPrototype
- 13 calls to hideStackFrames
- 13 calls to addReadOnlyProcessAlias
-========================
-</code></pre>
-    
-      <h2 id="polyglot-tracing">
-        
-        
-          Polyglot Tracing <a href="#polyglot-tracing" class="anchor_heading">#</a>
-        
-        
-      </h2>
+<p>GraalVM Insight provides access to <code>frame</code> variables and their fields.
+As such, the instrument can read value of <code>req.url</code> or <code>req.method</code> and provide them as <code>span.setTag</code> values to the OpenTracing server.</p>
 
-<p>The previous examples were written in JavaScript, but due to GraalVM’s polyglot nature, you can take the same instrument and use it in a program written in, e.g., the Ruby language.</p>
+<p>With this instrument, it is just a matter of being able to enable it at the right time.
+Check the <a href="/tools/graalvm-insight/embedding/">Embedding Insight into Node.js Application</a> section to see how to create an admin server and apply any trace scripts (including OpenTracing based ones) dynamically when needed.
+For purposes of this guide, something simpler will be used.</p>
 
-<ol>
-  <li>Create the <em>source-trace.js</em> file:
-    <pre><code class="language-javascript">insight.on('source', function(ev) {
-if (ev.uri.indexOf('gems') === -1) {
-  let n = ev.uri.substring(ev.uri.lastIndexOf('/') + 1);
-  print('JavaScript instrument observed load of ' + n);
-}
-});
-</code></pre>
-  </li>
-  <li>Prepare the <em>helloworld.rb</em> Ruby file:
-    <pre><code class="language-ruby">puts 'Hello from GraalVM Ruby!'
-</code></pre>
-  </li>
-  <li>Apply the JavaScript instrument to the Ruby program:
-    <pre><code class="language-shell">$JAVA_HOME/bin/ruby --jvm --polyglot --experimental-options --insight=source-trace.js helloworld.rb
-JavaScript instrument observed load of helloworld.rb
-Hello from GraalVM Ruby!
-</code></pre>
-    <p>It is necessary to start the Ruby launcher with the <code>--polyglot</code> parameter, as the <em>source-tracing.js</em> script remains written in JavaScript.</p>
-  </li>
-</ol>
+<p>Enable the instrument when the <code>jaeger</code> object is provided to it:</p>
 
-<p>A user can instrument any language on top of GraalVM, but also the Insight scripts can be written in any of the GraalVM supported languages (implemented with the <a href="https://github.com/oracle/graal/blob/truffle/docs/README.md">Truffle language implementation framework</a>).</p>
+<pre><code class="language-js">let initializeJaeger = function (ctx, frame) {
+    insight.off('enter', initializeJaeger);
 
-<ol>
-  <li>Create the <em>source-tracing.rb</em> Ruby file:
-    <pre><code class="language-ruby">puts "Ruby: Initializing GraalVM Insight script"
-insight.on('source', -&gt;(ev) {
- name = ev[:name]
- puts "Ruby: observed loading of #{name}"
-})
-puts 'Ruby: Hooks are ready!'
-</code></pre>
-  </li>
-  <li>Launch a Node.js application and instrument it with the Ruby script:
-    <pre><code class="language-shell">$JAVA_HOME/bin/node --jvm  --polyglot --experimental-options --insight=source-tracing.rb --js.print -e "print('With Ruby: ' + 6 * 7)" | grep Ruby
-Ruby: Initializing GraalVM Insight script
-Ruby: Hooks are ready!
-Ruby: observed loading of internal/per_context/primordials.js
-Ruby: observed loading of internal/per_context/setup.js
-Ruby: observed loading of internal/per_context/domexception.js
-....
-Ruby: observed loading of internal/modules/cjs/loader.js
-Ruby: observed loading of vm.js
-Ruby: observed loading of fs.js
-Ruby: observed loading of internal/fs/utils.js
-Ruby: observed loading of [eval]-wrapper
-Ruby: observed loading of [eval]
-With Ruby: 42
-</code></pre>
-  </li>
-</ol>
-    
-      <h2 id="inspecting-values">
-        
-        
-          Inspecting Values <a href="#inspecting-values" class="anchor_heading">#</a>
-        
-        
-      </h2>
+    let jaeger = frame.jaeger;
 
-<p>GraalVM Insight not only allows one to trace where the program execution is happening, it also offers access to values of local variables and function arguments during program execution.
-You can, for example, write an instrument that shows the value of argument <code>n</code> in the function <code>fib</code>:</p>
+    var initTracer = jaeger.initTracer;
+    console.log('agent: Jaeger tracer obtained');
 
-<pre><code class="language-javascript">insight.on('enter', function(ctx, frame) {
-   print('fib for ' + frame.n);
-}, {
-   roots: true,
-   rootNameFilter: (name) =&gt; 'fib' === name
+    // See schema https://github.com/jaegertracing/jaeger-client-node/blob/master/src/configuration.js#L37
+    var config = {
+      serviceName: 'insight-demo',
+      reporter: {
+        // Provide the traces endpoint. This forces the client to connect directly to the Collector and send
+        // spans over HTTP
+        collectorEndpoint: 'http://localhost:14268/api/traces',
+        // Provide username and password if authentication is enabled in the Collector
+        // username: '',
+        // password: '',
+      },
+      sampler: {
+          type : 'const',
+          param : 1
+      }
+    };
+    var options = {
+      tags: {
+        'insight-demo.version': '1.1.2',
+      },
+    //  metrics: metrics,
+      logger: console,
+      sampler: {
+          type : 'const',
+          param : 1
+      }
+    };
+
+    var tracer = initTracer(config, options);
+    initialize(tracer);
+};
+
+insight.on('return', initializeJaeger, {
+  roots: true,
+  rootNameFilter: 'jaegerAvailable'
 });
 </code></pre>
 
-<p>This instrument uses the second function argument, <code>frame</code>, to get access to values of local variables inside every instrumented function.
-The above script also uses <code>rootNameFilter</code> to apply its hook only to the function named <code>fib</code>:</p>
+<p>This instrument needs help from the main server script.
+Let the <code>server.js</code> obtain the <code>jaeger-client</code> module and pass it to the agent via the <code>jaegerAvailable</code> function.
+Then it creates a typical HTTP server.
+The content of <code>server.js</code> is:</p>
 
-<pre><code class="language-javascript">function fib(n) {
-  if (n &lt; 1) return 0;
-  if (n &lt; 2) return 1;
-  else return fib(n - 1) + fib(n - 2);
+<pre><code class="language-js">function jaegerAvailable(jaeger) {
+    console.log("Providing Jaeger object to the agent");
 }
-print("Two is the result " + fib(3));
+jaegerAvailable(require("jaeger-client"));
+
+const http = require("http");
+const srv = http.createServer((req, res) =&gt; {
+    console.log(`server: obtained request ${res.id}`);
+    setTimeout(() =&gt; {
+        res.write(`OK# ${res.id}`);
+        console.log(`server: replied to request ${res.id}`);
+        res.end();
+    }, 5);
+});
+srv.listen(8080);
 </code></pre>
 
-<p>When the instrument is stored in a <code>fib-trace.js</code> file and the actual code is in <code>fib.js</code>, invoking the following command yields detailed information about the program execution and parameters passed between function invocations:</p>
-<pre><code class="language-shell">$JAVA_HOME/bin/node --experimental-options --insight=fib-trace.js --js.print fib.js
-fib for 3
-fib for 2
-fib for 1
-fib for 0
-fib for 1
-Two is the result 2
+<p>With these two files you can launch the node application as well as the agent.
+But, first of all, start the Jaeger server:</p>
+
+<pre><code class="language-bash">docker run -d --name jaeger \
+-e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+-p 5775:5775/udp   -p 6831:6831/udp   -p 6832:6832/udp \
+-p 5778:5778   -p 16686:16686   -p 14268:14268   -p 9411:9411 \
+jaegertracing/all-in-one:latest
+
+graalvm/bin/node --insight=agent.js server.js
+Providing Jaeger object to the agent
+agent: Jaeger tracer obtained
+Initializing Jaeger Tracer with RemoteReporter and ConstSampler(always)
+agent: ready
 </code></pre>
+
+<p>Now you can connect to the Jaeger UI available at <a href="http://localhost:16686/">http://localhost:16686/</a> and put the server under some load:</p>
+
+<pre><code class="language-bash">ab -c 10 -n 10000 http://localhost:8080/
+</code></pre>
+
+<p>The server prints to the console detailed information while handling the requests and the Jaeger UI fills with the traces:</p>
+
+<p><img src="/docs/tools/insight/img/Insight-Jaeger.png" alt="Jaeger UI" /></p>
+
+<p>This completes the guide how to enhance a plain Node.js application with tracing.
+The traces remain separated in its own <code>agent.js</code> file and can be applied at start time (demonstrated here) or <a href="/tools/graalvm-insight/embedding/">dynamically</a> when needed.</p>
     
-      <h2 id="what-to-read-next">
+      <h3 id="what-to-read-rext">
         
         
-          What to Read Next <a href="#what-to-read-next" class="anchor_heading">#</a>
-        
-        
-      </h2>
-    
-      <h3 id="insight-deep-dive">
-        
-        
-          Insight Deep Dive <a href="#insight-deep-dive" class="anchor_heading">#</a>
+          What to Read Rext <a href="#what-to-read-rext" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>Any moderately skilled developer can easily create own so called “hooks” and dynamically apply them to the actual programs.
-That provides ultimate insights into execution and behavior of one’s application without compromising the execution speed.</p>
-
-<p>To continue learning and deep dive into GraalVM Insight, proceed to the <a href="/tools/graalvm-insight/manual/">Insight Manual</a> which starts with an obligatory <em>HelloWorld</em> example and then demonstrates more challenging tasks.</p>
-    
-      <h3 id="embeddeding-graalvm-insight-into-applications">
-        
-        
-          Embeddeding GraalVM Insight into Applications <a href="#embeddeding-graalvm-insight-into-applications" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>GraalVM languages (languages implemented with the Truffle framework) can be embedded into custom applications via <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">Polyglot Context API</a>.
-GraalVM Insight can also be controlled via the same API.</p>
-
-<p>Read the <a href="/tools/graalvm-insight/embedding/">embedding documentation</a> to learn how to integrate GraalVM Insight capabilities into applications in a secure way.</p>
-    
-      <h3 id="tracing-with-graalvm-insight">
-        
-        
-          Tracing with GraalVM Insight <a href="#tracing-with-graalvm-insight" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>GraalVM Insight dynamically adds tracing capabilities into existing code.
-Write your application as normally and apply <a href="https://opentelemetry.io/">Open Telemetry</a> traces dynamicall when needed.
-Read more about Insight and Jaeger integration in a <a href="/tools/graalvm-insight/tracing/">dedicated guide</a>.</p>
-    
-      <h3 id="api-specification">
-        
-        
-          API Specification <a href="#api-specification" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>If you are interested in the implementation details, check the <a href="https://www.graalvm.org/tools/javadoc/org/graalvm/tools/insight/Insight.html">API specification</a>.
-There you will find the information on the <code>insight</code> object properties, functions, etc.</p>
+<p>To learn more about Insight and find some challenging tasks, go to the <a href="/tools/graalvm-insight/manual/">Insight Manual</a>.</p>
 
               </div>
 
