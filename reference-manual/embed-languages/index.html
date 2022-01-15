@@ -3520,7 +3520,7 @@ native-image --language:js --initialize-at-build-time -cp . HelloPolyglot
 <p>It should be mentioned that you can also include a guest language into the native image, but exclude the JIT compiler by passing the <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> option to the builder.
 Be aware, the flag <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> has to placed <em>after</em> all the Truffle language/tool options, so that it will override the default settings.</p>
 
-<p>You can build the above example again but this time the created image will only contain the Truffle language interpreter (the GraalVM compiler will not be included in the image) by running:</p>
+<p>You can build the above example again but this time the created image will only contain the Truffle language interpreter (the Graal compiler will not be included in the image) by running:</p>
 <pre><code class="language-shell">native-image --language:js -Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime --initialize-at-build-time -cp . HelloPolyglotInterpreter
 </code></pre>
     
@@ -4105,10 +4105,108 @@ This can be useful if a known and trusted initialization script should be exclud
 }
 </code></pre>
     
+      <h2 id="polyglot-isolates">
+        
+        
+          Polyglot Isolates <a href="#polyglot-isolates" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>On GraalVM Enterprise, a Polyglot engine can be configured to run in a dedicated native image isolate.
+This experimental feature is enabled with the <code>--engine.SpawnIsolate</code> option.
+An engine running in this mode executes within a VM-level fault domain with its own garbage collector and JIT compiler.
+The fact that an engine runs within an isolate is completely transparent with respect to the Polyglot API and interoperability:</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolate {
+  public static void main(String[] args) {
+    Context context = Context.newBuilder("js")
+      .allowHostAccess(HostAccess.SCOPED)
+      .allowExperimentalOptions(true)
+      .option("engine.SpawnIsolate", "true").build();
+    Value function = context.eval("js", "x =&gt; x+1")
+    assert function.canExecute();
+    int x = function.execute(41).asInt();
+    assert x == 42;
+  }
+}
+</code></pre>
+
+<p>Since the host’s GC and the isolate’s GC are not aware of one another, cyclic references between objects on both heaps may occur.
+We thus strongly recommend to use <a href="#controlling-host-callback-parameter-scoping">scoped parameters for host callbacks</a> to avoid cyclic references.</p>
+
+<p>Multiple contexts can be spawned in the same isolated engine by <a href="#code-caching-across-multiple-contexts">sharing engines</a>:</p>
+
+<pre><code class="language-java">public class PolyglotIsolateMultipleContexts {
+    public static void main(String[] args) {
+        try (Engine engine = Engine.newBuilder()
+                .allowExperimentalOptions(true)
+                .option("engine.SpawnIsolate", "js").build()) {
+            Source source = Source.create("js", "21 + 21");
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>Note how we need to specify the language for the isolated engine as a parameter to <code>--engine.SpawnIsolate</code> in this case.
+The reason is that an isolated engine needs to know which set of languages should be available.
+Behind the scenes, GraalVM will then locate the corresponding native image language library.
+If only a single language is selected, then the library for the language will be loaded.
+If multiple languages are selected, then <code>libpolyglot</code>, the library containing all Truffle languages shipped with GraalVM, will be loaded.
+If a matching library is not available, creation of the engine will fail.</p>
+
+<p>Only one language library can be loaded during GraalVM’s lifetime.
+This means that the first isolated engine that is created sets the default for the remainder of the execution: if an isolated engine with solely Javascript was created first, only Javascript will be available in isolated languages.</p>
+    
+      <h3 id="passing-native-image-runtime-options">
+        
+        
+          Passing Native Image Runtime Options <a href="#passing-native-image-runtime-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>Engines running in an isolate can make use of <a href="https://github.com/oracle/graal/blob/master/native-image/HostedvsRuntimeOptions/">native image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
+For example, this can be used to limit the maximum heap memory used by an engine by setting the maximum heap size for the isolate via <code>--engine.IsolateOption.MaxHeapSize=128m</code>:</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolateMaxHeap {
+  public static void main(String[] args) {
+    try {
+      Context context = Context.newBuilder("js")
+        .allowHostAccess(HostAccess.SCOPED)
+        .allowExperimentalOptions(true)
+        .option("engine.SpawnIsolate", "true")
+        .option("engine.IsolateOption.MaxHeapSize", "64m").build()
+      context.eval("js", "var a = [];while (true) {a.push('foobar');}");
+    } catch (PolyglotException ex) {
+      if (ex.isResourceExhausted()) {
+        System.out.println("Resource exhausted");
+      }
+    }
+  }
+}
+</code></pre>
+<p>Exceeding the maximum heap size will automatically close the context and raise a <code>PolyglotException</code>.</p>
+    
       <h2 id="dependency-setup">
         
         
-          Dependency setup <a href="#dependency-setup" class="anchor_heading">#</a>
+          Dependency Setup <a href="#dependency-setup" class="anchor_heading">#</a>
         
         
       </h2>

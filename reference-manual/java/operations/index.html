@@ -578,15 +578,15 @@ $(document).ready(function(){
         
       </h1>
     
-      <h2 id="running-the-graalvm-compiler-in-native-image-vs-on-the-jvm">
+      <h2 id="running-the-graal-compiler-in-native-image-vs-on-the-jvm">
         
         
-          Running the GraalVM Compiler in Native Image vs on the JVM <a href="#running-the-graalvm-compiler-in-native-image-vs-on-the-jvm" class="anchor_heading">#</a>
+          Running the Graal compiler in Native Image vs on the JVM <a href="#running-the-graal-compiler-in-native-image-vs-on-the-jvm" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>When running the GraalVM compiler on the JVM, it goes through the same warm-up phase that the rest of the Java application does.
+<p>When running the Graal compiler on the JVM, it goes through the same warm-up phase that the rest of the Java application does.
 That is, it is first interpreted before its hot methods are compiled.
 This can translate into slightly longer times until the application reaches peak performance when compared to the native compilers in the JVM such as C1 and C2.</p>
 
@@ -607,7 +607,7 @@ It can be disabled with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
       </h2>
 
 <p>The first thing to be sure of when measuring performance is to ensure the JVM is using the GraalVM Enterprise compiler.
-In the GraalVM binary, the JVM is configured to use the GraalVM compiler as the top tier compiler by default.
+In the GraalVM binary, the JVM is configured to use the Graal compiler as the top tier compiler by default.
 You can confirm this by adding <code>-Dgraal.ShowConfiguration=info</code> to the command line.
 It will produce a line of output similar to the one below when the compiler is initialized:</p>
 
@@ -615,7 +615,7 @@ It will produce a line of output similar to the one below when the compiler is i
 </code></pre>
 
 <blockquote>
-  <p>Note: The GraalVM compiler is only initialized on the first top-tier JIT compilation request so if your application is short-lived, you may not see this output.</p>
+  <p>Note: The Graal compiler is only initialized on the first top-tier JIT compilation request so if your application is short-lived, you may not see this output.</p>
 </blockquote>
 
 <p>Optimizing JVM-based applications is a science in itself.
@@ -624,20 +624,20 @@ a poorly written application or 3rd party library code. For this reason, it is  
 
 <p>You can also compare performance against the native top-tier compiler in the JVM by adding <code>-XX:-UseJVMCICompiler</code> to the command line.</p>
 
-<p>If you observe a significant performance regression when using the GraalVM compiler, please open an issue on GitHub.
+<p>If you observe a significant performance regression when using the Graal compiler, please open an issue on GitHub.
 Attaching a Java Flight Recorder log and instructions to reproduce the issue makes investigation easier and thus the chances of a fix higher.
 Even better is if you can submit a <a href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a> benchmark that represents the hottest parts of your application (as identified by a profiler).
 This allows us to very quickly pinpoint missing optimization opportunities or to offer suggestions on how to restructure the code to avoid or reduce performance bottlenecks.</p>
     
-      <h2 id="troubleshooting-the-graalvm-compiler">
+      <h2 id="troubleshooting-the-graal-compiler">
         
         
-          Troubleshooting the GraalVM Compiler <a href="#troubleshooting-the-graalvm-compiler" class="anchor_heading">#</a>
+          Troubleshooting the Graal compiler <a href="#troubleshooting-the-graal-compiler" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>Like all software, the GraalVM compiler is not guaranteed to be bug free so it is useful to know how to diagnose and submit useful bug reports if you encounter issues.</p>
+<p>Like all software, the Graal compiler is not guaranteed to be bug free so it is useful to know how to diagnose and submit useful bug reports if you encounter issues.</p>
 
 <p>If you spot a security vulnerability, please do <strong>not</strong> report it via GitHub Issues or the public mailing lists, but via the process outlined at <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">Reporting Vulnerabilities guide</a>.</p>
     
@@ -685,7 +685,7 @@ j  org.graalvm.compiler.core.gen.NodeLIRBuilder.doBlock(Lorg/graalvm/compiler/no
 j  org.graalvm.compiler.core.LIRGenerationPhase.emitBlock(Lorg/graalvm/compiler/nodes/spi/NodeLIRBuilderTool;Lorg/graalvm/compiler/lir/gen/LIRGenerationResult;Lorg/graalvm/compiler/nodes/cfg/Block;Lorg/graalvm/compiler/nodes/StructuredGraph;Lorg/graalvm/compiler/core/common/cfg/BlockMap;)V+65
 </code></pre>
 
-<p>This example shows that the top frame was compiled (J) by the JVMCI compiler, which is the GraalVM compiler.
+<p>This example shows that the top frame was compiled (J) by the JVMCI compiler, which is the Graal compiler.
 The crash occurred at offset 0x141 in the machine code produced for:</p>
 <pre><code class="language-shell">org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V
 </code></pre>
@@ -696,7 +696,7 @@ The location of the crash is also often indicated near the top of the file with 
 # J 761 JVMCI org.graalvm.compiler.core.gen.NodeLIRBuilder.matchComplexExpressions(Ljava/util/List;)V (299 bytes) @ 0x0000000108a2fc01 [0x0000000108a2fac0+0x141] (null)
 </code></pre>
 
-<p>In this example, there is likely an error in the code produced by the GraalVM compiler for <code>NodeLIRBuilder.matchComplexExpressions</code>.</p>
+<p>In this example, there is likely an error in the code produced by the Graal compiler for <code>NodeLIRBuilder.matchComplexExpressions</code>.</p>
 
 <p>When filing an issue on <a href="https://github.com/oracle/graal/issues">GitHub</a> for such a crash, you should first attempt to reproduce the crash with extra diagnostics enabled for the compilation of the problematic method.
 In this example, you would add the following to your command line:</p>
@@ -733,7 +733,7 @@ HotSpotCompilation-1221        Lorg/graalvm/compiler/hotspot/amd64/AMD64HotSpotL
 <p>Here we see that the crash happened in a different method than the first crash.
 As such, we expand the filter argument to be <code>-Dgraal.MethodFilter=NodeLIRBuilder.matchComplexExpressions,AMD64HotSpotLIRGenerator.getResult</code> and run again.</p>
 
-<p>When the VM crashes in this way, it does not execute the shutdown code that archives the GraalVM compiler diagnostic output or delete the directory it was written to.
+<p>When the VM crashes in this way, it does not execute the shutdown code that archives the Graal compiler diagnostic output or delete the directory it was written to.
 This must be done manually after the crash.</p>
 
 <p>By default, the directory is <code>$PWD/graal-dumps/&lt;timestamp&gt;</code>; for example, <code>./graal-dumps/1499938817387</code>.
