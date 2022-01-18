@@ -20,9 +20,8 @@ bundle exec jekyll build --config _config_enterprise_22.yml
 
 # Move the output to html directory (required for OHC)
 mv _site html
-mv html/toc.html html/toc.htm
 zip -r html html/ -x *.DS_Store
-# rm -rf html/
+rm -rf html/
 
 git checkout _layouts/docs.html
 git checkout _layouts/docs-experimental.html
