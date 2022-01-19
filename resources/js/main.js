@@ -785,17 +785,17 @@ function selected(val) {
 $(document).ready(function() {
   // document.getElementById('display-version').innerHTML = window.location.pathname.split('/')[1];
 
-  var version = 'Release 22.0';
+  var version = 'Dev';
   switch (window.location.pathname.split('/')[1]) {
-    // case '22.0':
-    //   version = 'Release 22.0';
-    //   break;
+    case '22.0':
+      version = 'Release 22.0';
+      break;
     case '21.3':
       version = 'Release 21.3';
       break;
-    case 'snapshot':
-      version = 'Snapshot';
-      break;
+    // case '':
+    //   version = 'Dev';
+    //   break;
   }
   $('.display-version > #valueText').html(version);
 
