@@ -676,7 +676,7 @@ if (safVideo && defVideo) {
       }
 
     var results = idx.search(searchTerm); // Get lunr to perform a search
-    displaySearchResults(results, window.store); // We'll write this in the next sections
+    displaySearchResults(results, window.store);
   }
 })();
 
@@ -793,9 +793,6 @@ $(document).ready(function() {
     case '21.3':
       version = 'Release 21.3';
       break;
-    // case '':
-    //   version = 'Dev';
-    //   break;
   }
   $('.display-version > #valueText').html(version);
 
