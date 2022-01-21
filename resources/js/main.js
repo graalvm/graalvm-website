@@ -776,22 +776,24 @@ function toggleOptions(e) {
 
 }
 
-function selected(val) {
+function selected(val, version) {
    document.getElementById('valueText').innerHTML = val;
    document.getElementById('selectedValue').val = val;
+
+   location = '/' + version + '/' + window.location.pathname.split('/').splice(2).join('/');
    toggleOptions();
 }
 
 $(document).ready(function() {
   // document.getElementById('display-version').innerHTML = window.location.pathname.split('/')[1];
 
-  var version = 'Dev';
+  var version = '22.0 Release';
   switch (window.location.pathname.split('/')[1]) {
-    case '22.0':
-      version = 'Release 22.0';
-      break;
     case '21.3':
-      version = 'Release 21.3';
+      version = '21.3 Release';
+      break;
+    case 'dev':
+      version = 'Dev Build';
       break;
   }
   $('.display-version > #valueText').html(version);
@@ -801,41 +803,3 @@ $(document).ready(function() {
       $(this).attr('size', $(this).val().length)
   });
 });
-
-// // Automatic slideshow with manual navigation for announcements banner
-// var slideIndex = 0;
-// var slides = document.getElementsByClassName("adSlides");
-// var dots = document.getElementsByClassName("dotnav");
-//
-// showSlides();
-//
-// function showSlides() {
-//    var i;
-//    for (i = 0; i < slides.length; i++) {
-//        slides[i].style.display = "none";
-//    }
-//    slideIndex++;
-//    if (slideIndex> slides.length) {slideIndex = 1}
-//    for (i = 0; i < dots.length; i++) {
-//      dots[i].className = dots[i].className.replace(" active", "");
-//    }
-//    slides[slideIndex-1].style.display = "block";
-//    dots[slideIndex-1].className += " active";
-//    setTimeout(showSlides, 6000); // Change image every 8 seconds
-// }
-//
-// function currentSlide(no) {
-//    var i;
-//    for (i = 0; i < slides.length; i++) {
-//        slides[i].style.display = "none";
-//    }
-//    slideIndex = no;
-//    slides[no-1].style.display = "block";
-// }
-//
-// function plusSlides(n) {
-//  var newslideIndex = slideIndex + n;
-//  if(newslideIndex < 4 && newslideIndex > 0){
-//     currentSlide(newslideIndex);
-//  }
-// }

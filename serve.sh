@@ -1,2 +1,4 @@
 #! /usr/bin/env bash
-bundle exec jekyll serve --skip-initial-build --config _config_community_dev.yml
+cd _site
+echo "Server address: http://127.0.0.1:4000/"
+ruby -run -e httpd . -p4000

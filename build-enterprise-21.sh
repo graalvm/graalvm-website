@@ -16,7 +16,7 @@ rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-22.md
 cp toc-21.md toc.md
 
 # Clone docs sources from graal, js, graalpython, fastr, truffleruby cpu/graal-vm/21.3 branch into graalvm.org
-./pull-extra-enterprise.sh cpu/graal-vm/21.3
+./pull-extra.sh cpu/graal-vm/21.3
 # Build the documentation version 21. The output saved in _site/.
 bundle exec jekyll build --config _config_enterprise_21.yml
 
