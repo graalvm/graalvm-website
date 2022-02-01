@@ -25,7 +25,8 @@ folders.each do |dir|
     puts file if $VERBOSE
 
     lines = File.readlines(file)
-    last_yaml_line = lines.drop(1).index { |line|
+    lines = lines.drop(1)
+    last_yaml_line = lines.index { |line|
       line.strip == "---"
     }
 
@@ -34,7 +35,7 @@ folders.each do |dir|
       next
     end
 
-    yaml = lines[0..last_yaml_line].join
+    yaml = lines[0...last_yaml_line].join
     body = lines[last_yaml_line+1..-1].join
     begin
       header = YAML.load yaml
@@ -43,6 +44,17 @@ folders.each do |dir|
       next
     end
 
+    # Add title:
+    unless header.include?('title')
+      title = body[/^##?\s+(\S.+)$/, 1]
+      if title
+        header['title'] = title
+      else
+        warn "Could not find title in #{file}"
+      end
+    end
+
+    # Add version in permalink:
     if permalink = header['permalink']
       permalink = permalink[1...-1] if permalink.start_with?('"')
       versioned_permalink = if permalink.start_with?('/$version')
@@ -53,6 +65,7 @@ folders.each do |dir|
       header['permalink'] = versioned_permalink
     end
 
+    # Add redirect_from: for unversioned URLs
     if add_redirects and permalink
       redirects = Array(header['redirect_from'])
       redirect_to_latest_release = permalink.sub('/$version', '')
@@ -60,7 +73,7 @@ folders.each do |dir|
       header['redirect_from'] = redirects
     end
 
-    contents = YAML.dump(header) + body
+    contents = "#{YAML.dump(header).chomp}\n---\n#{body}"
     File.write(file, contents)
   end
 end
