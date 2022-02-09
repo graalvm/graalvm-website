@@ -777,28 +777,43 @@ function toggleOptions(e) {
 }
 
 function selected(val, version) {
+   var lastPart = window.location.pathname.split('/').splice(2).join('/');
+
+   if (lastPart.search(/\d\d_\d/) === 0) {
+     if (version === 'dev')
+     {
+       location = '/' + version + '/';
+       return;
+     }
+     location = '/' + window.location.pathname.split('/')[1] + '/' + version.replace('.', '_');
+     return;
+   }
+
    document.getElementById('valueText').innerHTML = val;
    document.getElementById('selectedValue').val = val;
 
-   location = '/' + version + '/' + window.location.pathname.split('/').splice(2).join('/');
+   location = '/' + version + '/' + lastPart;
    toggleOptions();
 }
 
 $(document).ready(function() {
-  // document.getElementById('display-version').innerHTML = window.location.pathname.split('/')[1];
+  var version = '';
 
-  var version = '22.0 Release';
   switch (window.location.pathname.split('/')[1]) {
     case '21.3':
       version = '21.3 Release';
+      break;
+    case '22.0':
+      version = '22.0 Release';
       break;
     case 'dev':
       version = 'Dev Build';
       break;
   }
-  $('.display-version > #valueText').html(version);
 
-// Set width for Search field input
+  version && $('.display-version > #valueText').html(version);
+
+  // Set width for Search field input
   $('#search-box').keyup(function() {
       $(this).attr('size', $(this).val().length)
   });
