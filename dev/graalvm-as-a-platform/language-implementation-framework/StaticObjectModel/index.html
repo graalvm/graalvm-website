@@ -10,7 +10,7 @@
 
   <title>
     
-      Auxiliary Engine Caching
+      Static Object Model
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
@@ -23,7 +23,7 @@
 
   <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script>
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="/dev/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
+  <link rel="canonical" href="/dev/graalvm-as-a-platform/language-implementation-framework/StaticObjectModel/">
   <script src="/resources/lib/bootstrap/js/bootstrap.min.js"></script>
   <script src="/resources/lib/sticky-sidebar/resizeSensor.js"></script>
   <script src="/resources/lib/sticky-sidebar/sticky-sidebar.min.js"></script>
@@ -499,13 +499,31 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub">
+          <li class="toc-bullets-sub toc-bullets-highlight">
           
             
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/StaticObjectModel/">
               Static Object Model
             </a>
           </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
 
           
         
@@ -697,31 +715,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
               Auxiliary Engine Caching
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -915,51 +915,39 @@ $(document).ready(function(){
     
       <li class="active">
         
-          Auxiliaryenginecachingenterprise
+          Staticobjectmodel
         
       </li>
     
   </ul>
 
 
-                <h1 id="auxiliary-engine-caching">
+                <h1 id="static-object-model">
         
         
-          Auxiliary Engine Caching
+          Static Object Model
         
         
       </h1>
 
-<p>The following document describes how the auxiliary engine cache of GraalVM works.</p>
-
-<p>This feature is only available in GraalVM Enterprise Edition. In the community edition, these options are not available.</p>
+<p>This guide demonstrates how to get started with using the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.html">StaticShape</a> and <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a> APIs introduced with GraalVM 21.3.0.
+The full documentation can be found in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/package-summary.html">Javadoc</a>.</p>
     
-      <h2 id="introduction">
+      <h3 id="motivation">
         
         
-          Introduction <a href="#introduction" class="anchor_heading">#</a>
+          Motivation <a href="#motivation" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p>Warmup of Truffle guest language programs can take a significant amount of time.
-Warmup consists of work that is repeated every time a program is executed until peak performance is reached.
-This includes:</p>
-<ol>
-  <li>Loading and parsing the guest application into Truffle AST data structures.</li>
-  <li>Execution and profiling of the guest application in the interpreter.</li>
-  <li>Compilation of the AST to machine code.</li>
-</ol>
+<p>The Static Object Model provides abstractions to represent the layout of objects that, once defined, do not change the number and the type of their properties.
+It is particularly well suited for, but not limited to, the implementation of the object model of static programming languages.
+Its APIs define the object layout (<a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.html">StaticShape</a>), execute property accesses (<a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a>), and allocate static objects (<a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/DefaultStaticObjectFactory.html">DefaultStaticObjectFactory</a>).
+The implementation is efficient and executes safety checks on property accesses that can be disabled if they are already executed by the language implementation, for example by a verifier.</p>
 
-<p>Within a single OS process, the work performed during warmup can be shared by specifying an <a href="/dev/reference-manual/embed-languages/#code-caching-across-multiple-contexts">explicit engine</a>.
-This requires language implementations to disable context-related optimizations to avoid deoptimizations between contexts that share code.
-Auxiliary engine caching builds upon the mechanism for disabling context-related optimizations and adds the capability to persist an engine with ASTs and optimized machine code to disk.
-This way, the work performed during warmup can be significantly reduced in the first application context of a new process.</p>
-
-<p>We use the SVM auxiliary image feature to persist and load the necessary data structures to the disk.
-Persisting the image can take significant time as compilation needs to be performed.
-However, loading is designed to be as fast as possible, typically almost instantaneous.
-This reduces the warmup time of an application significantly.</p>
+<p>The Static Object Model does not provide constructs to model the visibility of properties and does not distinguish between static and instance properties.
+Its APIs are not compatible with those of the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/package-summary.html">Dynamic Object Model</a>, which is more suited for dynamic languages.</p>
     
       <h2 id="getting-started">
         
@@ -969,208 +957,252 @@ This reduces the warmup time of an application significantly.</p>
         
       </h2>
 
-<p>Starting from a GraalVM EE installation, you first need to (re)build an image with auxiliary engine caching capabilities.
-For example, one can rebuild the JavaScript image by adding the auxiliary engine cache feature:</p>
+<p>In this first example, let’s assume that:</p>
+<ol>
+  <li><code>language</code> is an instance of the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html">TruffleLanguage</a> that we are implementing.</li>
+  <li>We want to represent an object with the following static layout:
+    <ul>
+      <li>An <code>int</code> property named <code>property1</code>.</li>
+      <li>An <code>Object</code> property named <code>property2</code> which can be stored as a final field. Later we will see in detail what this implies.</li>
+    </ul>
+  </li>
+</ol>
 
-<pre><code>graalvm/bin/native-image --macro:js-launcher -H:+AuxiliaryEngineCache -H:ReservedAuxiliaryImageBytes=1073741824
-</code></pre>
+<p>Here is how to use the Static Object Model to represent this layout:</p>
 
-<p>The <code>--macro</code> argument value depends on the guest language
-By default, auxiliary images of up to 1GB are possible.
-The maximum size can be increased or decreased as needed.
-The amount of reserved bytes does not actually impact the memory consumed by the application.
-In future versions, the auxiliary engine cache will be enabled by default when the <code>--macro:js-launcher</code> macro is used.</p>
-
-<p>After rebuilding the JavaScript launcher, the feature is used as follows:</p>
-
-<p>Create a new file <code>fib.js</code>:</p>
-
-<pre><code>function fib(n) {
-   if (n == 1 || n == 2) {
-       return 1;
-   }
-   return fib(n - 1) + fib(n - 2);
+<pre><code class="language-java">public class GettingStarted {
+    public void simpleShape(TruffleLanguage&lt;?&gt; language) {
+        StaticShape.Builder builder = StaticShape.newBuilder(language);
+        StaticProperty p1 = new DefaultStaticProperty("property1");
+        StaticProperty p2 = new DefaultStaticProperty("property2");
+        builder.property(p1, int.class, false);
+        builder.property(p2, Object.class, true);
+        StaticShape&lt;DefaultStaticObjectFactory&gt; shape = builder.build();
+        Object staticObject = shape.getFactory().create();
+        ...
+    }
 }
-console.log(fib(32))
 </code></pre>
 
-<p>In order to persist the engine of a profiling run to disk use the following command line:</p>
+<p>We start by creating a <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.Builder.html">StaticShape.Builder</a> instance, passing a reference to the language that we are implementing.
+Then, we create <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/DefaultStaticProperty.html">DefaultStaticProperty</a> instances that represent the properties that we want to add to the static object layout.
+The String id passed as argument must be unique within a builder.
+After creating the properties we register them to the builder instance:</p>
+<ul>
+  <li>The first argument is the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a> that we register.</li>
+  <li>The second argument is the type of the property. It can be a primitive class or <code>Object.class</code>.</li>
+  <li>The third argument is a boolean value that defines if the property can be stored as a final field.
+This gives the compiler the opportunity to perform additional optimizations.
+For example, reads to this property might be constant-folded.
+It’s important to note that the Static Object Model does not check if a property stored as final is not assigned more than once and that it is assigned before it is read.
+Doing so might lead to wrong behavior of the program, and it is up to the user to enforce that this cannot happen.
+We then create a new static shape calling <code>builder.build()</code>.
+To allocate the static object, we retrieve the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/DefaultStaticObjectFactory.html">DefaultStaticObjectFactory</a> from the shape, and we invoke its <code>create()</code> method.</li>
+</ul>
 
-<pre><code>graalvm/bin/js --experimental-options --engine.TraceCache=true --engine.CacheStore=fib.image fib.js
+<p>Now that we have our static object instance, let’s see how to use the static properties to perform property accesses.
+Expanding the example above:</p>
+<pre><code class="language-java">public class GettingStarted {
+    public void simpleShape(TruffleLanguage&lt;?&gt; language) {
+        ...
+        p1.setInt(staticObject, 42);
+        p2.setObject(staticObject, "42");
+        assert p1.getInt(staticObject) == 42;
+        assert p2.getObject(staticObject).equals("42");
+    }
+}
 </code></pre>
-
-<p>The ` –engine.TraceCache=true` option is optional and allows you to see what is going on.</p>
-
-<p>The output is as follows:</p>
-
-<pre><code>[engine] [cache] No load engine cache configured.
-2178309
-[engine] [cache] Preparing engine for store (compile policy hot)...
-[engine] [cache] Force compile targets mode: hot
-[engine] [cache] Prepared engine in 1 ms.
-[engine] [cache] Persisting engine for store ...
-[engine] [cache] Persisted engine in 20 ms.
-[engine] [cache] Detecting changes (update policy always)...
-[engine] [cache]     New image contains         1 sources and  82 function roots.
-[engine] [cache]     Always persist policy.
-[engine] [cache] Writing image to fib.image...
-[engine] [cache] Finished writing 1,871,872 bytes in 4 ms.
-</code></pre>
-
-<p>The engine can now be loaded from disk using the following command:</p>
-
-<pre><code>graalvm/bin/js --experimental-options --engine.TraceCache --engine.CacheLoad=fib.image fib.js
-</code></pre>
-
-<p>which prints:</p>
-
-<pre><code>[engine] [cache] Try loading image './fib.image'...
-[engine] [cache] Loaded image in 0 ms. 1,871,872 bytes   1 sources  82 roots
-[engine] [cache] Engine from image successfully patched with new options.
-2178309
-[engine] [cache] No store engine cache configured.
-</code></pre>
-
-<p>Since there is no need to warm up the application, the application’s execution time should be significantly improved.</p>
     
-      <h2 id="usage">
+      <h2 id="shape-hierarchies">
         
         
-          Usage <a href="#usage" class="anchor_heading">#</a>
+          Shape Hierarchies <a href="#shape-hierarchies" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The cache store and load operations can be controlled using the following options:</p>
+<p>It is possible to create a shape hierarchy by declaring that a new shape should extend an existing one.
+This is done by passing the parent shape as argument to <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.Builder.html">StaticShape.Builder.build(StaticShape)</a> when creating the child shape.
+Properties of the parent shape can then be used to access values stored in static objects of the child shape.</p>
 
-<ul>
-  <li><code>--engine.Cache=&lt;path&gt;</code> Loads and stores the cached engine from/to  <code>path</code>.</li>
-  <li><code>--engine.CacheStore=&lt;path&gt;</code> Stores the cached engine to  <code>path</code>.</li>
-  <li><code>--engine.CacheLoad=&lt;path&gt;</code> Loads the cached engine from <code>path</code>.</li>
-  <li><code>--engine.CachePreinitializeContext=&lt;boolean&gt;</code> Preinitialize a new context in the image (default <code>true</code>).</li>
-  <li><code>--engine.TraceCache=&lt;boolean&gt;</code> Enables debug output.</li>
-  <li><code>--engine.TraceCompilation=&lt;boolean&gt;</code> Prints forced compilations.</li>
-</ul>
+<p>In the following example we create a parent shape identical to the one discussed in <a href="#getting-started">the previous section</a>, then we extend it with a child shape that hides one of the properties of the parent shape.
+Finally, we demonstrate how the various properties can be accessed.</p>
 
-<p>The compilation of roots may be forced when an image is stored using the <code>--engine.CacheCompile=&lt;policy&gt;</code> option. The supported policies are:</p>
+<pre><code class="language-java">public class Subshapes {
+    public void simpleSubShape(TruffleLanguage&lt;?&gt; language) {
+        // Create a shape
+        StaticShape.Builder b1 = StaticShape.newBuilder(language);
+        StaticProperty s1p1 = new DefaultStaticProperty("property1");
+        StaticProperty s1p2 = new DefaultStaticProperty("property2");
+        b1.property(s1p1, int.class, false).property(s1p2, Object.class, true);
+        StaticShape&lt;DefaultStaticObjectFactory&gt; s1 = b1.build();
 
-<ul>
-  <li><code>none</code>: No compilations will be persisted, and existing compilations will be invalidated.</li>
-  <li><code>compiled</code>: No compilations will be forced, but finished compilations will be persisted.</li>
-  <li><code>hot</code>: All started compilations will be completed and then persisted. (default)</li>
-  <li><code>aot</code>: All started, and AOT compilable roots will be forced to compile and persisted.</li>
-  <li><code>executed</code>: All executed and all AOT compilable roots will be forced to compile.</li>
-</ul>
+        // Create a sub-shape
+        StaticShape.Builder b2 = StaticShape.newBuilder(language);
+        StaticProperty s2p1 = new DefaultStaticProperty("property1");
+        b2.property(s2p1, int.class, false);
+        StaticShape&lt;DefaultStaticObjectFactory&gt; s2 = b2.build(s1); // passing a shape as argument builds a sub-shape
 
-<p>By default, all started compilations in the compile queue will be completed and then persisted.
-Whether a function root is AOT compilable is determined by the language.
-A language supports AOT by implementing <code>RootNode.prepareForAOT()</code>.</p>
+        // Create a static object for the sub-shape
+        Object o2 = s2.getFactory().create();
 
-<p>An update policy can be specified if both load and store operations are set using the <code>--engine.UpdatePolicy=&lt;policy&gt;</code> option.
-Available policies are:</p>
-
-<ul>
-  <li><code>always</code> Always persist.</li>
-  <li><code>newsource</code> Store if new source was loaded that was not contained in the previously loaded image.</li>
-  <li><code>newroot</code> Store if a new root was loaded and not contained in the previously loaded image.</li>
-  <li><code>never</code> Never persist.</li>
-</ul>
+        // Perform property accesses
+        s1p1.setInt(o2, 42);
+        s1p2.setObject(o2, "42");
+        s2p1.setInt(o2, 24);
+        assert s1p1.getInt(o2) == 42;
+        assert s1p2.getObject(o2).equals("42");
+        assert s2p1.getInt(o2) == 24;    }
+}
+</code></pre>
     
-      <h2 id="known-restrictions">
+      <h2 id="extending-custom-base-classes">
         
         
-          Known Restrictions <a href="#known-restrictions" class="anchor_heading">#</a>
+          Extending custom base classes <a href="#extending-custom-base-classes" class="anchor_heading">#</a>
         
         
       </h2>
 
+<p>To reduce memory footprint, the language implementor might want static objects to extend the class that represents guest-level objects.
+This is complicated by the fact that <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.html">StaticShape.getFactory()</a> must return an instance of the factory class that allocates static objects.
+To achieve this, we first need to declare an interface that:</p>
 <ul>
-  <li>
-    <p>There are generally no restrictions on the kind of applications that can be persisted.
-If the language supports a shared context policy, auxiliary engine caching should work.
-If the language does not support it, then no data will be persisted.</p>
-  </li>
-  <li>
-    <p>The persisted auxiliary engine image can only be used with the same SVM native image that it was created with.
-Using the engine image with any other native-image will fail.</p>
-  </li>
-  <li>
-    <p>There can only be one active auxiliary image per native-image isolate.
-Trying to load multiple auxiliary images at the same time will fail.
-Currently, auxiliary images can also not be unloaded, but it is planned to lift this restriction in the future.</p>
-  </li>
-</ul>
-    
-      <h2 id="security-considerations">
-        
-        
-          Security Considerations <a href="#security-considerations" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>All data that is persisted to disk represents code only and no application context-specific data like global variables.
-However, profiled ASTs and code may contain artifacts of the optimizations performed in a Truffle AST.
-For example, it is possible that runtime strings are used for optimizations and therefore persisted to an engine image.</p>
-    
-      <h2 id="development-and-debugging-on-nativeimage">
-        
-        
-          Development and Debugging on NativeImage <a href="#development-and-debugging-on-nativeimage" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>There are several options useful for debugging auxiliary engines caching when running on NativeImage:</p>
-
-<ul>
-  <li><code>-XX:+TraceAuxiliaryImageClassHistogram</code> Prints a class histogram of all the objects contained in an image when persisting.</li>
-  <li><code>-XX:+TraceAuxiliaryImageReferenceTree</code> Prints a class reference tree of all the objects contained in an image when persisting.</li>
-</ul>
-    
-      <h2 id="development-and-debugging-on-hotspot">
-        
-        
-          Development and Debugging on HotSpot <a href="#development-and-debugging-on-hotspot" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>It can be useful to debug language implementation issues related to auxiliary image on HotSpot.
-On GraalVM EE in JVM mode, we have additional options that can be used to help debug issues with this feature:
-Since storing partial heaps on HotSpot is not supported, these debug features do not work on HotSpot.</p>
-
-<ul>
-  <li><code>--engine.DebugCacheStore=&lt;boolean&gt;</code> Prepares the engine for caching and stores it to a static field instead of writing it to disk.</li>
-  <li><code>--engine.DebugCacheLoad=&lt;boolean&gt;</code> Prepares the engine to use the engine stored in the static field instead of reading it from disk.</li>
-  <li><code>--engine.DebugCacheCompile=&lt;boolean&gt;</code> Policy to use to force compilation for executed call targets before persisting the engine. This supports the same values as <code>--engine.CacheCompile</code>.</li>
-  <li><code>--engine.DebugCacheTrace=&lt;boolean&gt;</code> Enables tracing for the engine cache debug feature.</li>
+  <li>Defines a method for each visible constructor of the static object super class that we want to invoke.</li>
+  <li>The arguments of each method must match those of the corresponding constructor.</li>
+  <li>The return type of each method must be assignable from the static object super class.</li>
 </ul>
 
-<p>For example:</p>
+<p>For example, if the static objects should extend this class:</p>
+<pre><code class="language-java">public abstract class MyStaticObject {
+    final String arg1;
+    final Object arg2;
 
-<pre><code>js --jvm  --experimental-options --engine.TraceCompilation --engine.DebugCacheTrace --engine.DebugCacheStore --engine.DebugCacheCompile=executed fib.js
+    public MyStaticObject(String arg1) {
+        this(arg1, null);
+    }
+
+    public MyStaticObject(String arg1, Object arg2) {
+        this.arg1 = arg1;
+        this.arg2 = arg2;
+    }
+}
 </code></pre>
 
-<p>Prints the following output:</p>
-
-<pre><code>[engine] opt done         fib                                                         |ASTSize            32 |Time   231( 147+84  )ms |Tier             Last |DirectCallNodes I    6/D    8 |GraalNodes   980/ 1857 |CodeSize         7611 |CodeAddress 0x10e20e650 |Source       fib.js:2
-2178309
-[engine] [cache] Preparing debug engine for storage...
-[engine] [cache] Force compile targets mode: executed
-[engine] [cache] Force compiling 4 roots for engine caching.
-[engine] opt done         @72fa3b00                                                   |ASTSize             3 |Time   211( 166+45  )ms |Tier             Last |DirectCallNodes I    2/D    1 |GraalNodes   500/ 1435 |CodeSize         4658 |CodeAddress 0x10e26c8d0 |Source            n/a
-[engine] opt done         :program                                                    |ASTSize            25 |Time   162( 123+39  )ms |Tier             Last |DirectCallNodes I    1/D    1 |GraalNodes   396/ 1344 |CodeSize         4407 |CodeAddress 0x10e27fd50 |Source       fib.js:1
-[engine] opt done         Console.log                                                 |ASTSize             3 |Time    26(  11+15  )ms |Tier             Last |DirectCallNodes I    0/D    0 |GraalNodes    98/  766 |CodeSize         2438 |CodeAddress 0x10e285710 |Source    &lt;builtin&gt;:1
-[engine] [cache] Stored debug engine in memory.
+<p>We need to declare the following factory interface:</p>
+<pre><code class="language-java">public interface MyStaticObjectFactory {
+    MyStaticObject create(String arg1);
+    MyStaticObject create(String arg1, Object arg2);
+}
 </code></pre>
 
-<p>This allows rapidly iterating on problems related to the compilation as well as to attach a Java debugger.
-A Java debugger can be attached using <code>--vm.Xdebug --vm.Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000</code>.</p>
+<p>Finally, this is how to allocate the custom static objects:</p>
+<pre><code class="language-java">public void customStaticObject(TruffleLanguage&lt;?&gt; language) {
+    StaticProperty property = new DefaultStaticProperty("arg1");
+    StaticShape&lt;MyStaticObjectFactory&gt; shape = StaticShape.newBuilder(language).property(property, Object.class, false).build(MyStaticObject.class, MyStaticObjectFactory.class);
+    MyStaticObject staticObject = shape.getFactory().create("arg1");
+    property.setObject(staticObject, "42");
+    assert staticObject.arg1.equals("arg1"); // fields of the custom super class are directly accessible
+    assert property.getObject(staticObject).equals("42"); // static properties are accessible as usual
+}
+</code></pre>
 
-<p>Debugging the loading of persisted engines is more difficult as writing an engine to disk is not supported on HotSpot.
-However, it is possible to use the polyglot embedding API to simulate this use-case in a unit test.
-See the <code>com.oracle.truffle.enterprise.test.DebugEngineCacheTest</code> class as an example.</p>
+<p>As you can see from the example above, fields and methods of the custom parent class are directly accessible and are not hidden by the static properties of the static object.</p>
+    
+      <h2 id="reducing-memory-footprint">
+        
+        
+          Reducing memory footprint <a href="#reducing-memory-footprint" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Reading the Javadoc, you might have noticed that <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticShape.html">StaticShape</a> does not provide an API to access the associated static properties.
+This reduces memory footprint in case the language implementation already has a way to store this information.
+For example, an implementation of the Java language might want to store the static shape in the class that represents a Java class, and a static property in the class that represents a Java field.
+In this case, the class representing a Java class should already have a way to retrieve the Java fields associated to it, hence the static properties associated to the shape.
+To further reduce memory footprint, the language implementor might want the class representing a Java field to extend <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a>.</p>
+
+<p>Instead of storing the static property in the class that represents fields:</p>
+<pre><code class="language-java">class MyField {
+    final StaticProperty p;
+
+    MyField(StaticProperty p) {
+        this.p = p;
+    }
+}
+
+new MyField(new DefaultStaticProperty("property1"));
+</code></pre>
+
+<p>The class that represents fields can extend <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a>:</p>
+<pre><code class="language-java">class MyField extends StaticProperty {
+    final Object name;
+
+    MyField(Object name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getId() {
+        return name.toString(); // this string must be a unique identifier within a Builder
+    }
+}
+
+new MyField("property1");
+</code></pre>
+    
+      <h2 id="safety-checks">
+        
+        
+          Safety Checks <a href="#safety-checks" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>On property access, the Static Object Model performs two types of safety checks:</p>
+<ol>
+  <li>That the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/staticobject/StaticProperty.html">StaticProperty</a> method matches the type of the static property.</li>
+</ol>
+
+<p>Example of wrong access:</p>
+<pre><code class="language-java">public void wrongMethod(TruffleLanguage&lt;?&gt; language) {
+    StaticShape.Builder builder = StaticShape.newBuilder(language);
+    StaticProperty property = new DefaultStaticProperty("property");
+    Object staticObject = builder.property(property, int.class, false).build().getFactory().create();
+
+    property.setObject(staticObject, "wrong access type"); // throws IllegalArgumentException
+</code></pre>
+
+<ol>
+  <li>That the object passed to the accessor method matches the shape generated by the builder to which the property is associated, or one of its child shapes.</li>
+</ol>
+
+<p>Example of wrong access:</p>
+<pre><code class="language-java">public void wrongShape(TruffleLanguage&lt;?&gt; language) {
+    StaticShape.Builder builder = StaticShape.newBuilder(language);
+    StaticProperty property = new DefaultStaticProperty("property");;
+    Object staticObject1 = builder.property(property, Object.class, false).build().getFactory().create();
+    Object staticObject2 = StaticShape.newBuilder(language).build().getFactory().create();
+
+    property.setObject(staticObject2, "wrong shape"); // throws IllegalArgumentException
+}
+</code></pre>
+
+<p>While these checks are often useful, they might be redundant if the language implementation already performs them, for example using a verifier.
+While the first type of checks (on property type) is very efficient and cannot be disabled, the second type of checks (on the shape) is computationally expensive and can be disabled via a command line argument:</p>
+<pre><code>--experimental-options --engine.RelaxStaticObjectSafetyChecks=true
+</code></pre>
+
+<p>or when creating the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.html">Context</a>:</p>
+<pre><code class="language-java">Context context = Context.newBuilder() //
+                         .allowExperimentalOptions(true) //
+                         .option("engine.RelaxStaticObjectSafetyChecks", "true") //
+                         .build();
+</code></pre>
+
+<p>It is highly discouraged to relax safety checks in absence of other equivalent checks.
+If the assumption on the correctness of the shape of the static objects is wrong, the VM is likely to crash.</p>
 
               </div>
 
