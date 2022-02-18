@@ -383,6 +383,8 @@ $(document).ready(function(){
   
 
   
+
+  
     
 
     
@@ -992,7 +994,7 @@ $(document).ready(function(){
 
 <p>Note that <code>-agentlib</code> must be specified <em>before</em> a <code>-jar</code> option or a class name or any application parameters in the <code>java</code> command line.</p>
 
-<p>During execution, the agent interfaces with the Java VM to intercept all calls that look up classes, methods, fields, resources, or request proxy accesses. The agent then generates the files <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code> in the specified output directory, which is <code>/path/to/config-dir/</code> in the example above. The generated files are standalone configuration files in <em>JSON</em> format which contain all intercepted dynamic accesses.</p>
+<p>During execution, the agent interfaces with the Java VM to intercept all calls that look up classes, methods, fields, resources, or request proxy accesses. The agent then generates the files <em>jni-config.json</em>, <em>reflect-config.json</em>, <em>proxy-config.json</em> and <em>resource-config.json</em> in the specified output directory, which is <code>/path/to/config-dir/</code> in the example above. The generated files are standalone configuration files in JSON format which contain all intercepted dynamic accesses.</p>
 
 <p>It can be necessary to run the target application more than once with different inputs to trigger separate execution paths for a better coverage of dynamic accesses. The agent supports this with the <code>config-merge-dir</code> option which adds the intercepted accesses to an existing set of configuration files:</p>
 <pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=/path/to/config-dir/ ...
@@ -1147,7 +1149,7 @@ For example: <code>-agentlib:caller-filter-file=/path/to/filter-file,config-outp
 }
 </code></pre>
 
-<p>TThe <code>rules</code> section contains a sequence of rules.
+<p>The <code>rules</code> section contains a sequence of rules.
 Each rule specifies either <code>includeClasses</code>, which means that lookups originating in matching classes will be included in the resulting configuration, or <code>excludeClasses</code>, which excludes lookups originating in matching classes from the configuration.
 Each rule defines a pattern for the set of matching classes, which can end in <code>.*</code> or <code>.**</code>: a <code>.*</code> ending matches all classes in a package and that package only, while a <code>.**</code> ending matches all classes in the package as well as in all subpackages at any depth. Without <code>.*</code> or <code>.**</code>, the rule applies only to a single class with the qualified name that matches the pattern.
 All rules are processed in the sequence in which they are specified, so later rules can partially or entirely override earlier ones.
@@ -1208,8 +1210,7 @@ In order to use separate paths with a single global <code>JAVA_TOOL_OPTIONS</cod
 <pre><code class="language-shell">export JAVA_TOOL_OPTIONS="-agentlib:native-image-agent=config-output-dir=/path/to/config-output-dir-{pid}-{datetime}/"
 </code></pre>
 
-<p>The <code>{pid}</code> placeholder is replaced with the process identifier, while <code>{datetime}</code> is replaced with the system date and time in UTC, formatted according to ISO 8601.
-For the above example, the resulting path could be: <code>/path/to/config-output-dir-31415-20181231T235950Z/</code>.</p>
+<p>The <code>{pid}</code> placeholder is replaced with the process identifier, while <code>{datetime}</code> is replaced with the system date and time in UTC, formatted according to ISO 8601. For the above example, the resulting path could be: <code>/path/to/config-output-dir-31415-20181231T235950Z/</code>.</p>
     
       <h3 id="trace-files">
         
@@ -1250,10 +1251,8 @@ In this case, it is necessary to provide the absolute path of the agent:</p>
         
       </h3>
 
-<p>When using the agent in multiple processes at the same time as described in the previous section, <code>config-output-dir</code> is a safe option, but results in multiple sets of configuration files.
-The <code>native-image-configure</code> tool can be used to merge these configuration files.
+<p>When using the agent in multiple processes at the same time as described in the previous section, <code>config-output-dir</code> is a safe option, but results in multiple sets of configuration files. The <code>native-image-configure-launcher</code> tool can be used to merge these configuration files.
 This tool must first be built with:</p>
-
 <pre><code class="language-shell">native-image --macro:native-image-configure-launcher
 </code></pre>
 
@@ -1262,10 +1261,12 @@ This tool must first be built with:</p>
 </blockquote>
 
 <p>Then, the tool can be used to merge sets of configuration files as follows:</p>
-<pre><code class="language-shell">native-image-configure generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
+<pre><code class="language-shell">native-image-configure-launcher generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
 </code></pre>
 
-<p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>. An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure help</code> for all options.</p>
+<p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>.</p>
+
+<p>An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure-launcher help</code> for all options.</p>
 
               </div>
 

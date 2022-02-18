@@ -10,7 +10,7 @@
 
   <title>
     
-      Static Native Images
+      Static and Mostly Static Images
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
@@ -335,6 +335,8 @@ $(document).ready(function(){
 </div>
 
 <ul class="toc-bullets">
+
+  
 
   
 
@@ -976,29 +978,23 @@ $(document).ready(function(){
   </ul>
 
 
-                <h1 id="static-native-images">
+                <h1 id="static-and-mostly-static-images">
         
         
-          Static Native Images
+          Static and Mostly Static Images
         
         
       </h1>
 
-<p>Static native images are statically linked binaries which can be used without any additional library dependencies, which makes them easier to distribute and to deploy on slim or distroless container images.
+<p>With GraalVM Native Image you can create static or mostly static images, depending on the purposes.</p>
+
+<p><strong>Static native images</strong> are statically linked binaries which can be used without any additional library dependencies.
+This makes them easier to distribute and to deploy on slim or distroless container images.
 They are created by statically linking against <a href="https://musl.libc.org/">musl-libc</a>, a lightweight, fast and simple <code>libc</code> implementation.</p>
-    
-      <h1 id="mostly-static-native-images">
-        
-        
-          Mostly Static Native Images
-        
-        
-      </h1>
 
-<p>Mostly static native images statically link against all libraries except libc. This approach is ideal for deploying such a native-image
-on distroless container images. Note that this currently only works when linking against <code>glibc</code>.</p>
-
-<!-- Note: Currently, you can build static native images on Linux AMD64 on Java 11 only. -->
+<p><strong>Mostly static native images</strong> statically link against all libraries except <code>libc</code>.
+This approach is ideal for deploying such native images on distroless container images.
+Note that it currently only works when linking against <code>glibc</code>.</p>
     
       <h2 id="prerequisites">
         
@@ -1040,38 +1036,40 @@ on distroless container images. Note that this currently only works when linking
   </li>
 </ol>
     
-      <h2 id="build-a-static-native-image">
+      <h2 id="build-static-native-image">
         
         
-          Build a Static Native Image <a href="#build-a-static-native-image" class="anchor_heading">#</a>
+          Build Static Native Image <a href="#build-static-native-image" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>First, ensure <code>$TOOLCHAIN_DIR/bin</code> is present on your <code>PATH</code> variable.
-To verify this, run:</p>
-
-<pre><code class="language-bash">x86_64-linux-musl-gcc
+<ol>
+  <li>First, ensure <code>$TOOLCHAIN_DIR/bin</code> is present on your <code>PATH</code> variable.
+ To verify this, run:
+    <pre><code class="language-bash"> x86_64-linux-musl-gcc
 </code></pre>
-<p>You should get a similar output printed:</p>
-<pre><code class="language-bash">x86_64-linux-musl-gcc: fatal error: no input files
-compilation terminated.
+    <p>You should get a similar output printed:</p>
+    <pre><code class="language-bash"> x86_64-linux-musl-gcc: fatal error: no input files
+ compilation terminated.
 </code></pre>
-
-<p>To build a static native image, use this command:</p>
-<pre><code class="language-shell">native-image --static --libc=musl [other arguments] Class
+  </li>
+  <li>Build a static native image by using this command:
+    <pre><code class="language-shell"> native-image --static --libc=musl [other arguments] Class
 </code></pre>
+  </li>
+</ol>
     
-      <h2 id="build-a-mostly-static-native-image">
+      <h2 id="build-mostly-static-native-image">
         
         
-          Build a Mostly Static Native Image <a href="#build-a-mostly-static-native-image" class="anchor_heading">#</a>
+          Build Mostly Static Native Image <a href="#build-mostly-static-native-image" class="anchor_heading">#</a>
         
         
       </h2>
 
 <p>As of GraalVM version 20.2, you can build a “mostly static” native image which statically links everything except <code>libc</code>.
-Statically linking all your libraries except glibc ensures your application has all the libraries it needs to run on any Linux glibc-based distro.</p>
+Statically linking all your libraries except <code>glibc</code> ensures your application has all the libraries it needs to run on any Linux <code>glibc</code>-based distribution.</p>
 
 <p>To build a mostly-static native image native image, use this command:</p>
 <pre><code class="language-shell">native-image -H:+StaticExecutableWithDynamicLibC [other arguments] Class
@@ -1089,17 +1087,17 @@ Statically linking all your libraries except glibc ensures your application has 
         
       </h2>
     
-      <h3 id="what-is-the-recommended-base-docker-image-for-deploying-a-staticmostly-static-native-image">
+      <h3 id="what-is-the-recommended-base-docker-image-for-deploying-a-static-or-mostly-static-native-image">
         
         
-          What is the recommended base Docker image for deploying a static/mostly static native image? <a href="#what-is-the-recommended-base-docker-image-for-deploying-a-staticmostly-static-native-image" class="anchor_heading">#</a>
+          What is the recommended base Docker image for deploying a static or mostly static native image? <a href="#what-is-the-recommended-base-docker-image-for-deploying-a-static-or-mostly-static-native-image" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>A fully static native-image gives you the most flexibility to choose a base image - it can run on anything including a <code>FROM scratch</code> image.
-A mostly static native-image requires a container image that provides glibc, but has no additional requirements.
-In both cases, choosing the base image mostly depends on what your particular native-image needs without having to worry about runtime library dependencies.</p>
+<p>A fully static native image gives you the most flexibility to choose a base image - it can run on anything including a <code>FROM scratch</code> image.
+A mostly static native image requires a container image that provides <code>glibc</code>, but has no additional requirements.
+In both cases, choosing the base image mostly depends on what your particular native image needs without having to worry about run-time library dependencies.</p>
 
               </div>
 

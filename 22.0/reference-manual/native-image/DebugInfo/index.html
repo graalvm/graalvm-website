@@ -383,6 +383,8 @@ $(document).ready(function(){
   
 
   
+
+  
     
 
     
@@ -995,18 +997,16 @@ $(document).ready(function(){
         
       </h1>
 
-<p>To add debug information to a generated native image, provide the <code>-g</code> option to the <code>native-image</code> builder:</p>
-<pre><code class="language-shell">native-image -g Hello
+<p>To add debug info to a generated native image, add the flag
+<code>-H:GenerateDebugInfo=&lt;N&gt;</code> to the native image command line (where <code>N</code> is
+a positive integer value – the default value <code>0</code> means generate no
+debug info). For example,</p>
+<pre><code class="language-shell">javac Hello.java
+native-image -H:GenerateDebugInfo=1 Hello
 </code></pre>
-
-<p>The <code>-g</code> flag instructs <code>native-image</code> to generate debug information.
-The resulting image will contain debug records in a format the GNU Debugger (GDB) understands.
-Additionally, you can pass <code>-O0</code> to the builder which specifies that no compiler optimizations should be performed.
-Disabling all optimizations is not required, but in general it makes the debugging experience better.</p>
-
-<blockquote>
-  <p>Note: Native Image debugging currently works on Linux with initial support for macOS. The feature is experimental.</p>
-</blockquote>
+<p>The resulting image should contain code (method) debug records in a
+format the GNU Debugger (GDB) understands (Windows support is still under development).
+At present it makes no difference which positive value is supplied to the <code>GenerateDebugInfo</code> option.</p>
     
       <h2 id="source-file-caching">
         
@@ -1016,52 +1016,63 @@ Disabling all optimizations is not required, but in general it makes the debuggi
         
       </h2>
 
-<p>The <code>GenerateDebugInfo</code> option also enables caching of sources for any JDK runtime classes, GraalVM classes, and application classes which can be located during native image generation.
-By default, the cache is created alongside the generated native image in a subdirectory named <code>sources</code>.
-If a target directory for the image is specified using option <code>-H:Path=...</code> then the cache is also relocated under that same target.
-A command line option can be used to provide an alternative path to <code>sources</code>.
-It is used to configure source file search path roots for the debugger.
-Files in the cache are located in a directory hierarchy that matches the file path information included in the native image debug records.
-The source cache should contain all the files needed to debug the generated image and nothing more.
-This local cache provides a convenient way of making just the necessary sources available to the debugger or IDE when debugging a native image.</p>
+<p>The <code>GenerateDebugInfo</code> option also enables caching of sources for any
+JDK runtime classes, GraalVM classes, and application classes which can
+be located during native image generation. By default, the cache is created
+alongside the generated native image in a subdirectory named <code>sources</code>. If a
+target directory for the image is specified using option <code>-H:Path=...</code> then
+the cache is also relocated under that same target. A command line option can
+be used to provide an alternative path to <code>sources</code>. It is used to configure
+source file search path roots for the debugger. Files in the cache are
+located in a directory hierarchy that matches the file path
+information included in the native image debug records. The source
+cache should contain all the files needed to debug the generated image
+and nothing more. This local cache provides a convenient way of making
+just the necessary sources available to the debugger or IDE when
+debugging a native image.</p>
 
-<p>The implementation tries to be smart about locating source files.
-It uses the current <code>JAVA_HOME</code> to locate the JDK src.zip when searching for JDK runtime sources.
-It also uses entries in the classpath to suggest locations for GraalVM source files and application source files (see below for precise details of the scheme used to identify source locations).
-However, source layouts do vary and it may not be possible to find all sources.
-Hence, users can specify the location of source files explicitly on the command line using option <code>DebugInfoSourceSearchPath</code>:</p>
-
+<p>The implementation tries to be smart about locating source files. It
+uses the current <code>JAVA_HOME</code> to locate the JDK src.zip when searching
+for JDK runtime sources. It also uses entries in the classpath to
+suggest locations for GraalVM source files and application source
+files (see below for precise details of the scheme used to identify
+source locations). However, source layouts do vary and it may not be
+possible to find all sources. Hence, users can specify the location of
+source files explicitly on the command line using option
+<code>DebugInfoSourceSearchPath</code>:</p>
 <pre><code class="language-shell">javac --source-path apps/greeter/src \
     -d apps/greeter/classes org/my/greeter/*Greeter.java
 javac -cp apps/greeter/classes \
     --source-path apps/hello/src \
     -d apps/hello/classes org/my/hello/Hello.java
-native-image -g \
+native-image -H:GenerateDebugInfo=1 \
     -H:-SpawnIsolates \
     -H:DebugInfoSourceSearchPath=apps/hello/src \
     -H:DebugInfoSourceSearchPath=apps/greeter/src \
     -cp apps/hello/classes:apps/greeter/classes org.my.hello.Hello
 </code></pre>
-
-<p>The <code>DebugInfoSourceSearchPath</code> option can be repeated as many times as required to notify all the target source locations.
-The value passed to this option can be either an absolute or relative path.
-It can identify either a directory, a source JAR, or a source zip file.
-It is also possible to specify several source roots at once using a comma separator:</p>
-
-<pre><code class="language-shell">native-image -g \
+<p>The <code>DebugInfoSourceSearchPath</code> option can be repeated as many times as
+required to notify all the target source locations. The value passed
+to this option can be either an absolute or relative path. It can
+identify either a directory, a source JAR, or a source zip file. It is
+also possible to specify several source roots at once using a comma
+separator:</p>
+<pre><code class="language-shell">native-image -H:GenerateDebugInfo=1 \
     -H:DebugInfoSourceSearchPath=apps/hello/target/hello-sources.jar,apps/greeter/target/greeter-sources.jar \
     -cp apps/target/hello.jar:apps/target/greeter.jar \
     org.my.Hello
 </code></pre>
-
-<p>By default, the cache of application, GraalVM, and JDK sources is created in a directory named <code>sources</code>.
-The <code>DebugInfoSourceCacheRoot</code> option can be used to specify an alternative path, which can be absolute or relative.
-In the latter case the path is interpreted relative to the target directory for the generated native image specified via option <code>-H:Path</code> (which defaults to the current
-working directory).
-As an example, the following variant of the previous command specifies an absolute temporary directory path constructed using the current process <code>id</code>:</p>
-
+<p>By default, the cache of application, GraalVM, and JDK sources is
+created in a directory named <code>sources</code>. The <code>DebugInfoSourceCacheRoot</code>
+option can be used to specify an alternative path, which can be
+absolute or relative. In the latter case the path is interpreted
+relative to the target directory for the generated native image
+specified via option <code>-H:Path</code> (which defaults to the current
+working directory). As an example, the following variant of the
+previous command specifies an absolute temporary directory path
+constructed using the current process id:</p>
 <pre><code class="language-shell">SOURCE_CACHE_ROOT=/tmp/$$/sources
-native-image -g \
+native-image -H:GenerateDebugInfo=1 \
     -H:-SpawnIsolates \
     -H:DebugInfoSourceCacheRoot=$SOURCE_CACHE_ROOT \
     -H:DebugInfoSourceSearchPath=apps/hello/target/hello-sources.jar,apps/greeter/target/greeter-sources.jar \
@@ -1070,11 +1081,17 @@ native-image -g \
 </code></pre>
 <p>The resulting cache directory will be something like <code>/tmp/1272696/sources</code>.</p>
 
-<p>If the source cache path includes a directory that does not yet exist, it will be created during population of the cache.</p>
+<p>If the source cache path includes a directory that does not yet exist,
+it will be created during population of the cache.</p>
 
-<p>Note that in all the examples above the <code>DebugInfoSourceSearchPath</code> options are actually redundant.
-In the first case, the classpath entries for <em>apps/hello/classes</em> and <em>apps/greeter/classes</em> will be used to derive the default search roots <em>apps/hello/src</em> and <em>apps/greeter/src</em>.
-In the second case, the classpath entries for <em>apps/target/hello.jar</em> and <em>apps/target/greeter.jar</em> will be used to derive the default search roots <em>apps/target/hello-sources.jar</em> and <em>apps/target/greeter-sources.jar</em>.</p>
+<p>Note that in all the examples above the <code>DebugInfoSourceSearchPath</code>
+options are actually redundant. In the first case, the classpath
+entries for <em>apps/hello/classes</em> and <em>apps/greeter/classes</em> will be used
+to derive the default search roots <em>apps/hello/src</em> and
+<em>apps/greeter/src</em>. In the second case, the classpath entries for
+<em>apps/target/hello.jar</em> and <em>apps/target/greeter.jar</em> will be used to
+derive the default search roots <em>apps/target/hello-sources.jar</em> and
+<em>apps/target/greeter-sources.jar</em>.</p>
     
       <h2 id="currently-implemented-features">
         
@@ -1097,8 +1114,10 @@ In the second case, the classpath entries for <em>apps/target/hello.jar</em> and
   <li>reference by name to methods and static field data</li>
 </ul>
 
-<p>Note that single stepping within a compiled method includes file and line number info for inlined code, including inlined GraalVM methods.
-So, GDB may switch files even though you are still in the same compiled method.</p>
+<p>Note that single stepping within a compiled method includes file and
+line number info for inlined code, including inlined GraalVM methods.
+So, GDB may switch files even though you are still in the same
+compiled method.</p>
     
       <h3 id="currently-missing-features">
         
@@ -1123,18 +1142,29 @@ So, GDB may switch files even though you are still in the same compiled method.<
       </h3>
 
 <p>GDB does not currently include support for debugging of Java programs.
-In consequence, debug capability has been implemented by generating debug info that models the Java program as an equivalent C++ program.
-Java class, array and interface references are actually pointers to records that contain the relevant field/array data.
-In the corresponding C++ model the Java name is used to label the underlying C++ (class/struct) layout types and Java references appear as pointers.</p>
+In consequence, debug capability has been implemented by generating debug
+info that models the Java program as an equivalent C++ program. Java
+class, array and interface references are actually pointers to records
+that contain the relevant field/array data. In the corresponding C++
+model the Java name is used to label the underlying C++ (class/struct)
+layout types and Java references appear as pointers.</p>
 
-<p>So, for example in the DWARF debug info model <code>java.lang.String</code> identifies a C++ class.
-This class layout type declares the expected fields like <code>hash</code> of type <code>int</code> and <code>value</code> of type <code>byte[]</code> and methods like <code>String(byte[])</code>, <code>charAt(int)</code>, etc. However, the copy constructor which appears in Java as <code>String(String)</code> appears in <code>gdb</code> with the signature <code>String(java.lang.String *)</code>.</p>
+<p>So, for example in the DWARF debug info model <code>java.lang.String</code>
+identifies a C++ class. This class layout type declares the expected
+fields like <code>hash</code> of type <code>int</code> and <code>value</code> of type <code>byte[]</code> and
+methods like <code>String(byte[])</code>, <code>charAt(int)</code>, etc. However, the copy
+constructor which appears in Java as <code>String(String)</code> appears in gdb
+with the signature <code>String(java.lang.String *)</code>.</p>
 
-<p>The C++ layout class inherits fields and methods from class (layout) type <code>java.lang.Object</code> using C++ public inheritance.
-The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes a single field called <code>hub</code> whose type is <code>java.lang.Class *</code>, i.e., it is a pointer to the object’s class.</p>
+<p>The C++ layout class inherits fields and methods from class (layout)
+type java.lang.Object using C++ public inheritance. The latter in turn
+inherits standard oop (ordinary object pointer) header fields from a special struct class named
+<code>_objhdr</code> which includes a single field called <code>hub</code> whose type is
+<code>java.lang.Class *</code> i.e. it is a pointer to the object’s class.</p>
 
-<p>The <code>ptype</code> command can be used to print details of a specific type.
-Note that the Java type name must be specified in quotes because to escape the embedded <code>.</code> characters.</p>
+<p>The ptype command can be used to print details of a specific type. Note
+that the java type name must be specified in quotes because to escape the
+embedded <code>.</code> characters.</p>
 
 <pre><code>(gdb) ptype 'java.lang.String'
 type = class java.lang.String : public java.lang.Object {
@@ -1155,8 +1185,9 @@ type = class java.lang.String : public java.lang.Object {
 }
 </code></pre>
 
-<p>The <code>print</code> command can be used to print the contents of a referenced object field by field.
-Note how a cast is used to convert a raw memory address to a reference for a specific Java type.</p>
+<p>The print command can be used to print the contents of a referenced object
+field by field. Note how a cast is used to convert a raw memory address to
+a reference for a specific Java type.</p>
 
 <pre><code>(gdb) print *('java.lang.String' *) 0x7ffff7c01060
 $1 = {
@@ -1171,11 +1202,13 @@ $1 = {
 }
 </code></pre>
 
-<p>The <code>hub</code> field in the object header is actually a reference of Java type <code>java.lang.Class</code>.
-Note that the field is typed by <code>gdb</code> using a pointer to the underlying C++ class (layout) type.</p>
+<p>The <code>hub</code> field in the object header is actually a reference of Java type
+<code>java.lang.Class</code>. Note that the field is typed by gdb using a pointer
+to the underlying C++ class (layout) type.</p>
 
-<p>All classes, from Object downwards inherit from a common, automatically generated header type <code>_objhdr</code>.
-It is this header type which includes the <code>hub</code> field:</p>
+<p>All classes, from Object downwards inherit from a common, automatically
+generated header type <code>_objhdr</code>. It is this header type which includes
+the <code>hub</code> field:</p>
 
 <pre><code>(gdb) ptype _objhdr
 type = struct _objhdr {
@@ -1190,9 +1223,12 @@ type = class java.lang.Object : public _objhdr {
     . . .
 </code></pre>
 
-<p>Given an address that might be an object reference it is possible to verify that case and identify the object’s type by printing the contents of the String referenced from the hub’s name field.
-First the value is cast to an object reference.
-Then a path expression is used to dereference through the the <code>hub</code> field and the <code>hub</code>’s name field to the <code>byte[]</code> value array located in the name <code>String</code>.</p>
+<p>Given an address that might be an object reference it is possible to
+verify that case and identify the object’s type by printing the
+contents of the String referenced from the hub’s name field.  First
+the value is cast to an object reference. Then a path expression is
+used to dereference through the the hub field and the hub’s name field
+to the <code>byte[]</code> value array located in the name String.</p>
 
 <pre><code>(gdb) print/x ((_objhdr *)$rdi)
 $2 = 0x7ffff7c01028
@@ -1225,13 +1261,15 @@ $4 = {
 }
 </code></pre>
 
-<p>A simpler command which allows just the name of the <code>hub</code> object to be printed is as follows:</p>
+<p>A simpler command which allows just the name of the <code>hub</code> object to be
+printed is as follows:</p>
 
 <pre><code>(gdb) x/s $2-&gt;hub-&gt;name-&gt;value-&gt;data
 798:	"[Ljava.lang.String;"
 </code></pre>
 
-<p>Indeed it is useful to define a gdb command <code>hubname_raw</code> to execute this operation on an arbitrary raw memory address.</p>
+<p>Indeed it is useful to define a gdb command <code>hubname_raw</code> to execute this
+operation on an arbitrary raw memory address.</p>
 
 <pre><code>define hubname_raw
   x/s (('java.lang.Object' *)($arg0))-&gt;hub-&gt;name-&gt;value-&gt;data
@@ -1250,9 +1288,11 @@ $5 = 0x2
 Cannot access memory at address 0x2
 </code></pre>
 
-<p>Array type layouts are modelled as a C++ class type.
-It inherits from class Object so it includes the hub and idHash header fields defined by <code>_objhdr</code>.
-It adds a length field and an embedded (C++) data array whose elements are typed from the Java array’s element type, either primitive values or object references.</p>
+<p>Array type layouts are modelled as a C++ class type. It inherits
+from class Object so it includes the hub and idHash header fields
+defined by <code>_objhdr</code>. It adds a length field and an embedded (C++) data
+array whose elements are typed from the Java array’s element type,
+either primitive values or object references.</p>
 
 <pre><code>(gdb) ptype 'java.lang.String[]'
 type = class java.lang.String[] : public java.lang.Object {
@@ -1261,14 +1301,19 @@ type = class java.lang.String[] : public java.lang.Object {
 }
 </code></pre>
 
-<p>The embedded array is nominally sized with length 0.
-However, when a Java array instance is allocated it includes enough space to ensure the data array can store the number of items defined in the length field.</p>
+<p>The embedded array is nominally sized with length 0. However, when a
+Java array instance is allocated it includes enough space to ensure
+the data array can store the number of items defined in the length
+field.</p>
 
-<p>Notice that in this case the type of the values stored in the data array is <code>java.lang.String *</code>.
-The the C++ array stores Java object references, i.e., addresses as far as the C++ model is concerned.</p>
+<p>Notice that in this case the type of the values stored in the data
+array is <code>java.lang.String *</code>. The the C++ array stores Java
+object references i.e. addresses as far as the C++ model is
+concerned.</p>
 
-<p>If <code>gdb</code> already knows the Java type for a reference it can be printed without casting using a simpler version of the hubname command.
-For example, the String array retrieved above as <code>$4</code> has a known type.</p>
+<p>If gdb already knows the Java type for a reference it can be printed
+without casting using a simpler version of the hubname command. For
+example, the String array retrieved above as <code>$4</code> has a known type.</p>
 
 <pre><code>(gdb) ptype $4
 type = class java.lang.String[] : public java.lang.Object {
@@ -1284,8 +1329,9 @@ end
 0x923b68:	"[Ljava.lang.String;"
 </code></pre>
 
-<p>Interface layouts are modelled as C++ union types.
-The members of the union include the C++ layout types for all Java classes which implement the interface.</p>
+<p>Interface layouts are modelled as C++ union types. The members of the
+union include the C++ layout types for all Java classes which implement
+the interface.</p>
 
 <pre><code>(gdb) ptype 'java.lang.CharSequence'
 type = union java.lang.CharSequence {
@@ -1297,9 +1343,11 @@ type = union java.lang.CharSequence {
 }
 </code></pre>
 
-<p>Given a reference typed to an interface it can be resolved to the relevant class type by viewing it through the relevant union element.</p>
+<p>Given a reference typed to an interface it can be resolved to the
+relevant class type by viewing it through the relevant union element.</p>
 
-<p>If we take the first String in the args array we can ask <code>gdb</code> to cast it to interface <code>CharSequence</code>.</p>
+<p>If we take the first String in the args array we can ask gdb to cast
+it to interface <code>CharSequence</code>.</p>
 
 <pre><code>(gdb) print (('java.lang.String[]' *)$rdi)-&gt;data[0]
 $5 = (java.lang.String *) 0x7ffff7c01060
@@ -1307,14 +1355,16 @@ $5 = (java.lang.String *) 0x7ffff7c01060
 $6 = (java.lang.CharSequence *) 0x7ffff7c01060
 </code></pre>
 
-<p>The <code>hubname</code> command will not work with this union type because it is only objects of the elements of the union that include the <code>hub</code> field:</p>
+<p>The <code>hubname</code> command will not work with this union type because it is
+only objects of the elements of the union that include the hub field:</p>
 
 <pre><code>(gdb) hubname $6
 There is no member named hub.
 </code></pre>
 
-<p>However, since all elements include the same header any one of them can be passed to hubname in order to identify the actual type.
-This allows the correct union element to be selected:</p>
+<p>However, since all elements include the same header any one of them
+can be passed to hubname in order to identify the actual type. This
+allows the correct union element to be selected:</p>
 
 <pre><code>(gdb) hubname $6-&gt;'_java.nio.CharBuffer'
 0x7d96d8:	"java.lang.String\270", &lt;incomplete sequence \344\220&gt;
@@ -1331,14 +1381,18 @@ $18 = {
 }
 </code></pre>
 
-<p>Notice that the printed class name for <code>hub</code> includes some trailing characters.
-That’s because a data array storing Java String text is not guaranteed to be zero-terminated.</p>
+<p>Notice that the printed class name for the hub includes some trailing
+characters. That’s because a data array storing Java String text
+is not guaranteed to be zero-terminated.</p>
 
-<p>The current debug info model does not include the location info needed to allow symbolic names for local vars and parameter vars to be resolved to primitive values or object references.
-However, the debugger does understand method names and static field names.</p>
+<p>The current debug info model does not include the location info needed
+to allow symbolic names for local vars and parameter vars to be
+resolved to primitive values or object references. However, the
+debugger does understand method names and static field names.</p>
 
-<p>The following command places a breakpoint on the main entry point for class <code>Hello</code>.
-Note that since GDB thinks this is a C++ method it uses the <code>::</code> separator to separate the method name from the class name.</p>
+<p>The following command places a breakpoint on the main entry point for
+class <code>Hello</code>. Note that since GDB thinks this is a C++ method it uses
+the <code>::</code> separator to separate the method name from the class name.</p>
 
 <pre><code>(gdb) info func ::main
 All functions matching regular expression "::main":
@@ -1379,8 +1433,9 @@ File java/math/BigInteger.java:
 	java.math.BigInteger[][] *java.math.BigInteger::powerCache;
 </code></pre>
 
-<p>The static variable name can be used to refer to the value stored in this field.
-Note also that the address operator can be used identify the location (address) of the field in the heap.</p>
+<p>The static variable name can be used to refer to the value stored in
+this field. Note also that the address operator can be used identify
+the location (address) of the field in the heap.</p>
 
 <pre><code>(gdb) p 'java.math.BigInteger'::powerCache
 $8 = (java.math.BigInteger[][] *) 0xa6fd98
@@ -1388,7 +1443,8 @@ $8 = (java.math.BigInteger[][] *) 0xa6fd98
 $9 = (java.math.BigInteger[][] **) 0xa6fbd8
 </code></pre>
 
-<p>The debugger dereferences through symbolic names for static fields to access the primitive value or object stored in the field.</p>
+<p>The gdb dereferences through symbolic names for static fields to access
+the primitive value or object stored in the field.</p>
 
 <pre><code>(gdb) p *'java.math.BigInteger'::powerCache
 $10 = {
@@ -1438,40 +1494,74 @@ $14 = {
         
       </h3>
 
-<p>One goal of the implementation is to make it simple to configure your debugger so that it can identify the relevant source file when it stops during program execution. The native image builder tries to achieve this by accumulating the relevant sources in a suitably structured file cache.</p>
+<p>One goal of the implementation is to make it simple to configure your
+debugger so that it can identify the relevant source file when it
+stops during program execution. The native image builder tries to
+achieve this by accumulating the relevant sources in a suitably
+structured file cache.</p>
 
-<p>The native image builder uses different strategies to locate source files for JDK runtime classes, GraalVM classes, and application source classes for inclusion in the local sources cache.
-It identifies which strategy to use based on the package name of the class.
-So, for example, packages starting with <code>java.*</code> or <code>jdk.*</code> are JDK classes; packages starting with <code>org.graal.*</code> or <code>com.oracle.svm.*</code> are GraalVM classes; any other packages are regarded as application classes.</p>
+<p>The native image builder uses different strategies to locate source
+files for JDK runtime classes, GraalVM classes, and application source
+classes for inclusion in the local sources cache. It identifies which
+strategy to use based on the package name of the class. So, for
+example, packages starting with <code>java.*</code> or <code>jdk.*</code> are JDK classes;
+packages starting with <code>org.graal.*</code> or <code>com.oracle.svm.*</code> are GraalVM
+classes; any other packages are regarded as application classes.</p>
 
-<p>Sources for JDK runtime classes are retrieved from the <em>src.zip</em> found in the JDK release used to run the native image generation process.
-Retrieved files are cached under subdirectory <em>sources</em>, using the module name (for JDK11) and package name of the associated class to define the directory hierarchy in which the source is located.</p>
+<p>Sources for JDK runtime classes are retrieved from the <em>src.zip</em> found
+in the JDK release used to run the native image generation process.
+Retrieved files are cached under subdirectory <em>sources/jdk</em>, using the
+module name (for JDK11) and package name of the associated class to
+define the directory hierarchy in which the source is located.</p>
 
-<p>For example, on Linux the source for <code>class java.util.HashMap</code> will be cached in file <em>sources/java.base/java/util/HashMap.java</em>.
-Debug info records for this class and its methods will identify this source file using the relative directory path <em>java.base/java/util</em> and file name <em>HashMap.java</em>. On Windows things will be the same modulo use of <code>\</code> rather than <code>/</code> as the file separator.</p>
+<p>For example, on Linux the source for <code>class java.util.HashMap</code> will
+be cached in file <em>sources/jdk/java.base/java/util/HashMap.java</em>. Debug
+info records for this class and its methods will identify this source
+file using the relative directory path <em>java.base/java/util</em> and file
+name <em>HashMap.java</em>. On Windows things will be the same modulo use of
+<code>\</code> rather than <code>/</code> as the file separator.</p>
 
-<p>Sources for GraalVM classes are retrieved from zip files or source directories derived from entries in the classpath.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>com.oracle.svm.core.VM</code> has its source file cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
+<p>Sources for GraalVM classes are retrieved from zip files or source
+directories derived from entries in the classpath. Retrieved files are
+cached under subdirectory <em>sources/graal</em>, using the package name of the
+associated class to define the directory hierarchy in which the source
+is located (e.g., class <code>com.oracle.svm.core.VM</code> has its source file
+cached at <code>sources/graal/com/oracle/svm/core/VM.java</code>).</p>
 
-<p>The lookup scheme for cached GraalVM sources varies depending upon what is found in each classpath entry.
-Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding file <em>/path/to/foo.src.zip</em> is considered as a candidate zip file system from which source files may be extracted.
-When the entry specifies a dir like <em>/path/to/bar</em> then directories <em>/path/to/bar/src</em> and <em>/path/to/bar/src_gen</em> are considered as candidates.
-Candidates are skipped when the zip file or source directory does not exist, or it does not contain at least one subdirectory hierarchy that matches one of the the expected GraalVM package hierarchies.</p>
+<p>The lookup scheme for cached GraalVM sources varies depending upon
+what is found in each classpath entry. Given a JAR file entry like
+<em>/path/to/foo.jar</em>, the corresponding file <em>/path/to/foo.src.zip</em> is
+considered as a candidate zip file system from which source files may
+be extracted. When the entry specifies a dir like <em>/path/to/bar</em> then
+directories <em>/path/to/bar/src</em> and <em>/path/to/bar/src_gen</em> are considered
+as candidates. Candidates are skipped when the zip file or source
+directory does not exist, or it does not contain at least one
+subdirectory hierarchy that matches one of the the expected GraalVM
+package hierarchies.</p>
 
-<p>Sources for application classes are retrieved from source JAR files or source directories derived from entries in the classpath.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>org.my.foo.Foo</code> has its source file cached as <code>sources/org/my/foo/Foo.java</code>).</p>
+<p>Sources for application classes are retrieved from source JAR files or
+source directories derived from entries in the classpath. Retrieved
+files are cached under subdirectory <em>sources/src</em>, using the package
+name of the associated class to define the directory hierarchy in
+which the source is located (e.g., class <code>org.my.foo.Foo</code> has its
+source file cached as <code>sources/src/org/my/foo/Foo.java</code>).</p>
 
-<p>The lookup scheme for cached application sources varies depending upon what is found in each classpath entry.
-Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding JAR <em>/path/to/foo-sources.jar</em> is considered as a candidate zip file system from which source files may
-be extracted.
-When the entry specifies a dir like <em>/path/to/bar/classes</em> or <em>/path/to/bar/target/classes</em> then one of the directories
-<em>/path/to/bar/src/main/java</em>, <em>/path/to/bar/src/java</em> or <em>/path/to/bar/src</em> is selected as a candidate (in that order of preference).
-Finally, the current directory in which the native image program is being run is also considered as a candidate.</p>
+<p>The lookup scheme for cached application sources varies depending upon
+what is found in each classpath entry. Given a JAR file entry like
+<em>/path/to/foo.jar</em>, the corresponding JAR <em>/path/to/foo-sources.jar</em> is
+considered as a candidate zip file system from which source files may
+be extracted. When the entry specifies a dir like <em>/path/to/bar/classes</em>
+or <em>/path/to/bar/target/classes</em> then one of the directories
+<em>/path/to/bar/src/main/java</em>, <em>/path/to/bar/src/java</em> or <em>/path/to/bar/src</em>
+is selected as a candidate (in that order of preference). Finally, the
+current directory in which the Native Image program is being run is
+also considered as a candidate.</p>
 
-<p>These lookup strategies are only provisional and may need extending in the future.
-However, it is possible to make missing sources available by other means.
-One option is to unzip extra app source JAR files, or copy extra app source trees into the cache.
-Another is to configure extra source search paths.</p>
+<p>These lookup strategies are only provisional and may need extending in the
+future. However, it is possible to make missing sources
+available by other means. One option is to unzip extra app source JAR files,
+or copy extra app source trees into the cache. Another is to
+configure extra source search paths.</p>
     
       <h3 id="configuring-source-paths-in-gnu-debugger">
         
@@ -1481,26 +1571,42 @@ Another is to configure extra source search paths.</p>
         
       </h3>
 
-<p>By default, GDB will employ the local directory root <code>sources</code> to locate the source files for your app classes, GraalVM classes, and JDK runtime classes.
-If the sources cache is not located in the directory in which you run GDB, you can configure the required paths using the following command:</p>
-
-<pre><code>(gdb) set directories /path/to/sources/
+<p>By default, GDB will employ the three local directory roots
+<code>sources/{jdk,graal,src}</code> to locate the source files for your app classes, GraalVM
+classes, and JDK runtime classes. If the sources cache is not located in the
+directory in which you run GDB, you can configure the required paths using the
+following command:</p>
+<pre><code>(gdb) set directories /path/to/sources/jdk:/path/to/sources/graal:/path/to/sources/src
 </code></pre>
+<p>The <code>/path/to/sources/jdk</code> directory should contain source files for all JDK runtime
+classes referenced from debug records.</p>
 
-<p>The argument to the set directories command should identify the location of the sources cache as an absolute path or a relative path from the working directory of the <code>gdb</code> session.</p>
+<p>The <code>/path/to/sources/graal</code> directory should contain source files for all GraalVM
+classes referenced from debug records. Note that the current
+implementation does not yet find some sources for the GraalVM JIT
+compiler in the <em>org.graalvm.compiler*</em> package subspace.</p>
 
-<p>Note that the current implementation does not yet find some sources for the GraalVM JIT compiler in the <em>org.graalvm.compiler*</em> package subspace.</p>
+<p>The <code>/path/to/sources/src</code> directory should contain source files for all
+application classes referenced from debug records, assuming they can
+be located using the lookup strategy described above.</p>
 
-<p>You can supplement the files cached in <code>sources</code> by unzipping application source JAR files or copying application source trees into the cache.
-You will need to ensure that any new subdirectory you add to <code>sources</code> corresponds to the top level package for the classes whose sources are being included.</p>
+<p>You can supplement the files cached in <code>sources/src</code> by unzipping
+application source JAR files or copying application source trees into the
+cache. You will need to ensure that any new subdirectory you add to
+<code>sources/src</code> corresponds to the top level package for the classes whose
+sources are being included.</p>
 
 <p>You can also add extra directories to the search path using the <code>set directories</code> command:</p>
 <pre><code class="language-shell">(gdb) set directories /path/to/my/sources/:/path/to/my/other/sources
 </code></pre>
-<p>Note that the GNU Debugger does not understand zip format file systems so any extra entries you add must identify a directory tree containing the relevant sources.
-Once again, top level entries in the directory added to the search path must correspond to the top level package for the classes whose sources are being included.</p>
+<p>Note that the GNU Debugger does not understand zip format file systems so any extra entries you
+add must identify a directory tree containing the relevant
+sources. Once again, top level entries in the directory added to the
+search path must correspond to the top level package for the classes
+whose sources are being included.</p>
 
-<!-- ### Configuring Source Paths in VS TO BE ADDED -->
+<!-- ### Configuring Source Paths in VS
+TO BE ADDED -->
     
       <h2 id="checking-debug-info-on-linux">
         
@@ -1510,10 +1616,14 @@ Once again, top level entries in the directory added to the search path must cor
         
       </h2>
 
-<p>Note that this is only of interest to those who want to understand how the debug info implementation works or want to troubleshoot problems encountered during debugging that might relate to the debug info encoding.</p>
+<p>Note that this is only of interest to those who want to understand how the
+debug info implementation works or want to troubleshoot problems
+encountered during debugging that might relate to the debug info
+encoding.</p>
 
-<p>The <code>objdump</code> command can be used to display the debug info embedded into a native image.
-The following commands (which all assume the target binary is called <code>hello</code>) can be used to display all generated content:</p>
+<p>The <code>objdump</code> command can be used to display the debug info embedded
+into a native image. The following commands (which all assume the
+target binary is called <code>hello</code>) can be used to display all generated content:</p>
 <pre><code>objdump --dwarf=info hello &gt; info
 objdump --dwarf=abbrev hello &gt; abbrev
 objdump --dwarf=ranges hello &gt; ranges
@@ -1525,20 +1635,32 @@ objdump --dwarf=frames hello &gt; frames
 
 <p>The <em>info</em> section includes details of all compiled Java methods.</p>
 
-<p>The <em>abbrev</em> section defines the layout of records in the info section that describe Java files (compilation units) and methods.</p>
+<p>The <em>abbrev</em> section defines the layout of records in the info section
+that describe Java files (compilation units) and methods.</p>
 
-<p>The <em>ranges</em> section details the start and end addresses of method code segments.</p>
+<p>The <em>ranges</em> section details the start and end addresses of method
+code segments.</p>
 
-<p>The <em>decodedline</em> section maps subsegments of method code range segments to files and line numbers.
-This mapping includes entries for files and line numbers for inlined methods.</p>
+<p>The <em>decodedline</em> section maps subsegments of method code range
+segments to files and line numbers. This mapping includes entries
+for files and line numbers for inlined methods.</p>
 
-<p>The <em>rawline</em> segment provides details of how the line table is generated using DWARF state machine instructions that encode file, line, and address transitions.</p>
+<p>The <em>rawline</em> segment provides details of how the line table is
+generated using DWARF state machine instructions that encode file,
+line, and address transitions.</p>
 
-<p>The <em>str</em> section provides a lookup table for strings referenced from records in the info section.</p>
+<p>The <em>str</em> section provides a lookup table for strings referenced
+from records in the info section.</p>
 
-<p>The <em>frames</em> section lists transition points in compiled methods where a (fixed size) stack frame is pushed or popped, allowing the debugger to identify each frame’s current and previous stack pointers and its return address.</p>
+<p>The <em>frames</em> section lists transition points in compiled methods
+where a (fixed size) stack frame is pushed or popped, allowing
+the debugger to identify each frame’s current and previous stack
+pointers and its return address.</p>
 
-<p>Note that some of the content embedded in the debug records is generated by the C compiler and belongs to code that is either in libraries or the C lib bootstrap code that is bundled in with the Java method code.</p>
+<p>Note that some of the content embedded in the debug records is
+generated by the C compiler and belongs to code that is either in
+libraries or the C lib bootstrap code that is bundled in with the
+Java method code.</p>
     
       <h3 id="currently-supported-targets">
         
@@ -1552,10 +1674,13 @@ This mapping includes entries for files and line numbers for inlined methods.</p
 
 <ul>
   <li>
-    <p>Linux/x86_64 support has been tested and should work correctly</p>
+    <p>Linux/x86_64 support has been tested and should work
+correctly</p>
   </li>
   <li>
-    <p>Linux/AArch64 support is present but has not yet been fully verified (break points should work ok but stack backtraces may be incorrect)</p>
+    <p>Linux/AArch64 support is present but has not yet been fully
+verified (break points should work ok but stack backtraces
+may be incorrect)</p>
   </li>
 </ul>
 
@@ -1569,37 +1694,55 @@ This mapping includes entries for files and line numbers for inlined methods.</p
         
       </h2>
 
-<p>Enabling the use of Isolates, by passing command line option <code>-H:-SpawnIsolates</code> to the <code>native-image</code> builder, affects the way ordinary object pointers (oops) are encoded.
-In turn, that means the debug info generator has to provide <code>gdb</code> with information about how to translate an encoded oop to the address in memory, where the object data is stored.
-This sometimes requires care when asking <code>gdb</code> to process encoded oops vs decoded raw addresses.</p>
+<p>Note that it is currently recommended to disable use of Isolates by
+passing flag <code>-H:-SpawnIsolates</code> on the command line when debug info
+generation is enabled. Enabling of Isolates affects the way ordinary object pointers (oops) are encoded. In turn, that means the debug info
+generator has to provide gdb with information about how to translate
+an encoded oop to the address in memory, where the object data is
+stored. This sometimes requires care when asking gdb to process
+encoded oops vs decoded raw addresses.</p>
 
-<p>When isolates are disabled, oops are essentially raw addresses pointing directly at the object contents.
-This is generally the same whether the oop is embedded in a static/instance field or is referenced from a local or parameter variable located in a register or saved to the stack.
-It is not quite that simple because the bottom 3 bits of some oops may be used to hold “tags” that record certain transient properties of an object.
-However, the debuginfo provided to <code>gdb</code> means that it will remove these tag bits before dereferencing the oop as an address.</p>
+<p>When isolates are disabled, oops are essentially raw addresses pointing
+directly at the object contents. This is generally the same whether
+the oop is embedded in a static/instance field or is referenced from a
+local or parameter variable located in a register or saved to the stack.
+It is not quite that simple because the bottom 3 bits of some oops may
+be used to hold “tags” that record certain transient properties of
+an object. However, the debuginfo provided to gdb means that it will
+remove these tag bits before dereferencing the oop as an address.</p>
 
-<p>By contrast, when isolates are enabled, oops references stored in static or instance fields are actually relative addresses, offsets from a dedicated heap base register (r14 on x86_64, r29 on AArch64), rather than direct addresses (in a few special cases the offset may also have some low tag bits set).
-When an ‘indirect’ oop of this kind gets loaded during execution, it is almost always immediately converted to a ‘raw’ address by adding the offset to the heap base register value.
-So, oops which occur as the value of local or parameter vars are actually raw addresses.</p>
+<p>By contrast, when isolates are enabled, oops references stored in static
+or instance fields are actually relative addresses, offsets from a
+dedicated heap base register (r14 on x86_64, r29 on AArch64), rather
+than direct addresses (in a few special cases the offset may also have
+some low tag bits set). When an ‘indirect’ oop of this kind gets loaded
+during execution, it is almost always immediately converted to a ‘raw’
+address by adding the offset to the heap base register value. So, oops
+which occur as the value of local or parameter vars are actually raw
+addresses.</p>
 
-<blockquote>
-  <p>Note that on some operating systems enabling Isolates causes problems with printing of objects when using a <code>gdb</code> release version 10 or earlier. It is currently recommended to disable use of Isolates, by passing command line option <code>-H:-SpawnIsolates</code>, when generating debug info if your operating system includes one of these earlier releases. Alternatively, you may be able to upgrade your debugger to a later version.</p>
-</blockquote>
+<p>The DWARF info encoded into the image, when isolates are enabled, tells
+gdb to rebase indirect oops whenever it tries to dereference them to
+access underlying object data. This is normally automatic and
+transparent, but it is visible in the underlying type model that gdb
+displays when you ask for the type of objects.</p>
 
-<p>The DWARF info encoded into the image, when isolates are enabled, tells <code>gdb</code> to rebase indirect oops whenever it tries to dereference them to access underlying object data.
-This is normally automatic and transparent, but it is visible in the underlying type model that <code>gdb</code> displays when you ask for the type of objects.</p>
-
-<p>For example, consider the static field we encountered above.
-Printing its type in an image that uses Isolates shows that this (static) field has a different type to the expected one:</p>
+<p>For example, consider the static field we encountered above. Printing
+its type in an image that uses Isolates shows that this (static) field
+has a different type to the expected one:</p>
 
 <pre><code>(gdb) ptype 'java.math.BigInteger'::powerCache
 type = class _z_.java.math.BigInteger[][] : public java.math.BigInteger[][] {
 } *
 </code></pre>
-<p>The field is typed as <code>_z_.java.math.BigInteger[][]</code> which is an empty wrapper class that inherits from the expected type <code>java.math.BigInteger[][]</code>.
-This wrapper type is essentially the same as the original but the DWARF info record that defines it includes information that tells gdb how to convert pointers to this type.</p>
+<p>The field is typed as <code>_z_.java.math.BigInteger[][]</code> which is an empty
+wrapper class that inherits from the expected type
+<code>java.math.BigInteger[][]</code>. This wrapper type is essentially the same
+as the original but the DWARF info record that defines it includes
+information that tells gdb how to convert pointers to this type.</p>
 
-<p>When <code>gdb</code> is asked to print the oop stored in this field it is clear that it is an offset rather than a raw address.</p>
+<p>When gdb is asked to print the oop stored in this field it is clear that
+it is an offset rather than a raw address.</p>
 
 <pre><code>(gdb) p/x 'java.math.BigInteger'::powerCache
 $1 = 0x286c08
@@ -1607,7 +1750,9 @@ $1 = 0x286c08
 0x286c08:	Cannot access memory at address 0x286c08
 </code></pre>
 
-<p>However, when <code>gdb</code> is asked to dereference through the field, it applies the necessary address conversion to the oop and fetches the correct data.</p>
+<p>However, when gdb is asked to dereference through the field, it applies
+the necessary address conversion to the oop and fetches the correct
+data.</p>
 
 <pre><code>(gdb) p/x *'java.math.BigInteger'::powerCache
 $2 = {
@@ -1623,7 +1768,8 @@ $2 = {
   }, &lt;No data fields&gt;}
 </code></pre>
 
-<p>Printing the type of the <code>hub</code> field or the data array shows that they are also modelled using indirect types:</p>
+<p>Printing the type of the hub field or the data array shows that they
+are also modelled using indirect types:</p>
 
 <pre><code>(gdb) ptype $1-&gt;hub
 type = class _z_.java.lang.Class : public java.lang.Class {
@@ -1633,7 +1779,7 @@ type = class _z_.java.math.BigInteger[] : public java.math.BigInteger[] {
 } *[0]
 </code></pre>
 
-<p>The debugger still knows how to dereference these oops:</p>
+<p>The gdb still knows how to dereference these oops:</p>
 
 <pre><code>(gdb) p $1-&gt;hub
 $3 = (_z_.java.lang.Class *) 0x1ec0e2
@@ -1654,17 +1800,23 @@ $4 = {
 
 </code></pre>
 
-<p>Since the indirect types inherit from the corresponding raw type it is possible to use an expression that identifies an indirect type pointer in almost all cases where an expression identifying a raw type pointer would work.
-The only case case where care might be needed is when casting a displayed numeric field value or displayed register value.</p>
+<p>Since the indirect types inherit from the corresponding raw type it is
+possible to use an expression that identifies an indirect type pointer
+in almost all cases where an expression identifying a raw type pointer
+would work. The only case case where care might be needed is when
+casting a displayed numeric field value or displayed register value.</p>
 
-<p>For example, if the indirect <code>hub</code> oop printed above is passed to <code>hubname_raw</code>, the cast to type Object internal to that command fails to force the required indirect oops translation.
-The resulting memory access fails:</p>
+<p>For example, if the indirect <code>hub</code> oop printed above is passed to
+<code>hubname_raw</code>, the cast to type Object internal to that command fails to
+force the required indirect oops translation. The resulting memory
+access fails:</p>
 
 <pre><code>(gdb) hubname_raw 0x1dc860
 Cannot access memory at address 0x1dc860
 </code></pre>
 
-<p>In this case it is necessary to use a slightly different command that casts its argument to an indirect pointer type:</p>
+<p>In this case it is necessary to use a slightly different command that
+casts its argument to an indirect pointer type:</p>
 <pre><code>(gdb) define hubname_indirect
  x/s (('_z_.java.lang.Object' *)($arg0))-&gt;hub-&gt;name-&gt;value-&gt;data
 end
