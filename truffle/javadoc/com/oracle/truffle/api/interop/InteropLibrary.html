@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.1.0-dev</b><br>163637a7ce318f0a4e649f0c91e262d7fefdb634</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.1.0-dev</b><br>b1f027477f19e64ec6023d28240a5c706f72d604</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -3605,7 +3605,6 @@ extends <a href="../../../../../com/oracle/truffle/api/library/Library.html" tit
     &#064;<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>.Child <b>private</b> <a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> block;
     &#064;<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>.Child <b>private</b> <a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> catchBlock;
     &#064;<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>.Child <b>private</b> <a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> finallyBlock;
-    &#064;<a href="../../../../../com/oracle/truffle/api/nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>.Child <b>private</b> <a href="../../../../../com/oracle/truffle/api/interop/InteropLibrary.html" title="class in com.oracle.truffle.api.interop"><code>InteropLibrary</code></a> exceptions;
     <b>private</b> <b>final</b> <a href="../../../../../com/oracle/truffle/api/profiles/BranchProfile.html" title="class in com.oracle.truffle.api.profiles"><code>BranchProfile</code></a> exceptionProfile;
 
     TryCatchNode(<a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> block, <a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> catchBlock,
@@ -3613,17 +3612,31 @@ extends <a href="../../../../../com/oracle/truffle/api/library/Library.html" tit
         <b>this</b>.block = block;
         <b>this</b>.catchBlock = catchBlock;
         <b>this</b>.finallyBlock = finallyBlock;
-        <b>this</b>.exceptions = <a href="../../../../../com/oracle/truffle/api/interop/InteropLibrary.html" title="class in com.oracle.truffle.api.interop"><code>InteropLibrary</code></a>.getFactory().createDispatched(5);
         <b>this</b>.exceptionProfile = <a href="../../../../../com/oracle/truffle/api/profiles/BranchProfile.html" title="class in com.oracle.truffle.api.profiles"><code>BranchProfile</code></a>.create();
     }
 
     &#064;<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Override.html?is-external=true" title="class or interface in java.lang"><code>Override</code></a>
     <b>void</b> executeVoid(<a href="../../../../../com/oracle/truffle/api/frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame) {
-        <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a> exception = <b>null</b>;
+        <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/RuntimeException.html?is-external=true" title="class or interface in java.lang"><code>RuntimeException</code></a> rethrowException = <b>null</b>;
         <b>try</b> {
             block.executeVoid(frame);
-        } <b>catch</b> (<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a> ex) {
-            exception = executeCatchBlock(frame, ex, catchBlock);
+        } <b>catch</b> (<a href="../../../../../com/oracle/truffle/api/exception/AbstractTruffleException.html" title="class in com.oracle.truffle.api.exception"><code>AbstractTruffleException</code></a> ex) {
+            exceptionProfile.enter();
+            <b>try</b> {
+                <b>if</b> (catchBlock != <b>null</b>) {
+                    catchBlock.executeVoid(frame);
+                    <em>// do not rethrow if handled</em>
+                    rethrowException = <b>null</b>;
+                } <b>else</b> {
+                    <em>// rethrow if not handled</em>
+                    rethrowException = ex;
+                }
+            } <b>catch</b> (<a href="../../../../../com/oracle/truffle/api/exception/AbstractTruffleException.html" title="class in com.oracle.truffle.api.exception"><code>AbstractTruffleException</code></a> e) {
+                rethrowException = e;
+            }
+        } <b>catch</b> (<a href="../../../../../com/oracle/truffle/api/nodes/ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a> cfe) {
+            <em>// run finally blocks for control flow</em>
+            rethrowException = cfe;
         }
         <em>// Java finally blocks that execute nodes are not allowed for</em>
         <em>// compilation as code in finally blocks is duplicated</em>
@@ -3632,43 +3645,8 @@ extends <a href="../../../../../com/oracle/truffle/api/library/Library.html" tit
         <b>if</b> (finallyBlock != <b>null</b>) {
             finallyBlock.executeVoid(frame);
         }
-        <b>if</b> (exception != <b>null</b>) {
-            <b>if</b> (exception <b>instanceof</b> <a href="../../../../../com/oracle/truffle/api/nodes/ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a>) {
-                <b>throw</b> (<a href="../../../../../com/oracle/truffle/api/nodes/ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a>) exception;
-            }
-            <b>try</b> {
-                <b>throw</b> exceptions.throwException(exception);
-            } <b>catch</b> (<a href="../../../../../com/oracle/truffle/api/interop/UnsupportedMessageException.html" title="class in com.oracle.truffle.api.interop"><code>UnsupportedMessageException</code></a> ie) {
-                <b>throw</b> <a href="../../../../../com/oracle/truffle/api/CompilerDirectives.html" title="class in com.oracle.truffle.api"><code>CompilerDirectives</code></a>.shouldNotReachHere(ie);
-            }
-        }
-    }
-
-    &#064;<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/SuppressWarnings.html?is-external=true" title="class or interface in java.lang"><code>SuppressWarnings</code></a>(<em>"unchecked"</em>)
-    <b>private</b> &lt;T <b>extends</b> <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a>&gt; <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a> executeCatchBlock(
-                    <a href="../../../../../com/oracle/truffle/api/frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame,
-                    <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a> ex,
-                    <a href="../../../../../com/oracle/truffle/api/nodes/BlockNode.html" title="class in com.oracle.truffle.api.nodes"><code>BlockNode</code></a> catchBlk) <b>throws</b> T {
-        <b>if</b> (ex <b>instanceof</b> <a href="../../../../../com/oracle/truffle/api/nodes/ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a>) {
-            <em>// run finally blocks for control flow</em>
-            <b>return</b> ex;
-        }
-        exceptionProfile.enter();
-        <b>if</b> (exceptions.isException(ex)) {
-            <b>if</b> (catchBlk != <b>null</b>) {
-                <b>try</b> {
-                    catchBlk.executeVoid(frame);
-                    <b>return</b> <b>null</b>;
-                } <b>catch</b> (<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><code>Throwable</code></a> catchEx) {
-                    <b>return</b> executeCatchBlock(frame, catchEx, <b>null</b>);
-                }
-            } <b>else</b> {
-                <em>// run finally blocks for any interop exception</em>
-                <b>return</b> ex;
-            }
-        } <b>else</b> {
-            <em>// do not run finally blocks for internal errors or unwinds</em>
-            <b>throw</b> (T) ex;
+        <b>if</b> (rethrowException != <b>null</b>) {
+            <b>throw</b> rethrowException;
         }
     }
 }
@@ -4850,7 +4828,7 @@ extends <a href="../../../../../com/oracle/truffle/api/library/Library.html" tit
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.1.0-dev</b><br>163637a7ce318f0a4e649f0c91e262d7fefdb634</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>22.1.0-dev</b><br>b1f027477f19e64ec6023d28240a5c706f72d604</div>
 </div>
 <div class="subNav">
 <ul class="navList">
