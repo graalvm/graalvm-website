@@ -39,6 +39,31 @@ function copyTextToClipboard(text) {
   document.body.removeChild(textArea);
 }
 
+function fiddleSnippet(elem, fileName) {
+  var className = fileName.match(/([^/]*)\.java$/)[1];
+  var div = elem.parentElement.parentElement;
+  displayFiddleLoadingMessage(div);
+  GraalVMFiddle.replace(div, div._snippets, {className: className});
+}
+
+function displayFiddleLoadingMessage(elem) {
+  var w = elem.clientWidth;
+  var h = elem.clientHeight;
+  var outer = document.createElement('div');
+  outer.style.position = 'relative';
+  var inner = document.createElement('div');
+  inner.style.position = 'absolute';
+  inner.style.left = (w/4) + 'px';
+  inner.style.top = (h/3) + 'px';
+  inner.style.width = (w/2) + 'px';
+  inner.style.height = (h/3) + 'px';
+  inner.style.lineHeight = (h/3) + 'px';
+  inner.className = 'fiddle-loading-message';
+  inner.appendChild(document.createTextNode('Loading...'));
+  outer.appendChild(inner);
+  elem.prepend(outer);
+}
+
 function createTerminal(serverUrl, containerId, terminalId, uid) {
   var appearDuration = 350;
   var revealDuration = 750;
