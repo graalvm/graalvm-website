@@ -40,6 +40,7 @@ function copyTextToClipboard(text) {
 }
 
 function fiddleSnippet(elem, fileName) {
+  elem.onclick = null; // do not call this function on the same elem again
   var className = fileName.match(/([^/]*)\.java$/)[1];
   var div = elem.parentElement.parentElement;
   displayFiddleLoadingMessage(div);
