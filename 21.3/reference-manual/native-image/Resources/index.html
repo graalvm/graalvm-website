@@ -387,6 +387,8 @@ $(document).ready(function(){
   
 
   
+
+  
     
 
     
@@ -988,8 +990,9 @@ $(document).ready(function(){
         
       </h1>
 
-<p>By default, the native image builder will not integrate any of the resources which are on the classpath during the generation into the final image.
-To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or the corresponding ClassLoader methods) return specific resources (instead of null), the resources that should be accessible at image run time need to be explicitly specified. This can be done via a configuration file such as the following:</p>
+<p>By default, the <code>native-image</code> tool will not integrate any of the resources which are on the classpath during the generation into the final image.
+To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or their corresponding <code>ClassLoader</code> methods) return specific resources (instead of <code>null</code>), you must specify the resources that should be accessible at run time. 
+This can be achieved using a configuration file with the following content:</p>
 
 <pre><code class="language-json">{
   "resources": {
@@ -1010,11 +1013,11 @@ To make calls such as <code>Class.getResource()</code> or <code>Class.getResourc
 <p>The configuration file’s path must be provided to <code>native-image</code> with <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>.
 Alternatively, individual resource paths can also be specified directly to <code>native-image</code>:</p>
 
-<pre><code class="language-shell">native-image -H:IncludeResources=&lt;Java regexp that matches resources to be included in the image&gt; -H:ExcludeResources=&lt;Java regexp that matches resources to be excluded from the image&gt; ...
+<pre><code class="language-shell">native-image -H:IncludeResources="&lt;Java regexp that matches resources to be included in the image&gt;" -H:ExcludeResources="&lt;Java regexp that matches resources to be excluded from the image&gt;" ...
 </code></pre>
 <p>The <code>-H:IncludeResources</code> and <code>-H:ExcludeResources</code> options can be passed several times to define more than one regexp to match or exclude resources, respectively.</p>
 
-<p>To see which resources get ultimately included into the image, you can enable the related logging info with <code>-H:Log=registerResource:</code>.</p>
+<p>To see which resources are included in the native executable, use the option <code>-H:Log=registerResource:&lt;log level&gt;</code>. The <code>&lt;log level&gt;</code> must be in the range from <code>1</code> to <code>5</code>, from least detailed to most detailed.</p>
     
       <h3 id="example-usage">
         
@@ -1028,9 +1031,9 @@ Alternatively, individual resource paths can also be specified directly to <code
 <pre><code>my-app-root
 └── src
     ├── main
-    │   └── com.my.app
-    │       ├── Resource0.txt
-    │       └── Resource1.txt
+    │   └── com.my.app
+    │       ├── Resource0.txt
+    │       └── Resource1.txt
     └── resources
         ├── Resource2.txt
         └── Resource3.txt
@@ -1038,12 +1041,78 @@ Alternatively, individual resource paths can also be specified directly to <code
 <p>Then:</p>
 
 <ul>
-  <li>All resources can be loaded with <code>.*/Resource.*txt$</code>, specified as <code>{"pattern":".*/Resource.*txt$"}</code> in a configuration file, or <code>-H:IncludeResources='.*/Resource.*txt$'</code> on the command line.</li>
+  <li>All resources can be loaded with <code>".*/Resource.*txt$"</code>, specified as <code>{"pattern":".*/Resource.*txt$"}</code> in a configuration file, or <code>-H:IncludeResources=".*/Resource.*txt$"</code> on the command line.</li>
   <li><code>Resource0.txt</code> can be loaded with <code>.*/Resource0.txt$</code>.</li>
   <li><code>Resource0.txt</code> and <code>Resource1.txt</code> can be loaded with <code>.*/Resource0.txt$</code> and <code>.*/Resource1.txt$</code>
 (or alternatively with a single <code>.*/(Resource0|Resource1).txt$</code>).</li>
-  <li>Also, if we want to include everything except the <code>Resource2.txt</code> file, we can simply exclude it with <code>-H:IncludeResources='.*/Resource.*txt$'</code> followed by <code>-H:ExcludeResources='.*/Resource2.txt$'</code>.</li>
+  <li>Also, if we want to include everything except the <code>Resource2.txt</code> file, we can simply exclude it with <code>-H:IncludeResources=".*/Resource.*txt$"</code> followed by <code>-H:ExcludeResources=".*/Resource2.txt$"</code>.</li>
 </ul>
+
+<p>The following demo illustrates how to include a resource into a native executable. The application <code>fortune</code> simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>.</p>
+
+<ol>
+  <li>
+    <p>Save the following Java code into the <em>Fortune.java</em> file:</p>
+
+    <pre><code class="language-java"> import java.io.BufferedReader;
+ import java.io.InputStreamReader;
+ import java.util.ArrayList;
+ import java.util.Random;
+ import java.util.Scanner;
+
+ public class Fortune {
+
+     private static final String SEPARATOR = "%";
+     private static final Random RANDOM = new Random();
+     private ArrayList&lt;String&gt; fortunes = new ArrayList&lt;&gt;();
+
+     public Fortune(String path) {
+         // Scan the file into the array of fortunes
+         Scanner s = new Scanner(new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(path))));
+         s.useDelimiter(SEPARATOR);
+         while (s.hasNext()) {
+             fortunes.add(s.next());
+         }        
+     }
+        
+     private void printRandomFortune() throws InterruptedException {
+         int r = RANDOM.nextInt(fortunes.size()); //Pick a random number
+         String f = fortunes.get(r);  //Use the random number to pick a random fortune
+         for (char c: f.toCharArray()) {  // Print out the fortune
+           System.out.print(c);
+             Thread.sleep(100);   
+         }
+     }
+      
+     public static void main(String[] args) throws InterruptedException {
+         Fortune fortune = new Fortune("/fortunes.u8");
+         fortune.printRandomFortune();
+     }
+ }
+</code></pre>
+  </li>
+  <li>
+    <p>Open the <a href="/docs/reference-manual/native-image/assets/fortunes.u8"><em>fortunes.u8</em></a> resource file and save it in the same directory as <em>Fortune.java</em>.</p>
+  </li>
+  <li>
+    <p>Compile:</p>
+
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac Fortune.java
+</code></pre>
+  </li>
+  <li>
+    <p>Build a native executable by specifying the resource path:</p>
+
+    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image Fortune -H:IncludeResources=".*u8$"
+</code></pre>
+  </li>
+  <li>
+    <p>Run the executable image:</p>
+
+    <pre><code class="language-shell"> ./fortune
+</code></pre>
+  </li>
+</ol>
 
 <p>See also the <a href="/21.3/reference-manual/native-image/BuildConfiguration/#assisted-configuration-of-native-image-builds">guide on assisted configuration of Java resources and other dynamic features</a>.</p>
     
@@ -1130,7 +1199,7 @@ In order to optimize this, it is possible to use <code>IncludeResourceBundles</c
       </h3>
 
 <p>Resource Bundle lookup is a complex and dynamic mechanism which utilizes a lot of the infrastructure of JVM.
-As a result of that, it causes image size increase for smaller applications such as Hello World.
+As a result of that, it causes the size of the executable to increase for smaller applications such as <code>HelloWorld</code>.
 Therefore, an optimized mode is set by default in which this lookup is simplified utilizing the fact the all bundles are known ahead of time.
 In case you would like to use the original JVM lookup, use the <code>-H:-LocalizationOptimizedMode</code> option.</p>
 
