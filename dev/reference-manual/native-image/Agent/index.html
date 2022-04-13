@@ -1043,10 +1043,10 @@ $(document).ready(function(){
 
 <p>The generated configuration files can be supplied to the <code>native-image</code> tool by placing them in a <code>META-INF/native-image/</code> directory on the class path, for example, in a JAR file used in the image build. This directory (or any of its subdirectories) is searched for files with the names <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code>, which are then automatically included in the build. Not all of those files must be present. When multiple files with the same name are found, all of them are included.</p>
     
-      <h2 id="building-native-image-with-java-reflection-example">
+      <h2 id="build-a-native-executable-with-java-reflection-example">
         
         
-          Building Native Image with Java Reflection Example <a href="#building-native-image-with-java-reflection-example" class="anchor_heading">#</a>
+          Build a Native Executable with Java Reflection Example <a href="#build-a-native-executable-with-java-reflection-example" class="anchor_heading">#</a>
         
         
       </h2>
@@ -1171,6 +1171,10 @@ For example: <code>-agentlib:caller-filter-file=/path/to/filter-file,config-outp
     {"excludeClasses": "com.oracle.svm.**"},
     {"includeClasses": "com.oracle.svm.tutorial.*"},
     {"excludeClasses": "com.oracle.svm.tutorial.HostedHelper"}
+  ],
+  "regexRules": [
+    {"includeClasses": ".*"},
+    {"excludeClasses": ".*\\$\\$Generated[0-9]+"}
   ]
 }
 </code></pre>
@@ -1186,6 +1190,12 @@ The rules of the built-in caller filter are always processed first, so they can 
 In the next rule however, lookups from those classes that are directly in package <code>com.oracle.svm.tutorial</code> are included again.
 Finally, lookups from the <code>HostedHelper</code> class is excluded again. Each of these rules partially overrides the previous ones.
 For example, if the rules were in the reverse order, the exclusion of <code>com.oracle.svm.**</code> would be the last rule and would override all other rules.</p>
+
+<p>The <code>regexRules</code> section also contains a sequence of rules.
+Its structure is the same as that of the <code>rules</code> section, but rules are specified as regular expression patterns which are matched against the entire fully qualified class identifier.
+The <code>regexRules</code> section is optional.
+If a <code>regexRules</code> section is specified, a class will be considered included if (and only if) both <code>rules</code> and <code>regexRules</code> include the class and neither of them exclude it.
+With no <code>regexRules</code> section, only the <code>rules</code> section determines whether a class is included or excluded.</p>
 
 <p>For testing purposes, the built-in filter for Java class library lookups can be disabled by adding the <code>no-builtin-caller-filter</code> option, but the resulting configuration files are generally unsuitable for a native image build.
 Similarly, the built-in filter for Java VM-internal accesses based on heuristics can be disabled with <code>no-builtin-heuristic-filter</code> and will also generally lead to less usable configuration files.
@@ -1207,10 +1217,10 @@ Using the <code>access-filter-file</code> option, a custom filter file that foll
 The option can be specified more than once to add multiple filter files and can be combined with the other filter options.
 For example: <code>-agentlib:access-filter-file=/path/to/access-filter-file,caller-filter-file=/path/to/caller-filter-file,config-output-dir=...</code></p>
     
-      <h3 id="specifying-configuration-files-as-native-image-arguments">
+      <h3 id="specify-configuration-files-as-native-image-arguments">
         
         
-          Specifying Configuration Files as Native Image Arguments <a href="#specifying-configuration-files-as-native-image-arguments" class="anchor_heading">#</a>
+          Specify Configuration Files as Native Image Arguments <a href="#specify-configuration-files-as-native-image-arguments" class="anchor_heading">#</a>
         
         
       </h3>
@@ -1289,6 +1299,17 @@ This tool must first be built with:</p>
 
 <p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>.
 An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure help</code> for all options.</p>
+    
+      <h3 id="experimental-options">
+        
+        
+          Experimental Options <a href="#experimental-options" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The native-image-agent has options which are currently experimental and might be enabled in future releases, but can also be changed or removed entirely.
+See the <a href="/dev/reference-manual/native-image/ExperimentalAgentOptions/">ExperimentalAgentOptions.md</a> guide.</p>
 
               </div>
 

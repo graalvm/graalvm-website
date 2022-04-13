@@ -10,7 +10,7 @@
 
   <title>
     
-      Java on Truffle
+      Enhanced HotSwap Capabilities with Java on Truffle
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
@@ -23,7 +23,7 @@
 
   <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script>
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="/dev/reference-manual/java-on-truffle/">
+  <link rel="canonical" href="/dev/reference-manual/java-on-truffle/hotswap/">
   <script src="/resources/lib/bootstrap/js/bootstrap.min.js"></script>
   <script src="/resources/lib/sticky-sidebar/resizeSensor.js"></script>
   <script src="/resources/lib/sticky-sidebar/sticky-sidebar.min.js"></script>
@@ -428,7 +428,7 @@ $(document).ready(function(){
     
       
         
-          <li class="toc-bullets-main toc-bullets-highlight">
+          <li class="toc-bullets-main">
         
           
           <a href="/dev/reference-manual/java-on-truffle/">
@@ -719,230 +719,362 @@ $(document).ready(function(){
         
       </li>
     
+      <li >
+        
+          <a href="/dev/reference-manual/java-on-truffle/">
+            Java On Truffle
+          </a>
+        
+      </li>
+    
       <li class="active">
         
-          Java On Truffle
+          Hotswap
         
       </li>
     
   </ul>
 
 
-              <h1 id="java-on-truffle">
+              <h1 id="enhanced-hotswap-capabilities-with-java-on-truffle">
         
         
-          Java on Truffle
+          Enhanced HotSwap Capabilities with Java on Truffle
         
         
       </h1>
 
-<p>Using GraalVM, you can run Java applications normally <a href="/dev/reference-manual/java/">on the JVM</a>, in <a href="/dev/reference-manual/native-image/">Native Image</a>, and now on Truffle.
-Java on Truffle is an implementation of the Java Virtual Machine Specification, <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/index.html">Java SE 8</a> and <a href="https://docs.oracle.com/javase/specs/jvms/se11/html/index.html">Java SE 11</a>, built upon GraalVM as a Truffle interpreter.
-It is a minified Java VM that includes all core components of a VM, implements the same API as the Java Runtime Environment library (libjvm.so), and reuses all JARs and native libraries from GraalVM.
-See the <a href="/dev/reference-manual/java-on-truffle/implementation/">Implementation Details</a> for more information.
-The project name behind this implementation is “Espresso”.
-Its open source version is available on <a href="https://github.com/oracle/graal/tree/master/espresso">GitHub</a>.</p>
+<p>With Java on Truffle you can benefit from enhanced HotSwap capabilites that allow the code to evolve naturally during development without the need for restarting a running application.
+You do not have to configure anything specific besides launching your app in debug mode and attaching a standard IDE debugger to gain the advantages of enhanced HotSwap.</p>
+    
+      <h2 id="debugging-with-java-on-truffle">
+        
+        
+          Debugging with Java on Truffle <a href="#debugging-with-java-on-truffle" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<p>The Java on Truffle execution mode runs Java via a Java bytecode interpreter, implemented with the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a> – an open-source library for writing interpreters for programming languages.
-Now Java can be executed by the same principle as other languages in the GraalVM ecosystem (JavaScript, Ruby, Python, R), directly interoperate with those languages, and pass data back and forth in the same memory space.
-Besides complete language interoperability, with Java on Truffle you can:</p>
+<p>You can use your favorite IDE debugger to debug Java applications running in the Java on Truffle runtime.
+For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
+To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to <strong>Run</strong>, <strong>Debug…</strong>, Edit Configurations, expand Environment, check the JRE value and VM options values.
+It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>. It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.
+Press Debug.</p>
+
+<p>This will run the application and start a debugger session in the background.</p>
+    
+      <h2 id="using-hotswap-during-a-debugging-session">
+        
+        
+          Using HotSwap during a Debugging Session <a href="#using-hotswap-during-a-debugging-session" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Once you have your debugger session running, you will be able to apply extensive code changes (HotSwap) without needing to restart the session.
+Feel free to try this out on your own applications or by following these instructions:</p>
+
+<ol>
+  <li>Create a new Java application.</li>
+  <li>
+    <p>Use the following <code>main</code> method as a starting point:</p>
+
+    <pre><code class="language-java">       public class HotSwapDemo {
+
+           private static final int ITERATIONS = 100;
+
+           public static void main(String[] args) {
+               HotSwapDemo demo = new HotSwapDemo();
+               System.out.println("Starting HotSwap demo with Java on Truffle: 'java.vm.name' = " + System.getProperty("java.vm.name"));
+               // run something in a loop
+               for (int i = 1; i &lt;= ITERATIONS; i++) {
+                   demo.runDemo(i);
+               }
+               System.out.println("Completed HotSwap demo with Java on Truffle");
+           }
+
+           public void runDemo(int iteration) {
+               int random = new Random().nextInt(iteration);
+               System.out.printf("\titeration %d ran with result: %d\n", iteration, random);
+           }
+       }
+</code></pre>
+  </li>
+  <li>Check that the <code>java.vm.name</code> property says you’re running on Espresso.</li>
+  <li>Place a line breakpoint on the first line in <code>runDemo()</code>.</li>
+  <li>
+    <p>Setup the Run configurations to run with Java on Truffle and press Debug. You will see:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-1.png" alt="debug-1" /></p>
+  </li>
+  <li>
+    <p>While paused at the breakpoint, extract a method from the body of <code>runDemo()</code>:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-2.png" alt="debug-2" /></p>
+  </li>
+  <li>
+    <p>Reload the changes by navigating to Run -&gt; Debugging Actions -&gt; Reload Changed Classes:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-3.png" alt="debug-3" /></p>
+  </li>
+  <li>
+    <p>Verify that the change was applied by noticing the <code>&lt;obsolete&gt;:-1</code> current frame in the Debug -&gt; Frames view:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-4.png" alt="debug-4" /></p>
+  </li>
+  <li>
+    <p>Place a breakpoint on the first line of the new extracted method and press Resume Program. The breakpoint will hit:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-5.png" alt="debug-5" /></p>
+  </li>
+  <li>
+    <p>Try to change the access modifiers of <code>printRandom()</code> from <code>private</code> to <code>public static</code>. Reload the changes. Press Resume Program to verify the change was applied:</p>
+
+    <p><img src="/resources/img/java-on-truffle/debug-6.png" alt="debug-6" /></p>
+  </li>
+</ol>
+
+<p>Watch video version of the enhanced HotSwap capabilities with Java on Truffle demo.</p>
+
+<div class="row">
+  <div class="col-sm-12">
+    <div class="vlog__video">
+      <img src="/resources/img/java-on-truffle/enhanced-hotswap-capabilities-demo.png" alt="video_1" />
+          <a href="#" data-video="gfuvvV6mplo" class="btn btn-primary btn-primary--filled js-popup">watch video</a>
+    </div>
+  </div>
+</div>
+
+<div id="video-view" class="modal-window">
+  <div class="modal-window__content">
+    <button type="button" title="Close" id="js-close" class="modal-window__close"><img src="/resources/img/btn-close.svg" alt="close_video" /></button>
+    <div class="modal-window__video">
+      <div id="player"></div>
+    </div>
+  </div>
+</div>
+<p><br /></p>
+    
+      <h3 id="supported-changes">
+        
+        
+          Supported Changes <a href="#supported-changes" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The enhanced HotSwap of Java on Truffle is almost feature complete.
+The following changes are supported:</p>
 
 <ul>
-  <li>run Java bytecode in a separate context from the host Java VM.</li>
-  <li>run either a Java 8, Java 11, Java 17 guest JVM, allowing to embed e.g. a Java 8 context in a Java 11 application, by using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">GraalVM’s Polyglot API</a></li>
-  <li>leverage the whole stack of tools provided by the Truffle framework, not previously available for Java.</li>
-  <li>have an improved isolation of the host Java VM and the Java program running on Truffle, so you can run less trusted guest code.</li>
-  <li>run in the context of a native image while still allowing dynamically-loaded bytecode.</li>
-  <li>take advantage of unlimited <a href="/dev/reference-manual/java-on-truffle/hotswap/">HotSwap capabilities</a> during a debugging session.</li>
+  <li>Add and remove methods</li>
+  <li>Add and remove constructors</li>
+  <li>Add and remove methods from interfaces</li>
+  <li>Change access modifiers of methods</li>
+  <li>Change access modifiers of constructors</li>
+  <li>Add and remove fields</li>
+  <li>Change field type</li>
+  <li>Move field in hierarchy and preserve state (see note below)</li>
+  <li>Changes to class access modifiers, e.g. abstract and final modifiers</li>
+  <li>Changes to Lambdas</li>
+  <li>Add new anonymous inner classes</li>
+  <li>Remove anonymous inner classes</li>
+  <li>Changing the superclass</li>
+  <li>Changing implemented interfaces</li>
 </ul>
 
-<p>Java on Truffle is an experimental technology in GraalVM, but already passes the Java Compatibility Kit (JCK or TCK for Java SE).</p>
-    
-      <h2 id="install-java-on-truffle">
-        
-        
-          Install Java on Truffle <a href="#install-java-on-truffle" class="anchor_heading">#</a>
-        
-        
-      </h2>
+<p><strong>Note</strong>: When instance fields are moved in the class hierarchy the state is preserved whenever possible.
+Examples include the Pull Up Field refactoring where all existing instances of the origin subclass will be able to read the previously stored value from the super class field.
+On the other hand, for unrelated subclass instances where the field was not present prior to the change, the new field value will be the language default (i.e. null for object-type fields, 0 for int etc.).</p>
 
-<p>To run Java on Truffle, you need to have <a href="/dev/docs/getting-started/">GraalVM installed</a>.
-The Java on Truffle runtime is not available by default, but can be easily added to GraalVM using the <a href="/dev/reference-manual/graalvm-updater/">GraalVM Updater tool</a>.</p>
-
-<p>For GraalVM Community Edition users, run the following command to install Java on Truffle from the GitHub catalog:</p>
-<pre><code class="language-shell">gu install espresso
-</code></pre>
-
-<p>The installable’s name, <code>espresso</code>, is the project code-name, it is used to avoid ambiguity with the other ways Java code can run on GraalVM.</p>
-
-<p>For GraalVM Enterprise Edition users, download  Java on Truffle from <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle GraalVM Downloads</a>.
-Having downloaded the appropriate JAR file in consideration of the operating system and underlying Java SE version, install it with:</p>
-<pre><code class="language-shell">gu install -L espresso.jar
-</code></pre>
-
-<p>It installs the <code>jvm</code> runtime library under the <code>GRAALVM_HOME/lib/truffle/</code> location.</p>
-    
-      <h2 id="run-java-on-truffle">
-        
-        
-          Run Java on Truffle <a href="#run-java-on-truffle" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>You can run a Java application on Truffle by passing the <code>-truffle</code> flag to the standard <code>java</code> launcher.
-This is similar to how you used to switch between the <code>-client</code> and <code>-server</code> JVMs.</p>
-
-<p>To execute a class file:</p>
-<pre><code class="language-shell">java -truffle [options] class
-</code></pre>
-<p>To execute a JAR file:</p>
-<pre><code class="language-shell">java -truffle [options] --jar jarfile
-</code></pre>
-
-<p>Using Java 11 based GraalVM distribution, you can also run a Java application from the main class in a module, or run a single source-file program:</p>
-<pre><code class="language-shell">java -truffle [options] -m module[/&lt;mainclass&gt;]
-java -truffle [options] sourcefile
-</code></pre>
-
-<p>By default, Java on Truffle runs within GraalVM by reusing all GraalVM’s JARs and native libraries, but it is possible to “cross-version” and specify a different Java installation directory (<code>java.home</code>).
-It will automatically switch versions regardless of the host JVM.</p>
-<pre><code class="language-shell">java -truffle --java.JavaHome=/path/to/java/home -version
-</code></pre>
-    
-      <h2 id="performance-considerations">
-        
-        
-          Performance Considerations <a href="#performance-considerations" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Java on Trufle is an experimental technology in GraalVM, and peak performance is currently 2-3x slower than HotSpot.</p>
-
-<p>The startup time will not match the speed offered by the regular GraalVM just-in-time (JIT) execution yet, but having created a fully working Java on Truffle runtime, the development team is now focusing on performance.
-You can still influence the performance by passing the following options to <code>java -truffle</code>:</p>
+<p>As of GraalVM 22.1.0, the following limitations remain:</p>
 <ul>
-  <li><code>--engine.MultiTier=true</code> to enable multi-tier compilation;</li>
-  <li><code>--engine.Inlining=false</code> in combination with <code>--java.InlineFieldAccessors=true</code> to make the compilation faster, in exchange for slower performance.</li>
+  <li>Changes to Enums</li>
 </ul>
-
-<p>The <code>--vm.XX:</code> syntax ensures the option is passed to the underlying <a href="/dev/reference-manual/native-image/HostedvsRuntimeOptions/">native image VM</a>.
-When using the <code>-XX:</code> syntax, the VM first checks if there is such an option in the Java on Truffle runtime.
-If there is none, it will try to apply this option to the underlying native image VM.
-This might be important for options such as <code>MaxDirectMemorySize</code> which can be set independently at both levels: <code>-XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by the Java program running on Truffle (the guest VM), while <code>--vm.XX:MaxDirectMemorySize=256M</code> controls how much native memory can be reserved by native image (the host VM).</p>
     
-      <h2 id="start-running-applications">
+      <h2 id="hotswap-plugin-api">
         
         
-          Start Running Applications <a href="#start-running-applications" class="anchor_heading">#</a>
+          HotSwap Plugin API <a href="#hotswap-plugin-api" class="anchor_heading">#</a>
         
         
       </h2>
+
+<p>With Java on Truffle you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
+While code reloading (HotSwap) is a powerful tool, it is not sufficient to reflect all kinds of changes, e.g., changes to annotations, framework-specific changes such as implemented services or beans.
+For these things the code often needs to be executed to reload configurations or contexts before the changes are fully reflected in the running instance.
+This is where the Truffle on Java HotSwap Plugin API comes in handy.
+The Truffle on Java HotSwap Plugin API is meant for framework developers by setting up appropriate hooks to reflect changes in response to source code edits in your IDE.
+The main design principle is that you can register various HotSwap listeners that will be fired on specified HotSwap events.
+Examples include the ability to re-run a static initializer, a generic post HotSwap callback and hooks when implementations for a certain service provider changes.</p>
+
+<p><strong>Note</strong>: The HotSwap Plugin API is under development and more fine-grained registration of HotSwap listeners are likely to be added upon requests from the community.
+You are welcomed to send enhancement requests to help shape the API through our community support <a href="https://www.graalvm.org/community/">channels</a>.</p>
+
+<p>Review the HotSwap Plugin API by going through a running example that will enable more powerful reloading support on <a href="https://micronaut.io/">Micronaut</a>.</p>
     
-      <h4 id="from-command-line">
+      <h3 id="micronaut-hotswap-plugin">
         
         
-          From Command Line
+          Micronaut HotSwap Plugin <a href="#micronaut-hotswap-plugin" class="anchor_heading">#</a>
         
         
-      </h4>
+      </h3>
 
-<p>To ensure you have successfully installed Java on Truffle, verify its version:</p>
-<pre><code class="language-shell">java -truffle -version
+<p>The Micronaut HotSwap plugin example implementation is hosted as a <a href="https://github.com/javeleon/micronaut-core">fork</a> of Micronaut-core.
+The following instructions are based on a macOS X setup and only minor variations are needed for Windows.
+To get started:</p>
+
+<ol>
+  <li>Clone the repository:
+    <pre><code class="language-shell">  git clone git@github.com:javeleon/micronaut-core.git
 </code></pre>
+  </li>
+  <li>Build and publish to local Maven repository:
+    <pre><code class="language-shell">  cd micronaut-core
+  ./gradlew publishMavenPublicationToMavenLocal
+</code></pre>
+  </li>
+</ol>
 
-<p>Taking this <code>HelloWorld.java</code> example, compile it and run from the command line:</p>
-<pre><code class="language-java">public class HelloWorld {
-  public static void main(String[] args) {
-    System.out.println("Hello, World!");
-  }
+<p>Now you will have a HotSwap-ready version of Micronaut.
+Before setting up a sample application that uses the enhanced version of Micronaut, look at what the plugin does under the hood.</p>
+
+<p>The interesting class is <code>MicronautHotSwapPlugin</code> which holds on to an application context that can be reloaded when certain changes are made to the application source code.
+The class looks like this:</p>
+
+<pre><code class="language-java">final class MicronautHotSwapPlugin implements HotSwapPlugin {
+
+    private final ApplicationContext context;
+    private boolean needsBeenRefresh = false;
+
+    MicronautHotSwapPlugin(ApplicationContext context) {
+        this.context = context;
+        // register class re-init for classes that provide annotation metadata
+        EspressoHotSwap.registerClassInitHotSwap(
+                AnnotationMetadataProvider.class,
+                true,
+                () -&gt; needsBeenRefresh = true);
+        // register ServiceLoader listener for declared bean definitions
+        EspressoHotSwap.registerMetaInfServicesListener(
+                BeanDefinitionReference.class,
+                context.getClassLoader(),
+                () -&gt; reloadContext());
+        EspressoHotSwap.registerMetaInfServicesListener(
+                BeanIntrospectionReference.class,
+                context.getClassLoader(),
+                () -&gt; reloadContext());
+    }
+
+    @Override
+    public String getName() {
+        return "Micronaut HotSwap Plugin";
+    }
+
+    @Override
+    public void postHotSwap(Class&lt;?&gt;[] changedClasses) {
+        if (needsBeenRefresh) {
+            reloadContext();
+        }
+        needsBeenRefresh = false;
+    }
+
+    private void reloadContext() {
+        if (Micronaut.LOG.isInfoEnabled()) {
+            Micronaut.LOG.info("Reloading app context");
+        }
+        context.stop();
+        context.flushBeanCaches();
+        context.start();
+
+        // fetch new embedded application bean which will re-wire beans
+        Optional&lt;EmbeddedApplication&gt; bean = context.findBean(EmbeddedApplication.class);
+        // now restart the embedded app/server
+        bean.ifPresent(ApplicationContextLifeCycle::start);
+    }
 }
 </code></pre>
 
-<pre><code class="language-shell">$JAVA_HOME/bin/javac HelloWorld.java
-$JAVA_HOME/bin/java -truffle HelloWorld
-HelloWorld.java!
+<p>The logic regarding the HotSwap API sits in the constructor of this class.
+Micronaut is architected around compile-time annotation processing where annotation metadata is gathered and stored into static fields in generated classes.
+Whenever a developer makes a change to a Micronaut-annotated class, the corresponding metadata classes are re-generated.
+Since standard HotSwap does not (and it should not) re-run static initializers, with HotSwap Plugin static initializer are re-run for all classes that provide metadata (the Micronaut-generated classes). Thus, this API method <code>EspressoHotSwap.registerClassInitHotSwap</code> is used:</p>
+
+<pre><code class="language-java">public static boolean registerClassInitHotSwap(Class&lt;?&gt; klass, boolean onChange, HotSwapAction action)
 </code></pre>
 
-<p>Taking some real-world applications, try running <a href="https://github.com/spring-projects/spring-petclinic">Spring PetClinic</a> - a sample web application that demonstrates the use of Spring Boot with Spring MVC and Spring Data JPA.</p>
+<p>This will register a listener on Class changes for the specific class and importantly any subclass thereof.
+The <code>onChange</code> variable instructs if static initializers should only be re-run if the code within changed.
+The <code>action</code> parameter is a hook for firing a specific action whenever a static initializer has been re-run.
+Here we pass a function for setting the <code>needsBeenRefresh</code> field to true whenever an static initializer is re-run.
+Upon completion of a HotSwap action the plugin receives a <code>postHotSwap</code> call that, in response to a true <code>needsBeenRefresh</code>, executes the Micronaut-specific code to reload the application context in the <code>reloadContext</code> method.</p>
+    
+      <h3 id="detecting-and-injecting-new-classes">
+        
+        
+          Detecting and Injecting New Classes <a href="#detecting-and-injecting-new-classes" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>HotSwap is designed to enable classes to be HotSwap’ed in a running application.
+However, if a developer introduces an entirely new class, e.g., a new <code>@Controller </code>class in Micronaut, HotSwap does not magically inject a new class, as doing so would require knowledge about internal classloading logic at the very least.</p>
+
+<p>A standard way in which classes are discovered by a framework is through the <code>ServiceLoader</code> mechanism.
+The Truffle on Java HotSwap API has built-in support for registering service implementation change listeners by means of the method <code>EspressoHotSwap.registerMetaInfServicesListener</code>:</p>
+
+<pre><code class="language-java">public static boolean registerMetaInfServicesListener(Class&lt;?&gt; serviceType, ClassLoader loader, HotSwapAction action)
+</code></pre>
+
+<p>The current support is limited to listening for implementation changes for class path based service deployment in <code>META-INF/services</code>.
+Whenever there is a change to the set of service implementations for the registered class type, the <code>action</code> is fired.
+In the Micronaut HotSwap plugin, <code>reloadContext</code> is executed which will then pickup the changes automatically.</p>
+
+<p><strong>Note</strong>: HotSwap actions caused by changes to service implementation changes are fired indepent of HotSwap. As a developer, you do not need to perform a HotSwap from your IDE to see the new functionality in the running application.</p>
+    
+      <h3 id="next-level-hotswap-for-micronaut">
+        
+        
+          Next-Level HotSwap for Micronaut <a href="#next-level-hotswap-for-micronaut" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Now that you know how the Micronaut HotSwap plugin works, use this feature in a real application.
+Here is a sample application created from the tutorial <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.html">“Creating your first Micronaut Graal Application”</a>.
+Example’s sources can be downloaded as a ready-made Gradle project from <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.zip">here</a>.
+Download, unzip and open the project in your IDE.</p>
+
+<p>Before you proceed, make sure that you have Java on Truffle <a href="/dev/reference-manual/java-on-truffle/#install-java-on-truffle">installed</a> and set the GraalVM as the project SDK.</p>
 
 <ol>
-  <li>Clone the project and navigate to the project’s directory:
-    <pre><code class="language-shell">git clone https://github.com/spring-projects/spring-petclinic.git
-cd spring-petclinic
+  <li>In your IDE navigate to the root <code>build.gradle</code> within the sample project. Add:
+    <pre><code class="language-groovy">run.jvmArgs+="-truffle"
 </code></pre>
   </li>
-  <li>Build a JAR file (Spring PetClinic is built with Maven):
-    <pre><code class="language-shell">./mvnw package
+  <li>Also add maven local repository where we previously published the enhanced Micronaut framework. For example:
+    <pre><code class="language-groovy">repositories {
+  mavenLocal()
+  ...
+}
 </code></pre>
   </li>
-  <li>Then run it from the command line by selecting the <code>-truffle</code> runtime:
-    <pre><code class="language-java">java -truffle -jar target/spring-petclinic-&lt;version&gt;-SNAPSHOT.jar
+  <li>In <code>gradle.properties</code> update the Micronaut version that you published. For example:
+    <pre><code class="language-groovy">micronautVersion=2.5.8-SNAPSHOT
 </code></pre>
+    <p>Now you are all setup.</p>
   </li>
-  <li>When the application starts, access it on <a href="http://localhost:8080/">localhost:8000</a>.</li>
+  <li>
+    <p>Execute<code>assemble</code> task and create a run configuration using the defined <code>run</code> gradle task.</p>
+  </li>
+  <li>
+    <p>Press the Debug button to start the application in debugging mode, which enables enhanced HotSwap support.</p>
+  </li>
+  <li>
+    <p>Once the application is started, verify that you get a response from the <code>ConferenceController</code> by going to <code>http://localhost:8080/conferences/random</code>.</p>
+  </li>
+  <li>Try to make various changes to the classes within the sample app, e.g., change the <code>@Controller</code> mapping to a different value, or add a new <code>@Get</code>annotated method and apply HotSwap to see the magic. In case you define a new <code>@Controller</code> class, all you need is compiling the class and once the change is picked up by the file system watch, you will see the reload without the need for explicitly HotSwap.</li>
 </ol>
-    
-      <h4 id="from-ide">
-        
-        
-          From IDE
-        
-        
-      </h4>
-
-<p>To run a Java project on Truffle from an IDE requires setting the Java on Truffle enabled GraalVM as a project’s default JDK.
-For exampe, to run the Spring PetClinic project using Intellij IDEA, you need to:</p>
-
-<p>1. Navigate to <strong>File</strong>, then to <strong>Project Structure</strong>. Click <strong>Project</strong>, and then click <strong>Project SDK</strong>. Expand the drop down, press Add <strong>JDK</strong> and open the folder where you installed GraalVM. For macOS users, JDK home path will be <code>/Library/Java/JavaVirtualMachines/{graalvm}/Contents/Home</code>. Give it a name, and press Apply.</p>
-
-<p><img src="/resources/img/java-on-truffle/add-project-default-sdk.png" alt="" /></p>
-
-<p>2. Generate sources and update folders for the project. In the Maven sidebar, click on the folder with the spinner icon:</p>
-
-<p><img src="/resources/img/java-on-truffle/generate-project-sources.png" alt="" /></p>
-
-<p>3. Enable the Java on Truffle execution mode. From the main menu select <strong>Run</strong>, then <strong>Run…</strong>. Click <strong>Edit Configurations</strong> and choose <strong>Environment</strong>. Put the <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code> command in <strong>VM options</strong> and press Apply.</p>
-
-<p><img src="/resources/img/java-on-truffle/pass-vmoption.png" alt="" /></p>
-
-<p>It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.</p>
-
-<p>4. Press Run.</p>
-    
-      <h2 id="debugging">
-        
-        
-          Debugging <a href="#debugging" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>You do not have to configure anything special to debug applications running Java on Truffle from your favorite IDE debugger.
-For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
-To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to Run -&gt; Debug… -&gt; Edit Configurations, expand Environment, check the JRE value and VM options values.
-It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>: <code>-truffle</code> to run Java on Truffle, and <code>-XX:+IgnoreUnrecognizedVMOptions</code> as a temporary workaround since the Java on Truffle runtime does not yet support attaching Java agents.</p>
-
-<p><img src="/resources/img/debug-configuration.png" alt="" /></p>
-    
-      <h2 id="what-to-read-next">
-        
-        
-          What to Read Next <a href="#what-to-read-next" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Java on Truffle enables a seamless Java interoperability with other languages in the GraalVM ecosystem.
-Check the <a href="/dev/reference-manual/java-on-truffle/interoperability/">Interoperability with Truffle Languages guide</a> to learn how to load code written in foreign languages, export and import objects between languages, how to use Java-on-Truffle objects from a foreign language and vice versa to create powerful polyglot programs.</p>
-
-<p>To learn about the implementation approach, project’s current status, and known limitations proceed to <a href="/dev/reference-manual/java-on-truffle/implementation/">Implementation Details</a>.</p>
-
-<p>You can already run some large applications like the Eclipse IDE, Scala or other languages REPLs, etc. in the Java on Truffle execution mode.
-We recommend having a look at the collection of <a href="/dev/reference-manual/java-on-truffle/demos/">Demo Applications</a>.</p>
-
-<p>If you have a question, check the available <a href="/dev/reference-manual/java-on-truffle/faq/">FAQs</a>, or reach us directly over the <strong>#espresso</strong> channel in <a href="https://www.graalvm.org/slack-invitation/">GraalVM Slack</a>.</p>
 
             </div>
 
