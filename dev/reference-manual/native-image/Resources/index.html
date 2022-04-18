@@ -574,7 +574,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/Properties/">
-              Using System Properties in Native Images
+              Using System Properties in Native Image
             </a>
           </li>
 
@@ -1012,19 +1012,19 @@ $(document).ready(function(){
         
       </h1>
 
-<p>By default, the <code>native-image</code> tool will not integrate any of the resources which are on the classpath during the generation into the final image.
-To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or their corresponding <code>ClassLoader</code> methods) return specific resources (instead of <code>null</code>), you must specify the resources that should be accessible at run time. 
+<p>By default, the <code>native-image</code> tool will not integrate any of the resources that are on the classpath into the native executable.
+To make calls such as <code>Class.getResource()</code> or <code>Class.getResourceAsStream()</code> (or their corresponding <code>ClassLoader</code> methods) return specific resources (instead of <code>null</code>), you must specify the resources that should be accessible at runtime. 
 This can be achieved using a configuration file with the following content:</p>
 
 <pre><code class="language-json">{
   "resources": {
     "includes": [
-      {"pattern": "&lt;Java regexp that matches resource(s) to be included in the image&gt;"},
+      {"pattern": "&lt;Java regexp that matches resource(s) to be included in the executable&gt;"},
       {"pattern": "&lt;another regexp&gt;"},
       ...
     ],
     "excludes": [
-      {"pattern": "&lt;Java regexp that matches resource(s) to be excluded from the image&gt;"},
+      {"pattern": "&lt;Java regexp that matches resource(s) to be excluded from the executable&gt;"},
       {"pattern": "&lt;another regexp&gt;"},
       ...
     ]
@@ -1032,12 +1032,12 @@ This can be achieved using a configuration file with the following content:</p>
 }
 </code></pre>
 
-<p>The configuration file’s path must be provided to <code>native-image</code> with <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>.
-Alternatively, individual resource paths can also be specified directly to <code>native-image</code>:</p>
+<p>Provide the configuration file’s path to the <code>native-image</code> tool using the option <code>-H:ResourceConfigurationFiles=/path/to/resource-config.json</code>.
+Alternatively, you can specify individual resource paths directly to the <code>native-image</code> tool as follows:</p>
 
-<pre><code class="language-shell">native-image -H:IncludeResources="&lt;Java regexp that matches resources to be included in the image&gt;" -H:ExcludeResources="&lt;Java regexp that matches resources to be excluded from the image&gt;" ...
+<pre><code class="language-shell">native-image -H:IncludeResources="&lt;Java regexp that matches resources to be included in the executable&gt;" -H:ExcludeResources="&lt;Java regexp that matches resources to be excluded from the executable&gt;" ...
 </code></pre>
-<p>The <code>-H:IncludeResources</code> and <code>-H:ExcludeResources</code> options can be passed several times to define more than one regexp to match or exclude resources, respectively.</p>
+<p>You can pass the <code>-H:IncludeResources</code> and <code>-H:ExcludeResources</code> options several times to define more than one regexp to include or exclude resources, respectively.</p>
 
 <p>To see which resources are included in the native executable, use the option <code>-H:Log=registerResource:&lt;log level&gt;</code>. The <code>&lt;log level&gt;</code> must be in the range from <code>1</code> to <code>5</code>, from least detailed to most detailed.</p>
     
@@ -1064,17 +1064,17 @@ Alternatively, individual resource paths can also be specified directly to <code
 
 <ul>
   <li>All resources can be loaded with <code>".*/Resource.*txt$"</code>, specified as <code>{"pattern":".*/Resource.*txt$"}</code> in a configuration file, or <code>-H:IncludeResources=".*/Resource.*txt$"</code> on the command line.</li>
-  <li><code>Resource0.txt</code> can be loaded with <code>.*/Resource0.txt$</code>.</li>
-  <li><code>Resource0.txt</code> and <code>Resource1.txt</code> can be loaded with <code>.*/Resource0.txt$</code> and <code>.*/Resource1.txt$</code>
-(or alternatively with a single <code>.*/(Resource0|Resource1).txt$</code>).</li>
-  <li>Also, if we want to include everything except the <code>Resource2.txt</code> file, we can simply exclude it with <code>-H:IncludeResources=".*/Resource.*txt$"</code> followed by <code>-H:ExcludeResources=".*/Resource2.txt$"</code>.</li>
+  <li><em>Resource0.txt</em> can be loaded with <code>.*/Resource0.txt$</code>.</li>
+  <li><em>Resource0.txt</em> and <em>Resource1.txt</em> can be loaded with <code>.*/Resource0.txt$</code> and <code>.*/Resource1.txt$</code>
+ (or alternatively with a single <code>.*/(Resource0|Resource1).txt$</code>).</li>
+  <li>Also, if we want to include everything except the <em>Resource2.txt</em> file, we can simply exclude it using <code>-H:IncludeResources=".*/Resource.*txt$"</code> followed by <code>-H:ExcludeResources=".*/Resource2.txt$"</code>.</li>
 </ul>
 
-<p>The following demo illustrates how to include a resource into a native executable. The application <code>fortune</code> simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>.</p>
+<p>The following demo illustrates how to include a resource into a native executable. The application <code>fortune</code> simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>).</p>
 
 <ol>
   <li>
-    <p>Save the following Java code into the <em>Fortune.java</em> file:</p>
+    <p>Save the following Java code into a file named <em>Fortune.java</em>:</p>
 
     <pre><code class="language-java"> import java.io.BufferedReader;
  import java.io.InputStreamReader;
@@ -1094,7 +1094,7 @@ Alternatively, individual resource paths can also be specified directly to <code
          s.useDelimiter(SEPARATOR);
          while (s.hasNext()) {
              fortunes.add(s.next());
-         }        
+         }
      }
         
      private void printRandomFortune() throws InterruptedException {
@@ -1102,7 +1102,7 @@ Alternatively, individual resource paths can also be specified directly to <code
          String f = fortunes.get(r);  //Use the random number to pick a random fortune
          for (char c: f.toCharArray()) {  // Print out the fortune
            System.out.print(c);
-             Thread.sleep(100);   
+             Thread.sleep(100); 
          }
      }
       
@@ -1114,10 +1114,10 @@ Alternatively, individual resource paths can also be specified directly to <code
 </code></pre>
   </li>
   <li>
-    <p>Open the <a href="/docs/reference-manual/native-image/assets/fortunes.u8"><em>fortunes.u8</em></a> resource file and save it in the same directory as <em>Fortune.java</em>.</p>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/fortunes.u8"><em>fortunes.u8</em></a> resource file and save it in the same directory as <em>Fortune.java</em>.</p>
   </li>
   <li>
-    <p>Compile:</p>
+    <p>Compile the Java source code:</p>
 
     <pre><code class="language-shell"> $JAVA_HOME/bin/javac Fortune.java
 </code></pre>
@@ -1146,13 +1146,13 @@ Alternatively, individual resource paths can also be specified directly to <code
         
       </h2>
 
-<p>It is also possible to specify which locales should be included in the image and what should be the default one.
-For example, to switch the default locale to Swiss German and also include French and English, one can use the following hosted options.</p>
+<p>It is also possible to specify which locales should be included in the executable and which should be the default.
+For example, to switch the default locale to Swiss German and also include French and English, use the following  options:</p>
 <pre><code class="language-shell">native-image -Duser.country=CH -Duser.language=de -H:IncludeLocales=fr,en
 </code></pre>
-<p>The locales are specified using <a href="https://docs.oracle.com/javase/tutorial/i18n/locale/matching.html">language tags</a>. All
-locales can be included via <code>-H:+IncludeAllLocales</code>, but please note that it increases the size of the resulting
-binary.</p>
+<p>The locales are specified using <a href="https://docs.oracle.com/javase/tutorial/i18n/locale/matching.html">language tags</a>. You can include all
+locales via <code>-H:+IncludeAllLocales</code>, but note that it increases the size of the resulting
+executable.</p>
     
       <h2 id="resource-bundles-in-native-image">
         
@@ -1162,9 +1162,9 @@ binary.</p>
         
       </h2>
 
-<p>Java localization support (<code>java.util.ResourceBundle</code>) enables Java code to load L10N resources and show the right user messages suitable for actual runtime settings like time locale and format, etc.</p>
+<p>Java localization support (<code>java.util.ResourceBundle</code>) enables Java code to load L10N resources and show the user messages suitable for runtime settings such as time, locale, and format.</p>
 
-<p>Native Image needs ahead-of-time knowledge of the resource bundles your application needs so that it can load and store the appropriate bundles for usage in the generated binary.
+<p>Native Image needs knowledge ahead-of-time of the resource bundles your application needs so that it can load and store the appropriate bundles for usage in the generated executable.
 The bundles can be specified in the resource configuration file (see above), in the <code>bundles</code> section:</p>
 
 <pre><code class="language-json">{
@@ -1177,11 +1177,11 @@ The bundles can be specified in the resource configuration file (see above), in 
 }
 </code></pre>
 
-<p>Alternatively, bundles can be specified directly as options to <code>native-image</code> as follows:</p>
+<p>Alternatively, bundles can be specified directly as options to the <code>native-image</code> tool as follows:</p>
 <pre><code class="language-shell">native-image -H:IncludeResourceBundles=your.pgk.Bundle,another.pkg.Resource,etc.Bundle ...
 </code></pre>
-<p>By default, the requested bundles are included for all requested locales.
-In order to optimize this, it is possible to use <code>IncludeResourceBundles</code> with locale specific substring, for example <code>-H:+IncludeResourceBundles=com.company.bundles.MyBundle_fr-FR</code> will include the bundle only in French.</p>
+<p>By default, requested bundles are included for all requested locales.
+To optimize this, it is possible to use <code>IncludeResourceBundles</code> with a locale-specific substring, for example <code>-H:+IncludeResourceBundles=com.company.bundles.MyBundle_fr-FR</code> will only include the bundle in French.</p>
     
       <h3 id="resources-in-java-modules">
         
@@ -1191,7 +1191,7 @@ In order to optimize this, it is possible to use <code>IncludeResourceBundles</c
         
       </h3>
 
-<p>Wherever resources are specified with <code>&lt;Java regexp that matches resources to be included in the image&gt;</code> or resource bundles are specified via bundle name, it is possible to specify the exact modules these resources or bundles should be taken from. To do so, specify the module-name before the resource-regex or bundle name with <code>:</code> as separator. For example:</p>
+<p>Wherever resources are specified with <code>&lt;Java regexp that matches resources to be included in the image&gt;</code> or resource bundles are specified via bundle name, it is possible to specify the exact modules from which these resources or bundles should be taken. To do so, specify the module name before the resource-regex or bundle name with <code>:</code> as the separator. For example:</p>
 
 <pre><code class="language-json">{
    "resources": {
@@ -1207,23 +1207,34 @@ In order to optimize this, it is possible to use <code>IncludeResourceBundles</c
 }
 </code></pre>
 
-<p>This will make native-image include <code>resource-file.txt</code> only from Java module <code>library-module</code>. So even if other modules or the classpath contains resources that would match pattern <code>^resource-file.txt$</code> only the one in module <code>library-module</code> would be registered for image-inclusion. Similar if there would be other bundles accessible with the same bundle name <code>your.pkg.Bundle</code> only the one from <code>main-module</code> would be included. Native image will also ensure that the modules are guaranteed to be accessible at image-runtime. I.e. the following code pattern:</p>
+<p>This will cause the <code>native-image</code> tool to only include <code>resource-file.txt</code> from the Java module <code>library-module</code>. If other modules or the classpath contains resources that match the pattern <code>^resource-file.txt$</code> only the one in module <code>library-module</code> is registered for inclusion in the executable. Similarly, if other bundles are accessible with the same bundle name <code>your.pkg.Bundle</code> only the one from <code>main-module</code> is included. Native image will also ensure that the modules are guaranteed to be accessible at runtime. That is, the following code pattern:</p>
 <pre><code class="language-java">InputStream resource = ModuleLayer.boot().findModule(moduleName).getResourceAsStream(resourcePath);
 </code></pre>
-<p>will always work as expected for resources registered as described above (even if the module does not contain any code that is seen reachable by the static analysis).</p>
+<p>will always work as expected for resources registered as described above (even if the module does not contain any code that is considered reachable by static analysis).</p>
     
-      <h3 id="jvm-mode-of-localization">
+      <h3 id="java-vm-mode-of-localization">
         
         
-          JVM Mode of Localization <a href="#jvm-mode-of-localization" class="anchor_heading">#</a>
+          Java VM Mode of Localization <a href="#java-vm-mode-of-localization" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>Resource Bundle lookup is a complex and dynamic mechanism which utilizes a lot of the infrastructure of JVM.
-As a result of that, it causes the size of the executable to increase for smaller applications such as <code>HelloWorld</code>.
-Therefore, an optimized mode is set by default in which this lookup is simplified utilizing the fact the all bundles are known ahead of time.
-In case you would like to use the original JVM lookup, use the <code>-H:-LocalizationOptimizedMode</code> option.</p>
+<p>Resource Bundle lookup is a complex and dynamic mechanism which utilizes a lot of Java VM infrastructure.
+As a result, it causes the size of the executable to increase for smaller applications such as <code>HelloWorld</code>.
+Therefore, an optimized mode is set by default in which this lookup is simplified utilizing the fact that all bundles are known ahead of build time.
+For the original Java VM lookup, use the <code>-H:-LocalizationOptimizedMode</code> option.</p>
+    
+      <h2 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<ul>
+  <li><a href="/dev/reference-manual/native-image/Logging/">Logging in Native Image</a></li>
+</ul>
 
               </div>
 

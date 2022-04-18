@@ -574,7 +574,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/Properties/">
-              Using System Properties in Native Images
+              Using System Properties in Native Image
             </a>
           </li>
 
@@ -1012,7 +1012,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Out of the box, Native Image supports logging using the <code>java.util.logging.*</code> API.</p>
+<p>By default, Native Image supports logging via the <code>java.util.logging.*</code> API.</p>
     
       <h2 id="default-logging-configuration">
         
@@ -1022,11 +1022,11 @@ $(document).ready(function(){
         
       </h2>
 
-<p>The logging configuration built in a native image by default is based on the <code>logging.properties</code> file found in the JDK.
-This configures a <code>java.util.logging.ConsoleHandler</code> which will only show messages at the <code>INFO</code> and above levels.
-Custom logging configuration can be loaded either at image build time or at run time as described below.</p>
+<p>The default logging configuration in a native executable is based on the <code>logging.properties</code> file found in the JDK.
+This configures a <code>java.util.logging.ConsoleHandler</code> which will only show messages at the <code>INFO</code> level and above.
+Custom logging configuration can be loaded either at executable build time or at runtime as described below.</p>
 
-<p>Note that if additional logging handlers are used, the corresponding classes need to be registered for reflection.
+<p>Note that if additional logging handlers are used, the corresponding classes must be registered for reflection.
 For example, if <code>java.util.logging.FileHandler</code> is used then the following reflection configuration is necessary:</p>
 <pre><code class="language-json">{
     "name" : "java.util.logging.FileHandler",
@@ -1035,7 +1035,7 @@ For example, if <code>java.util.logging.FileHandler</code> is used then the foll
     ]
   }
 </code></pre>
-<p>See the <a href="/dev/reference-manual/native-image/Reflection/">Reflection Support</a> page for more details.</p>
+<p>For more details, see <a href="/dev/reference-manual/native-image/Reflection/">Reflection Support</a>.</p>
     
       <h2 id="build-time-logger-initialization">
         
@@ -1045,25 +1045,48 @@ For example, if <code>java.util.logging.FileHandler</code> is used then the foll
         
       </h2>
 
-<p>The logger can be initialized at image build time with a custom <code>logging.properties</code> config, as in the code below:</p>
-<pre><code class="language-java">public class BuildTimeLoggerInit {
-  private static final Logger LOGGER;
-  static {
-    LogManager.getLogManager().readConfiguration(BuildTimeLoggerInit.class.getResourceAsStream("logging.properties"));
-    LOGGER = Logger.getLogger(BuildTimeLoggerInit.class.getName());
-  }
+<p>The logger can be initialized at executable build time with a custom <em>logging.properties</em> configuration file, as illustrated in following example.</p>
 
-  public static void main(String[] args) throws IOException {
-    // Use the LOGGER here
-  }
-}
+<ol>
+  <li>Save the following Java code into a file named <em>BuildTimeLoggerInit.java</em>, then compile it using <code>javac</code>:
+    <pre><code class="language-java"> import java.io.IOException;
+ import java.util.logging.Level;
+ import java.util.logging.LogManager;
+ import java.util.logging.Logger;
+
+ public class BuildTimeLoggerInit {
+   private static final Logger LOGGER;
+   static {
+       try {
+           LogManager.getLogManager().readConfiguration(BuildTimeLoggerInit.class.getResourceAsStream("/logging.properties"));
+       } catch (IOException | SecurityException | ExceptionInInitializerError ex) {
+           Logger.getLogger(BuildTimeLoggerInit.class.getName()).log(Level.SEVERE, "Failed to read logging.properties file", ex);
+       }
+     LOGGER = Logger.getLogger(BuildTimeLoggerInit.class.getName());
+   }
+
+   public static void main(String[] args) throws IOException {
+     LOGGER.log(Level.WARNING, "Danger, Will Robinson!");
+   }
+ }
 </code></pre>
+  </li>
+  <li>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>BuildTimeLoggerInit.java</em>.</p>
+  </li>
+  <li>
+    <p>Build and run the native executable</p>
 
-<p>The <code>logging.properties</code> file is processed at image build time.
-It does not need to be included in the native image, therefore reducing the image size.</p>
+    <pre><code class="language-shell"> native-image BuildTimeLoggerInit --initialize-at-build-time=BuildTimeLoggerInit
+ ./buildtimeloggerinit
+</code></pre>
+    <p>The <em>logging.properties</em> file is processed at build time.
+It does not need to be included in the native executable, therefore reducing the size of the executable file.</p>
+  </li>
+</ol>
 
-<p><code>LoggerHolder.LOGGER</code> is also initialized at image build time and is readily available at run time, therefore improving the startup.
-Unless the application needs to process a custom <code>logging.properties</code> configuration at run time, this approach is recommended.</p>
+<p><code>LoggerHolder.LOGGER</code> is also initialized at build time and is readily available at runtime, therefore improving the startup time. 
+Unless your application needs to process a custom <em>logging.properties</em> configuration file at runtime, this approach is recommended.</p>
     
       <h2 id="runtime-logger-initialization">
         
@@ -1073,19 +1096,53 @@ Unless the application needs to process a custom <code>logging.properties</code>
         
       </h2>
 
-<p>The logger can also be initialized at run time, as in the code below:</p>
-<pre><code class="language-java">public class RuntimeLoggerInit {
-    public static void main(String[] args) throws IOException {
-        LogManager.getLogManager().readConfiguration(RuntimeLoggerInit.class.getResourceAsStream("logging.properties"));
-        Logger logger = Logger.getLogger(RuntimeLoggerInit.class.getName());
-        // Use the logger here
-    }
-}
+<p>The logger can also be initialized at runtime, as shown in the following example.</p>
+
+<ol>
+  <li>
+    <p>Save the following Java code into a file named <em>RuntimeLoggerInit.java</em>, then compile it using <code>javac</code>:</p>
+
+    <pre><code class="language-java"> import java.io.IOException;
+ import java.util.logging.Level;
+ import java.util.logging.LogManager;
+ import java.util.logging.Logger;
+
+ public class RuntimeLoggerInit {
+     public static void main(String[] args) throws IOException {
+         LogManager.getLogManager().readConfiguration(RuntimeLoggerInit.class.getResourceAsStream("/logging.properties"));
+         Logger logger = Logger.getLogger(RuntimeLoggerInit.class.getName());
+         logger.log(Level.WARNING, "Danger, Will Robinson!");
+     }
+ }
 </code></pre>
+  </li>
+  <li>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>RuntimeLoggerInit.java</em>.</p>
+  </li>
+  <li>
+    <p>Build and run the native executable</p>
 
-<p>In this case, the <code>logging.properties</code> file needs to be available for runtime processing and it must be included in the image via the <code>-H:IncludeResources=logging.properties</code> option.</p>
+    <pre><code class="language-shell"> native-image RuntimeLoggerInit -H:IncludeResources="logging.properties"
+ ./runtimeloggerinit
+</code></pre>
+  </li>
+</ol>
 
-<p>See the information about <a href="/dev/reference-manual/native-image/Resources/">accessing resources at runtime</a> for more details on this option.</p>
+<p>In this case, the <em>logging.properties</em> file needs to be available for runtime processing and it must be included in the executable via the <code>-H:IncludeResources=logging.properties</code> option. For more details on this option, see <a href="/dev/reference-manual/native-image/Resources/">accessing resources at runtime</a>.</p>
+    
+      <h2 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<ul>
+  <li><a href="/dev/reference-manual/native-image/Resources/">Accessing Resources in Native Images</a></li>
+  <li><a href="/dev/reference-manual/native-image/ClassInitialization/">Class Initialization in Native Image</a></li>
+  <li><a href="/dev/reference-manual/native-image/BuildConfiguration/">Native Image Build Configuration</a></li>
+  <li><a href="/dev/reference-manual/native-image/Reflection/">Reflection Use in Native Images</a></li>
+</ul>
 
               </div>
 

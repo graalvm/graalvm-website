@@ -10,7 +10,7 @@
 
   <title>
     
-      Limitations and Differences to Native Execution
+      Interaction of GraalVM with Native Code
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
@@ -556,7 +556,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/llvm/NativeExecution/">
-              Limitations and Differences to Native Execution
+              Interaction of GraalVM with Native Code
             </a>
           </li>
 
@@ -762,217 +762,124 @@ $(document).ready(function(){
   </ul>
 
 
-                <h1 id="limitations-and-differences-to-native-execution">
+                <h1 id="interaction-of-graalvm-with-native-code">
         
         
-          Limitations and Differences to Native Execution
+          Interaction of GraalVM with Native Code
         
         
       </h1>
 
-<p>LLVM code interpreted or compiled with the default configuration of GraalVM Community or Enterprise editions will not have the same characteristics as the same code interpreted or compiled in a managed environment, enabled with the <code>--llvm.managed</code> option on top of GraalVM Enterprise.
-The behaviour of the <code>lli</code> interpreter used to directly execute programs in LLVM bitcode format differs between native and managed modes.
-The difference lies in safety guarantees and cross-language interoperability.</p>
-
-<p>Note: Managed execution mode for LLVM bitcode is possible with GraalVM Enterprise only.</p>
-
-<p>In the default configuration, cross-language interoperability requires bitcode to be compiled with the debug information enabled (<code>-g</code>), and the <code>-mem2reg</code> optimization performed on LLVM bitcode (compiled with at least <code>-O1</code>, or explicitly using the <code>opt</code> tool).
-These requirements can be overcome in a managed environment of GraalVM Enterprise that allows native code to participate in the polyglot programs, passing and receiving the data from any other supported language.
-In terms of security, the execution of native code in a managed environment passes with additional safety features: catching illegal pointer accesses, accessing arrays outside of the bounds, etc.</p>
-
-<p>There are certain limitations and differences to the native execution depending on the GraalVM edition.
-Consider them respectively.</p>
+<p>The GraalVM LLVM runtime allows users to run code written in languages that traditionally compile directly to native code.
+These languages typically do not require any managed runtime or VM to run.
+Therefore, special care is needed to consider the interaction of this code with the <a href="#">managed runtime of GraalVM</a>, in particular if the code is using certain low-level features.</p>
     
-      <h3 id="limitations-and-differences-to-native-execution-on-top-of-graalvm-community">
+      <h2 id="limited-access-to-low-level-system-calls">
         
         
-          Limitations and Differences to Native Execution on Top of GraalVM Community <a href="#limitations-and-differences-to-native-execution-on-top-of-graalvm-community" class="anchor_heading">#</a>
+          Limited Access to Low-level System Calls <a href="#limited-access-to-low-level-system-calls" class="anchor_heading">#</a>
         
         
-      </h3>
-<p>The LLVM interpreter in GraalVM Community Edition environment allows executing LLVM bitcode within a multilingual context.
-Even though it aspires to be a generic LLVM runtime, there are certain fundamental and/or implementational limitations that users need to be aware of.</p>
-
-<p>The following restrictions and differences to native execution (i.e., bitcode compiled down to native code) exist when LLVM bitcode is executed with the LLVM interpreter on top of GraalVM Community:</p>
+      </h2>
 
 <ul>
-  <li>The GraalVM LLVM interpreter assumes that bitcode was generated to target the x86_64 architecture.</li>
-  <li>Bitcode should be the result of compiling C/C++ code using clang version 7, other compilers/languages, e.g., Rust, might have specific requirements that are not supported.</li>
-  <li>Unsupported functionality – it is not possible to call any of the following functions:
+  <li>Signal handling is performed based on the following assumptions:
     <ul>
-      <li><code>clone()</code></li>
-      <li><code>fork()</code></li>
-      <li><code>vfork()</code></li>
-      <li><code>setjmp()</code>, <code>sigsetjmp()</code>, <code>longjmp()</code>, <code>siglongjmp()</code></li>
-      <li>Functions of the <code>exec()</code> function family</li>
-      <li>Pthread functions</li>
-      <li>Code running in the LLVM interpreter needs to be aware that a JVM is running in the same process, so many syscalls such as fork, brk, sbrk, futex, mmap, rt_sigaction, rt_sigprocmask, etc. might not work as expected or cause the JVM to crash.</li>
-      <li>Calling unsupported syscalls or unsupported functionality (listed above) via native code libraries can cause unexpected side effects and crashes.</li>
+      <li>The managed runtime assumes that it has full control of handling all signals.</li>
+      <li>Installed signal handlers might behave differently than on native execution.</li>
     </ul>
   </li>
-  <li>Thread local variables
+  <li>Process control and threading is done based on the following aspects:
     <ul>
-      <li>Thread local variables from bitcode are not compatible with thread local variables from native code.</li>
-    </ul>
-  </li>
-  <li>Cannot rely on memory layout
-    <ul>
-      <li>Pointers to thread local variables are not stored in specific locations, e.g., the FS segment.</li>
-      <li>The order of globals in memory might be different, consequently no assumptions about their relative locations can be made.</li>
-      <li>Stack frames cannot be inspected or modified using pointer arithmetic (overwrite return address, etc.).</li>
-      <li>Walking the stack is only possible using the Truffle APIs.</li>
-      <li>There is a strict separation between code and data, so that reads, writes and pointer arithmetic on function pointers or pointers to code will lead to undefined behavior.</li>
-    </ul>
-  </li>
-  <li>Signal handlers
-    <ul>
-      <li>Installing signal handlers is not supported.</li>
-    </ul>
-  </li>
-  <li>The stack
-    <ul>
-      <li>The default stack size is not set by the operating system but by the option <code>--llvm.stackSize</code>.</li>
-    </ul>
-  </li>
-  <li>Dynamic linking
-    <ul>
-      <li>Interacting with the LLVM bitcode dynamic linker is not supported, e.g., dlsym/dlopen can only be used for native libraries.</li>
-      <li>The dynamic linking order is undefined if native libraries and LLVM bitcode libraries are mixed.</li>
-      <li>Native libraries cannot import symbols from bitcode libraries.</li>
-    </ul>
-  </li>
-  <li>x86_64 inline assembly is not supported.</li>
-  <li>Undefined behavior according to C spec
-    <ul>
-      <li>While most C compilers map undefined behavior to CPU semantics, the GraalVM LLVM interpreter might map some of this undefined behavior to Java or other semantics. Examples include: signed integer overflow (mapped to the Java semantics of an arithmetic overflow), integer division by zero (will throw an ArithmeticException), oversized shift amounts (mapped to the Java behavior).</li>
-    </ul>
-  </li>
-  <li>Floating point arithmetics
-    <ul>
-      <li>Some floating point operations and math functions will use more precise operations and cast the result to a lower precision (instead of performing the operation at a lower precision).</li>
-      <li>Only the rounding mode FE_TONEAREST is supported.</li>
-      <li>Floating point exceptions are not supported.</li>
-    </ul>
-  </li>
-  <li>NFI limitations (calling real native functions)
-    <ul>
-      <li>Structs, complex numbers, or fp80 values are not supported as by-value arguments or by-value return values.</li>
-      <li>The same limitation applies to calls back from native code into interpreted LLVM bitcode.</li>
-    </ul>
-  </li>
-  <li>Limitations of polyglot interoperability (working with values from other GraalVM languages)
-    <ul>
-      <li>Foreign objects cannot be stored in native memory locations. Native memory locations include:
-        <ul>
-          <li>globals (except the specific case of a global holding exactly one pointer value);</li>
-          <li>malloc’ed memory (including c++ new, etc.);</li>
-          <li>stack (e.g., escaping automatic variables).</li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-  <li>LLVM instruction set support (based on LLVM 7.0.1)
-    <ul>
-      <li>A set of rarely-used bitcode instructions are not available (va_arg, catchpad, cleanuppad, catchswitch, catchret, cleanupret, fneg, callbr).</li>
-      <li>The instructions with limited support:
-        <ul>
-          <li>atomicrmw (only supports sub, add, and, nand, or, xor, xchg);</li>
-          <li>extract value and insert value (only supports a single indexing operand);</li>
-          <li>cast (missing support for certain rarely-used kinds);</li>
-          <li>atomic ordering and address space attributes of load and store instructions are ignored.</li>
-        </ul>
-      </li>
-      <li>Values – assembly constants are not supported (module-level assembly and any assembly strings).</li>
-      <li>Types:
-        <ul>
-          <li>There is no support for 128-bit floating point types (fp128 and ppc_fp128), x86_mmx, half-precision floats (fp16) and any vectors of unsupported primitive types.</li>
-          <li>The support for fp80 is limited (not all intrinsics are supported for fp80, some intrinsics or instructions might silently fall back to fp64).</li>
-        </ul>
-      </li>
-    </ul>
-  </li>
-  <li>A number of rarely-used or experimental intrinsics based on LLVM 7.0.1 are not supported because of implementational limitations or because they are out of scope:
-    <ul>
-      <li>experimental intrinsics: <code>llvm.experimental.*</code>, <code>llvm.launder.invariant.group</code>, <code>llvm.strip.invariant.group</code>;</li>
-      <li>trampoline intrinsics: <code>llvm.init.trampoline</code>, <code>llvm.adjust.trampoline</code>;</li>
-      <li>general intrinsics: <code>llvm.var.annotation</code>, <code>llvm.ptr.annotation</code>, <code>llvm.annotation</code>, <code>llvm.codeview.annotation</code>, <code>llvm.trap</code>, <code>llvm.debugtrap</code>, <code>llvm.stackprotector</code>, <code>llvm.stackguard</code>, <code>llvm.ssa_copy</code>, <code>llvm.type.test</code>, <code>llvm.type.checked.load</code>, <code>llvm.load.relative</code>, <code>llvm.sideeffect</code>;</li>
-      <li>specialised arithmetic intrinsics: <code>llvm.canonicalize</code>, <code>llvm.fmuladd</code>;</li>
-      <li>standard c library intrinsics: <code>llvm.fma</code>, <code>llvm.trunc</code>, <code>llvm.nearbyint</code>, <code>llvm.round</code>;</li>
-      <li>code generator intrinsics: <code>llvm.returnaddress</code>, <code>llvm.addressofreturnaddress</code>, <code>llvm.frameaddress</code>, <code>llvm.localescape</code>, <code>llvm.localrecover</code>, <code>llvm.read_register</code>, <code>llvm.write_register</code>, <code>llvm.stacksave</code>, <code>llvm.stackrestore</code>, <code>llvm.get.dynamic.area.offset</code>, <code>llvm.prefetch</code>, <code>llvm.pcmarker</code>, <code>llvm.readcyclecounter</code>, <code>llvm.clear_cache</code>, <code>llvm.instrprof*</code>, <code>llvm.thread.pointer</code>;</li>
-      <li>exact gc intrinsics: <code>llvm.gcroot</code>, <code>llvm.gcread</code>, <code>llvm.gcwrite</code>;</li>
-      <li>element wise atomic memory intrinsics: <code>llvm.*.element.unordered.atomic</code>;</li>
-      <li>masked vector intrinsics: <code>llvm.masked.*</code>;</li>
-      <li>bit manipulation intrinsics: <code>llvm.bitreverse</code>, <code>llvm.fshl</code>, <code>llvm.fshr</code>.</li>
+      <li>GraalVM assumes it has full control over threading.</li>
+      <li>Multi-threading is supported via the <code>pthreads</code> library (for example, <code>pthread_create</code>).</li>
+      <li>Directly using process related syscalls like <code>clone</code>, <code>fork</code>, <code>vfork</code>, etc. is not supported.</li>
+      <li>The <code>exec</code> function family is not supported.</li>
     </ul>
   </li>
 </ul>
     
-      <h3 id="limitations-and-differences-to-managed-execution-on-top-of-graalvm-enterprise">
+      <h2 id="memory-layout">
         
         
-          Limitations and Differences to Managed Execution on Top of GraalVM Enterprise <a href="#limitations-and-differences-to-managed-execution-on-top-of-graalvm-enterprise" class="anchor_heading">#</a>
+          Memory Layout <a href="#memory-layout" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>The managed execution for LLVM bitcode is a GraalVM Enterprise Edition feature and can be enabled with the <code>--llvm.managed</code> command line option.
-In managed mode, the GraalVM LLVM runtime prevents access to unmanaged memory and uncontrolled calls to native code and operating system functionality.
-The allocations are performed in the managed Java heap, and accesses to the surrounding system are routed through proper Language API and Java API calls.</p>
+<p>The memory and stack layout of processes running on GraalVM is different than with direct native execution.
+In particular, no assumptions are possible about the relative positions of globals, stack variables and so on.</p>
 
-<p>All the restrictions from the default native LLVM execution on GraalVM apply to the managed execution, but with the following differences/changes:</p>
+<p>Walking the stack is only possible using the GraalVM APIs.
+There is a strict separation between code and data.
+Self-modifying code will not work.
+Reads, writes and pointer arithmetic on pointers to code are not supported.</p>
+    
+      <h2 id="interaction-with-system-libraries-in-native-mode">
+        
+        
+          Interaction with System Libraries in Native Mode <a href="#interaction-with-system-libraries-in-native-mode" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>In the native execution mode (the default mode), code running on the GraalVM LLVM runtime can do calls to real native libraries (for example, system libraries).
+These calls behave similar to JNI calls in Java: they temporarily leave the managed execution environment.</p>
+
+<p>Since the code executed in these libraries is not under the control of GraalVM, that code can essentially do anything.
+In particular, no multicontext isolation applies, and GraalVM APIs like the virtual filesystem are bypassed.</p>
+
+<p>Note that this applies in particular to most of the standard C library.</p>
+    
+      <h2 id="managed-execution-mode">
+        
+        
+          Managed Execution Mode <a href="#managed-execution-mode" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The managed mode (enabled with the <code>--llvm.managed</code> option) is a special execution mode where the LLVM runtime runs purely in managed mode, similar to all other GraalVM supported languages.</p>
+
+<blockquote>
+  <p>Note: The managed mode is only available in GraalVM Enterprise Edition.</p>
+</blockquote>
+
+<p>In this mode, by design, it is not allowed to call native code and access native memory.
+All memory is managed by the garbage collector, and all code that should be run needs to be compiled to bitcode.</p>
+
+<p>Pointer arithmetic is only possible to the extent allowed by the C standard.
+In particular, overflows are prevented, and it is not possible to access different allocations via out-of-bounds access.
+All such invalid accesses result in runtime exceptions rather than in undefined behavior.</p>
+
+<p>In managed mode, GraalVM simulates a virtual Linux/AMD64 operating system, with <a href="https://www.musl-libc.org/">musl libc</a> and <a href="https://libcxx.llvm.org/">libc++</a> as the C/C++ standard libraries.
+All code needs to be compiled for that system, and can then be used to run on any architecture or operating system supported by GraalVM.
+Syscalls are virtualized and routed through appropriate GraalVM APIs.</p>
+    
+      <h2 id="polyglot-interaction-between-native-code-and-managed-languages">
+        
+        
+          Polyglot Interaction Between Native Code and Managed Languages <a href="#polyglot-interaction-between-native-code-and-managed-languages" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>When using polyglot interoperability between LLVM languages (e.g., C/C++) and managed languages (e.g., JavaScript, Python, Ruby), some care must be taken with the manual memory management.
+Note that this section only applies to the native mode of execution (the default).
+In managed mode (enabled with the <code>--llvm.managed</code> option and only available in GraalVM Enterprise), the LLVM runtime itself behaves like a managed language, and the polyglot interaction is the same as between other managed languages.</p>
 
 <ul>
-  <li>Platform independent
+  <li>Garbage collection policies to be considered:
     <ul>
-      <li>Bitcode must be compiled for the generic <code>linux_x86_64</code> target using the provided musl libc library on all platforms, regardless of the actual underlying operating system.</li>
+      <li>Pointers to objects of managed languages are managed by a garbage collector, therefore they do not need to be freed manually.</li>
+      <li>On the other hand, pointers to allocations from the LLVM code (e.g., <code>malloc</code>) are not under control of the garbage collector, so they need to be deallocated manually.</li>
     </ul>
   </li>
-  <li>C++
+  <li>Unmanaged heap policies to be considered:
     <ul>
-      <li>C++ on managed mode requires GraalVM 20.1 or newer.</li>
-    </ul>
-  </li>
-  <li>Native memory and code
-    <ul>
-      <li>Calls to native functions are not possible. Thus only the functionality provided in the supplied musl libc and by the GraalVM LLVM interface is available.</li>
-      <li>Loading native libraries is not possible.</li>
-      <li>Native memory access is not possible.</li>
-    </ul>
-  </li>
-  <li>System calls
-    <ul>
-      <li>System calls with only limited support are read, readv, write, writev, open, close, dup, dup2, lseek, stat, fstat, lstat, chmod, fchmod, ioctl, fcntl, unlink, rmdir, utimensat, uname, set_tid_address, gettid, getppid, getpid, getcwd, exit, exit_group, clock_gettime, and arch_prctl.</li>
-      <li>The functionality is limited to common terminal IO, process control, and file system operations.</li>
-      <li>Some syscalls are implemented as a noop and/or return error warning that they are not available, e.g., chown, lchown, fchown, brk, rt_sigaction, sigprocmask, and futex.</li>
-    </ul>
-  </li>
-  <li>Musl libc
-    <ul>
-      <li>The musl libc library behaves differently than the more common glibc <a href="https://wiki.musl-libc.org/functional-differences-from-glibc.html">in some cases</a>.</li>
-    </ul>
-  </li>
-  <li>The stack
-    <ul>
-      <li>Accessing the stack pointer directly is not possible.</li>
-      <li>The stack is not contiguous, and accessing memory that is out of the bounds of a stack allocation (e.g., accessing neighboring stack value using pointer arithmetics) is not possible.</li>
-    </ul>
-  </li>
-  <li>Pointers into the managed heap
-    <ul>
-      <li>Reading parts of a managed pointer is not possible.</li>
-      <li>Overwriting parts of a managed pointer (e.g., using bits for pointer tagging) and subsequently dereferencing the destroyed managed pointer is not possible.</li>
-      <li>Undefined behavior in C pointer arithmetics applies.</li>
-      <li>Complex pointer arithmetics (e.g., multiplying pointers) can convert a managed pointer to an i64 value. The i64 value can be used in pointer comparisons but cannot be dereferenced.</li>
-    </ul>
-  </li>
-  <li>Floating point arithmetics
-    <ul>
-      <li>80-bit floating points only use 64-bit floating point precision.</li>
-    </ul>
-  </li>
-  <li>Dynamic linking
-    <ul>
-      <li>The interaction with the LLVM bitcode dynamic linker is not supported, e.g., dlsym/dlopen cannot be used. This does not allow to load native code.</li>
+      <li>Native memory (e.g., <code>malloc</code>, data sections, thread locals) is not under the control of a garbage collector.</li>
+      <li>Pointers to foreign objects controlled by the garbage collector can not be stored in native memory directly.</li>
+      <li>There are handle functions available to work around this limitation (see <code>graalvm/llvm/handles.h</code>).</li>
     </ul>
   </li>
 </ul>

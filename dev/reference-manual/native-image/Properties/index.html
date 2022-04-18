@@ -10,7 +10,7 @@
 
   <title>
     
-      Using System Properties in Native Images
+      Using System Properties in Native Image
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
@@ -574,7 +574,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/Properties/">
-              Using System Properties in Native Images
+              Using System Properties in Native Image
             </a>
           </li>
 
@@ -1004,84 +1004,181 @@ $(document).ready(function(){
   </ul>
 
 
-                <h1 id="using-system-properties-in-native-images">
+                <h1 id="using-system-properties-in-native-image">
         
         
-          Using System Properties in Native Images
+          Using System Properties in Native Image
         
         
       </h1>
 
-<p>Assume you have the following Java Program:</p>
+<p>Assume you have the following Java application that you have compiled using <code>javac</code>:</p>
 <pre><code class="language-java">public class App {
     public static void main(String[] args) {
         System.getProperties().list(System.out);
     }
 }
 </code></pre>
-<p>If you compile that with, e.g., <code>native-image -Dfoo=bar App</code> the system property <code>foo</code> will be available at <em>image build time</em>.
-For example, whenever you are in the <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/ImageInfo.html#inImageBuildtimeCode--">code that is part of your application but executed at image build time</a> (usually static field initializations and static initializers).
-Thus if you execute the image above it will not contain <code>foo</code> in the list of properties.</p>
+<p>If you build a native executable using <code>native-image -Dfoo=bar App</code>, the system property <code>foo</code> will be available at <em>executable build time</em>, for example, whenever you are in the <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/ImageInfo.html#inImageBuildtimeCode--">code that is part of your application but run at build time</a> (usually static field initializations and static initializers).
+Thus if you run the executable above it will not contain <code>foo</code> in the printed list of properties.</p>
 
-<p>If, on the other hand, you execute the image with <code>app -Dfoo=bar</code>, it will show <code>foo</code> in the list of properties because you specified it for <em>image run time</em>.</p>
+<p>If, on the other hand, you run the executable with <code>app -Dfoo=bar</code>, it will display <code>foo</code> in the list of properties because you specified it at <em>executable runtime</em>.</p>
 
 <p>In other words:</p>
 <ul>
-  <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> to <code>native-image</code> affects properties seen at image build time.</li>
-  <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> to an image execution affects properties seen at image run time.</li>
+  <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> as an argument to <code>native-image</code> affects properties seen at executable build time.</li>
+  <li>Passing <code>-D&lt;key&gt;=&lt;value&gt;</code> as an argument to a native executable affects properties seen at executable runtime.</li>
 </ul>
     
-      <h2 id="access-environment-variables-at-run-time">
+      <h3 id="using-system-properties-at-build-time">
         
         
-          Access Environment Variables at Run Time <a href="#access-environment-variables-at-run-time" class="anchor_heading">#</a>
+          Using System Properties at Build Time <a href="#using-system-properties-at-build-time" class="anchor_heading">#</a>
+        
+        
+      </h3>
+<p>System Properties can be read at build time and incorporated into the resulting executable file, as shown in the following example.</p>
+
+<ol>
+  <li>
+    <p>Save the following Java code into a file named <em>ReadProperties.java</em>, then compile it using <code>javac</code>:</p>
+
+    <pre><code class="language-java"> public class ReadProperties {
+     private static final String STATIC_PROPERTY_KEY = "static_key";
+     private static final String INSTANCE_PROPERTY_KEY = "instance_key";
+     private static final String STATIC_PROPERTY;
+     private final String instanceProperty;
+     static {
+         System.out.println("Getting value of static property with key: " + STATIC_PROPERTY_KEY);
+         STATIC_PROPERTY = System.getProperty(STATIC_PROPERTY_KEY);
+     }
+    
+     public ReadProperties() {
+         System.out.println("Getting value of instance property with key: " + INSTANCE_PROPERTY_KEY);
+         instanceProperty = System.getProperty(INSTANCE_PROPERTY_KEY);
+     }
+        
+     public void print() {
+         System.out.println("Value of instance property: " + instanceProperty);
+     } 
+        
+     public static void main(String[] args) {
+         System.out.println("Value of static property: " + STATIC_PROPERTY);
+         ReadProperties rp = new ReadProperties();
+         rp.print();
+     } 
+ }
+</code></pre>
+  </li>
+  <li>
+    <p>Build and run the native executable</p>
+
+    <pre><code class="language-shell"> native-image -Dstatic_key=STATIC_VALUE ReadProperties
+ ./readproperties -Dinstance_key=INSTANCE_VALUE
+</code></pre>
+
+    <p>You should see output similar to</p>
+
+    <pre><code> Getting value of static property with key: static_key
+ Value of static property: null
+ Getting value of instance property with key: instance_key
+ Value of instance property: INSTANCE_VALUE
+</code></pre>
+
+    <p>This indicates that the class static initializer was run at <strong>runtime</strong>, not at build time.</p>
+
+    <p>To force the class static initializer to run at build time, use the <code>--initialize-at-build-time</code> flag, as follows:</p>
+
+    <pre><code class="language-shell"> native-image --initialize-at-build-time=ReadProperties -Dstatic_key=STATIC_VALUE ReadProperties
+</code></pre>
+
+    <p>In the output from the <code>native-image</code> tool you should see output similar to the following</p>
+
+    <pre><code> ...
+ [1/7] Initializing...                                            (7.7s @ 0.07GB)
+ Getting value of static property with key: static_key
+ ...
+</code></pre>
+    <p>Run the executable again, as follows</p>
+
+    <pre><code class="language-shell"> ./readproperties -Dinstance_key=INSTANCE_VALUE
+</code></pre>
+
+    <p>This time you should see output similar to</p>
+
+    <pre><code> Value of static property: STATIC_VALUE
+ Getting value for instance property key: instance_key
+ Value of instance property: INSTANCE_VALUE
+</code></pre>
+
+    <p>This confirms that the static initializer was run at <strong>build time</strong>, not at runtime.</p>
+  </li>
+</ol>
+    
+      <h2 id="access-environment-variables-at-runtime">
+        
+        
+          Access Environment Variables at Runtime <a href="#access-environment-variables-at-runtime" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>Native image can also access environment variables at runtime.
+<p>NaA native executable can also access environment variables at runtime.
 Consider the following example.</p>
 
 <ol>
-  <li>Save this Java code into the <em>EnvMap.java</em> file:</li>
-</ol>
+  <li>
+    <p>Save this Java code into the <em>EnvMap.java</em> file:</p>
 
-<pre><code class="language-java">  import java.util.Map;
-  public class EnvMap {
-      public static void main (String[] args) {
-          var filter = args.length &gt; 0 ? args[0] : "";
-          Map&lt;String, String&gt; env = System.getenv();
-          for (String envName : env.keySet()) {
-              if(envName.contains(filter)) {
-                  System.out.format("%s=%s%n",
-                                    envName,
-                                    env.get(envName));
-              }
-          }
-      }
-  }
+    <pre><code class="language-java"> import java.util.Map;
+ public class EnvMap {
+     public static void main (String[] args) {
+         var filter = args.length &gt; 0 ? args[0] : "";
+         Map&lt;String, String&gt; env = System.getenv();
+         for (String envName : env.keySet()) {
+             if(envName.contains(filter)) {
+                 System.out.format("%s=%s%n",
+                                 envName,
+                                 env.get(envName));
+             }
+         }
+     }
+ }
 </code></pre>
+  </li>
+</ol>
 
 <p>This code iterates over the environment variables and prints out the ones passing through the filter, passed as the command line argument.</p>
 
 <ol>
-  <li>Compile and build a native image:</li>
-</ol>
+  <li>
+    <p>Compile and build a native executable:</p>
 
-<pre><code class="language-shell">  javac EnvMap.java
-  native-image EnvMap
+    <pre><code class="language-shell"> javac EnvMap.java
+ native-image EnvMap
 </code></pre>
+  </li>
+  <li>
+    <p>Run the resulting native executable and pass some argument, as in the example below. It will correctly print out the values of the environment variable(s). For example:</p>
 
-<ol>
-  <li>Run the resulting native image and pass some argument. It will correctly print out the values of the environment variables. For example:</li>
-</ol>
-
-<pre><code class="language-shell">  ./envmap HELLO
-  HELLOWORLD=hello world
-  export HELLOWORLD="world"
-  ./envmap HELLO
-  HELLOWORLD=world
+    <pre><code class="language-shell"> ./envmap HELLO
+ &lt;no output&gt;
+ export HELLOWORLD="Hello World!"
+ ./envmap HELLO
+ HELLOWORLD=Hello World!
 </code></pre>
+    
+      <h2 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+    <pre><code>   * [Class Initialization in Native Image](/dev/reference-manual/native-image/ClassInitialization/)
+</code></pre>
+  </li>
+</ol>
 
               </div>
 
