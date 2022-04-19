@@ -13,8 +13,8 @@ cp robots-ohc.txt robots.txt
 # This is required to point to Release Notes 22.x
 rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-21.md
 
-# Clone docs sources from graal, js, graalpython, fastr, truffleruby release/graal-vm/22.0 branch into graalvm.org
-./pull-extra.sh release/graal-vm/22.0
+# Clone docs sources from graal, js, graalpython, fastr, truffleruby release/graal-vm/22.1 branch into graalvm.org
+./pull-extra.sh release/graal-vm/22.1
 # Build the documentation version 22. The output saved in _site.
 bundle exec jekyll build --config _config_enterprise_22.yml
 
