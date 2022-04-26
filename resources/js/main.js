@@ -826,17 +826,20 @@ $(document).ready(function() {
   var version = '';
 
   switch (window.location.pathname.split('/')[1]) {
-    case '21.3':
-      version = '21.3 Release';
+    case '22.1':
+      version = '22.1 Release';
       break;
     case '22.0':
       version = '22.0 Release';
+      break;      
+    case '21.3':
+      version = '21.3 Release';
       break;
     case 'dev':
       version = 'Dev Build';
       break;
   }
-
+  
   version && $('.display-version > #valueText').html(version);
 
   // Set width for Search field input
