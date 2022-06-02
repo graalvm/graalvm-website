@@ -847,10 +847,10 @@ It can be installed with the <em>GraalVM Updater</em>:</p>
 
 <p>Alternatively, you can also download the Node.js runtime plugin installable manually and install it from a file, e.g.:</p>
 
-<pre><code class="language-shell">$ $GRAALVM/bin/gu install --file ~/Downloads/nodejs-installable-svm-java17-linux-amd64-21.3.0.jar
+<pre><code class="language-shell">$ $GRAALVM/bin/gu install --file ~/Downloads/nodejs-installable-...-.jar
 </code></pre>
 
-<p>This installs the <code>node</code> and <code>npm</code> binaries in the <code>$GRAALVM/bin</code> directory.
+<p>This installs the <code>node</code> and <code>npm</code> binaries in the <code>$GRAALVM_HOME/bin</code> directory.
 Use the <code>node</code> utility to execute Node.js applications:</p>
 <pre><code class="language-shell">node [options] [filename] [args]
 </code></pre>
@@ -858,27 +858,31 @@ Use the <code>node</code> utility to execute Node.js applications:</p>
 <p>To install a Node.js package, use the <code>npm</code> launcher from the GraalVM’s <code>/bin</code> folder.
 The <code>npm</code> command is equivalent to the default Node.js command and supports all Node.js APIs.</p>
 
-<p>1. Install the <code>colors</code> and <code>ansispan</code> packages using <code>npm install</code> as follows:</p>
-<pre><code class="language-shell">npm install colors ansispan
+<ol>
+  <li>Install the <code>colors</code> and <code>ansispan</code> packages using <code>npm install</code> as follows:
+    <pre><code class="language-shell"> npm install colors ansispan
 </code></pre>
-<p>After the packages are installed, you can use them from your application.</p>
+    <p>After the packages are installed, you can use them from your application.</p>
+  </li>
+  <li>Add the following code snippet to a file named <code>app.js</code> and save it in the same directory where you installed the Node.js packages:
+    <pre><code class="language-js"> const http = require("http");
+ const span = require("ansispan");
+ require("colors");
 
-<p>2. Add the following code snippet to a file named <code>app.js</code> and save it in the same directory where you installed the Node.js packages:</p>
-<pre><code class="language-js">const http = require("http");
-const span = require("ansispan");
-require("colors");
+ http.createServer(function (request, response) {
+     response.writeHead(200, {"Content-Type": "text/html"});
+     response.end(span("Hello Graal.js!".green));
+ }).listen(8000, function() { console.log("Graal.js server running at http://127.0.0.1:8000/".red); });
 
-http.createServer(function (request, response) {
-    response.writeHead(200, {"Content-Type": "text/html"});
-    response.end(span("Hello Graal.js!".green));
-}).listen(8000, function() { console.log("Graal.js server running at http://127.0.0.1:8000/".red); });
-
-setTimeout(function() { console.log("DONE!"); process.exit(); }, 2000);
+ setTimeout(function() { console.log("DONE!"); process.exit(); }, 2000);
 </code></pre>
-
-<p>3. Execute it on GraalVM using the <code>node</code> command as follows:</p>
-<pre><code class="language-shell">node app.js
+  </li>
+  <li>Execute it on GraalVM using the <code>node</code> command as follows:
+    <pre><code class="language-shell"> node app.js
 </code></pre>
+  </li>
+</ol>
+
 <p>For more information about running Node.js, continue to <a href="/dev/reference-manual/js/NodeJS/">Node.js Runtime</a>.
 Node.js functionality is available when an application is started from the <code>node</code> binary launcher.
 Certain limits apply when launching a Node.js application or accessing npm packages from a Java context, see <a href="/dev/reference-manual/js/NodeJSvsJavaScriptContext/">Node.js vs. Java Script Context</a>.</p>
@@ -897,7 +901,7 @@ While GraalVM is designed to run Node.js and JavaScript applications, it also pr
 <p>To enable Node.js or JavaScript interoperability with other languages, pass the <code>--jvm</code> and <code>--polyglot</code> options. For example:</p>
 
 <pre><code class="language-shell">node --jvm --polyglot
-Welcome to Node.js v12.15.0.
+Welcome to Node.js v16.14.2.
 Type ".help" for more information.
 &gt; var array = Polyglot.eval("python", "[1,2,42,4]")
 &gt; console.log(array[2]);
@@ -963,7 +967,8 @@ Hello Java!
 hello from node.js
 done
 </code></pre>
-<p>By setting the classpath, you instruct <code>node</code> to start a JVM properly. Both Node.js and JVM then run in the same process and the interoperability works using the same <code>Value</code> classes as above.</p>
+<p>By setting the classpath, you instruct <code>node</code> to start a JVM properly. 
+Both Node.js and JVM then run in the same process and the interoperability works using the same <code>Value</code> classes as above.</p>
 
 <p>Learn more about language interoperability in the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a> guide.</p>
     
