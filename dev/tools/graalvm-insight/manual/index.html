@@ -416,7 +416,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/dev/reference-manuals/">
+          <a href="/dev/reference-manual/">
             Reference Manuals
           </a>
         </li>
@@ -711,6 +711,7 @@ This provides ultimate insights into execution and behavior of one’s applicati
   <li><a href="#insight-into-c-code">Insight into C Code</a></li>
   <li><a href="#inspecting-values">Inspecting Values</a></li>
   <li><a href="#modifying-local-variables">Modifying Local Variables</a></li>
+  <li><a href="#insight-to-a-specific-location">Insight to a Specific Location</a></li>
   <li><a href="#delaying-insight-initialization-in-nodejs">Delaying Insight Initialization in Node.JS</a></li>
   <li><a href="#handling-exceptions">Handling Exceptions</a></li>
   <li><a href="#intercepting-and-altering-execution">Intercepting and Altering Execution</a></li>
@@ -925,23 +926,36 @@ In this section, you will find a Python example.</p>
 Such insights can be applied to programs written in Python or any other language.</p>
 
 <p>Here is an example of a script that prints out value of variable <code>n</code> when a function <code>minusOne</code> is called.
-Save this code to the <code>agent-fib.js</code> file:</p>
+Save this code to the <code>agent.py</code> file:</p>
+
+<pre><code class="language-python">def onEnter(ctx, frame):
+    print(f"minusOne {frame.n}")
+
+class At:
+    sourcePath = ".*agent-fib.js"
+
+class Roots:
+    roots = True
+    at = At()
+    rootNameFilter = "minusOne"
+
+insight.on("enter", onEnter, Roots())
+</code></pre>
+<p>This code uses a declarative specification of source location introduced in GraalVM 22.2. Use a dynamic <code>sourceFilter</code> with older GraalVM versions:</p>
 
 <pre><code class="language-python">def onEnter(ctx, frame):
     print(f"minusOne {frame.n}")
 
 class Roots:
     roots = True
+    rootNameFilter = "minusOne"
 
     def sourceFilter(self, src):
         return src.name == "agent-fib.js"
 
-    def rootNameFilter(self, n):
-        return n == "minusOne"
-
 insight.on("enter", onEnter, Roots())
 </code></pre>
-<p>Apply this script to, for example, a JavaScript application using the following command:</p>
+<p>Apply this script to <a href="https://github.com/oracle/graal/vm/tests/all/agentscript/agent-fib.js">agent-fib.js</a> using the following command:</p>
 
 <pre><code class="language-bash">`js --polyglot --insight=agent.py agent-fib.js`
 </code></pre>
@@ -969,34 +983,51 @@ insight.on("source", -&gt; (env) {
   puts "Ruby: observed loading of #{env.name}"
 })
 puts("Ruby: Hooks are ready!")
+</code></pre>
 
-insight.on("enter", -&gt; (ctx, frame) {
+<p>Launch a Node.js application and instrument it with the Ruby script:</p>
+
+<pre><code class="language-bash">graalvm/bin/node --js.print --experimental-options --polyglot --insight=source-tracing.rb agent-fib.js
+Ruby: Initializing GraalVM Insight script
+Ruby: Hooks are ready!
+Ruby: observed loading of node:internal/errors
+Ruby: observed loading of node:internal/util
+Ruby: observed loading of node:events
+....
+Ruby: observed loading of node:internal/modules/run_main
+Ruby: observed loading of &lt;...&gt;/agent-fib.js
+Three is the result 3
+</code></pre>
+
+<p>To track variable values, create <code>agent.rb</code> script:</p>
+<pre><code class="language-ruby">insight.on("enter", -&gt; (ctx, frame) {
+    puts("minusOne #{frame.n}")
+}, {
+  roots: true,
+  rootNameFilter: "minusOne",
+  at: {
+    sourcePath: ".*agent-fib.js"
+  }
+})
+</code></pre>
+<p>This code uses a declarative specification of source location introduced in GraalVM 22.2. Use a dynamic <code>sourceFilter</code> with older GraalVM versions:</p>
+<pre><code class="language-ruby">insight.on("enter", -&gt; (ctx, frame) {
     puts("minusOne #{frame.n}")
 }, {
   roots: true,
   rootNameFilter: "minusOne",
   sourceFilter: -&gt; (src) {
-    return src.name == "agent-fib.js"
+    return src.name == Dir.pwd+"/agent-fib.js"
   }
 })
 </code></pre>
 
-<p>The above Ruby script example prints out value of variable <code>n</code> when a function <code>minusOne</code> in the <code>agent-fib.js</code> program is called.
-Launch a Node.js application and instrument it with the Ruby script:</p>
-
-<pre><code class="language-bash">graalvm/bin/node --js.print --polyglot --insight=agent-ruby.rb agent-fib.js
-Ruby: Initializing GraalVM Insight script
-Ruby: Hooks are ready!
-Ruby: observed loading of internal/per_context/primordials.js
-Ruby: observed loading of internal/per_context/setup.js
-Ruby: observed loading of internal/per_context/domexception.js
-....
-Ruby: observed loading of internal/modules/cjs/loader.js
-Ruby: observed loading of vm.js
-Ruby: observed loading of fs.js
-Ruby: observed loading of internal/fs/utils.js
-Ruby: observed loading of [eval]-wrapper
-Ruby: observed loading of [eval]
+<p>The above Ruby script example prints out value of variable <code>n</code> when a function <code>minusOne</code> in the <a href="https://github.com/oracle/graal/vm/tests/all/agentscript/agent-fib.js">agent-fib.js</a> program is called:</p>
+<pre><code class="language-bash">graalvm/bin/node --js.print --experimental-options --polyglot --insight=agent.rb agent-fib.js
+minusOne 4
+minusOne 3
+minusOne 2
+minusOne 2
 Three is the result 3
 </code></pre>
     
@@ -1184,6 +1215,61 @@ Apply the following Insight script to “erase” non-even numbers before adding
 <p>GraalVM Insight <code>enter</code> and <code>return</code> hooks can only modify existing variables.
 They cannot introduce new ones.
 Attempts to do so yield an exception.</p>
+    
+      <h2 id="insight-to-a-specific-location">
+        
+        
+          Insight to a Specific Location <a href="#insight-to-a-specific-location" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To get to variables at a specific code location, the <code>at</code> object may have not only one of the mandatory source specifications:
+a <code>sourcePath</code> property with the regular expression matching the source file path, or <code>sourceURI</code> property with string representation of the source URI.
+There can also be an optional <code>line</code> and/or <code>column</code> specified. Let’s have a <code>distance.js</code> source file:</p>
+<pre><code class="language-js">(function(x, y) {
+    let x2 = x*x;
+    let y2 = y*y;
+    let d = Math.sqrt(x2 + y2);
+    for (let i = 0; i &lt; d; i++) {
+        // ...
+    }
+    return d;
+})(3, 4);
+</code></pre>
+
+<p>Then we can apply following <code>distance-trace.js</code> insight script to get values of variables:</p>
+<pre><code class="language-js">insight.on('enter', function(ctx, frame) {
+    print("Squares: " + frame.x2 + ", " + frame.y2);
+}, {
+    statements: true,
+    at: {
+        sourcePath: ".*distance.js",
+        line: 4
+    }
+});
+
+insight.on('enter', function(ctx, frame) {
+    print("Loop var i = " + frame.i);
+}, {
+    expressions: true,
+    at: {
+        sourcePath: ".*distance.js",
+        line: 5,
+        column: 21
+    }
+});
+</code></pre>
+<p>That gives us:</p>
+<pre><code class="language-bash">graalvm/bin/js --insight=distance-trace.js distance.js
+Squares: 9, 16
+Loop var i = 0
+Loop var i = 1
+Loop var i = 2
+Loop var i = 3
+Loop var i = 4
+Loop var i = 5
+</code></pre>
     
       <h2 id="delaying-insight-initialization-in-nodejs">
         
