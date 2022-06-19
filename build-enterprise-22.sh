@@ -1,7 +1,8 @@
-# Build GraalVM Enterprise documentation ver 22 for Oracle Help Center
 #!/bin/bash
 set -ex
 export JEKYLL_ENV=production
+
+# Build GraalVM Enterprise documentation ver 22 for Oracle Help Center
 
 # bundle config --local path vendor/bundle
 # bundle install
