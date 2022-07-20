@@ -13,7 +13,7 @@
       Embedding Languages
     
   </title>
-  <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
+  <meta name="description" content="GraalVM is a high-performance JDK distribution itten in Java and other JVM languages along with support for JavaScript, Ruby, Python, and a number of other p..."/>
   <link rel="apple-touch-icon" sizes="180x180" href="/resources/img/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/resources/img/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/resources/img/favicon/favicon-16x16.png">
@@ -368,7 +368,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -385,7 +384,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -404,7 +402,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -421,7 +418,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -440,7 +436,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -457,7 +452,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -487,11 +481,26 @@ $(document).ready(function(){
         
         
 
-
         
         
       
     
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
   
 
   
@@ -598,7 +607,7 @@ $(document).ready(function(){
   <li><a href="#lookup-java-types-from-guest-languages">Lookup Java Types from Guest Languages</a></li>
   <li><a href="#computed-arrays-using-polyglot-proxies">Computed Arrays Using Polyglot Proxies</a></li>
   <li><a href="#host-access">Host Access</a></li>
-  <li><a href="#build-native-images-from-polyglot-applications">Build Native Images from Polyglot Applications</a></li>
+  <li><a href="#build-native-executables-from-polyglot-applications">Build Native Executables from Polyglot Applications</a></li>
   <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
   <li><a href="#embed-languages-in-guest-languages">Embed languages in Guest Languages</a></li>
   <li><a href="#build-a-shell-for-many-languages">Build a Shell for Many Languages</a></li>
@@ -1789,10 +1798,11 @@ R where indices start with one.</li>
 <p>Polyglot applications offer bi-directional access between guest languages and host languages.
 As a result, you can pass Java objects to guest languages.</p>
 
-<p>Use the code example in this section with your polyglot application to show how guest languages can access primitive Java values, objects, arrays, and functional interfaces.</p>
+<p>Since the Polyglot API is secure by default, access is limited in the default configuration.
+To permit guest languages to access any public method or field of a Java object, you have to explicitly specify <code>allowAllAccess(true)</code> when the context is built.
+In this mode, the guest language code can access any resource that is accessible to host Java code.</p>
 
-<p>To permit guest languages to access any public method or field of a Java object, set <code>allowAllAccess(true)</code> when the context is built.
-In this mode, the guest language code must be fully trusted, as it can access other not explicitly exported Java methods using reflection.</p>
+<p>Use the code example in this section with your polyglot application to show how guest languages can access primitive Java values, objects, arrays, and functional interfaces.</p>
 
 <div class="tabs-below">
 
@@ -3192,7 +3202,7 @@ In order to avoid accidentally exposed methods, no host access is allowed by def
 <p>By default, a <code>Value</code> lives as long as the corresponding <code>Context</code>.
 However, it may be desireable to change this default behavior and bind a value to a scope, such that when execution leaves the scope, the value is invalidated.
 An example for such a scope are guest-to-host callbacks, where a <code>Value</code> may be passed as a callback parameter.
-We have already seen above how this works with the default <code>HostAccess.EXPLICIT</code>:</p>
+We have already seen above how passing callback parameters works with the default <code>HostAccess.EXPLICIT</code>:</p>
 
 <pre><code class="language-java">public class Services {
     Value lastResult;
@@ -3217,7 +3227,7 @@ public static void main(String[] args) {
 }
 </code></pre>
 
-<p>In this example, <code>lastResult</code> maintains a reference to the value from the guest is stored on the host and remains accessible until after the scope of <code>callback()</code> has ended.</p>
+<p>In this example, <code>lastResult</code> maintains a reference to the value from the guest that is stored on the host and remains accessible also after the scope of <code>callback()</code> has ended.</p>
 
 <p>However, this is not always desireable, as keeping the value alive may block resources unnecessarily or not reflect the behavior of ephemeral values correctly.
 For these cases, <code>HostAccess.SCOPED</code> can be used, which changes the default behavior for all callbacks, such that values that are passed as callback parameters are only valid for the duration of the callback.</p>
@@ -3300,10 +3310,10 @@ The following access parameters may be configured:</p>
   <p>Note: Granting access to class loading, native APIs, or host I/O effectively grants all access, as these privileges can be used to bypass other access restrictions.</p>
 </blockquote>
     
-      <h2 id="build-native-images-from-polyglot-applications">
+      <h2 id="build-native-executables-from-polyglot-applications">
         
         
-          Build Native Images from Polyglot Applications <a href="#build-native-images-from-polyglot-applications" class="anchor_heading">#</a>
+          Build Native Executables from Polyglot Applications <a href="#build-native-executables-from-polyglot-applications" class="anchor_heading">#</a>
         
         
       </h2>
@@ -3311,7 +3321,7 @@ The following access parameters may be configured:</p>
 <p>Polyglot embeddings can also be compiled ahead-of-time using <a href="/dev/reference-manual/native-image/">Native Image</a>.
 By default, no language is included if the Polyglot API is used.
 To enable guest languages, the <code>--language:&lt;languageId&gt;</code> (e.g., <code>--language:js</code>) option needs to be specified.
-Currently, it is required to set the <code>--initialize-at-build-time</code> option when building a polyglot native image.
+Currently, it is required to set the <code>--initialize-at-build-time</code> option when building a polyglot native executable.
 All examples on this page can be converted to native executables with the <code>native-image</code> builder.</p>
 
 <p>The following example shows how a simple HelloWorld JavaScript application can be built using <code>native-image</code>:</p>
@@ -3321,7 +3331,7 @@ native-image --language:js --initialize-at-build-time -cp . HelloPolyglot
 ./HelloPolyglot
 </code></pre>
 
-<p>It should be mentioned that you can also include a guest language into the native image, but exclude the JIT compiler by passing the <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> option to the builder.
+<p>It should be mentioned that you can also include a guest language into the native executable, but exclude the JIT compiler by passing the <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> option to the builder.
 Be aware, the flag <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime</code> has to placed <em>after</em> all the Truffle language/tool options, so that it will override the default settings.</p>
 
 <p>You can build the above example again but this time the created image will only contain the Truffle language interpreter (the Graal compiler will not be included in the image) by running:</p>
@@ -3337,7 +3347,7 @@ Be aware, the flag <code>-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.De
       </h3>
 
 <p>Accessing host Java code from the guest application requires Java reflection in order to work.
-When reflection is used within a native image, the <a href="/dev/reference-manual/native-image/Reflection/">reflection configuration file</a> is required.</p>
+When reflection is used within a native executable, the <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">reflection configuration file</a> is required.</p>
 
 <p>For this example we use JavaScript to show host access with native executables.
 Copy the following code in a new file named <code>AccessJavaFromJS.java</code>.</p>
@@ -3580,7 +3590,7 @@ public class ExecutionListenerTest {
         
       </h2>
 
-<p>On GraalVM Enterprise, a Polyglot engine can be configured to run in a dedicated native image isolate.
+<p>On GraalVM Enterprise, a Polyglot engine can be configured to run in a dedicated <code>native-image</code> isolate.
 This experimental feature is enabled with the <code>--engine.SpawnIsolate</code> option.
 An engine running in this mode executes within a VM-level fault domain with its own garbage collector and JIT compiler.
 The fact that an engine runs within an isolate is completely transparent with respect to the Polyglot API and interoperability:</p>
@@ -3631,13 +3641,21 @@ We thus strongly recommend to use <a href="#controlling-host-callback-parameter-
 
 <p>Note how we need to specify the language for the isolated engine as a parameter to <code>--engine.SpawnIsolate</code> in this case.
 The reason is that an isolated engine needs to know which set of languages should be available.
-Behind the scenes, GraalVM will then locate the corresponding native image language library.
+Behind the scenes, GraalVM will then locate the corresponding Native Image language library.
 If only a single language is selected, then the library for the language will be loaded.
 If multiple languages are selected, then <code>libpolyglot</code>, the library containing all Truffle languages shipped with GraalVM, will be loaded.
 If a matching library is not available, creation of the engine will fail.</p>
 
 <p>Only one language library can be loaded during GraalVM’s lifetime.
-This means that the first isolated engine that is created sets the default for the remainder of the execution: if an isolated engine with solely Javascript was created first, only Javascript will be available in isolated languages.</p>
+This means that the first isolated engine that is created sets the default for the remainder of the execution: if an isolated engine with solely JavaScript was created first, only JavaScript will be available in isolated engines.</p>
+    
+      <h3 id="setting-the-heap-size">
+        
+        
+          Setting the Heap Size <a href="#setting-the-heap-size" class="anchor_heading">#</a>
+        
+        
+      </h3>
     
       <h3 id="passing-native-image-runtime-options">
         
@@ -3646,7 +3664,8 @@ This means that the first isolated engine that is created sets the default for t
         
         
       </h3>
-<p>Engines running in an isolate can make use of <a href="/dev/reference-manual/native-image/HostedvsRuntimeOptions/">native image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
+
+<p>Engines running in an isolate can make use of <a href="/dev/reference-manual/native-image/contributing/HostedvsRuntimeOptions/">Native Image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
 For example, this can be used to limit the maximum heap memory used by an engine by setting the maximum heap size for the isolate via <code>--engine.IsolateOption.MaxHeapSize=128m</code>:</p>
 
 <pre><code class="language-java">import org.graalvm.polyglot.*;
@@ -3670,6 +3689,29 @@ public class PolyglotIsolateMaxHeap {
 </code></pre>
 <p>Exceeding the maximum heap size will automatically close the context and raise a <code>PolyglotException</code>.</p>
     
+      <h3 id="ensuring-host-callback-stack-headroom">
+        
+        
+          Ensuring Host Callback Stack Headroom <a href="#ensuring-host-callback-stack-headroom" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>With Polyglot Isolates, the experimental <code>--engine.HostCallStackHeadRoom</code> option can require a minimum stack size that is guaranteed when performing a host callback.
+If the available stack size drops below the specified threshold, the host callback fails.</p>
+    
+      <h3 id="memory-protection">
+        
+        
+          Memory Protection <a href="#memory-protection" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>In Linux environments that support Memory Protection Keys, the experimental <code>--engine.MemoryProtection=true</code> option can be used to isolate the heaps of Polyglot Isolates at the hardware level.
+If an engine is created with this option, a dedicated protection key will be allocated for the isolated engine’s heap.
+GraalVM will only enable access to the engine’s heap when executing code of the Polyglot Isolate.</p>
+    
       <h2 id="dependency-setup">
         
         
@@ -3691,7 +3733,7 @@ An example of this for Maven means adding the following to the <code>pom.xml</co
 &lt;/dependency&gt;
 </code></pre>
 
-<p>Additionally, when using Java modules, your <code>modue-info.java</code> file should require <code>org.graalvm.sdk</code>.</p>
+<p>Additionally, when using Java modules, your <code>module-info.java</code> file should require <code>org.graalvm.sdk</code>.</p>
 
 <pre><code class="language-java">module com.mycompany.app {
   requires org.graalvm.sdk;
@@ -3897,7 +3939,6 @@ An example of this for Maven means adding the following to the <code>pom.xml</co
     </div>
     <div class="overlay"></div>
 
-    <!-- <script src='/resources/lib/twitter-fetcher.js'></script> -->
     <script src='/resources/lib/slick-slider/slick.min.js'></script>
     <script src='/resources/js/main.js'></script>
   </body>

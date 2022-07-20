@@ -13,7 +13,7 @@
       Java Performance Examples
     
   </title>
-  <meta name="description" content="GraalVM is a high-performance JDK distribution designed to accelerate the execution of applications written in Java and other JVM languages along with suppor..."/>
+  <meta name="description" content="GraalVM is a high-performance JDK distribution itten in Java and other JVM languages along with support for JavaScript, Ruby, Python, and a number of other p..."/>
   <link rel="apple-touch-icon" sizes="180x180" href="/resources/img/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/resources/img/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/resources/img/favicon/favicon-16x16.png">
@@ -378,7 +378,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -395,7 +394,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -414,7 +412,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -431,7 +428,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -450,7 +446,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -468,7 +463,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -485,7 +479,6 @@ $(document).ready(function(){
 
         
         
-
 
         
         
@@ -588,7 +581,6 @@ $(document).ready(function(){
         
         
 
-
         
         
       
@@ -606,11 +598,26 @@ $(document).ready(function(){
         
         
 
-
         
         
       
     
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
   
 
   
@@ -723,66 +730,70 @@ The examples below demonstrate this.</p>
 This example counts the number of uppercase characters in a body of text.
 To simulate a large load, the same sentence is processed 10 million times:</p>
 
-<p>1. Save the following code snippet to a file named <code>CountUppercase.java</code>:</p>
+<ol>
+  <li>
+    <p>Save the following code snippet to a file named <code>CountUppercase.java</code>:</p>
 
-<pre><code class="language-java">public class CountUppercase {
-    static final int ITERATIONS = Math.max(Integer.getInteger("iterations", 1), 1);
-    public static void main(String[] args) {
-        String sentence = String.join(" ", args);
-        for (int iter = 0; iter &lt; ITERATIONS; iter++) {
-            if (ITERATIONS != 1) System.out.println("-- iteration " + (iter + 1) + " --");
-            long total = 0, start = System.currentTimeMillis(), last = start;
-            for (int i = 1; i &lt; 10_000_000; i++) {
-                total += sentence.chars().filter(Character::isUpperCase).count();
-                if (i % 1_000_000 == 0) {
-                    long now = System.currentTimeMillis();
-                    System.out.printf("%d (%d ms)%n", i / 1_000_000, now - last);
-                    last = now;
-                }
-            }
-            System.out.printf("total: %d (%d ms)%n", total, System.currentTimeMillis() - start);
-        }
-    }
-}
+    <pre><code class="language-java"> public class CountUppercase {
+     static final int ITERATIONS = Math.max(Integer.getInteger("iterations", 1), 1);
+     public static void main(String[] args) {
+         String sentence = String.join(" ", args);
+         for (int iter = 0; iter &lt; ITERATIONS; iter++) {
+             if (ITERATIONS != 1) System.out.println("-- iteration " + (iter + 1) + " --");
+             long total = 0, start = System.currentTimeMillis(), last = start;
+             for (int i = 1; i &lt; 10_000_000; i++) {
+                 total += sentence.chars().filter(Character::isUpperCase).count();
+                 if (i % 1_000_000 == 0) {
+                     long now = System.currentTimeMillis();
+                     System.out.printf("%d (%d ms)%n", i / 1_000_000, now - last);
+                     last = now;
+                 }
+             }
+             System.out.printf("total: %d (%d ms)%n", total, System.currentTimeMillis() - start);
+         }
+     }
+ }
+</code></pre>
+  </li>
+  <li>Compile it and run as follows:
+    <pre><code class="language-shell"> javac CountUppercase.java
+ java CountUppercase This year I would like to run ALL languages in one VM.
+ 1 (319 ms)
+ 2 (275 ms)
+ 3 (164 ms)
+ 4 (113 ms)
+ 5 (100 ms)
+ 6 (124 ms)
+ 7 (86 ms)
+ 8 (76 ms)
+ 9 (77 ms)
+ total: 69999993 (1414 ms)
 </code></pre>
 
-<p>2. Compile it and run as follows:</p>
-<pre><code class="language-shell">javac CountUppercase.java
-java CountUppercase This year I would like to run ALL languages in one VM.
-1 (319 ms)
-2 (275 ms)
-3 (164 ms)
-4 (113 ms)
-5 (100 ms)
-6 (124 ms)
-7 (86 ms)
-8 (76 ms)
-9 (77 ms)
-total: 69999993 (1414 ms)
+    <p>The warmup time depends on numerous factors like the source code or how many cores a machine has.
+ If the performance profile of <code>CountUppercase</code> on your machine does not match the above, run it for more iterations by adding <code>-Diterations=N</code> just after <code>java</code> for some <code>N</code> greater than 1.</p>
+  </li>
+  <li>Add the <code>-Dgraal.PrintCompilation=true</code> option to see statistics for the compilations:
+    <pre><code class="language-shell"> java -Dgraal.PrintCompilation=true CountUppercase This year I would like to run ALL languages in one VM.
 </code></pre>
 
-<p>The warmup time depends on numerous factors like the source code or how many cores a machine has.
-If the performance profile of <code>CountUppercase</code> on your machine does not match the above, run it for more iterations by adding <code>-Diterations=N</code> just after <code>java</code> for some <code>N</code> greater than 1.</p>
-
-<p>3. Add the <code>-Dgraal.PrintCompilation=true</code> option to see statistics for the compilations:</p>
-<pre><code class="language-shell">java -Dgraal.PrintCompilation=true CountUppercase This year I would like to run ALL languages in one VM.
+    <p>This option prints a line after each compilation that shows the method compiled, time taken, bytecodes processed (including inlined methods), size of machine code produced, and amount of memory allocated during compilation.</p>
+  </li>
+  <li>Use the <code>-XX:-UseJVMCICompiler</code> option to disable the GraalVM compiler and use the native top tier compiler in the VM to compare performance:
+    <pre><code class="language-shell"> java -XX:-UseJVMCICompiler CountUppercase This year I would like to run ALL languages in one VM.
+ 1 (492 ms)
+ 2 (441 ms)
+ 3 (443 ms)
+ 4 (470 ms)
+ 5 (422 ms)
+ 6 (382 ms)
+ 7 (407 ms)
+ 8 (425 ms)
+ 9 (343 ms)
+ total: 69999993 (4249 ms)
 </code></pre>
-
-<p>This option prints a line after each compilation that shows the method compiled, time taken, bytecodes processed (including inlined methods), size of machine code produced, and amount of memory allocated during compilation.</p>
-
-<p>4. Use the <code>-XX:-UseJVMCICompiler</code> option to disable the GraalVM compiler and use the native top tier compiler in the VM to compare performance:</p>
-<pre><code class="language-shell">java -XX:-UseJVMCICompiler CountUppercase This year I would like to run ALL languages in one VM.
-1 (492 ms)
-2 (441 ms)
-3 (443 ms)
-4 (470 ms)
-5 (422 ms)
-6 (382 ms)
-7 (407 ms)
-8 (425 ms)
-9 (343 ms)
-total: 69999993 (4249 ms)
-</code></pre>
+  </li>
+</ol>
 
 <p>The preceding example demonstrates the benefits of partial escape analysis (PEA) and advanced inlining, which combine to significantly reduce heap allocation.
 The results were obtained using Oracle GraalVM Enterprise Edition.</p>
@@ -802,107 +813,110 @@ You can simulate the Community Edition on the Enterprise Edition by adding the o
 The following example is a simplified version of the Sunflow engine core code.
 It performs calculations to blend various values for a point of light in a rendered scene.</p>
 
-<p>1. Save the following code snippet to a file named <code>Blender.java</code>:</p>
-<pre><code class="language-java">public class Blender {
+<ol>
+  <li>Save the following code snippet to a file named <code>Blender.java</code>:
+    <pre><code class="language-java"> public class Blender {
 
-    private static class Color {
-        double r, g, b;
+     private static class Color {
+         double r, g, b;
 
-        private Color(double r, double g, double b) {
-            this.r = r;
-            this.g = g;
-            this.b = b;
-        }
+         private Color(double r, double g, double b) {
+             this.r = r;
+             this.g = g;
+             this.b = b;
+         }
 
-        public static Color color() {
-            return new Color(0, 0, 0);
-        }
+         public static Color color() {
+             return new Color(0, 0, 0);
+         }
 
-        public void add(Color other) {
-            r += other.r;
-            g += other.g;
-            b += other.b;
-        }
+         public void add(Color other) {
+             r += other.r;
+             g += other.g;
+             b += other.b;
+         }
 
-        public void add(double nr, double ng, double nb) {
-            r += nr;
-            g += ng;
-            b += nb;
-        }
+         public void add(double nr, double ng, double nb) {
+             r += nr;
+             g += ng;
+             b += nb;
+         }
 
-        public void multiply(double factor) {
-            r *= factor;
-            g *= factor;
-            b *= factor;
-        }
-    }
+         public void multiply(double factor) {
+             r *= factor;
+             g *= factor;
+             b *= factor;
+         }
+     }
 
-    private static final Color[][][] colors = new Color[100][100][100];
+     private static final Color[][][] colors = new Color[100][100][100];
 
-    public static void main(String[] args) {
-        for (int j = 0; j &lt; 10; j++) {
-            long t = System.nanoTime();
-            for (int i = 0; i &lt; 100; i++) {
-                initialize(new Color(j / 20, 0, 1));
-            }
-            long d = System.nanoTime() - t;
-            System.out.println(d / 1_000_000 + " ms");
-        }
-    }
+     public static void main(String[] args) {
+         for (int j = 0; j &lt; 10; j++) {
+             long t = System.nanoTime();
+             for (int i = 0; i &lt; 100; i++) {
+                 initialize(new Color(j / 20, 0, 1));
+             }
+             long d = System.nanoTime() - t;
+             System.out.println(d / 1_000_000 + " ms");
+         }
+     }
 
-    private static void initialize(Color id) {
-        for (int x = 0; x &lt; colors.length; x++) {
-            Color[][] plane = colors[x];
-            for (int y = 0; y &lt; plane.length; y++) {
-                Color[] row = plane[y];
-                for (int z = 0; z &lt; row.length; z++) {
-                    Color color = new Color(x, y, z);
-                    color.add(id);
-                    if ((color.r + color.g + color.b) % 42 == 0) {
+     private static void initialize(Color id) {
+         for (int x = 0; x &lt; colors.length; x++) {
+             Color[][] plane = colors[x];
+             for (int y = 0; y &lt; plane.length; y++) {
+                 Color[] row = plane[y];
+                 for (int z = 0; z &lt; row.length; z++) {
+                     Color color = new Color(x, y, z);
+                     color.add(id);
+                     if ((color.r + color.g + color.b) % 42 == 0) {
                          // PEA only allocates a color object here
                          row[z] = color;
-                    } else {
+                     } else {
                          // Here the color object is not allocated at all
-                    }
-                }
-            }
-        }
-    }
-}
+                     }
+                 }
+             }
+         }
+     }
+ }
+</code></pre>
+  </li>
+  <li>Compile it and run as follows:
+    <pre><code class="language-shell"> javac Blender.java
+ java Blender
+ 1156 ms
+ 916 ms
+ 925 ms
+ 980 ms
+ 913 ms
+ 904 ms
+ 862 ms
+ 863 ms
+ 919 ms
+ 868 ms
 </code></pre>
 
-<p>2. Compile it and run as follows:</p>
-<pre><code class="language-shell">javac Blender.java
-java Blender
-1156 ms
-916 ms
-925 ms
-980 ms
-913 ms
-904 ms
-862 ms
-863 ms
-919 ms
-868 ms
+    <p>If you would like to check how it would behave when using GraalVM Community, use the following configuration flag:</p>
+    <pre><code class="language-shell"> java -Dgraal.CompilerConfiguration=community Blender
 </code></pre>
-
-<p>If you would like to check how it would behave when using GraalVM Community, use the following configuration flag:</p>
-<pre><code class="language-shell">java -Dgraal.CompilerConfiguration=community Blender
+  </li>
+  <li>Use the <code>-XX:-UseJVMCICompiler</code> option to disable the Graal compiler and run with the default HotSpot JIT compiler:
+    <pre><code class="language-shell"> java -XX:-UseJVMCICompiler Blender
+ 2546 ms
+ 2522 ms
+ 1710 ms
+ 1741 ms
+ 1724 ms
+ 1722 ms
+ 1763 ms
+ 1742 ms
+ 1714 ms
+ 1733 ms
 </code></pre>
-
-<p>3. Use the <code>-XX:-UseJVMCICompiler</code> option to disable the Graal compiler and run with the default HotSpot JIT compiler:</p>
-<pre><code class="language-shell">java -XX:-UseJVMCICompiler Blender
-2546 ms
-2522 ms
-1710 ms
-1741 ms
-1724 ms
-1722 ms
-1763 ms
-1742 ms
-1714 ms
-1733 ms
-</code></pre>
+  </li>
+</ol>
 
 <p>The performance improvement comes from the partial escape analysis moving the allocation of <code>color</code> in <code>initialize</code> down to the point where it is stored into <code>colors</code> (i.e., the point at which it escapes).</p>
 
@@ -1106,7 +1120,6 @@ java Blender
     </div>
     <div class="overlay"></div>
 
-    <!-- <script src='/resources/lib/twitter-fetcher.js'></script> -->
     <script src='/resources/lib/slick-slider/slick.min.js'></script>
     <script src='/resources/js/main.js'></script>
   </body>
