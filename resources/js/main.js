@@ -826,6 +826,9 @@ $(document).ready(function() {
   var version = '';
 
   switch (window.location.pathname.split('/')[1]) {
+    case '22.2':
+      version = '22.2 Release';
+      break;
     case '22.1':
       version = '22.1 Release';
       break;
