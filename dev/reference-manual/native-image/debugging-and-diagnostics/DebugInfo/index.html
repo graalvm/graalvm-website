@@ -773,6 +773,8 @@ The resulting image will contain debug records in a format the GNU Debugger (GDB
 Additionally, you can pass <code>-O0</code> to the builder which specifies that no compiler optimizations should be performed.
 Disabling all optimizations is not required, but in general it makes the debugging experience better.</p>
 
+<p>Debug information is not just useful to the debugger. It can also be used by the Linux performance profiling tools <code>perf</code> and <code>valgrind</code> to correlate execution statistics such as CPU utilization or cache misses with specific, named Java methods and even link them to individual lines of Java code in the original Java source file.</p>
+
 <p>By default, debug info will only include details of some of the values of parameters and local variables.
 This means that the debugger will report many parameters and local variables as being undefined. If you pass <code>-O0</code> to the builder then full debug information will be included.
 If you
@@ -789,8 +791,23 @@ However, it can significantly increase the size of the generated image on disk. 
 and local variable information by passing flag <code>-H:+SourceLevelDebug</code> can cause a program to be compiled
 slightly differently and for some applications this can slow down execution.</p>
 
+<p>The basic <code>perf report</code> command, which displays a histogram showing percentage execution time in each Java method, only requires passing flags <code>-g</code> and <code>-H:+SourceLevelDebug</code> to the <code>native-image</code> command.
+However, more sophisticated uses of <code>perf</code> (i.e. <code>perf annotate</code>) and use of
+<code>valgrind</code> requires debug info to be supplemented with linkage symbols identifying compiled Java methods.
+Java method symbols are omitted from the generated native image by default but they can be retained achieved by passing one extra flag to the <code>native-image</code> command</p>
+
+<pre><code class="language-shell">native-image -g -H:+SourceLevelDebug -H:-DeleteLocalSymbols Hello
+</code></pre>
+
+<p>Use of this flag will result in a small increase in the size of the
+resulting image file.</p>
+
 <blockquote>
   <p>Note: Native Image debugging currently works on Linux with initial support for macOS. The feature is experimental.</p>
+</blockquote>
+
+<blockquote>
+  <p>Note: Debug info support for <code>perf</code> and <code>valgrind</code> on Linux is an experimental feature.</p>
 </blockquote>
     
       <h3 id="table-of-contents">
@@ -809,6 +826,7 @@ slightly differently and for some applications this can slow down execution.</p>
   <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
   <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
   <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
+  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
 </ul>
     
       <h2 id="source-file-caching">
@@ -1573,6 +1591,172 @@ For example, calling the method below prints high-level information about the Na
 <ul>
   <li><a href="/dev/reference-manual/native-image/debugging-and-diagnostics/Debugging/">Debugging Native Image in VS Code</a></li>
 </ul>
+    
+      <h2 id="special-considerations-for-using-perf-and-valgrind">
+        
+        
+          Special Considerations for using perf and valgrind <a href="#special-considerations-for-using-perf-and-valgrind" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Debug info includes details of address ranges for top level and
+inlined compiled method code as well as mappings from code addresses
+to the corresponding source files and lines.
+<code>perf</code> and <code>valgrind</code> are able to use this information for some of
+their recording and reporting operations.
+For example, <code>perf report</code> is able to associate code adresses sampled
+during a <code>perf record</code> session with Java methods and print the
+DWARF-derived method name for the method in its output histogram.</p>
+
+<pre><code>    . . .
+    68.18%     0.00%  dirtest          dirtest               [.] _start
+            |
+            ---_start
+               __libc_start_main_alias_2 (inlined)
+               |          
+               |--65.21%--__libc_start_call_main
+               |          com.oracle.svm.core.code.IsolateEnterStub::JavaMainWrapper_run_5087f5482cc9a6abc971913ece43acb471d2631b (inlined)
+               |          com.oracle.svm.core.JavaMainWrapper::run (inlined)
+               |          |          
+               |          |--55.84%--com.oracle.svm.core.JavaMainWrapper::runCore (inlined)
+               |          |          com.oracle.svm.core.JavaMainWrapper::runCore0 (inlined)
+               |          |          |          
+               |          |          |--55.25%--DirTest::main (inlined)
+               |          |          |          |          
+               |          |          |           --54.91%--DirTest::listAll (inlined)
+               . . .
+</code></pre>
+
+<p>Unfortunately, other operations require Java methods to be identified
+by an ELF (local) function symbol table entry locating the start of
+the compiled method code.
+In particular, assembly code dumps provided by both tools identify
+branch and call targets using an offset from the nearest symbol.
+Omitting Java method symbols means that offsets are generally
+displayed relative to some unrelated global symbol, usually the entry
+point for a method exported for invocation by C code.</p>
+
+<p>As an illustration of the problem, the following excerpted output from
+<code>perf annotate</code> displays the first few annotated instructions of the
+compiled code for method <code>java.lang.String::String()</code>.</p>
+
+<pre><code>    . . .
+         : 501    java.lang.String::String():
+         : 521    public String(byte[] bytes, int offset, int length, Charset charset) {
+    0.00 :   519d50: sub    $0x68,%rsp
+    0.00 :   519d54: mov    %rdi,0x38(%rsp)
+    0.00 :   519d59: mov    %rsi,0x30(%rsp)
+    0.00 :   519d5e: mov    %edx,0x64(%rsp)
+    0.00 :   519d62: mov    %ecx,0x60(%rsp)
+    0.00 :   519d66: mov    %r8,0x28(%rsp)
+    0.00 :   519d6b: cmp    0x8(%r15),%rsp
+    0.00 :   519d6f: jbe    51ae1a &lt;graal_vm_locator_symbol+0xe26ba&gt;
+    0.00 :   519d75: nop
+    0.00 :   519d76: nop
+         : 522    Objects.requireNonNull(charset);
+    0.00 :   519d77: nop
+         : 524    java.util.Objects::requireNonNull():
+         : 207    if (obj == null)
+    0.00 :   519d78: nop
+    0.00 :   519d79: nop
+         : 209    return obj;
+    . . .
+</code></pre>
+
+<p>The leftmost column shows percentages for the amount of time recorded
+at each instruction in samples obtained during the <code>perf record</code> run.
+Each instruction is prefaced with it’s address in the program’s code
+section.
+The disassembly interleaves the source lines from which the code is
+derived, 521-524 for the top level code and 207-209 for the code
+inlined from from <code>Objects.requireNonNull()</code>.
+Also, the start of the method is labelled with the name defined in the
+DWARF debug info, <code>java.lang.String::String()</code>.
+However, the branch instruction <code>jbe</code> at address <code>0x519d6f</code> uses a
+very large offset from <code>graal_vm_locator_symbol</code>.
+The printed offset does identify the correct address relative to the
+location of the symbol.
+However, this fails to make clear that the target address actually
+lies within the compiled code range for method <code>String::String()</code> i.e. that thsi is a method-local branch.</p>
+
+<p>Readability of the tool output is significantly improved if
+option <code>-H-DeleteLocalSymbols</code> is passed to the <code>native-image</code>
+command.
+The equivalent <code>perf annotate</code> output with this option enabled is as
+follows:</p>
+
+<pre><code>    . . .
+         : 5      000000000051aac0 &lt;String_constructor_f60263d569497f1facccd5467ef60532e990f75d&gt;:
+         : 6      java.lang.String::String():
+         : 521    *          {@code offset} is greater than {@code bytes.length - length}
+         : 522    *
+         : 523    * @since  1.6
+         : 524    */
+         : 525    @SuppressWarnings("removal")
+         : 526    public String(byte[] bytes, int offset, int length, Charset charset) {
+    0.00 :   51aac0: sub    $0x68,%rsp
+    0.00 :   51aac4: mov    %rdi,0x38(%rsp)
+    0.00 :   51aac9: mov    %rsi,0x30(%rsp)
+    0.00 :   51aace: mov    %edx,0x64(%rsp)
+    0.00 :   51aad2: mov    %ecx,0x60(%rsp)
+    0.00 :   51aad6: mov    %r8,0x28(%rsp)
+    0.00 :   51aadb: cmp    0x8(%r15),%rsp
+    0.00 :   51aadf: jbe    51bbc1 &lt;String_constructor_f60263d569497f1facccd5467ef60532e990f75d+0x1101&gt;
+    0.00 :   51aae5: nop
+    0.00 :   51aae6: nop
+         : 522    Objects.requireNonNull(charset);
+    0.00 :   51aae7: nop
+         : 524    java.util.Objects::requireNonNull():
+         : 207    * @param &lt;T&gt; the type of the reference
+         : 208    * @return {@code obj} if not {@code null}
+         : 209    * @throws NullPointerException if {@code obj} is {@code null}
+         : 210    */
+         : 211    public static &lt;T&gt; T requireNonNull(T obj) {
+         : 212    if (obj == null)
+    0.00 :   51aae8: nop
+    0.00 :   51aae9: nop
+         : 209    throw new NullPointerException();
+         : 210    return obj;
+    . . .
+</code></pre>
+
+<p>In this version the start address of the method is now labelled with
+the mangled symbol name <code>String_constructor_f60263d569497f1facccd5467ef60532e990f75d</code>
+as well as the DWARF name.
+The branch target is now printed using an offset from that start
+symbol.</p>
+
+<p>Unfortunately, <code>perf</code> and <code>valgrind</code> do not correctly understand the
+mangling algorithm employed by GraalVM, nor are they currently able to
+replace the mangled name with the DWARF name in the disassembly even
+though both symbol and DWARF function data are known to identify code
+starting at the same address.
+So, the branch instruction still prints its target using a symbol plus
+offset but it is at least using the method symbol this time.</p>
+
+<p>Also, because address <code>51aac0</code> is now recognized as a method start,
+<code>perf</code> has preceded the first line of the method with 5 context lines,
+which list the tail end of the method’s javadoc comment.
+Unfortunately, perf has numbered these lines incorrectly, labelling
+the first comment with 521 rather than 516.</p>
+
+<p>Executing command <code>perf annotate</code> will provide a disassembly listing
+for all methods and C functions in the image.
+It is possible to annotate a specific method by passing it’s name as
+an argument to the perf annotate command.
+Note, however, that <code>perf</code> requries the mangled symbol name as
+argument rather than the DWARF name.
+So, in order to annotate method <code>java.lang.String::String()</code> it is
+necessary to run command <code>perf annotate
+String_constructor_f60263d569497f1facccd5467ef60532e990f75d</code>.</p>
+
+<p>The <code>valgrind</code> tool <code>callgrind</code> also requires local symbols to be
+retained in order to provide high quality output.
+When <code>callgrind</code> is used in combination with a viewer like
+<code>kcachegrind</code> it is possible to identify a great deal of valuable
+information about native image execution aand relate it back to
+specific source code lines.</p>
 
               </div>
 
