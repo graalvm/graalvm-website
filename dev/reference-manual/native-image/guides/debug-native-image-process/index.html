@@ -970,18 +970,64 @@ This will enable source-level debugging, and the debugger (GDB) then correlates 
   <li>GDB 10.1 or higher</li>
 </ul>
 
-<p>Follow the steps to test debugging a native executable with GDB. The below workflow is know to work on Linux OS with GDB 10.1.</p>
+<p>Follow the steps to test debugging a native executable with GDB. The below workflow is known to work on Linux with GDB 10.1.</p>
 
 <ol>
   <li>
     <p>Save the following code to the file named <em>GDBDemo.java</em>.</p>
+
+    <pre><code class="language-java"> public class GDBDemo {
+     static long fieldUsed = 1000;
+
+     public static void main(String[] args) {
+         if (args.length &gt; 0) {
+             int n = -1;
+             try {
+                 n = Integer.parseInt(args[0]);
+             } catch (NumberFormatException ex) {
+                 System.out.println(args[0] + " is not a number!");
+             }
+             if (n &lt; 0) {
+                 System.out.println(args[0] + " is negative.");
+             }
+             double f = factorial(n);
+             System.out.println(n + "! = " + f);
+         } 
+
+         if (false)
+             neverCalledMethod();
+
+         StringBuilder text = new StringBuilder();
+         text.append("Hello World from GraalVM Native Image and GDB in Java.\n");
+         System.out.println(text.toString());
+     }
+
+     static void neverCalledMethod() {
+         System.out.println("This method is unreachable and will not be included in the native executable.");
+     }
+
+     static double factorial(int n) {
+         if (n == 0) {
+             return 1;
+         }
+         if (n &gt;= fieldUsed) {
+             return Double.POSITIVE_INFINITY;
+         }
+         double f = 1;
+         while (n &gt; 1) {
+             f *= n--;
+         }
+         return f;
+     }
+ }
+</code></pre>
   </li>
   <li>
     <p>Compile it and generate a native executable with debug information:</p>
 
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac JFRDemo.java
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac GDBDemo.java
 </code></pre>
-    <pre><code class="language-shell"> native-image -g -O0 JFRDemo
+    <pre><code class="language-shell"> native-image -g -O0 GDBDemo
 </code></pre>
     <p>The <code>-g</code> option instructs <code>native-image</code> to generate debug information. The resulting native executable will contain debug records in a format GDB understands.</p>
 
@@ -990,7 +1036,7 @@ This will enable source-level debugging, and the debugger (GDB) then correlates 
   <li>
     <p>Launch the debugger and run your native executable:</p>
 
-    <pre><code class="language-shell"> gdb ./jfrdemo
+    <pre><code class="language-shell"> gdb ./gdbdemo
 </code></pre>
     <p>The <code>gdb</code> prompt will open.</p>
   </li>
