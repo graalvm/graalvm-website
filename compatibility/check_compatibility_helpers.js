@@ -47,7 +47,7 @@ class DB {
             if (requested_version === undefined) {
                 const versions = this.db[requested_name];
                 for (let version in versions) {
-                    if (version.startsWith('~')) {
+                    if (!version.startsWith('~')) {
                         const entry = versions[version];
                         ret.push([entry.name, version, entry.test_status, entry.pass_percentage]);
                     }
@@ -60,7 +60,7 @@ class DB {
                     const semver_match = Utilities.approximate_recommendation(requested_version);
                     if (semver_match in this.db[requested_name]) {
                         const entry = this.db[requested_name][semver_match];
-                        ret.push([entry.name, semver_match, entry.test_status, entry.pass_percentage]);
+                        ret.push([entry.name, entry.version, entry.test_status, entry.pass_percentage]);
                     } else {
                         ret.push([requested_name, requested_version, 'unknown', undefined]);
                     }
