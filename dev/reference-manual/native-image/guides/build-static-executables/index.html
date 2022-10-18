@@ -937,11 +937,11 @@ $(document).ready(function(){
 A static native executable is easy to distribute and deploy on a slim or distroless container (a scratch container).
 You can create a static native executable by statically linking it against <a href="https://musl.libc.org/">musl-libc</a>, a lightweight, fast and simple <code>libc</code> implementation.</p>
 
-<p><strong>A mostly-static native executable</strong> is a binary that links everything except the standard C library, <code>glibc</code>. This is an alternative option to staticly linking everything.
+<p><strong>A mostly-static native executable</strong> is a binary that links everything (<code>zlib</code>, JDK shared libraries) except the standard C library, <code>libc</code>. This is an alternative option to staticly linking everything. Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>.
 This approach is ideal for deployment on a distroless container image.</p>
 
 <blockquote>
-  <p>Note: This currently only works when linked against <code>glibc</code>.</p>
+  <p>Note: This currently only works when linked against <code>libc</code>.</p>
 </blockquote>
 
 <p>This guide shows how you can take advantage of Native Image linking options including fully dynamic, fully static, and mostly static (except <code>libc</code>) to generate an executable ideal for your deployment scenario.</p>
@@ -1053,8 +1053,7 @@ public class EnvMap {
         
       </h2>
 
-<p>With GraalVM Native Image you can build a mostly-static native executable that statically links everything except <code>libc</code>.
-Statically linking all your libraries except <code>glibc</code> ensures your application has all the libraries it needs to run on any Linux <code>glibc</code>-based distribution.</p>
+<p>With GraalVM Native Image you can build a mostly-static native executable that statically links everything except <code>libc</code>. Statically linking all your libraries except <code>libc</code> ensures your application has all the libraries it needs to run on any Linux <code>libc</code>-based distribution.</p>
 
 <p>To build a mostly-static native executable, use this command:</p>
 
@@ -1065,6 +1064,9 @@ Statically linking all your libraries except <code>glibc</code> ensures your app
 
 <pre><code class="language-shell">native-image -H:+StaticExecutableWithDynamicLibC EnvMap
 </code></pre>
+
+<p>This produces a native executable that statically links all involved libraries (including JDK shared libraries) except for <code>libc</code>. This includes <code>zlib</code>. Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>.
+One way to check what dynamic libraries your application depends on is to run <code>ldd</code> with the native executable, for example, <code>ldd helloworld</code>.</p>
     
       <h3 id="frequently-asked-questions">
         
@@ -1083,7 +1085,7 @@ Statically linking all your libraries except <code>glibc</code> ensures your app
       </h4>
 
 <p>A fully static native executable gives you the most flexibility to choose a base container image - it can run on anything including a <code>FROM scratch</code> image.
-A mostly-static native executable requires a container image that provides <code>glibc</code>, but has no additional requirements.
+A mostly-static native executable requires a container image that provides <code>libc</code>, but has no additional requirements.
 In both cases, choosing the base container image generally depends on your native executable’s specific requirements.</p>
     
       <h3 id="related-documentation">
