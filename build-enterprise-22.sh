@@ -16,8 +16,8 @@ cp robots-ohc.txt robots.txt
 # This is required to point to Release Notes 22.x
 rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-21.md
 
-# Clone docs sources from graal, js, graalpy, fastr, truffleruby release/graal-vm/22.3 branch into graalvm.org
-./pull-extra.sh release/graal-vm/22.3
+# Clone docs sources from graal, js, graalpython, fastr, truffleruby release/graal-vm/22.2 branch into graalvm.org
+./pull-extra.sh release/graal-vm/22.2
 # Add titles for all pages
 ruby process_front_matter.rb --add-title pages release-notes docs truffle/docs
 # Build the documentation version 22. The output saved in _site.
