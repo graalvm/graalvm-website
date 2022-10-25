@@ -16,7 +16,7 @@ cp robots-ohc.txt robots.txt
 rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-22.md
 cp toc-21.md toc.md
 
-# Clone docs sources from graal, js, graalpython, fastr, truffleruby cpu/graal-vm/21.3 branch into graalvm.org
+# Clone docs sources from graal, js, graalpy, fastr, truffleruby cpu/graal-vm/21.3 branch into graalvm.org
 ./pull-extra.sh cpu/graal-vm/21.3
 # Add titles for all pages
 ruby process_front_matter.rb --add-title pages release-notes docs truffle/docs
