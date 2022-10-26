@@ -949,12 +949,30 @@ The GraalVM Dashboard uses report files created by the native image builder. (F
 <p>Package the contents of the first implementation (<a href="https://github.com/graalvm/graalvm-demos/tree/master/fortune-demo/fortune">fortune</a>) as a native executable and review its composition.</p>
 
 <ol>
-  <li>Clone the project, build the application, and run it:
-    <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos
+  <li>Download or clone the repository and navigate into the <em>fortune-demo/fortune</em> directory:
+    <pre><code> git clone https://github.com/graalvm/graalvm-demos
  cd fortune-demo/fortune
- mvn package
- ./target/fortune
 </code></pre>
+  </li>
+  <li>Build the project:
+    <pre><code> mvn clean package
+</code></pre>
+  </li>
+  <li>When the build succeeds, run the application on the JVM with the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support">Tracing agent</a>. Since you have installed GraalVM, it will run on GraalVM JDK.
+    <pre><code> mvn -Pnative -Dagent exec:exec@java-agent
+</code></pre>
+    <p>The application will return a random saying. 
+ The agent generates the configuration files in the <code>target/native/agent-output</code> subdirectory.</p>
+  </li>
+  <li>Build a native executable of this application with GraalVM Native Image and Maven:
+    <pre><code> mvn -Pnative -Dagent package
+</code></pre>
+    <p>When the command completes, a native executable, <code>fortune</code>, is generated in the <code>/target</code> directory of the project and ready for use.</p>
+  </li>
+  <li>Run the application by launching a native executable directly:
+    <pre><code> ./target/fortune
+</code></pre>
+
     <p>The application should slowly print a random phrase.</p>
 
     <p>The application’s <a href="https://github.com/graalvm/graalvm-demos/blob/master/fortune-demo/fortune/pom.xml"><em>pom.xml</em></a> file employs the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Image Maven plugin</a> to build a native executable, configured to produce diagnostic data using these two options:</p>
@@ -1010,10 +1028,26 @@ The GraalVM Dashboard uses report files created by the native image builder. (F
 <p>The first implementation of the fortune application uses the <a href="https://github.com/FasterXML/jackson">Jackson JSON parser</a> (package <code>com.fasterxml</code>) at <strong>runtime</strong> to parse the contents of a <a href="https://github.com/graalvm/graalvm-demos/blob/master/fortune-demo/fortune/src/main/resources/fortunes.json">resource file</a> that the native image builder has included in the native executable. An alternative implementation (named “staticfortune”) parses the contents of the resource file at build time. This means that the resource file is no longer included in the executable, and the code required to parse the file is omitted from the native executable because it is only required at build time.</p>
 
 <ol>
-  <li>Build the application and run it:
-    <pre><code class="language-shell"> cd ../staticfortune
- mvn package
- ./target/staticfortune
+  <li>Change to the project directory and build the project:
+    <pre><code> cd ../staticfortune
+</code></pre>
+    <pre><code> mvn clean package
+</code></pre>
+  </li>
+  <li>Run the application on the JVM (GraalVM JDK) with the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support">Tracing agent</a>:
+    <pre><code> mvn -Pnative -Dagent exec:exec@java-agent
+</code></pre>
+    <p>The application will print a random saying. The agent generates the configuration files in the <code>target/native/agent-output</code> subdirectory.</p>
+  </li>
+  <li>Build a static native executable:
+    <pre><code> mvn -Pnative -Dagent package
+</code></pre>
+    <p>When the command completes, a native executable, <code>staticfortune</code>, is generated in the <code>/target</code> directory of the project and ready for use.</p>
+  </li>
+  <li>
+    <p>Run the demo by launching a native executable directly or with the Maven profile:</p>
+
+    <pre><code> ./target/staticfortune
 </code></pre>
     <p>The application should behave in exactly the same way as the first implementation.</p>
 
