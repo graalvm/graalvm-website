@@ -848,7 +848,7 @@ $(document).ready(function(){
       </h1>
 
 <p>TruffleRuby aims to be fully compatible with the standard implementation of
-Ruby, MRI, version 3.0.3, <a href="#c-extension-compatibility">including C extensions</a>.
+Ruby, MRI, version 3.1.2, <a href="#c-extension-compatibility">including C extensions</a>.
 TruffleRuby is still in development, so it is not 100% compatible yet.</p>
 
 <p>TruffleRuby can run Rails and is compatible with many gems, including C extensions.
@@ -971,18 +971,6 @@ The implementation should be fairly complete and passes all the specs of the <co
 In TruffleRuby threads are scheduled in parallel.
 As in JRuby and Rubinius, you are responsible for correctly synchronising access to your own shared mutable data structures, and TruffleRuby will be responsible for correctly synchronising the state of the interpreter.</p>
     
-      <h3 id="threads-detect-interrupts-at-different-points">
-        
-        
-          Threads detect interrupts at different points <a href="#threads-detect-interrupts-at-different-points" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>TruffleRuby threads may detect that they have been interrupted at different points in the program compared to where they would on MRI.
-In general, TruffleRuby seems to detect an interrupt sooner than MRI.
-JRuby and Rubinius are also different from MRI; the behavior is not documented in MRI, and it is likely to change between MRI versions, so it is not recommended to depend on interrupt points.</p>
-    
       <h3 id="fibers-do-not-have-the-same-performance-characteristics-as-in-mri">
         
         
@@ -1015,7 +1003,7 @@ These classes are implemented if it is practical to do so, but this is not alway
       </h3>
 
 <p><code>Regexp</code> instances are always immutable in TruffleRuby.
-In CRuby 3.0, all literal <code>Regexp</code> are immutable, but non-literal are still mutable.
+In CRuby 3.1, all literal <code>Regexp</code> are immutable, but non-literal are still mutable.
 This limitation means that one cannot define singleton methods on a Regexp instance, and cannot create instances of subclasses of Regexp on TruffleRuby.</p>
     
       <h2 id="features-with-subtle-differences">
@@ -1040,17 +1028,6 @@ This limitation means that one cannot define singleton methods on a Regexp insta
 
 <p>The <code>--jit</code> option and the <code>jit</code> feature have no effect on TruffleRuby and warn. The GraalVM compiler is always used when available.</p>
     
-      <h3 id="time-is-limited-to-millisecond-precision">
-        
-        
-          Time is limited to millisecond precision <a href="#time-is-limited-to-millisecond-precision" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Ruby normally provides microsecond (millionths of a second) clock precision, but TruffleRuby is currently limited to millisecond (thousands of a second) precision.
-This applies to <code>Time.now</code> and <code>Process.clock_gettime(Process::CLOCK_REALTIME)</code>.</p>
-    
       <h3 id="strings-have-a-maximum-bytesize-of-231-1">
         
         
@@ -1064,16 +1041,17 @@ The JVM enforces a maximum array size of 2<sup>31</sup>-1 (by storing the size i
 That is, Strings must be smaller than 2GB. This is the same restriction as JRuby.
 A possible workaround could be to use natively-allocated strings, but it would be a large effort to support every Ruby String operation on native strings.</p>
     
-      <h3 id="the-process-title-might-be-truncated">
+      <h3 id="threads-detect-interrupts-at-different-points">
         
         
-          The process title might be truncated <a href="#the-process-title-might-be-truncated" class="anchor_heading">#</a>
+          Threads detect interrupts at different points <a href="#threads-detect-interrupts-at-different-points" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>Setting the process title (via <code>$0</code> or <code>Process.setproctitle</code> in Ruby) is done as best-effort.
-It may not work, or the title you try to set may be truncated.</p>
+<p>TruffleRuby threads may detect that they have been interrupted at different points in the program compared to where they would on MRI.
+In general, TruffleRuby seems to detect an interrupt sooner than MRI.
+JRuby and Rubinius are also different from MRI; the behavior is not documented in MRI, and it is likely to change between MRI versions, so it is not recommended to depend on interrupt points.</p>
     
       <h3 id="polyglot-standard-io-streams">
         
@@ -1145,7 +1123,9 @@ Additionally, <code>FPE</code>, <code>ILL</code>, <code>KILL</code>, <code>SEGV<
         
       </h3>
 
-<p>Using most methods on <code>ObjectSpace</code> will temporarily lower the performance of your program.
+<p><code>ObjectSpace#each_object</code> is implemented but is fairly slow due to needing to iterate the whole heap and essentially doing the equivalent of a GC marking phase.
+<code>ObjectSpace#trace_object_allocations_start</code> slows down all allocations, similar to the behavior on CRuby.
+Using most methods on <code>ObjectSpace</code> will temporarily lower the performance of your program.
 Using them in test cases and other similar ‘offline’ operations is fine, but you probably do not want to use them in the inner loop of your production application.</p>
     
       <h3 id="set_trace_func">
@@ -1167,7 +1147,7 @@ As with <code>ObjectSpace</code>, it is recommended that you do not use this in 
         
       </h3>
 
-<p>Throwing exceptions and other operations which need to create a backtrace are slower than on MRI.
+<p>Throwing exceptions and other operations which need to create a backtrace are in general slower than on MRI.
 This is because TruffleRuby needs to undo optimizations that have been applied to run your Ruby code fast in order to recreate the backtrace entries.
 It is not recommended to use exceptions for control flow on any implementation of Ruby anyway.</p>
 
