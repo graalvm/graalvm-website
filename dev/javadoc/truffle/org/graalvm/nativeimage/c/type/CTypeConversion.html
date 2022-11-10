@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>5b9ab1879d68485b26dabe6e3104b0ba4103c048</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>93f03577d07b1bee9529816ff4d99a768812784e</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -204,8 +204,8 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/graalvm/nativeimage/c/type/CTypeConversion.html#toCString-java.lang.CharSequence-org.graalvm.nativeimage.c.type.CCharPointer-org.graalvm.word.UnsignedWord-">toCString</a></span>(<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/CharSequence.html?is-external=true" title="class or interface in java.lang">CharSequence</a>&nbsp;javaString,
          <a href="../../../../../org/graalvm/nativeimage/c/type/CCharPointer.html" title="interface in org.graalvm.nativeimage.c.type">CCharPointer</a>&nbsp;buffer,
          <a href="../../../../../org/graalvm/word/UnsignedWord.html" title="interface in org.graalvm.word">UnsignedWord</a>&nbsp;bufferSize)</code>
-<div class="block">Copies the provide <code>javaString</code> into the buffer up to the provide <code>bufferSize</code>
- bytes encoded with the default character set.</div>
+<div class="block">Copies the <code>javaString</code> into the buffer as a 0 terminated C string encoded with the
+ default character set.</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
@@ -214,7 +214,8 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
          <a href="http://docs.oracle.com/javase/17/docs/api/java/nio/charset/Charset.html?is-external=true" title="class or interface in java.nio.charset">Charset</a>&nbsp;charset,
          <a href="../../../../../org/graalvm/nativeimage/c/type/CCharPointer.html" title="interface in org.graalvm.nativeimage.c.type">CCharPointer</a>&nbsp;buffer,
          <a href="../../../../../org/graalvm/word/UnsignedWord.html" title="interface in org.graalvm.word">UnsignedWord</a>&nbsp;bufferSize)</code>
-<div class="block">Copies the <code>javaString</code> into the buffer encoded with the <code>charset</code> character set.</div>
+<div class="block">Copies the <code>javaString</code> into the buffer as a 0 terminated C string encoded with the
+ <code>charset</code> character set.</div>
 </td>
 </tr>
 <tr id="i8" class="altColor">
@@ -298,18 +299,24 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
 <pre>public static&nbsp;<a href="../../../../../org/graalvm/word/UnsignedWord.html" title="interface in org.graalvm.word">UnsignedWord</a>&nbsp;toCString(<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/CharSequence.html?is-external=true" title="class or interface in java.lang">CharSequence</a>&nbsp;javaString,
                                      <a href="../../../../../org/graalvm/nativeimage/c/type/CCharPointer.html" title="interface in org.graalvm.nativeimage.c.type">CCharPointer</a>&nbsp;buffer,
                                      <a href="../../../../../org/graalvm/word/UnsignedWord.html" title="interface in org.graalvm.word">UnsignedWord</a>&nbsp;bufferSize)</pre>
-<div class="block">Copies the provide <code>javaString</code> into the buffer up to the provide <code>bufferSize</code>
- bytes encoded with the default character set.
+<div class="block">Copies the <code>javaString</code> into the buffer as a 0 terminated C string encoded with the
+ default character set.
  <p>
- In case the string is larger than the <code>buffer</code>, the <code>bufferSize</code> bytes are
- copied.</div>
+ When a nullptr is passed as the buffer and the buffer size is zero, then no copying is
+ performed but the byte-sized length of the <code>javaString</code> is still returned.
+ <p>
+ In case the string is larger than the <code>buffer</code>, then an
+ <code>IllegalArgumentException</code> is thrown.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>javaString</code> - managed Java string</dd>
-<dd><code>buffer</code> - to store the bytes of javaString encoded with charset</dd>
-<dd><code>bufferSize</code> - size of the buffer</dd>
+<dd><code>buffer</code> - to store the bytes of 0 terminated javaString encoded with the default charset
+            or a nullptr</dd>
+<dd><code>bufferSize</code> - size of the buffer or 0 when the buffer is a nullptr</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>number of bytes copied to the buffer</dd>
+<dd>the byte-sized length of the <code>javaString</code> when represented as a C string
+         encoded with the default character set. This length does not include the 0
+         terminator.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>19.0</dd>
 </dl>
@@ -325,18 +332,24 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
                                      <a href="http://docs.oracle.com/javase/17/docs/api/java/nio/charset/Charset.html?is-external=true" title="class or interface in java.nio.charset">Charset</a>&nbsp;charset,
                                      <a href="../../../../../org/graalvm/nativeimage/c/type/CCharPointer.html" title="interface in org.graalvm.nativeimage.c.type">CCharPointer</a>&nbsp;buffer,
                                      <a href="../../../../../org/graalvm/word/UnsignedWord.html" title="interface in org.graalvm.word">UnsignedWord</a>&nbsp;bufferSize)</pre>
-<div class="block">Copies the <code>javaString</code> into the buffer encoded with the <code>charset</code> character set.
+<div class="block">Copies the <code>javaString</code> into the buffer as a 0 terminated C string encoded with the
+ <code>charset</code> character set.
  <p>
- In case the string is larger than the <code>buffer</code>, the <code>bufferSize</code> bytes are
- copied.</div>
+ When a nullptr is passed as the buffer and the buffer size is zero, then no copying is
+ performed but the byte-sized length of the <code>javaString</code> is still returned.
+ <p>
+ In case the string is larger than the <code>buffer</code>, then an
+ <code>IllegalArgumentException</code> is thrown.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>javaString</code> - managed Java string</dd>
 <dd><code>charset</code> - desired character set for the returned string</dd>
-<dd><code>buffer</code> - to store the bytes of javaString encoded with charset</dd>
-<dd><code>bufferSize</code> - size of the buffer</dd>
+<dd><code>buffer</code> - to store the bytes of 0 terminated javaString encoded with charset or a nullptr</dd>
+<dd><code>bufferSize</code> - size of the buffer or 0 when the buffer is a nullptr</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>number of bytes copied to the buffer</dd>
+<dd>the byte-sized length of the <code>javaString</code> when represented as C string encoded
+         with the <code>charset</code> character set. This length does not include the 0
+         terminator.</dd>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>19.0</dd>
 </dl>
@@ -537,7 +550,7 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>5b9ab1879d68485b26dabe6e3104b0ba4103c048</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>93f03577d07b1bee9529816ff4d99a768812784e</div>
 </div>
 <div class="subNav">
 <ul class="navList">
