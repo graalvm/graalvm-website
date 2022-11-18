@@ -853,3 +853,34 @@ $(document).ready(function() {
       $(this).attr('size', $(this).val().length)
   });
 });
+
+// Copy to clipboard
+
+const copyButtonLabel = "Copy";
+
+// Only add a button if browser supports Clipboard API
+if (navigator.clipboard) {
+
+  let blocks = document.querySelectorAll("pre");
+
+  blocks.forEach((block) => {
+    let button = document.createElement("button");
+    button.innerText = copyButtonLabel;
+    button.addEventListener("click", copyCode);
+    block.appendChild(button);
+  });
+}
+
+async function copyCode(event) {
+  const button = event.srcElement;
+  const pre = button.parentElement;
+  let code = pre.querySelector("code");
+  let text = code.innerText;
+  await navigator.clipboard.writeText(text);
+
+  button.innerText = "Copied";
+
+  setTimeout(() => {
+    button.innerText = copyButtonLabel;
+  }, 1000)
+}
