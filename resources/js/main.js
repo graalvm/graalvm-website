@@ -454,7 +454,6 @@ if (sidebar) {
   });
 }
 
-
 // Video popup
 var modal = document.getElementById('video-view');
 var btnsArray = document.querySelectorAll(".js-popup");
@@ -806,7 +805,7 @@ function selected(val, version) {
    var lastPart = window.location.pathname.split('/').splice(2).join('/');
 
    if (lastPart.search(/\d\d_\d/) === 0) {
-     if (version === 'dev')
+     if (version === 'latest' || version === 'dev')
      {
        location = '/' + version + '/';
        return;
@@ -826,6 +825,9 @@ $(document).ready(function() {
   var version = '';
 
   switch (window.location.pathname.split('/')[1]) {
+    case 'latest':
+      version = 'Latest';
+      break;
     case '22.3':
       version = '22.3 Release';
       break;

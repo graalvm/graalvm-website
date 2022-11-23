@@ -330,18 +330,17 @@ $(document).ready(function(){
     <span class="arrow arrow-down" id="arrowControl"></span>
   </div>
   <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-    <li class="select-option" onclick="selected('Release 22.3', '22.3');">22.3 Release</li>
-    <li class="select-option" onclick="selected('Release 22.2', '22.2');">22.2 Release</li>
-    <li class="select-option" onclick="selected('Release 22.1', '22.1');">22.1 Release</li>
-    <li class="select-option" onclick="selected('Release 22.0', '22.0');">22.0 Release</li>
-    <li class="select-option" onclick="selected('Release 21.3', '21.3');">21.3 Release</li>
+    <li class="select-option" onclick="selected('Latest', 'latest');">Latest</li>
+    <li class="select-option" onclick="selected('22.3 Release', '22.3');">22.3 Release</li>
+    <li class="select-option" onclick="selected('22.2 Release', '22.2');">22.2 Release</li>
+    <li class="select-option" onclick="selected('22.1 Release', '22.1');">22.1 Release</li>
+    <li class="select-option" onclick="selected('22.0 Release', '22.0');">22.0 Release</li>
+    <li class="select-option" onclick="selected('21.3 Release', '21.3');">21.3 Release</li>
     <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
   </ul>
 </div>
 
 <ul class="toc-bullets">
-
-  
 
   
 
@@ -1037,16 +1036,48 @@ for record in handler.this.logged:
         
       </h2>
 
-<p>The other way to use Jython is to embed it into Java applications.
-Where above GraalVM’s Python runtime offered some measure of compatibility with existing Jython code, nothing is offered in this case.
-Existing code using Jython depends directly on the Jython package (for example, in the Maven configuration), because the Java code has references to Jython internal classes such as <code>PythonInterpreter</code>.</p>
+<p>The other way to use Jython is to embed it into Java applications.</p>
 
-<p>For GraalVM’s Python runtime, no dependency other than on the <a href="https://mvnrepository.com/artifact/org.graalvm.sdk/graal-sdk">GraalVM SDK</a> is required.
-There are no APIs particular to Python that are exposed, and everything is done through the GraalVM API.</p>
+<p>There are two options for embedding Jython in a Java application.
+One it to use the <code>PythonInterpreter</code> object that Jython provides.
+Existing code using Jython n this manner depends directly on the Jython package (for example, in the Maven configuration), because the Java code has references to Jython internal classes.
+These classes do not exist in GraalVM, and no equivalent classes are exposed.
+To migrate from this usage, switch to the <a href="https://mvnrepository.com/artifact/org.graalvm.sdk/graal-sdk">GraalVM SDK</a>.
+Using this SDK, no APIs particular to Python are exposed, everything is done through the GraalVM API, with maximum configurability of the Python runtime.</p>
 
-<p>It is important to note that as long as your application is executed on GraalVM with the Python language installed,
-you can embed Python in your programs.
-For more details, refer to the <a href="/dev/reference-manual/embed-languages/">Embed Languages</a> guide.</p>
+<p>The other option to embed Jython in Java is via <a href="https://www.jcp.org/en/jsr/detail?id=223">JSR 223</a> by using the classes of the the <code>javax.script</code> package, and, in particular, via the <code>ScriptEngine</code> class.
+We do not recommend this approach, since the <code>ScriptEngine</code> APIs are not a clean fit for the options and capabilities of GraalVM Python.
+However, to migrate existing code, the NetBeans project provides packages on Maven Central to help here.
+Remove Jython and add the following dependencies instead (using a Maven <code>pom.xml</code> as an example):</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+  &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
+  &lt;artifactId&gt;org-netbeans-libs-graalsdk&lt;/artifactId&gt;
+  &lt;version&gt;RELEASE150&lt;/version&gt; &lt;!-- or any later release --&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+  &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
+  &lt;artifactId&gt;org-netbeans-api-scripting&lt;/artifactId&gt;
+  &lt;version&gt;RELEASE150&lt;/version&gt; &lt;!-- or any later release --&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>Afterwards, basic usage of GraalVM’s Python can be achieved by replacing</p>
+
+<pre><code class="language-java">ScriptEngine python = new ScriptEngineManager().getEngineByName("python");
+`` 
+
+with
+
+```java
+import org.netbeans.api.scripting.Scripting;
+// ...
+ScriptEngineManager manager = Scripting.newBuilder().allowAllAccess(true).build();
+ScriptEngine python = manager.getEngineByName("GraalVM:python");
+</code></pre>
+
+<p>It is important to note that either of those options will only work if your application is executed on GraalVM with the Python language installed.
+For more details, refer to the <a href="https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md">Embed Languages</a> guide.</p>
 
             </div>
 

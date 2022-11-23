@@ -12,6 +12,6 @@ cp robots-original.txt robots.txt
 ./pull-extra.sh master
 ruby process_front_matter.rb --add-title pages release-notes
 ruby process_front_matter.rb --add-title --version-permalinks --add-redirects docs truffle/docs
-bundle exec jekyll build --config _config_community.yml
+bundle exec jekyll build --config _config_community_dev.yml
 
 # Use ./serve.sh to serve the website without rebuilding

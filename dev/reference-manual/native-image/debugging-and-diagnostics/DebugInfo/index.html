@@ -329,18 +329,17 @@ $(document).ready(function(){
     <span class="arrow arrow-down" id="arrowControl"></span>
   </div>
   <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-    <li class="select-option" onclick="selected('Release 22.3', '22.3');">22.3 Release</li>
-    <li class="select-option" onclick="selected('Release 22.2', '22.2');">22.2 Release</li>
-    <li class="select-option" onclick="selected('Release 22.1', '22.1');">22.1 Release</li>
-    <li class="select-option" onclick="selected('Release 22.0', '22.0');">22.0 Release</li>
-    <li class="select-option" onclick="selected('Release 21.3', '21.3');">21.3 Release</li>
+    <li class="select-option" onclick="selected('Latest', 'latest');">Latest</li>
+    <li class="select-option" onclick="selected('22.3 Release', '22.3');">22.3 Release</li>
+    <li class="select-option" onclick="selected('22.2 Release', '22.2');">22.2 Release</li>
+    <li class="select-option" onclick="selected('22.1 Release', '22.1');">22.1 Release</li>
+    <li class="select-option" onclick="selected('22.0 Release', '22.0');">22.0 Release</li>
+    <li class="select-option" onclick="selected('21.3 Release', '21.3');">21.3 Release</li>
     <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
   </ul>
 </div>
 
 <ul class="toc-bullets">
-
-  
 
   
 
@@ -916,6 +915,7 @@ In the second case, the classpath entries for <em>apps/target/hello.jar</em> and
   <li>access through object networks via path expressions</li>
   <li>reference by name to methods and static field data</li>
   <li>reference by name to values bound to parameter and local vars</li>
+  <li>reference by name to class constants</li>
 </ul>
 
 <p>Note that single stepping within a compiled method includes file and line number info for inlined code, including inlined GraalVM methods.
@@ -1163,6 +1163,44 @@ end
 
 (gdb) hubname $1
 0x8779c8:	"[Ljava.lang.String;"
+</code></pre>
+
+<p>The native image heap contains a unique hub object (i.e. instance of
+<code>java.lang.Class</code>) for every Java type that is included in the
+image. It is possible to refer to these class constants using the
+standard Java class literal syntax:</p>
+
+<pre><code>(gdb) print 'Hello.class'
+$6 = {
+  &lt;java.lang.Object&gt; = {
+    &lt;_objhdr&gt; = {
+      hub = 0xaabd00,
+      idHash = 1589947226
+    }, &lt;No data fields&gt;}, 
+  members of java.lang.Class:
+  typeCheckStart = 13,
+  name = 0xbd57f0,
+  ...
+</code></pre>
+
+<p>Unfortunately it is necessary to quote the class constant literal to
+avoid gdb interpreting the embedded <code>.</code> character as a field access.</p>
+
+<p>Note that the type of a class constant literal is <code>java.lang.Class</code>
+rather than <code>java.lang.Class *</code>.</p>
+
+<p>Class constants exist for Java instance classes, interfaces, array
+classes and arrays, including primitive arrays:</p>
+
+<pre><code>(gdb)  print 'java.util.List.class'.name
+$7 = (java.lang.String *) 0xb1f698
+(gdb) print 'java.lang.String[].class'.name-&gt;value-&gt;data
+$8 = 0x8e6d78 "[Ljava.lang.String;"
+(gdb) print 'long.class'.name-&gt;value-&gt;data
+$9 = 0xc87b78 "long"
+(gdb) x/s  'byte[].class'.name-&gt;value-&gt;data
+0x925a00:	"[B"
+(gdb) 
 </code></pre>
 
 <p>Interface layouts are modelled as C++ union types.
