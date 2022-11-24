@@ -826,22 +826,19 @@ $(document).ready(function() {
 
   switch (window.location.pathname.split('/')[1]) {
     case 'latest':
-      version = 'Latest';
-      break;
-    case '22.3':
-      version = '22.3 Release';
+      version = 'Latest (22.3)';
       break;
     case '22.2':
-      version = '22.2 Release';
+      version = '22.2';
       break;
     case '22.1':
-      version = '22.1 Release';
+      version = '22.1';
       break;
     case '22.0':
-      version = '22.0 Release';
+      version = '22.0';
       break;      
     case '21.3':
-      version = '21.3 Release';
+      version = '21.3';
       break;
     case 'dev':
       version = 'Dev Build';
