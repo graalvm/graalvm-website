@@ -951,10 +951,10 @@ For example, if you use <code>java.util.logging.FileHandler</code> then provide 
 </code></pre>
 <p>For more details, see <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">Reflection Support</a>.</p>
     
-      <h2 id="build-time-logger-initialization">
+      <h2 id="initializing-a-logger-at-build-time">
         
         
-          Build-Time Logger Initialization <a href="#build-time-logger-initialization" class="anchor_heading">#</a>
+          Initializing a Logger at Build Time <a href="#initializing-a-logger-at-build-time" class="anchor_heading">#</a>
         
         
       </h2>
@@ -962,21 +962,21 @@ For example, if you use <code>java.util.logging.FileHandler</code> then provide 
 <p>The logger can be initialized at executable build time with a custom <em>logging.properties</em> configuration file, as illustrated in following example.</p>
 
 <ol>
-  <li>Save the following Java code into a file named <em>BuildTimeLoggerInit.java</em>, then compile it using <code>javac</code>:
+  <li>Save the following Java code into a file named <em>LoggerBuildTimeInit.java</em>, then compile it using <code>javac</code>:
     <pre><code class="language-java"> import java.io.IOException;
  import java.util.logging.Level;
  import java.util.logging.LogManager;
  import java.util.logging.Logger;
 
- public class BuildTimeLoggerInit {
+ public class LoggerBuildTimeInit {
      private static final Logger LOGGER;
      static {
          try {
-             LogManager.getLogManager().readConfiguration(BuildTimeLoggerInit.class.getResourceAsStream("/logging.properties"));
+             LogManager.getLogManager().readConfiguration(LoggerBuildTimeInit.class.getResourceAsStream("/logging.properties"));
          } catch (IOException | SecurityException | ExceptionInInitializerError ex) {
-             Logger.getLogger(BuildTimeLoggerInit.class.getName()).log(Level.SEVERE, "Failed to read logging.properties file", ex);
+             Logger.getLogger(LoggerBuildTimeInit.class.getName()).log(Level.SEVERE, "Failed to read logging.properties file", ex);
          }
-         LOGGER = Logger.getLogger(BuildTimeLoggerInit.class.getName());
+         LOGGER = Logger.getLogger(LoggerBuildTimeInit.class.getName());
      }
 
      public static void main(String[] args) throws IOException {
@@ -986,17 +986,17 @@ For example, if you use <code>java.util.logging.FileHandler</code> then provide 
 </code></pre>
   </li>
   <li>
-    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>BuildTimeLoggerInit.java</em>.</p>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>LoggerBuildTimeInit.java</em>.</p>
   </li>
   <li>
     <p>Build and run the native executable</p>
 
-    <pre><code class="language-shell"> native-image BuildTimeLoggerInit --initialize-at-build-time=BuildTimeLoggerInit
- ./buildtimeloggerinit
+    <pre><code class="language-shell"> native-image LoggerBuildTimeInit --initialize-at-build-time=LoggerBuildTimeInit
 </code></pre>
-
-    <p>It should produce output that looks similar to</p>
-    <pre><code> WARNING: Danger, Will Robinson! [Wed May 18 17:20:39 BST 2022]
+    <pre><code class="language-shell"> ./loggerbuildtimeinit
+</code></pre>
+    <p>It should produce output that looks similar to:</p>
+    <pre><code class="language-shell"> WARNING: Danger, Will Robinson! [Wed May 18 17:20:39 BST 2022]
 </code></pre>
 
     <p>This demonstrates that the <em>logging.properties</em> file is processed at when the executable is built.
@@ -1007,46 +1007,45 @@ Unless your application needs to process a custom <em>logging.properties</em> co
   </li>
 </ol>
     
-      <h2 id="runtime-logger-initialization">
+      <h2 id="initializing-a-logger-at-run-time">
         
         
-          Runtime Logger Initialization <a href="#runtime-logger-initialization" class="anchor_heading">#</a>
+          Initializing a Logger at Run Time <a href="#initializing-a-logger-at-run-time" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>The logger can also be initialized at runtime, as shown in the following example.</p>
+<p>The logger can also be initialized at run time, as shown in the following example.</p>
 
 <ol>
   <li>
-    <p>Save the following Java code into a file named <em>RuntimeLoggerInit.java</em>, then compile it using <code>javac</code>:</p>
+    <p>Save the following Java code into a file named <em>LoggerRunTimeInit.java</em>, then compile it using <code>javac</code>:</p>
 
     <pre><code class="language-java"> import java.io.IOException;
  import java.util.logging.Level;
  import java.util.logging.LogManager;
  import java.util.logging.Logger;
     
- public class RuntimeLoggerInit {
+ public class LoggerRunTimeInit {
      public static void main(String[] args) throws IOException {
-         LogManager.getLogManager().readConfiguration(RuntimeLoggerInit.class.getResourceAsStream("/logging.properties"));
-         Logger logger = Logger.getLogger(RuntimeLoggerInit.class.getName());
+         LogManager.getLogManager().readConfiguration(LoggerRunTimeInit.class.getResourceAsStream("/logging.properties"));
+         Logger logger = Logger.getLogger(LoggerRunTimeInit.class.getName());
          logger.log(Level.WARNING, "Danger, Will Robinson!");
      }
  }
 </code></pre>
   </li>
   <li>
-    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>RuntimeLoggerInit.java</em>.</p>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>LoggerRunTimeInit.java</em>.</p>
   </li>
   <li>
     <p>Build and run the native executable</p>
 
-    <pre><code class="language-shell"> native-image RuntimeLoggerInit -H:IncludeResources="logging.properties"
- ./runtimeloggerinit
+    <pre><code class="language-shell"> native-image LoggerRunTimeInit -H:IncludeResources="logging.properties"
 </code></pre>
-
-    <p>It should produce output that looks similar to</p>
-
+    <pre><code class="language-shell"> ./loggerruntimeinit
+</code></pre>
+    <p>It should produce output that looks similar to:</p>
     <pre><code> WARNING: Danger, Will Robinson! [Wed May 18 17:22:40 BST 2022]
 </code></pre>
 
