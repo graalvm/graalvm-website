@@ -822,27 +822,12 @@ function selected(val, version) {
 }
 
 $(document).ready(function() {
-  var version = '';
 
-  switch (window.location.pathname.split('/')[1]) {
-    case 'latest':
-      version = 'Latest (22.3)';
-      break;
-    case '22.2':
-      version = '22.2';
-      break;
-    case '22.1':
-      version = '22.1';
-      break;
-    case '22.0':
-      version = '22.0';
-      break;      
-    case '21.3':
-      version = '21.3';
-      break;
-    case 'dev':
-      version = 'Dev Build';
-      break;
+  var version = window.location.pathname.split('/')[1];
+  if (version === "latest") {
+      version = "Latest";
+  } else if (version === "dev") {
+      version = "Dev Build";
   }
   
   version && $('.display-version > #valueText').html(version);
