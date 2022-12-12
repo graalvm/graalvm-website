@@ -10,7 +10,7 @@
 
   <title>
     
-      Build a Spring Boot Application into a Native Executable
+      Build a Native Executable from a Spring Boot 3 Application
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution written for Java and other JVM languages, along with support for JavaScript, Ruby, Python, and several other p..."/>
@@ -500,7 +500,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/guides/build-spring-boot-app-into-native-executable/">
-              Build a Spring Boot Application into a Native Executable
+              Build a Native Executable from a Spring Boot 3 Application
             </a>
           </li>
 
@@ -918,252 +918,300 @@ $(document).ready(function(){
   </ul>
 
 
-                <h1 id="build-a-spring-boot-application-into-a-native-executable">
+                <h1 id="build-a-native-executable-from-a-spring-boot-3-application">
         
         
-          Build a Spring Boot Application into a Native Executable
+          Build a Native Executable from a Spring Boot 3 Application
         
         
       </h1>
 
-<p>To package a Spring Boot application into a native executable, you need to use <strong>Spring Native</strong>, and add <strong>Maven/Gradle plugin for GraalVM Native Image (Native Build Tools)</strong> to automate the process.</p>
+<p>With the built-in support for GraalVM Native Image in Spring Boot 3, superseding the experimental <a href="https://docs.spring.io/spring-native/docs/current/reference/htmlsingle/#overview">Spring Native project</a>, it has become much easier to compile a Spring Boot 3 application into a native executable.</p>
 
+<p>There are two ways to generate a native executable from a Spring Boot application:</p>
 <ul>
-  <li>
-    <p><a href="https://docs.spring.io/spring-native/docs/current/reference/htmlsingle/#overview">Spring Native</a> project provides support for compiling Spring applications ahead-of-time using GraalVM Native Image and eventually packaging them into lightweight containers. The target is to support any Spring applications, almost unmodified.</p>
-  </li>
-  <li>
-    <p><a href="https://graalvm.github.io/native-build-tools/">Native Build Tools</a> provide Maven and Gradle plugins to add support for building Java applications into native executables and testing them using <a href="https://maven.apache.org/">Apache Maven™</a>. These plugins are maintained by the GraalVM team.</p>
-  </li>
+  <li><a href="https://docs.spring.io/spring-boot/docs/3.0.0/reference/html/native-image.html#native-image.developing-your-first-application.buildpacks">Using Buildpacks</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/">Using GraalVM Native Build Tools</a></li>
 </ul>
 
-<p>In this guide you will learn how to use Spring Native and the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Maven plugin for GraalVM Native Image</a> to add basic support and build a native executable for a Spring Boot application.</p>
+<p>This guide focuses on using the <a href="https://graalvm.github.io/native-build-tools/">Native Build Tools</a> plugins shipped by GraalVM for both Maven and Gradle. You can use them to perform a variety of GraalVM tasks.</p>
+
+<p>For more information about using BuildPacks to create a native executable, see <a href="https://docs.spring.io/spring-boot/docs/3.0.0/reference/html/native-image.html#native-image.developing-your-first-application.buildpacks">Building a Native Image Using Buildpacks</a>.</p>
+
+<blockquote>
+  <p>Note: To use the Native Build Tools, first install GraalVM. The easiest way to install GraalVM is to use the <a href="https://github.com/graalvm/graalvm-jdk-downloader">GraalVM JDK Downloader</a>: <code>bash &lt;(curl -sL https://get.graalvm.org/jdk)</code>.</p>
+</blockquote>
     
-      <h3 id="note-on-a-sample-application">
+      <h2 id="create-a-sample-application">
         
         
-          Note on a Sample Application <a href="#note-on-a-sample-application" class="anchor_heading">#</a>
+          Create a Sample Application <a href="#create-a-sample-application" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
-<p>For the demo part, we will use a minimal REST-based API application, built on top of Spring Boot:</p>
+<p>As a demonstration, this guide uses a minimal REST-based API application, built on top of Spring Boot 3:</p>
 
 <ul>
-  <li><code>com.example.demo.DemoApplication</code>: the main Spring Boot class that defines the HTTP endpoint.</li>
-  <li><code>com.example.demo.Jabberwocky</code>: a utility class that implements the logic of the application.</li>
+  <li><code>com.example.jibber.JibberApplication</code>: the main Spring Boot class.</li>
+  <li><code>com.example.jibber.Jabberwocky</code>: a utility class that implements the logic of the application.</li>
+  <li><code>com.example.jibber.JibberController</code>: a REST controller which serves as an entry-point for HTTP requests.</li>
 </ul>
 
-<p>If we call the HTTP endpoint, <code>/jibber</code>, it will return some nonsense verse generated in the style of the Jabberwocky poem, by Lewis Carroll. 
+<p>If you call the HTTP endpoint, <code>/jibber</code>, it will return some nonsense verse generated in the style of the Jabberwocky poem, by Lewis Carroll. 
 The program achieves this by using a Markov Chain to model the original poem (this is essentially a statistical model). 
 This model generates a new text.
 The example application provides the text of the poem, then generates a model of the text, which the application then uses to generate a new text that is similar to the original text. 
-The application uses the <code>RiTa</code> library as an external dependency to build and use Markov Chains.</p>
+The application uses the <a href="https://rednoise.org/rita/">RiTa library</a> as an external dependency to build and use Markov Chains.</p>
 
-<p>The <code>pom.xml</code> file was generated using <a href="https://start.spring.io/">Spring Initializr</a> with Spring Native Tools added as a feature.</p>
-
-<p>Now we will go step-by-step explaining what necessary dependencies should be added to successfully convert a Spring Boot application into a native executable.</p>
+<p>Now follow these steps to create a Spring Boot REST-based application and compile it into a native executable.</p>
 
 <ol>
   <li>
-    <p>Clone the demo:</p>
+    <p>Create a sample Spring Boot Java project:</p>
 
-    <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos.git
-</code></pre>
-    <p>Find <strong>spring-native-image</strong> and open the demo folder in your favourite code editor or IDE.
- Open the Maven configuration file, <code>pom.xml</code>, to review what necessary dependencies were added.</p>
+    <ul>
+      <li>
+        <p>Go to <a href="https://start.spring.io/">start.spring.io</a> and select the following values:</p>
+
+        <p><img src="/docs/reference-manual/native-image/assets/spring_initializr.png" alt="Spring Initializr" /></p>
+
+        <p>Make sure you add the <strong>GraalVM Native Support</strong> dependency, and name the artifact and project “jibber”.</p>
+      </li>
+      <li>
+        <p>Click <strong>GENERATE</strong>. Spring Initializr creates an application with the default package <code>com.example</code> in a directory named <em>jibber</em>. The application ZIP file will be downloaded in your default downloads directory.</p>
+      </li>
+      <li>
+        <p>Unzip it, open it in your code editor, and proceed to the next steps.</p>
+      </li>
+    </ul>
   </li>
   <li>
-    <p>Find the <a href="https://docs.spring.io/spring-native/docs/current/reference/htmlsingle/#spring-aot">Spring AOT plugin</a> added to the default build configuration in plugins section. It performs ahead-of-time transformations of a Spring application into a native executable.</p>
+    <p>Open the Maven configuration file, <em>pom.xml</em>, and notice the <code>native-maven-plugin</code> plugin added:</p>
 
-    <pre><code class="language-xml"> &lt;plugin&gt;
-     &lt;groupId&gt;org.springframework.experimental&lt;/groupId&gt;
-     &lt;artifactId&gt;spring-aot-maven-plugin&lt;/artifactId&gt;
-     &lt;version&gt;${spring-native.version}&lt;/version&gt;
-     &lt;executions&gt;
-         &lt;execution&gt;
-             &lt;id&gt;test-generate&lt;/id&gt;
-             &lt;goals&gt;
-                 &lt;goal&gt;test-generate&lt;/goal&gt;
-             &lt;/goals&gt;
-         &lt;/execution&gt;
-         &lt;execution&gt;
-             &lt;id&gt;generate&lt;/id&gt;
-             &lt;goals&gt;
-                 &lt;goal&gt;generate&lt;/goal&gt;
-             &lt;/goals&gt;
-         &lt;/execution&gt;
-     &lt;/executions&gt;
- &lt;/plugin&gt;
+    <pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
+    &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
+&lt;/plugin&gt;
 </code></pre>
-    <p>This is the first dependency that you have add to your Spring Boot projects if you plan to target GraalVM Native Image.</p>
+
+    <p>This is the only dependency that you have to add to your Spring Boot 3 project to enable <a href="https://graalvm.github.io/native-build-tools/latest/index.html">Native Build Tools</a>, which provide a variety of GraalVM tasks.</p>
+
+    <p>This demonstration application uses the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Maven plugin for GraalVM Native Image building</a>, but if your project is built with Gradle, substitute with  <code>native-gradle-plugin</code>.</p>
+
+    <p>Another important thing is to ensure that your <em>pom.xml</em> file uses <code>spring-boot-starter-parent</code>. You should have a <code>&lt;parent&gt;</code> element that looks like this:</p>
+
+    <pre><code class="language-xml">&lt;parent&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-parent&lt;/artifactId&gt;
+    &lt;version&gt;3.0.0&lt;/version&gt;
+&lt;/parent&gt;
+</code></pre>
+
+    <p>The <code>spring-boot-starter-parent</code> parent declares the <code>native</code> profile (as well as others, for example, <code>nativeTest</code>) that configures the executions needed to build a native executable. Then you can activate a profile using the <code>-P</code> option on the command line.</p>
   </li>
-  <li>Notice the Spring Native dependency in  <code>&lt;dependencies&gt;</code> section, which provides native configuration APIs and other mandatory classes required to run a Spring application as a native executable. You need to specify it explicitly only with Maven.
+  <li>
+    <p>The application uses the <a href="https://rednoise.org/rita/">RiTa library</a> as an external dependency to build and use Markov Chains. Insert the following in the <code>&lt;dependency&gt;</code> element of your <em>pom.xml</em> file:</p>
+
     <pre><code class="language-xml"> &lt;dependency&gt;
-     &lt;groupId&gt;org.springframework.experimental&lt;/groupId&gt;
-     &lt;artifactId&gt;spring-native&lt;/artifactId&gt;
-     &lt;version&gt;${spring-native.version}&lt;/version&gt;
+     &lt;groupId&gt;org.rednoise&lt;/groupId&gt;
+     &lt;artifactId&gt;rita&lt;/artifactId&gt;
+     &lt;version&gt;2.4.501&lt;/version&gt;
  &lt;/dependency&gt;
 </code></pre>
-    <p>This is another required dependency.</p>
   </li>
   <li>
-    <p>See the required repositories added for Maven:</p>
+    <p>Create a utility class named <code>Jabberwocky</code> (in a file named <em>Jabberwocky.java</em>) in the same location as the main class <em>src/main/java/com/example/jibber/</em> with the following content:</p>
 
-    <ul>
-      <li>
-        <p>The repository for the <code>spring-native</code> dependency:</p>
+    <pre><code class="language-java"> package com.example.jibber;
 
-        <pre><code class="language-xml"> &lt;repositories&gt;
-     &lt;repository&gt;
-         &lt;id&gt;spring-release&lt;/id&gt;
-         &lt;name&gt;Spring release&lt;/name&gt;
-         &lt;url&gt;https://repo.spring.io/release&lt;/url&gt;
-         &lt;snapshots&gt;
-             &lt;enabled&gt;false&lt;/enabled&gt;
-         &lt;/snapshots&gt;
-     &lt;/repository&gt;
- &lt;/repositories&gt;
+ import org.springframework.context.annotation.Scope;
+ import org.springframework.stereotype.Service;
+ import rita.RiMarkov;
+
+ @Service
+ @Scope("singleton")
+ public class Jabberwocky {
+
+     private RiMarkov r;
+
+     public Jabberwocky() {
+         loadModel();
+     }
+
+     private void loadModel() {
+
+         String text = "’Twas brillig, and the slithy toves " +
+                 "Did gyre and gimble in the wabe:" +
+                 "All mimsy were the borogoves, " +
+                 "And the mome raths outgrabe. " +
+                 "Beware the Jabberwock, my son! " +
+                 "The jaws that bite, the claws that catch! " +
+                 "Beware the Jubjub bird, and shun " +
+                 "The frumious Bandersnatch! " +
+                 "He took his vorpal sword in hand; " +
+                 "Long time the manxome foe he sought— " +
+                 "So rested he by the Tumtum tree " +
+                 "And stood awhile in thought. " +
+                 "And, as in uffish thought he stood, " +
+                 "The Jabberwock, with eyes of flame, " +
+                 "Came whiffling through the tulgey wood, " +
+                 "And burbled as it came! " +
+                 "One, two! One, two! And through and through " +
+                 "The vorpal blade went snicker-snack! " +
+                 "He left it dead, and with its head " +
+                 "He went galumphing back. " +
+                 "And hast thou slain the Jabberwock? " +
+                 "Come to my arms, my beamish boy! " +
+                 "O frabjous day! Callooh! Callay!” " +
+                 "He chortled in his joy. " +
+                 "’Twas brillig, and the slithy toves " +
+                 "Did gyre and gimble in the wabe: " +
+                 "All mimsy were the borogoves, " +
+                 "And the mome raths outgrabe.";
+         this.r = new RiMarkov(3);
+         this.r.addText(text);
+     }
+
+     public String generate() {
+         return generate(10);
+     }
+
+     public String generate(final int numLines) {
+         String[] lines = this.r.generate(numLines);
+         StringBuffer b = new StringBuffer();
+         for (int i=0; i&lt; lines.length; i++) {
+             b.append(lines[i]);
+             b.append("&lt;br/&gt;\n");
+         }
+         return b.toString();
+     }
+
+ }
 </code></pre>
-      </li>
-      <li>
-        <p>The plugin’s repository for the Spring AOT plugin:</p>
-
-        <pre><code class="language-xml"> &lt;pluginRepositories&gt;
-     &lt;pluginRepository&gt;
-         &lt;id&gt;spring-release&lt;/id&gt;
-         &lt;name&gt;Spring release&lt;/name&gt;
-         &lt;url&gt;https://repo.spring.io/release&lt;/url&gt;
-         &lt;snapshots&gt;
-             &lt;enabled&gt;false&lt;/enabled&gt;
-         &lt;/snapshots&gt;
-     &lt;/pluginRepository&gt;
- &lt;/pluginRepositories&gt;
-</code></pre>
-      </li>
-    </ul>
+    <p>It is a Singleton class that generates nonsense verse in the style of the poem Jabberwocky, by Lewis Carroll. It does this using a Markov Chain to model the text of the original poem.</p>
   </li>
   <li>
-    <p>So far you learned how to configure build of Spring applications specifically. The next step is adding the Maven plugin for GraalVM Native Image that is a common requirement for any Java application. Find the <code>org.graalvm.buildtools:native-maven-plugin</code> plugin configuration in <code>pom.xml</code>:</p>
+    <p>Create a REST controller class named <code>JibberController</code> (in a file named <em>JibberController.java</em>), which serves as an entry-point for HTTP requests in the directory <em>src/main/java/com/example/jibber/</em>. Add the following content:</p>
 
-    <pre><code class="language-xml"> &lt;plugin&gt;
-     &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
-     &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
-     &lt;version&gt;${native-buildtools.version}&lt;/version&gt;
-     &lt;executions&gt;
-         &lt;execution&gt;
-             &lt;id&gt;build-native&lt;/id&gt;
-             &lt;phase&gt;package&lt;/phase&gt;
-             &lt;goals&gt;
-                 &lt;goal&gt;build&lt;/goal&gt;
-             &lt;/goals&gt;
-         &lt;/execution&gt;
-     &lt;/executions&gt;
-     &lt;configuration&gt;
-         &lt;imageName&gt;${binary-name}&lt;/imageName&gt;
-         &lt;skip&gt;${skip-native-build}&lt;/skip&gt;
-         &lt;buildArgs&gt;
-             &lt;buildArg&gt;-H:+ReportExceptionStackTraces ${native-image-extra-flags}&lt;/buildArg&gt;
-         &lt;/buildArgs&gt;
-     &lt;/configuration&gt;
- &lt;/plugin&gt;
-</code></pre>
+    <pre><code class="language-java"> package com.example.jibber;
 
-    <p>Notice how we pass the configuration arguments to the underlying <code>native-image</code> tool using the <code>&lt;buildArgs&gt;</code> section. In individual <code>buildArg</code> tags, you can pass all Native Image parameters as you would pass them to the <code>native-image</code> tool on the command line.</p>
-  </li>
-  <li>
-    <p>To avoid classes clash between Spring Boot packaging and the <code>native-maven-plugin</code> build, we customized a Spring Boot classifier:</p>
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.http.ResponseEntity;
+ import org.springframework.web.bind.annotation.*;
 
-    <ul>
-      <li>Included <code>&lt;repackage.classifier/&gt;</code> into project’s general properties:
-        <pre><code class="language-xml">  &lt;properties&gt;
-      &lt;java.version&gt;17&lt;/java.version&gt;
-      &lt;repackage.classifier/&gt;
-      &lt;spring-native.version&gt;0.11.4&lt;/spring-native.version&gt;
-  &lt;/properties&gt;
-</code></pre>
-      </li>
-      <li>Modified <code>native</code> profile so to include <code>repackage.classifier</code>:
-        <pre><code class="language-xml">  &lt;profiles&gt;
-      &lt;profile&gt;
-          &lt;id&gt;native&lt;/id&gt;
-          &lt;properties&gt;
-              &lt;repackage.classifier&gt;exec&lt;/repackage.classifier&gt;
-          &lt;/properties&gt;
-          ...
-      &lt;/profile&gt;
-  &lt;/profiles&gt;
-</code></pre>
-      </li>
-      <li>Modified the <code>spring-boot-maven-plugin</code> configuration to include the classifier:
-        <pre><code class="language-xml">  &lt;plugin&gt;
-      &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-      &lt;artifactId&gt;spring-boot-maven-plugin&lt;/artifactId&gt;
-      &lt;configuration&gt;
-          &lt;classifier&gt;${repackage.classifier}&lt;/classifier&gt;
-          &lt;image&gt;
-              &lt;builder&gt;paketobuildpacks/builder:tiny&lt;/builder&gt;
-              &lt;env&gt;
-                  &lt;BP_NATIVE_IMAGE&gt;true&lt;/BP_NATIVE_IMAGE&gt;
-              &lt;/env&gt;
-          &lt;/image&gt;
-      &lt;/configuration&gt;
-  &lt;/plugin&gt;
-</code></pre>
-      </li>
-    </ul>
+ @RestController
+ @RequestMapping("/jibber")
+ public class JibberController {
 
-    <p>This Spring Boot application is now ready to be built and compiled ahead-of-time into a native executable.</p>
-  </li>
-  <li>
-    <p>From a console window, enter the application root directory and build the application:</p>
+     @Autowired
+     Jabberwocky j;
 
-    <pre><code class="language-shell"> cd graalvm-demos/spring-native-image &amp;&amp; mvn clean package
-</code></pre>
-    <p>This will generate a runnable JAR file that contains all of the application’s dependencies and also a correctly configured <code>MANIFEST</code> file.</p>
+     @RequestMapping
+     ResponseEntity&lt;String&gt; jibber() {
+         return ResponseEntity.ok(j.generate());
+     }
 
-    <p>As a nice extra, there is also a <a href="https://github.com/graalvm/graalvm-demos/blob/master/spring-native-image/Dockerfiles/Dockerfile">Dockerfile</a> provided with this demo. 
- So, besides building the application JAR, you see a Docker image being built at <code>mvn clean package</code> step, pulling the GraalVM container image, <code>ghcr.io/graalvm/jdk:ol8-java17</code>, as the JVM.</p>
-
-    <p>You can also test running this application from a JAR:</p>
-    <pre><code class="language-shell"> java -jar ./target/benchmark-jibber-0.0.1-SNAPSHOT.jar &amp;
-</code></pre>
-    <p>where <code>&amp;</code> brings the application to the background.
- Call the endpoint:</p>
-    <pre><code class="language-shell"> curl http://localhost:8080/jibber
-</code></pre>
-    <p>Bring the app back to the foreground and terminate:</p>
-    <pre><code class="language-shell"> fg
- ctrl+C
-</code></pre>
-  </li>
-  <li>
-    <p>Next build a native executable for this Spring Boot application using the Maven profile:</p>
-
-    <pre><code class="language-shell"> mvn package -Dnative
-</code></pre>
-    <p>It will generate a native executable for the platform in the target directory, called <code>jibber</code>.</p>
-  </li>
-  <li>
-    <p>Run the application from a native executable. Execute the following command in your terminal and put it into the background, using <code>&amp;</code>:</p>
-
-    <pre><code class="language-shell"> ./target/jibber &amp;
-</code></pre>
-    <p>Call the endpoint to test it using the <code>curl</code> command:</p>
-
-    <pre><code class="language-shell"> curl http://localhost:8080/jibber
-</code></pre>
-    <p>Notice how fast this native version of your Spring Boot application starts. It also uses fewer resources than running from JAR.</p>
-
-    <p>You should get some nonsense verse back. To terminate it, first bring the application to the foreground, <code>fg</code> and kill <code>&lt;ctrl-c&gt;</code>.</p>
-
-    <p>Last, check the executable file size to compare the footprint:</p>
-    <pre><code class="language-shell"> ls -lh target/jibber
+     @RequestMapping(value = "/{number}")
+     ResponseEntity&lt;String&gt; jibberN(@PathVariable int number) {
+         return ResponseEntity.ok(j.generate(number));
+     }
+ }
 </code></pre>
   </li>
 </ol>
 
-<p>You can further “shrink” this native executable by <a href="/dev/reference-manual/native-image/guides/containerise-native-executable-and-run-in-docker-container/">containerising and running it from a Docker container</a>.</p>
+<p>This application is now ready to be built and compiled ahead-of-time into a native executable.</p>
+    
+      <h2 id="generate-a-native-executable-using-the-maven-profile">
+        
+        
+          Generate a Native Executable Using the Maven Profile <a href="#generate-a-native-executable-using-the-maven-profile" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<ol>
+  <li>
+    <p>Run the following command:</p>
+
+    <pre><code class="language-shell"> ./mvnw native:compile -Pnative
+</code></pre>
+    <p>It will generate a native executable for your platform in the <em>target</em> directory, called <em>jibber</em>.</p>
+  </li>
+  <li>
+    <p>Run this native executable and put it into the background, by appending <code>&amp;</code>:</p>
+
+    <pre><code class="language-shell"> ./target/jibber &amp;
+</code></pre>
+    <p>Open the application <a href="http://localhost:8080/jibber">http://localhost:8080/jibber</a> in a browser to test it, or call the endpoint using <code>curl</code>:</p>
+
+    <pre><code class="language-shell"> curl http://localhost:8080/jibber
+</code></pre>
+    <p>You should get some nonsense verse back. 
+ To terminate it, first bring the application to the foreground using <code>fg</code>, and then enter <code>&lt;CTRL-c&gt;</code>.</p>
+  </li>
+</ol>
+
+<p>As an experiment, compare the startup time when running this application from a JAR file:</p>
+
+<ol>
+  <li>
+    <p>Recompile the application:</p>
+
+    <pre><code class="language-shell"> ./mvnw clean package
+</code></pre>
+    <p>It generates a runnable JAR file with all dependencies.</p>
+  </li>
+  <li>
+    <p>Run the application from the JAR file:</p>
+
+    <pre><code class="language-shell"> java -jar ./target/jibber-0.0.1-SNAPSHOT.jar
+</code></pre>
+    <p>Notice how much quicker the native executable version of this Spring Boot application starts. It also uses fewer resources than running from a JAR file.</p>
+  </li>
+</ol>
+    
+      <h2 id="configure-native-build-tools-maven-plugin">
+        
+        
+          Configure Native Build Tools Maven Plugin <a href="#configure-native-build-tools-maven-plugin" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>You can configure the Maven plugin for GraalVM Native Image using the <code>&lt;buildArgs&gt;</code> elements. 
+In individual <code>&lt;buildArg&gt;</code> elements, you can pass all Native Image options as you would pass them to the <code>native-image</code> tool on the command line. 
+For example, pass the <code>-Ob</code> (capital “O”, lower case “b”) option which enables the quick build mode for development purposes. 
+Also change the resulting binary name to “new-jibber”.</p>
+
+<ol>
+  <li>
+    <p>Open <em>pom.xml</em> and modify the <code>native-maven-plugin</code> configuration as follows:</p>
+
+    <pre><code class="language-xml"> &lt;plugin&gt;
+     &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
+     &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
+     &lt;configuration&gt;
+         &lt;imageName&gt;new-jibber&lt;/imageName&gt;
+         &lt;buildArgs&gt;
+             &lt;buildArg&gt;-Ob&lt;/buildArg&gt;
+         &lt;/buildArgs&gt;
+     &lt;/configuration&gt;
+ &lt;/plugin&gt;
+</code></pre>
+  </li>
+  <li>
+    <p>Now re-build the native executable using the <code>native</code> profile:</p>
+
+    <pre><code class="language-shell"> ./mvnw native:compile -Pnative
+</code></pre>
+
+    <p>Notice that a native executable, now named <code>new-jibber</code>, was generated in less time: the compiler operated in economy mode with fewer optimizations, resulting in much faster compilation times. (The quick build mode is not recommended for production.)</p>
+  </li>
+</ol>
+
+<p>See the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Build Tools Maven plugin documentation</a> to learn more.</p>
     
       <h3 id="related-documentation">
         
@@ -1175,9 +1223,9 @@ The application uses the <code>RiTa</code> library as an external dependency to 
 
 <ul>
   <li>Run an interactive lab: <a href="https://luna.oracle.com/lab/fdfd090d-e52c-4481-a8de-dccecdca7d68">GraalVM Native Image, Spring and Containerisation</a>. This lab will also show how to create small Distroless containers to package your GraalVM Native Image native executables in, allowing you to shrink your Docker Images even further.</li>
-  <li>Package a Spring application to lightweight Docker container containing a native executable with <a href="https://docs.spring.io/spring-native/docs/current/reference/htmlsingle/#getting-started-buildpacks">Spring Boot Buildpacks</a>.</li>
-  <li>Learn more about the <a href="https://docs.spring.io/spring-native/docs/current/reference/htmlsingle/#getting-started">Spring Native project</a>.</li>
-  <li>Read more about <a href="https://graalvm.github.io/native-build-tools/">Native Build Tools</a>.</li>
+  <li><a href="/dev/reference-manual/native-image/guides/containerise-native-executable-and-run-in-docker-container/">Containerise a Native Executable and Run in a Docker Container</a></li>
+  <li><a href="https://docs.spring.io/spring-boot/docs/3.0.0/reference/html/native-image.html#native-image.introducing-graalvm-native-images">Spring Boot Support for GraalVM Native Image</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/">Native Build Tools</a></li>
 </ul>
 
               </div>
