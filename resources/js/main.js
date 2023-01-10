@@ -868,3 +868,89 @@ async function copyCode(event) {
     button.innerText = copyButtonLabel;
   }, 1000)
 }
+
+// //w3 option for filtering
+// filterSelection("all")
+// function filterSelection(c) {
+//   var x, i;
+//   x = document.getElementsByClassName("filterDiv");
+//   if (c == "all") c = "";
+//   // Add the "show" class (display:block) to the filtered elements, and remove the "show" class from the elements that are not selected
+//   for (i = 0; i < x.length; i++) {
+//     w3RemoveClass(x[i], "show");
+//     if (x[i].className.indexOf(c) > -1) w3AddClass(x[i], "show");
+//   }
+// }
+
+// // Show filtered elements
+// function w3AddClass(element, name) {
+//   var i, arr1, arr2;
+//   arr1 = element.className.split(" ");
+//   arr2 = name.split(" ");
+//   for (i = 0; i < arr2.length; i++) {
+//     if (arr1.indexOf(arr2[i]) == -1) {
+//       element.className += " " + arr2[i];
+//     }
+//   }
+// }
+
+// // Hide elements that are not selected
+// function w3RemoveClass(element, name) {
+//   var i, arr1, arr2;
+//   arr1 = element.className.split(" ");
+//   arr2 = name.split(" ");
+//   for (i = 0; i < arr2.length; i++) {
+//     while (arr1.indexOf(arr2[i]) > -1) {
+//       arr1.splice(arr1.indexOf(arr2[i]), 1);
+//     }
+//   }
+//   element.className = arr1.join(" ");
+// }
+
+// // Add active class to the current control button (highlight it)
+// var btnContainer = document.getElementById("myBtnContainer");
+// var btns = btnContainer.getElementsByClassName("filtertab");
+// for (var i = 0; i < btns.length; i++) {
+//   btns[i].addEventListener("click", function() {
+//     var current = document.getElementsByClassName("active-filter");
+//     current[0].className = current[0].className.replace(" active-filter", "");
+//     this.className += " active-filter";
+//   });
+// }
+
+// ________Filters on the "guides" page___________
+$(".filter-item").click(function() {
+  $(this).addClass("active-filter").siblings().removeClass("active-filter");
+});
+
+$(document).ready(function () {
+  function filterItems(moduleFilterValue) {
+    let filterString = `.${moduleFilterValue}`
+
+    $(".guides-box")
+        .not(filterString)
+        .hide("1000");
+    $(".guides-box")
+        .filter(filterString)
+        .show("1000");
+  }
+
+  $(".filter-item").click(function () {
+      const moduleFilterValue = $(".filter-item.module-filter.active-filter").attr("data-filter");
+      filterItems(moduleFilterValue)
+       const langValue = new URLSearchParams(window.location.search).get('lang') || 'java';
+
+       window.history.pushState("", window.location.title, `?guide=${moduleFilterValue}`);
+  });
+  function setFilters() {
+    const params = new URLSearchParams(window.location.search);
+    const moduleFilterValue =params.get('module') || 'all';
+
+    const moduleFilterElement = $(`.module-filter[data-filter=${moduleFilterValue}]`);
+    moduleFilterElement.addClass("active-filter").siblings().removeClass("active-filter");
+
+    filterItems(moduleFilterValue);
+  }
+  setFilters();
+});
+// ________end of the "guides" page___________
