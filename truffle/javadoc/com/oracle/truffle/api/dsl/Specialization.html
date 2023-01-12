@@ -38,7 +38,7 @@
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>5be01a6f49b7671a274c848393a1dc34e179602c</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>fe73df906031fa986dc54335a55803cb30f70aec</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -238,6 +238,12 @@ public @interface <span class="memberNameLabel">Specialization</span></pre>
 <div class="block">
  Declares an event guards that trigger re-specialization in case an exception is thrown in the
  specialization body.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../com/oracle/truffle/api/dsl/Specialization.html#unroll--">unroll</a></span></code>
+<div class="block">Instructs the specialization to unroll a specialization with multiple instances.</div>
 </td>
 </tr>
 </table>
@@ -520,7 +526,7 @@ public @interface <span class="memberNameLabel">Specialization</span></pre>
 <li class="blockList"><a name="limit--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>limit</h4>
 <pre>public abstract&nbsp;<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;limit</pre>
@@ -579,6 +585,82 @@ public @interface <span class="memberNameLabel">Specialization</span></pre>
 </ul>
 </li>
 </ul>
+<ul class="blockList">
+<li class="blockList"><a name="unroll--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>unroll</h4>
+<pre>public abstract&nbsp;int&nbsp;unroll</pre>
+<div class="block">Instructs the specialization to unroll a specialization with multiple instances. Unrolling
+ causes fields of the inline cache to be directly stored in the node instead of a chained
+ inline cache. At most 8 instances of a specialization can be unrolled to avoid code explosion
+ in the interpreter.
+ <p>
+ A common use-case for this feature is to unroll the first instance of an inline cache. It is
+ often the case that specializations with multiple instances are instantiated only once. By
+ unrolling the first instance we can optimize for this common situation which may lead to
+ footprint and interpreter performance improvements.
+ <p>
+ This feature is prone to cause inefficiencies if used too aggressively. Extra care should be
+ taken, e.g. the generated code should be inspected and profiled to verify that the new code
+ is better than the previous version.
+ <p>
+ Consider the following example:
+
+ <pre>
+ class MyNode extends Node {
+
+     static int limit = 2;
+
+     abstract int execute(int value);
+
+     &#64;Specialization(guards = "value == cachedValue", limit = "limit", unroll = 1)
+     int doDefault(int value,
+                     &#64;Cached("value") int cachedValue) {
+         return value;
+     }
+
+ }
+ </pre>
+
+ In this example we unroll the first instance of an inline cache on <code>int</code> values.
+ This is equivalent to manually specifying the following specializations:
+
+ <pre>
+ class MyUnrollNode extends Node {
+
+     static int limit = 2;
+
+     abstract int execute(int value);
+
+     &#64;Specialization(guards = "value == cachedValue", limit = "1")
+     int doUnrolled0(int value,
+                     &#64;Cached("value") int cachedValue) {
+         return value;
+     }
+
+     &#64;Specialization(guards = "value == cachedValue", limit = "limit - 1")
+     int doDefault(int value,
+                     &#64;Cached("value") int cachedValue) {
+         return value;
+     }
+ }
+
+ </pre></div>
+<dl>
+<dt><span class="simpleTagLabel">Since:</span></dt>
+<dd>23.0</dd>
+</dl>
+<dl>
+<dt>Default:</dt>
+<dd>0</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
 </li>
 </ul>
 </div>
@@ -601,7 +683,7 @@ public @interface <span class="memberNameLabel">Specialization</span></pre>
 <li><a href="../../../../../index-all.html">Index</a></li>
 <li><a href="../../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>5be01a6f49b7671a274c848393a1dc34e179602c</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.0.0-dev</b><br>fe73df906031fa986dc54335a55803cb30f70aec</div>
 </div>
 <div class="subNav">
 <ul class="navList">
