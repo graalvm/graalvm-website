@@ -938,13 +938,12 @@ $(document).ready(function () {
   $(".filter-item").click(function () {
       const moduleFilterValue = $(".filter-item.module-filter.active-filter").attr("data-filter");
       filterItems(moduleFilterValue)
-       const langValue = new URLSearchParams(window.location.search).get('lang') || 'java';
 
-       window.history.pushState("", window.location.title, `?guide=${moduleFilterValue}`);
+       window.history.pushState("", window.location.title, `?topic=${moduleFilterValue}`);
   });
   function setFilters() {
     const params = new URLSearchParams(window.location.search);
-    const moduleFilterValue =params.get('module') || 'all';
+    const moduleFilterValue =params.get('topic') || 'all';
 
     const moduleFilterElement = $(`.module-filter[data-filter=${moduleFilterValue}]`);
     moduleFilterElement.addClass("active-filter").siblings().removeClass("active-filter");
