@@ -1,0 +1,86 @@
+/*
+ * Copyright and related rights waived via CC0
+ *
+ * You should have received a copy of the CC0 legalcode along with this
+ * work. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+ */
+
+
+plugins {
+    id 'org.graalvm.internal.tck-base'
+    id 'checkstyle'
+    id 'java-library'
+    id 'org.graalvm.buildtools.native'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+        vendor = JvmVendorSpec.GRAAL_VM
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 17
+}
+
+checkstyle {
+    configFile tck.repoRoot.file("gradle/checkstyle.xml").get().asFile
+}
+
+tasks.register("checkstyle") {
+    description = "Runs all checkstyle tasks"
+    group = JavaBasePlugin.VERIFICATION_GROUP
+    dependsOn tasks.withType(Checkstyle)
+}
+
+String metadataPath = Objects.requireNonNullElse(
+		System.getenv("GVM_TCK_MD"),
+		providers.gradleProperty('metadata.dir').get()
+)
+
+File metadataFile
+if (!metadataPath.startsWith("/")) {
+	metadataFile = file(tck.metadataRoot).toPath().resolve(metadataPath).toFile()
+} else {
+    metadataFile = file(metadataPath)
+}
+
+String libraryVersion = System.getenv("GVM_TCK_LV") ?: providers.gradleProperty('library.version').get()
+
+String libraryGAV = System.getenv("GVM_TCK_LC") ?: providers.gradleProperty('library.coordinates').getOrElse(null)
+libraryGAV = libraryGAV ?: ""
+
+String overrideVal = System.getenv("GVM_TCK_EXCLUDE") ?: providers.gradleProperty('library.override').getOrElse(null)
+overrideVal = overrideVal ?: "false"
+boolean override = overrideVal.toBoolean()
+
+tck.testedLibraryVersion = libraryVersion
+// This value can be used to request specific library version to test with.
+
+dependencies {
+    testImplementation(platform(libs.test.junit.bom))
+    testImplementation(libs.test.junit.jupiter.core)
+    testImplementation(libs.test.junit.vintage)
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+graalvmNative {
+    binaries {
+        test {
+            configurationFileDirectories.from(metadataFile)
+            if (override) {
+                excludeConfig.put(libraryGAV, [".*"])
+            }
+            buildArgs.add('-H:+StrictConfiguration') // Necessary in order to test metadata properly
+            verbose = true
+        }
+    }
+}
