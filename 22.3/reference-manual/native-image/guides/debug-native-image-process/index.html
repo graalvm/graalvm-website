@@ -416,7 +416,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/22.3/native-image/guides/">
+          <a href="/22.3/reference-manual/native-image/guides/">
             User Guides
           </a>
         </li>
@@ -507,8 +507,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/22.3/reference-manual/native-image/guides/build-with-reflection/">
-              Build with Reflection
+            <a href="/22.3/reference-manual/native-image/guides/configure-with-tracing-agent/">
+              Configure Native Image with the Tracing Agent
             </a>
           </li>
 
@@ -625,7 +625,7 @@ $(document).ready(function(){
           
             
             <a href="/22.3/reference-manual/native-image/guides/use-reachability-metadata-repository-gradle/">
-              Use Shared Reachability Metadata with Native Image Gradle Plugin
+              Configure Native Image Using Shared Reachability Metadata
             </a>
           </li>
 
@@ -755,15 +755,60 @@ This will enable source-level debugging, and the debugger (GDB) then correlates 
 <p>Follow the steps to test debugging a native executable with GDB. The below workflow is know to work on Linux OS with GDB 10.1.</p>
 
 <ol>
-  <li>
-    <p>Save the following code to the file named <em>GDBDemo.java</em>.</p>
+  <li>Save the following code to the file named <em>GDBDemo.java</em>.
+    <pre><code class="language-java">  public class GDBDemo {
+  static long fieldUsed = 1000;
+
+  public static void main( String[] args ) {
+      if (args.length &gt; 0) {
+          int n = -1;
+          try {
+              n = Integer.parseInt(args[0]);
+          } catch (NumberFormatException ex) {
+              System.out.println(args[0] + " is not a number!");
+          }
+          if (n &lt; 0) {
+              System.out.println(args[0] + " is negative.");
+          }
+          double f = factorial(n);
+          System.out.println(n + "! = " + f);
+      } 
+
+      if (false)
+          neverCalledMethod();
+
+      StringBuilder text = new StringBuilder();
+      text.append("Hello World from GraalVM Native Image and GDB in Java.\n");
+      System.out.println(text.toString());
+  }
+
+  static void neverCalledMethod() {
+      System.out.println("This method is unreachable and will not be included in the native executable.");
+  }
+
+  static double factorial(int n) {
+      if (n == 0) {
+          return 1;
+      }
+      if (n &gt;= fieldUsed) {
+          return Double.POSITIVE_INFINITY;
+      }
+      double f = 1;
+      while (n &gt; 1) {
+          f *= n--;
+      }
+      return f;
+  }
+ }
+
+</code></pre>
   </li>
   <li>
     <p>Compile it and generate a native executable with debug information:</p>
 
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac JFRDemo.java
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac GDBDemo.java
 </code></pre>
-    <pre><code class="language-shell"> native-image -g -O0 JFRDemo
+    <pre><code class="language-shell"> native-image -g -O0 GDBDemo
 </code></pre>
     <p>The <code>-g</code> option instructs <code>native-image</code> to generate debug information. The resulting native executable will contain debug records in a format GDB understands.</p>
 
@@ -772,7 +817,7 @@ This will enable source-level debugging, and the debugger (GDB) then correlates 
   <li>
     <p>Launch the debugger and run your native executable:</p>
 
-    <pre><code class="language-shell"> gdb ./jfrdemo
+    <pre><code class="language-shell"> gdb ./gdbdemo
 </code></pre>
     <p>The <code>gdb</code> prompt will open.</p>
   </li>
@@ -786,9 +831,7 @@ This will enable source-level debugging, and the debugger (GDB) then correlates 
  (gdb) args.length > 0
  ``` --></p>
   </li>
-  <li>
-    <p>Pass <code>&lt;arg&gt;</code> to the command line. Step over to the next function call. If the native executable segfaults, you can print the backtrace of the entire stack (<code>bt</code>).</p>
-  </li>
+  <li>Pass <code>&lt;arg&gt;</code> to the command line. Step over to the next function call. If the native executable segfaults, you can print the backtrace of the entire stack (<code>bt</code>).</li>
 </ol>
 
 <p>The debugger points machine instructions back from the binary to specific source lines in Java files. Note that single stepping within a compiled method includes file and line number information for inlined code. GDB may switch files even though you are still in the same compiled method.</p>
@@ -940,7 +983,7 @@ Read more about Native Image debugging support from the <a href="/22.3/reference
               <p class="title-footer quickstart">Get started with GraalVM</p>
               <p class="footer-desc">Available for Java, JavaScript, Python, Ruby, R, LLVM, Scala
                 on Linux, Linux AArch64, MacOS and Windows platform </p>
-              <a href="/22.3/docs/getting-started/"
+              <a href='/docs/getting-started/'
                 class="btn btn-primary">Get started &#8594;</a>
             </div>
           </div>
