@@ -953,3 +953,11 @@ $(document).ready(function () {
   setFilters();
 });
 // ________end of the "guides" page___________
+
+//Close button for survey banner
+
+document.querySelector(".banner-survey__close").addEventListener("click", function() {
+  this.closest(".banner-survey").style.display = "none";
+});
+
+//

@@ -34,6 +34,7 @@
   <script async defer src="https://buttons.github.io/buttons.js"></script>
   <!-- <link rel="stylesheet" href="https://elocation.oracle.com/mapviewer/jslib/v2.3/css/oraclemapsv2.css> -->
   <!-- <script src="https://maps.oracle.com/mapviewer/jslib/v2.3/oraclemapsv2.js"></script> -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
 </head>
 
 
@@ -206,7 +207,7 @@
   
 
   
-
+<!-- 
   <div class="announcement">
     <div class="container-fluid container-fluid--custom-sm">
       <div class="row align-items-center">
@@ -215,6 +216,22 @@
             <a href="https://graalvm.typeform.com/to/mbVLI58l" class="btn-primary start"> Tell us what we should add or change →</a>
           </p>
         </div>
+      </div>
+    </div>
+  </div> -->
+  <div class="banner-survey">
+    <div class="container-fluid container-fluid--custom-sm">
+      <div class="align-items-center banner-survey__content">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12 text-center banner-survey__text"> 
+          <p class="banner-survey__mobile">Help us improve GraalVM! Tell us what we should add or change
+            <a href="https://graalvm.typeform.com/to/mbVLI58l" class="btn-primary start"> Start survey</a>
+          </p>
+        </div>
+        <button class="banner-survey__close" type="button">
+          <span class="material-icons">
+            close
+          </span>
+        </button>
       </div>
     </div>
   </div>
@@ -725,71 +742,90 @@ Ruby, and those that compile to LLVM bitcode, it also provides a Python API to i
 In fact, GraalVM uses this API internally to execute Python C extensions using the GraalVM LLVM runtime.</p>
 
 <p>You can import the <code>polyglot</code> module to interact with other languages:</p>
-<pre><code class="language-python">import polyglot
+<pre><code class="language-python">&gt;&gt;&gt; import polyglot
+</code></pre>
+
+<p>You can evaluate some inlined code from another language:</p>
+<pre><code class="language-python">&gt;&gt;&gt; polyglot.eval(string="1 + 1", language="ruby")
+2
+</code></pre>
+
+<p>You can evaluate some code from a file, by passing the path to it:</p>
+<pre><code class="language-python">&gt;&gt;&gt; with open("./my_ruby_file.rb", "w") as f:
+...    f.write("Polyglot.export('RubyPolyglot', Polyglot)")
+41
+&gt;&gt;&gt; polyglot.eval(path="./my_ruby_file.rb", language="ruby")
+&lt;foreign object at ...&gt;
 </code></pre>
 
 <p>You can import a global value from the entire polyglot scope:</p>
-<pre><code class="language-python">imported_polyglot_global = polyglot.import_value("global_name")
+<pre><code class="language-python">&gt;&gt;&gt; ruby_polyglot = polyglot.import_value("RubyPolyglot")
 </code></pre>
 
 <p>This global value should then work as expected:</p>
 <ul>
-  <li>Accessing attributes assumes it reads from the <code>members</code> namespace.</li>
-  <li>Accessing items is supported both with strings and numbers.</li>
-  <li>Calling methods on the result tries to do a straight invoke and falls
-back to reading the member and trying to execute it.</li>
+  <li>Accessing attributes assumes it reads from the <code>members</code> namespace.
+```python
+    <blockquote>
+      <blockquote>
+        <blockquote>
+          <p>ruby_polyglot.to_s</p>
+        </blockquote>
+      </blockquote>
+    </blockquote>
+  </li>
+</ul>
+<p>&lt;foreign object at …&gt;</p>
+<pre><code>
+* Calling methods on the result tries to do a straight invoke and falls
+back to reading the member and trying to execute it.
+```python
+&gt;&gt;&gt; ruby_polyglot.to_s()
+Polyglot
+</code></pre>
+
+<ul>
+  <li>Accessing items is supported both with strings and numbers.
+    <pre><code class="language-python">&gt;&gt;&gt; ruby_polyglot.methods()[10] is not None
+True
+</code></pre>
+  </li>
 </ul>
 
-<p>You can evaluate some inlined code from another language:</p>
-<pre><code class="language-python">polyglot.eval(string="1 + 1", language="ruby")
-</code></pre>
-
-<p>You can evaluate some code from a file, by passing the path to it:</p>
-<pre><code class="language-python">polyglot.eval(path="./my_ruby_file.rb", language="ruby")
-</code></pre>
-
-<p>If you pass a file, you can also rely on the file-based language detection:</p>
-<pre><code class="language-python">polyglot.eval(path="./my_ruby_file.rb")
-</code></pre>
-
-<p>You can export some oblect from Python to other supported languages so they can import
+<p>You can export some object from Python to other supported languages so they can import
 it:</p>
-<pre><code class="language-python">foo = object()
-polyglot.export_value(foo, name="python_foo")
+<pre><code class="language-python">&gt;&gt;&gt; foo = object()
+&gt;&gt;&gt; polyglot.export_value(value=foo, name="python_foo")
+&lt;object object at ...&gt;
+&gt;&gt;&gt; jsfoo = polyglot.eval(language="js", string="Polyglot.import('python_foo')")
+&gt;&gt;&gt; jsfoo is foo
+True
 </code></pre>
 
 <p>The export function can be used as a decorator.
 In this case the function name is used as the globally exported name:</p>
-<pre><code class="language-python">@polyglot.export_value
-def python_method():
-    return "Hello from Python!"
+<pre><code class="language-python">&gt;&gt;&gt; @polyglot.export_value
+... def python_method():
+...     return "Hello from Python!"
 </code></pre>
 
 <p>Here is an example of how to use the JavaScript regular expression engine to
-match Python strings. Save this code to the <code>polyglot_example.py</code> file:</p>
-<pre><code class="language-python">import polyglot
+match Python strings.</p>
+<pre><code class="language-python">&gt;&gt;&gt; js_re = polyglot.eval(string="RegExp()", language="js")
 
-re = polyglot.eval(string="RegExp()", language="js")
+&gt;&gt;&gt; pattern = js_re.compile(".*(?:we have (?:a )?matching strings?(?:[!\\?] )?)(.*)")
 
-pattern = re.compile(".*(?:we have (?:a )?matching strings?(?:[!\\?] )?)(.*)")
+&gt;&gt;&gt; if pattern.exec("This string does not match"):
+...    raise SystemError("that shouldn't happen")
 
-if pattern.exec("This string does not match"):
-    raise SystemError("that shouldn't happen")
+&gt;&gt;&gt; md = pattern.exec("Look, we have matching strings! This string was matched by Graal.js")
 
-md = pattern.exec("Look, we have matching strings! This string was matched by Graal.js")
-if not md:
-    raise SystemError("this should have matched")
-
-print("Here is what we found: '%s'" % md[1])
-</code></pre>
-
-<p>To run it, pass the <code>--jvm --polyglot</code> option to the <code>graalpy</code> launcher:</p>
-<pre><code class="language-shell">graalpy --jvm --polyglot polyglot_example.py
+&gt;&gt;&gt; "Here is what we found: '%s'" % md[1]
+"Here is what we found: 'This string was matched by Graal.js'"
 </code></pre>
 
 <p>This program matches Python strings using the JavaScript regular expression object.
-Python reads the captured group from the JavaScript result and prints:
-<em>Here is what we found: ‘This string was matched by Graal.js’</em>.</p>
+Python reads the captured group from the JavaScript result and prints it.</p>
 
 <p>As a more complex example, see how you can read a file using R, process the data in Python, and use R again to display the resulting data image, using both the R and Python libraries in conjunction.
 To run this example, first install the required R library:</p>
@@ -843,30 +879,35 @@ time.sleep(10)
       </h2>
 
 <p>Finally, to interoperate with Java (only when running on the JVM), you can use the <code>java</code> module:</p>
-<pre><code class="language-python">import java
-BigInteger = java.type("java.math.BigInteger")
-myBigInt = BigInteger.valueOf(42)
-# public Java methods can just be called
-myBigInt.shiftLeft(128)
-# Java method names that are keywords in Python can be accessed using `getattr`
-getattr(myBigInt, "not")()
-byteArray = myBigInt.toByteArray()
-# Java arrays can act like Python lists
-print(list(byteArray))
+<pre><code class="language-python">&gt;&gt;&gt; import java
+&gt;&gt;&gt; BigInteger = java.type("java.math.BigInteger")
+&gt;&gt;&gt; myBigInt = BigInteger.valueOf(42)
+&gt;&gt;&gt; # public Java methods can just be called
+&gt;&gt;&gt; myBigInt.shiftLeft(128)
+&lt;JavaObject[java.math.BigInteger] at ...&gt;
+&gt;&gt;&gt; # Java method names that are keywords in Python can be accessed using `getattr`
+&gt;&gt;&gt; getattr(myBigInt, "not")()
+&lt;JavaObject[java.math.BigInteger] at ...&gt;
+&gt;&gt;&gt; byteArray = myBigInt.toByteArray()
+&gt;&gt;&gt; # Java arrays can act like Python lists
+&gt;&gt;&gt; list(byteArray)
+[42]
 </code></pre>
 
 <p>For packages under the <code>java</code> package, you can also use the normal Python import
 syntax:</p>
-<pre><code class="language-python">import java.util.ArrayList
-from java.util import ArrayList
-
-java.util.ArrayList == ArrayList
-
-al = ArrayList()
-al.add(1)
-al.add(12)
-print(al)
-# prints [1, 12]
+<pre><code class="language-python">&gt;&gt;&gt; import java.util.ArrayList
+&gt;&gt;&gt; from java.util import ArrayList
+&gt;&gt;&gt;
+&gt;&gt;&gt; java.util.ArrayList == ArrayList
+True
+&gt;&gt;&gt; al = ArrayList()
+&gt;&gt;&gt; al.add(1)
+True
+&gt;&gt;&gt; al.add(12)
+True
+&gt;&gt;&gt; al
+[1, 12]
 </code></pre>
 
 <p>In addition to the <code>type</code> builtin method, the <code>java</code> module exposes the following
@@ -899,19 +940,18 @@ methods as well:</p>
   </tbody>
 </table>
 
-<pre><code class="language-python">import java
-ArrayList = java.type('java.util.ArrayList')
-my_list = ArrayList()
-print(java.is_symbol(ArrayList))
-# prints True
-print(java.is_symbol(my_list))
-# prints False, my_list is not a Java host symbol
-print(java.is_object(ArrayList))
-# prints True, symbols are also host objects
-print(java.is_function(my_list.add))
-# prints True, the add method of ArrayList
-print(java.instanceof(my_list, ArrayList))
-# prints True
+<pre><code class="language-python">&gt;&gt;&gt; ArrayList = java.type('java.util.ArrayList')
+&gt;&gt;&gt; my_list = ArrayList()
+&gt;&gt;&gt; java.is_symbol(ArrayList)
+True
+&gt;&gt;&gt; java.is_symbol(my_list)
+False
+&gt;&gt;&gt; java.is_object(ArrayList)
+True
+&gt;&gt;&gt; java.is_function(my_list.add)
+True
+&gt;&gt;&gt; java.instanceof(my_list, ArrayList)
+True
 </code></pre>
 
 <p>See <a href="/dev/reference-manual/polyglot-programming/">Polyglot Programming</a> and <a href="/dev/reference-manual/embed-languages/">Embed Languages</a> for more information about interoperability with other programming languages.</p>

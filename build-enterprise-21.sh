@@ -19,7 +19,7 @@ cp toc-21.md toc.md
 # Clone docs sources from graal, js, graalpy, fastr, truffleruby cpu/graal-vm/21.3 branch into graalvm.org
 ./pull-extra.sh cpu/graal-vm/21.3
 # Add titles for all pages
-ruby process_front_matter.rb --add-title pages release-notes docs truffle/docs
+ruby process_front_matter.rb --add-title pages release-notes/enterprise docs truffle/docs
 # Build the documentation version 21. The output saved in _site/.
 bundle exec jekyll build --config _config_enterprise_21.yml
 

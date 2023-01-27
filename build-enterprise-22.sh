@@ -19,7 +19,7 @@ rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-21.md
 # Clone docs sources from graal, js, graalpy, fastr, truffleruby release/graal-vm/22.3 branch into graalvm.org
 ./pull-extra.sh cpu/graal-vm/22.3
 # Add titles for all pages
-ruby process_front_matter.rb --add-title pages release-notes docs truffle/docs
+ruby process_front_matter.rb --add-title pages release-notes/enterprise docs truffle/docs
 # Build the documentation version 22. The output saved in _site.
 bundle exec jekyll build --config _config_enterprise_22.yml
 
