@@ -904,15 +904,15 @@ public abstract class AbsNode extends Node {
 
 <p>The compressed memory footprint for <code>AbsNode</code> and <code>AddAbsNode</code> after one execution are computed as follows:</p>
 
-<pre><code>AbsNodeGen = object header 
+<pre><code>AbsNodeGen = object header
    + Node field for Node.parent
    + int field for state
 
-AddAbsNodeGen = object header 
+AddAbsNodeGen = object header
    + Node field for Node.parent
    + int  field for state
-   + Node field for @Cached AbsNode leftAbs 
-   + Node field for @Cached AbsNode rightAbs 
+   + Node field for @Cached AbsNode leftAbs
+   + Node field for @Cached AbsNode rightAbs
 
 Footprint = headerCount * 12 + pointerCount * 4 + primitiveByteSize
 Footprint = 3 * 12 + 5 * 4 + 12 = 68 bytes
@@ -947,8 +947,8 @@ public abstract class AbsNode extends Node {
 
 <p>Now the DSL reports a compile error for <code>AbsNode</code>:</p>
 
-<pre><code>Error generating code for @GenerateInline: Found non-final execute method without a node parameter execute(long). Inlinable nodes 
- must use the Node type as the first parameter after the optional frame for all non-final execute methods. A valid signature for an 
+<pre><code>Error generating code for @GenerateInline: Found non-final execute method without a node parameter execute(long). Inlinable nodes
+ must use the Node type as the first parameter after the optional frame for all non-final execute methods. A valid signature for an
  inlinable node is execute([VirtualFrame frame, ] Node node, ...).
 </code></pre>
 
@@ -1017,7 +1017,7 @@ public abstract class AbsNode extends Node {
 <p>Now we have achieved object-inlining of <code>AbsNode</code> into  <code>AddAbsNode</code>.
 The new memory footprint computes as follows:</p>
 
-<pre><code>AddAbsNodeGen = object header 
+<pre><code>AddAbsNodeGen = object header
    + Node field for Node.parent
    + int  field for state
 
@@ -1076,7 +1076,7 @@ public abstract static class Add4AbsNode extends Node {
 }
 </code></pre>
 
-<p>This time, instead of specifying <code>@Cached(inline=true)</code>, we auto-enable inlining wherever possible using <code>@GenerateCached(alwaysInlineCached = true)</code>. 
+<p>This time, instead of specifying <code>@Cached(inline=true)</code>, we auto-enable inlining wherever possible using <code>@GenerateCached(alwaysInlineCached = true)</code>.
 Depending on the use case, it can hinder readability to repeat individual inlining commands for every cached node.</p>
 
 <p>Computing the overhead now becomes more tricky. We need to understand how many state bits each node requires to keep track of active specializations.
@@ -1091,7 +1091,7 @@ The memory footprint of an executed <code>Add4AbsNode</code> is therefore comput
 <pre><code>Footprint = 1 * 12 + 1 * 4 + 4 = 20 bytes
 </code></pre>
 
-<p>As you can see, this is the same memory footprint a single <code>AddAbsNode</code> had. 
+<p>As you can see, this is the same memory footprint a single <code>AddAbsNode</code> had.
 If we use the same formula to compute the memory footprint of an <code>Add4AbsNode</code> without any object inlining</p>
 
 <pre><code>Footprint = 1 * 12 + 4 * 4 + 4 + 3 * 68 = 236 bytes
@@ -1259,10 +1259,10 @@ public abstract static class SumArrayNode extends Node {
 
 <pre><code class="language-java">    @ExportLibrary(ExampleArithmeticLibrary.class)
     static class ExampleNumber {
-        
+
         final long value;
-        
-        /* ... */ 
+
+        /* ... */
 
         @ExportMessage
         final long abs(@Bind("$node") Node node,
@@ -1302,7 +1302,7 @@ public abstract static class SumArrayNode extends Node {
       </h3>
 
 <p>Nodes or profiles that can be inlined in the DSL can also be implemented manually.
-The class must implement a static method called <code>inline</code>. 
+The class must implement a static method called <code>inline</code>.
 For example, most inlinable Truffle profiles use custom inlining.
 Extra care must be taken when implementing such inlinable classes and if possible, a DSL generated node should be used instead.
 See <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.profiles/src/com/oracle/truffle/api/profiles/InlinedBranchProfile.java">InlinedBranchProfile</a> or <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.profiles/src/com/oracle/truffle/api/profiles/InlinedIntValueProfile.java">InlinedIntValueProfile</a> class as an example on how to implement the inline method.</p>
@@ -1373,6 +1373,111 @@ This allows API to use node inlining across stable API boundaries as long as the
 </ul>
 
 <p>The DSL validates whether the required fields are matching to the state specification of the parent node and emits a warning if it is not compatible to the node specification.</p>
+    
+      <h3 id="lazy-initialized-nodes-with-dsl-inlining">
+        
+        
+          Lazy Initialized Nodes with DSL Inlining <a href="#lazy-initialized-nodes-with-dsl-inlining" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><em>Full source code of the example: <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningAndLazyInitExample.java">NodeInliningAndLazyInitExample.java</a>.</em></p>
+
+<p>DSL inlining can be used to provide lazy initialization for otherwise cached node that is only used in code blocks that
+are protected by conditions that trigger rarely. Consider this example:</p>
+<pre><code class="language-java">@GenerateInline(false)
+@GenerateUncached
+public abstract static class RaiseErrorNode extends Node {
+    abstract void execute(Object type, String message);
+
+    // ...
+}
+
+@GenerateInline(false)
+@GenerateUncached(false)
+public abstract static class LazyInitExampleBefore extends Node {
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value,
+              @Cached RaiseErrorNode raiseError) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            raiseError.execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p><code>RaiseErrorNode</code> is always instantiated even-though we do not need it if <code>doSomeWork</code> always returns
+non <code>null</code> result at runtime. Before DSL inlining, this issue was usually solved by lazy-initialized
+<code>@Child</code> node:</p>
+<pre><code class="language-java">@GenerateInline(false)
+@GenerateUncached(false)
+public abstract static class LazyInitExampleBefore2 extends Node {
+    @Child RaiseErrorNode raiseError;
+
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            if (raiseError == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                raiseError = insert(RaiseErrorNodeGen.create());
+            }
+            raiseError.execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p>However <code>@Child</code> nodes have some drawbacks. Most notably, the <code>@Specialization</code> cannot be <code>static</code> and we
+cannot generate uncached variant of the node.</p>
+
+<p>With DSL inlining, one should either make the <code>RaiseErrorNode</code> inlineable if beneficial, or if it is a node that:</p>
+
+<ul>
+  <li>has a lot of specializations with multiple instances, or</li>
+  <li>cannot currently be inlined, or</li>
+  <li>has a lot of cached fields that cannot be inlined</li>
+</ul>
+
+<p>then one can create an inlinable wrapper node that initializes the <code>RaiseErrorNode</code> on demand:</p>
+<pre><code class="language-java">@GenerateInline
+@GenerateUncached
+@GenerateCached(false)
+public abstract static class LazyRaiseNode extends Node {
+    public final RaiseErrorNode get(Node node) {
+        return execute(node);
+    }
+
+    abstract RaiseErrorNode execute(Node node);
+
+    @Specialization
+    static RaiseErrorNode doIt(@Cached(inline = false) RaiseErrorNode node) {
+        return node;
+    }
+}
+
+@GenerateInline(false)
+@GenerateUncached
+public abstract static class LazyInitExample extends Node {
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value,
+              @Cached LazyRaiseNode raiseError) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            raiseError.get(this).execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p>Unless <code>LazyRaiseNode.execute</code> gets called, the cost of the wrapper is single reference field
+and one bit from the bitset of <code>LazyInitExample</code> node. Except for the extra bit, it is the same as
+with the lazy initialized <code>@Child</code> node field.</p>
 
               </div>
 
