@@ -596,13 +596,14 @@ The options are a best effort approach to limiting resource usage of guest appli
 
 <!-- BEGIN: sandbox-options -->
 <ul>
-  <li><code>--sandbox.AllocatedBytesCheckEnabled=true|false</code> : Specifies whether checking of allocated bytes for an execution context is enabled. Is set to ‘true’ by default.</li>
   <li><code>--sandbox.AllocatedBytesCheckFactor=[0.0, inf)</code> : Specifies a factor of MaxHeapMemory the allocation of which triggers retained heap memory computation. When allocated bytes for an execution context reach the specified factor, computation of bytes retained in the heap by the context is initiated. Is set to ‘1.0’ by default.</li>
   <li><code>--sandbox.AllocatedBytesCheckInterval=[1, inf)ms|s|m|h|d</code> : Time interval to check allocated bytes for an execution context. Exceeding certain number of allocated bytes triggers computation of bytes retained in the heap by the context. Is set to ‘10ms’ by default. Maximum interval is 1h.</li>
   <li><code>--sandbox.MaxASTDepth=[1, inf)</code> : Maximum AST depth of a function (default: no limit).</li>
   <li><code>--sandbox.MaxCPUTime=[1, inf)ms|s|m|h|d</code> : Limits the total maximum CPU time that was spent running the application. No limit is set by default. Example value: ‘100ms’.</li>
   <li><code>--sandbox.MaxCPUTimeCheckInterval=[1, inf)ms|s|m|h|d</code> : Time interval to check the active CPU time for an execution context. Is set to ‘10ms’ by default. Maximum interval is 1h.</li>
-  <li><code>--sandbox.MaxHeapMemory=[1, inf)B|KB|MB|GB</code> : Specifies the maximum heap memory that can be retained by the application during its run. No limit is set by default and setting the related expert options has no effect. Example value: ‘100MB’.</li>
+  <li><code>--sandbox.MaxErrorStreamSize=[0, inf)B|KB|MB|GB</code> : Specifies the maximum size that the guest application can write to stderr. No limit is set by default. Example value: ‘10MB’.</li>
+  <li><code>--sandbox.MaxHeapMemory=[1, inf)B|KB|MB|GB</code> : Specifies the maximum heap memory that can be retained by the application during its run. Includes only data retained by the guest application, runtime allocated data is not included. No limit is set by default and setting the related expert options has no effect. Example value: ‘100MB’.</li>
+  <li><code>--sandbox.MaxOutputStreamSize=[0, inf)B|KB|MB|GB</code> : Specifies the maximum size that the guest application can write to stdout. No limit is set by default. Example value: ‘10MB’.</li>
   <li><code>--sandbox.MaxStackFrames=[1, inf)</code> : Limits the maximum number of guest stack frames (default: no limit).</li>
   <li><code>--sandbox.MaxStatements=[1, inf)</code> : Limits the maximum number of guest language statements executed. The execution is cancelled with an resource exhausted error when it is exceeded.</li>
   <li><code>--sandbox.MaxStatementsIncludeInternal</code> : Configures whether to include internal sources in the max statements computation.</li>
@@ -880,6 +881,52 @@ It is not allowed to specify negative values or no size unit with max heap memor
 
 <p>Resetting resource limits using <code>Context.resetLimits</code> does not affect the heap memory limit.</p>
     
+      <h2 id="limiting-the-size-of-the-output-written-to-stdoutstderr">
+        
+        
+          Limiting the size of the output written to stdout/stderr <a href="#limiting-the-size-of-the-output-written-to-stdoutstderr" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Limits the size of the output that the application writes to standard output or standard error output during runtime.
+If the limit is exceeded, evaluation of the code fails and the context is canceled.
+Limiting the size of the output can serve as protection against denial-of-service attacks that flood the output.</p>
+    
+      <h4 id="example-usage-2">
+        
+        
+          Example Usage
+        
+        
+      </h4>
+<pre><code class="language-java">try (Context context = Context.newBuilder("js")
+                           .option("sandbox.MaxOutputStreamSize", "100KB")
+                       .build()) {
+    context.eval("js", "while(true) { console.log('Log message') };");
+    assert false;
+} catch (PolyglotException e) {
+    // triggered after writing more than 100KB to stdout
+    // context is closed and can no longer be used
+    // error message: Maximum output stream size of 102400 exceeded. Bytes written 102408.
+    assert e.isCancelled();
+    assert e.isResourceExhausted();
+}
+</code></pre>
+<pre><code class="language-java">try (Context context = Context.newBuilder("js")
+                           .option("sandbox.MaxErrorStreamSize", "100KB")
+                       .build()) {
+    context.eval("js", "while(true) { console.error('Error message') };");
+    assert false;
+} catch (PolyglotException e) {
+    // triggered after writing more than 100KB to stderr
+    // context is closed and can no longer be used
+    // error message: Maximum error stream size of 102400 exceeded. Bytes written 102410.
+    assert e.isCancelled();
+    assert e.isResourceExhausted();
+}
+</code></pre>
+    
       <h2 id="determining-sandbox-resource-limits">
         
         
@@ -918,10 +965,10 @@ Sandbox Command Line Options:
 <p>With the polyglot embedding API it is possible to reset the limits at any point in time using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html#resetLimits--"><code>Context.resetLimits</code></a> method.
 This can be useful if a known and trusted initialization script should be excluded from limit. Resetting the limits is not applicable to all limits.</p>
     
-      <h3 id="example-usage-2">
+      <h3 id="example-usage-3">
         
         
-          Example Usage <a href="#example-usage-2" class="anchor_heading">#</a>
+          Example Usage <a href="#example-usage-3" class="anchor_heading">#</a>
         
         
       </h3>

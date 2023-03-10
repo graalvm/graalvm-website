@@ -781,20 +781,13 @@ The <code>native-image</code> tool generates a C header file containing the foll
 
 <p>In the following example, you’ll create a small Java class library (containing one class), use <code>native-image</code> to create a shared library from the class library, and then create a small C application that uses the shared library.
 The C application takes a string as its argument, passes it to the shared library, and prints environment variables that contain the argument.</p>
-    
-      <h4 id="prerequisites">
-        
-        
-          Prerequisites
-        
-        
-      </h4>
 
-<p>You have set the <code>JAVA_HOME</code> environment variable to the location of the GraalVM installation.</p>
-
-<p>You have have installed LLVM toolchain support to GraalVM, as follows:</p>
-<pre><code class="language-shell">$JAVA_HOME/bin/gu install llvm-toolchain
+<ol>
+  <li>Download and install the latest GraalVM JDK with Native Image and LLVM toolchain using the <a href="https://github.com/graalvm/graalvm-jdk-downloader">GraalVM JDK Downloader</a>:
+    <pre><code class="language-bash"> bash &lt;(curl -sL https://get.graalvm.org/jdk) -c 'llvm-toolchain' 
 </code></pre>
+  </li>
+</ol>
 
 <blockquote>
   <p>Note: The llvm-toolchain GraalVM component is not available on Microsoft Windows.</p>
@@ -831,11 +824,10 @@ The C application takes a string as its argument, passes it to the shared librar
 </code></pre>
     <p>Notice how the method <code>filterEnv()</code> is identified as an <strong>entrypoint</strong> using the <code>@CEntryPoint</code> annotation and the method is given a name as a argument to the annotation.</p>
   </li>
-  <li>
-    <p>Compile the Java code and build a native shared library, as follows:</p>
-
+  <li>Compile the Java code and build a native shared library, as follows:
     <pre><code class="language-shell"> $JAVA_HOME/bin/javac LibEnvMap.java
- $JAVA_HOME/bin/native-image -H:Name=libenvmap --shared 
+</code></pre>
+    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image -H:Name=libenvmap --shared 
 </code></pre>
 
     <p>It will produce the following artifacts:</p>
@@ -882,15 +874,11 @@ The C application takes a string as its argument, passes it to the shared librar
 
     <p>The statement <code>#include "libenvmap.h"</code> loads the native shared library.</p>
   </li>
-  <li>
-    <p>Compile the C application using <code>clang</code>.</p>
-
+  <li>Compile the C application using <code>clang</code>.
     <pre><code class="language-shell"> $JAVA_HOME/languages/llvm/native/bin/clang -I ./ -L ./ -l envmap -Wl,-rpath ./ -o main main.c 
 </code></pre>
   </li>
-  <li>
-    <p>Run the C application by passing a string as an argument. For example:</p>
-
+  <li>Run the C application by passing a string as an argument. For example:
     <pre><code class="language-shell"> ./main USER
 </code></pre>
     <p>It will correctly print out the name and value of the matching environment variable(s).</p>

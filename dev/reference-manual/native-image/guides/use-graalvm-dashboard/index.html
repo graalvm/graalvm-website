@@ -726,30 +726,34 @@ The GraalVM Dashboard uses report files created by the native image builder. (F
 <p>Package the contents of the first implementation (<a href="https://github.com/graalvm/graalvm-demos/tree/master/fortune-demo/fortune">fortune</a>) as a native executable and review its composition.</p>
 
 <ol>
+  <li>Download and install the latest GraalVM JDK with Native Image using the <a href="https://github.com/graalvm/graalvm-jdk-downloader">GraalVM JDK Downloader</a>:
+    <pre><code class="language-bash"> bash &lt;(curl -sL https://get.graalvm.org/jdk)
+</code></pre>
+  </li>
   <li>Download or clone the repository and navigate into the <em>fortune-demo/fortune</em> directory:
-    <pre><code> git clone https://github.com/graalvm/graalvm-demos
- cd fortune-demo/fortune
+    <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos
+</code></pre>
+    <pre><code class="language-shell"> cd fortune-demo/fortune
 </code></pre>
   </li>
   <li>Build the project:
-    <pre><code> mvn clean package
+    <pre><code class="language-shell"> mvn clean package
 </code></pre>
   </li>
   <li>When the build succeeds, run the application on the JVM with the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support">Tracing agent</a>. Since you have installed GraalVM, it will run on GraalVM JDK.
-    <pre><code> mvn -Pnative -Dagent exec:exec@java-agent
+    <pre><code class="language-shell"> mvn -Pnative -Dagent exec:exec@java-agent
 </code></pre>
     <p>The application will return a random saying. 
  The agent generates the configuration files in the <code>target/native/agent-output</code> subdirectory.</p>
   </li>
   <li>Build a native executable of this application with GraalVM Native Image and Maven:
-    <pre><code> mvn -Pnative -Dagent package
+    <pre><code class="language-shell"> mvn -Pnative -Dagent package
 </code></pre>
     <p>When the command completes, a native executable, <code>fortune</code>, is generated in the <code>/target</code> directory of the project and ready for use.</p>
   </li>
   <li>Run the application by launching a native executable directly:
-    <pre><code> ./target/fortune
+    <pre><code class="language-shell"> ./target/fortune
 </code></pre>
-
     <p>The application should slowly print a random phrase.</p>
 
     <p>The application’s <a href="https://github.com/graalvm/graalvm-demos/blob/master/fortune-demo/fortune/pom.xml"><em>pom.xml</em></a> file employs the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Image Maven plugin</a> to build a native executable, configured to produce diagnostic data using these two options:</p>
@@ -761,7 +765,7 @@ The GraalVM Dashboard uses report files created by the native image builder. (F
 
     <p>Compare the sizes of the JAR file and the native executable (for example, using <code>du</code>):</p>
 
-    <pre><code class="language-shell"> du -sh target/*
+    <pre><code> du -sh target/*
  0B	    target/archive-tmp
  136K	target/classes
  17M     target/fortune
@@ -806,36 +810,32 @@ The GraalVM Dashboard uses report files created by the native image builder. (F
 
 <ol>
   <li>Change to the project directory and build the project:
-    <pre><code> cd ../staticfortune
+    <pre><code class="language-shell"> cd ../staticfortune
 </code></pre>
-    <pre><code> mvn clean package
+    <pre><code class="language-shell"> mvn clean package
 </code></pre>
   </li>
   <li>Run the application on the JVM (GraalVM JDK) with the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support">Tracing agent</a>:
-    <pre><code> mvn -Pnative -Dagent exec:exec@java-agent
+    <pre><code class="language-shell"> mvn -Pnative -Dagent exec:exec@java-agent
 </code></pre>
     <p>The application will print a random saying. The agent generates the configuration files in the <code>target/native/agent-output</code> subdirectory.</p>
   </li>
   <li>Build a static native executable:
-    <pre><code> mvn -Pnative -Dagent package
+    <pre><code class="language-shell"> mvn -Pnative -Dagent package
 </code></pre>
     <p>When the command completes, a native executable, <code>staticfortune</code>, is generated in the <code>/target</code> directory of the project and ready for use.</p>
   </li>
-  <li>
-    <p>Run the demo by launching a native executable directly or with the Maven profile:</p>
-
-    <pre><code> ./target/staticfortune
+  <li>Run the demo by launching a native executable directly or with the Maven profile:
+    <pre><code class="language-shell"> ./target/staticfortune
 </code></pre>
     <p>The application should behave in exactly the same way as the first implementation.</p>
 
     <p>The application’s <a href="https://github.com/graalvm/graalvm-demos/blob/master/fortune-demo/staticfortune/pom.xml"><em>pom.xml</em></a> file again uses the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Image Maven plugin</a> to build a native executable. However, for this implementation it adds an extra option to initialize class <code>demo.StaticFortune</code> at build time:</p>
-
     <pre><code class="language-shell"> -H:DashboardDump=staticfortune -H:+DashboardAll --initialize-at-build-time=demo.StaticFortune
 </code></pre>
 
     <p>Compare the sizes of the JAR file and the native executable:</p>
-
-    <pre><code class="language-shell"> du -sh target/*
+    <pre><code> du -sh target/*
  0B	    target/archive-tmp
  76K	    target/classes
  0B	    target/generated-sources

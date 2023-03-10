@@ -727,6 +727,10 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
 <p>The following application demonstrates the use of Java reflection.</p>
 
 <ol>
+  <li>Download and install the latest GraalVM JDK with Native Image using the <a href="https://github.com/graalvm/graalvm-jdk-downloader">GraalVM JDK Downloader</a>:
+    <pre><code class="language-bash"> bash &lt;(curl -sL https://get.graalvm.org/jdk)
+</code></pre>
+  </li>
   <li>Save the following source code in a file named <em>ReflectionExample.java</em>:
     <pre><code class="language-java"> import java.lang.reflect.Method;
     
@@ -763,8 +767,10 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
   </li>
   <li>Compile the example and then run each command below.
     <pre><code class="language-shell"> $JAVA_HOME/bin/javac ReflectionExample.java
- $JAVA_HOME/bin/java ReflectionExample StringReverser reverse "hello"
- $JAVA_HOME/bin/java ReflectionExample StringCapitalizer capitalize "hello"
+</code></pre>
+    <pre><code class="language-shell"> $JAVA_HOME/bin/java ReflectionExample StringReverser reverse "hello"
+</code></pre>
+    <pre><code class="language-shell"> $JAVA_HOME/bin/java ReflectionExample StringCapitalizer capitalize "hello"
 </code></pre>
     <p>The output of each command should be <code>"olleh"</code> and <code>"HELLO"</code>, respectively. (An exception is thrown if you provide any other string to identify the class or method.)</p>
   </li>
@@ -778,8 +784,8 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
   <li>Run the resulting native executable, using the following command:
     <pre><code class="language-bash"> ./reflectionexample StringReverser reverse "hello"
 </code></pre>
-    <p>You’ll see an exception, similar to</p>
-    <pre><code class="language-shell"> Exception in thread "main" java.lang.ClassNotFoundException: StringReverser
+    <p>You’ll see an exception, similar to:</p>
+    <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringReverser
      at java.lang.Class.forName(DynamicHub.java:1338)
      at java.lang.Class.forName(DynamicHub.java:1313)
      at ReflectionExample.main(ReflectionExample.java:25)
@@ -825,8 +831,12 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
   <li>Test your executable.
     <pre><code class="language-shell"> ./reflectionexample StringReverser reverse "hello"
  olleh
- ./reflectionexample StringCapitalizer capitalize "hello"
- Exception in thread "main" java.lang.ClassNotFoundException: StringCapitalizer
+</code></pre>
+    <pre><code class="language-shell"> ./reflectionexample StringCapitalizer capitalize "hello"
+</code></pre>
+
+    <p>You’ll see again an exception, similar to:</p>
+    <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringCapitalizer
      at java.lang.Class.forName(DynamicHub.java:1338)
      at java.lang.Class.forName(DynamicHub.java:1313)
      at ReflectionExample.main(ReflectionExample.java:25)
@@ -838,6 +848,7 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
  You can manually edit the <em>reflection-config.json</em> file or re-run the tracing agent to update the existing configuration file using the <code>config-merge-dir</code> option, as follows:
     <pre><code class="language-shell"> $JAVA_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=META-INF/native-image ReflectionExample StringCapitalizer capitalize "hello"
 </code></pre>
+
     <p>This command updates the <em>reflection-config.json</em> file to include the name of the class <code>StringCapitalizer</code> and its <code>capitalize()</code> method.</p>
     <pre><code class="language-json"> [
      {
@@ -853,7 +864,8 @@ This guide demonstrates how to configure <code>native-image</code> with the agen
   </li>
   <li>Rebuild the native executable and run it.
     <pre><code class="language-shell"> $JAVA_HOME/bin/native-image ReflectionExample
- ./reflectionexample StringCapitalizer capitalize "hello"
+</code></pre>
+    <pre><code class="language-shell"> ./reflectionexample StringCapitalizer capitalize "hello"
 </code></pre>
 
     <p>The application should now work as intended.</p>
