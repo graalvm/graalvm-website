@@ -10,7 +10,7 @@
 
   <title>
     
-      Installing `libssl`
+      Benchmarking TruffleRuby
     
   </title>
   <meta name="description" content="GraalVM is a high-performance JDK distribution written for Java and other JVM languages, along with support for JavaScript, Ruby, Python, and several other p..."/>
@@ -23,7 +23,7 @@
 
   <script src="/resources/lib/jquery/jquery-3.2.1.min.js"></script>
   <link rel="stylesheet" href="/assets/main.css">
-  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/ruby/Installinglibssl/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/ruby/Benchmarking/">
   <script src="/resources/lib/bootstrap/js/bootstrap.min.js"></script>
   <script src="/resources/lib/sticky-sidebar/resizeSensor.js"></script>
   <script src="/resources/lib/sticky-sidebar/sticky-sidebar.min.js"></script>
@@ -522,31 +522,13 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/dev/reference-manual/ruby/Installinglibssl/">
               Installing `libssl`
             </a>
           </li>
-
-          
-            <div>
-    <script>
-      var scriptElement = document.currentScript;
-      var div = $(scriptElement.parentElement);
-      $(window).on("load", function() {
-        $("#content-wrapper h2").each(function() {
-          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-          a.text($(this).text().replace('#', ''));
-          // a.text($(this).text();
-          li.append(a);
-          div.append(li);
-        });
-      });
-    </script>
-  </div>
 
           
         
@@ -825,81 +807,180 @@ $(document).ready(function(){
   </ul>
 
 
-              <h1 id="installing-libssl">
+              <h1 id="benchmarking-truffleruby">
         
         
-          Installing <code>libssl</code>
+          Benchmarking TruffleRuby
         
         
       </h1>
 
-<p>TruffleRuby provides the <code>openssl</code> gem but not the native <code>libssl</code> system library that the gem uses.
-TruffleRuby supports libssl versions 1.0.2, 1.1.0 and 3.0.0.</p>
-
-<p>If you experience <code>openssl</code>-related errors, it might help to recompile the <code>openssl</code> gem by running <code>lib/truffle/post_install_hook.sh</code>.
-This is done automatically by Ruby managers, and mentioned in the post-install message when installing TruffleRuby via <code>gu install</code> in GraalVM.</p>
-
-<p>To compile TruffleRuby against a non-system <code>libssl</code>, set <code>OPENSSL_PREFIX</code> while installing TruffleRuby:</p>
-<pre><code class="language-bash">export OPENSSL_PREFIX=/path/to/my/openssl-1.1.0
-</code></pre>
+<p>This document lists the most important points to consider when benchmarking TruffleRuby.</p>
     
-      <h3 id="fedora-based-rhel-oracle-linux-etc">
+      <h2 id="guidelines-for-benchmarking-truffleruby">
         
         
-          Fedora-based: RHEL, Oracle Linux, etc <a href="#fedora-based-rhel-oracle-linux-etc" class="anchor_heading">#</a>
+          Guidelines for Benchmarking TruffleRuby <a href="#guidelines-for-benchmarking-truffleruby" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>We expect anyone publishing benchmark numbers about TruffleRuby to follow these guidelines.</p>
+    
+      <h3 id="use-truffleruby-ee">
+        
+        
+          Use TruffleRuby EE <a href="#use-truffleruby-ee" class="anchor_heading">#</a>
         
         
       </h3>
 
-<pre><code class="language-bash">sudo dnf install openssl-devel
-</code></pre>
+<p>Use TruffleRuby EE, it is faster than CE overall and represents what TruffleRuby is capable of.</p>
     
-      <h3 id="debian-based-ubuntu-etc">
+      <h3 id="use-the-latest-release">
         
         
-          Debian-based: Ubuntu, etc <a href="#debian-based-ubuntu-etc" class="anchor_heading">#</a>
+          Use the Latest Release <a href="#use-the-latest-release" class="anchor_heading">#</a>
         
         
       </h3>
 
-<pre><code class="language-bash">sudo apt-get install libssl-dev
-</code></pre>
+<p>Always use the latest release at the time of benchmarking (so it does not misrepresent TruffleRuby by using an old release which may have known performance issues).</p>
     
-      <h3 id="macos">
+      <h3 id="use-the-correct-runtime-configuration">
         
         
-          macOS <a href="#macos" class="anchor_heading">#</a>
+          Use the Correct Runtime Configuration <a href="#use-the-correct-runtime-configuration" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>On macOS the system version is too old.</p>
+<p>TruffleRuby has two Runtime Configurations, Native and JVM, see <a href="/dev/reference-manual/ruby/#truffleruby-runtime-configurations">this comparison</a>.</p>
+
+<p>If you want to benchmark peak performance, you should use the JVM configuration.
+To do so, set the environment variable <code>TRUFFLERUBYOPT=--jvm</code> so it affects all TruffleRuby processes.
+You can also pass <code>--jvm</code> as an argument to TruffleRuby if you are sure there are no subprocesses.</p>
+
+<p>The Native configuration provides better startup and warmup but has slower peak performance.</p>
+
+<p>Of course you can also benchmark both configurations and see which one is better for what you are benchmarking.</p>
     
-      <h4 id="homebrew">
+      <h3 id="run-with-enough-warmup">
         
         
-          Homebrew
+          Run with Enough Warmup <a href="#run-with-enough-warmup" class="anchor_heading">#</a>
         
         
-      </h4>
+      </h3>
 
-<p>We recommend installing libssl via <a href="https://brew.sh">Homebrew</a>.</p>
+<p>TruffleRuby like other runtimes with a just-in-time compiler needs some time (called warmup) to reach peak performance,
+because it takes time to just-in-time compile the relevant methods of the benchmark.
+The easiest way to check if there was enough warmup is to run the benchmark workload repeatedly inside a process and print the times of each run.
+The times should be very stable once it’s warmed up and conversely keep changing while it is not warmed up yet.
+See <a href="/dev/reference-manual/ruby/ReportingPerformanceProblems/">this documentation</a> for more details about warmup.</p>
+    
+      <h3 id="consider-disabling-the-global-c-extension-lock">
+        
+        
+          Consider Disabling the Global C-Extension Lock <a href="#consider-disabling-the-global-c-extension-lock" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<pre><code class="language-bash">brew install openssl
+<p>On TruffleRuby, C extensions by default use a global lock for maximum compatibility with CRuby.
+If you are benchmarking a multi-threaded Ruby program (e.g. Rails on a multi-threaded server), it is worth trying
+<code>TRUFFLERUBYOPT="--experimental-options --cexts-lock=false"</code>.
+<a href="https://github.com/oracle/truffleruby/issues/2136">This issue</a> tracks a way to automatically not use the lock for extensions which do not need it.</p>
+    
+      <h2 id="recommendations">
+        
+        
+          Recommendations <a href="#recommendations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>These are more general recommendations about benchmarking.</p>
+    
+      <h3 id="avoid-benchmarking-on-a-laptop">
+        
+        
+          Avoid Benchmarking on a Laptop <a href="#avoid-benchmarking-on-a-laptop" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Performance on laptops is very sensitive to heat, and so overall quite unstable.
+As an example, if the CPU gets too warm the operating system will throttle it, making the benchmark results unfair and unstable.
+So benchmarking should be done on on a desktop computer or server.</p>
+    
+      <h3 id="avoid-other-running-processes">
+        
+        
+          Avoid Other Running Processes <a href="#avoid-other-running-processes" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>As those would cause extra noise in benchmarking results.
+Definitely no browser, slack, IDE, etc as those use a lot of CPU.</p>
+    
+      <h3 id="disable-frequency-scaling">
+        
+        
+          Disable Frequency Scaling <a href="#disable-frequency-scaling" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>CPU frequency scaling and boost generally just increases noise in benchmarking results,
+so it is recommended to disable them when benchmarking for more stable results.</p>
+
+<p>For Intel CPUs use:</p>
+
+<pre><code class="language-bash">sudo sh -c 'echo 1 &gt; /sys/devices/system/cpu/intel_pstate/no_turbo'
+</code></pre>
+
+<p>For AMD CPUs use:</p>
+
+<pre><code class="language-bash">sudo sh -c 'echo 0 &gt; /sys/devices/system/cpu/cpufreq/boost'
+</code></pre>
+
+<p>Also make sure the performance governor is used on Linux:</p>
+
+<pre><code class="language-bash">sudo cpupower frequency-set -g performance
+cpupower frequency-info
 </code></pre>
     
-      <h4 id="macports">
+      <h3 id="do-not-pin-truffleruby-to-a-single-core">
         
         
-          MacPorts
+          Do not pin TruffleRuby to a Single Core <a href="#do-not-pin-truffleruby-to-a-single-core" class="anchor_heading">#</a>
         
         
-      </h4>
+      </h3>
 
-<p>MacPorts should also work but is not actively tested.</p>
+<p>TruffleRuby uses multiple threads for the JIT Compiler, the GC, etc.
+Restricting it to a single core for benchmarking does not make sense, it would cause a lot of contention.</p>
+    
+      <h3 id="avoid-benchmarking-on-macos">
+        
+        
+          Avoid Benchmarking on macOS <a href="#avoid-benchmarking-on-macos" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<pre><code class="language-bash">sudo port install openssl
-</code></pre>
+<p>macOS’s memory management is subpar and can cause unnecessary memory swapping even when there is enough memory (e.g. it sometimes keeps terminated processes in memory needlessly).</p>
+
+<p>macOS’s TCP stack is also subpar, see the <a href="https://www.phusionpassenger.com/library/config/apache/optimization/#operating-system-recommendations">Passenger docs</a> on this subject.</p>
+
+<p>If you have no choice but to benchmark on macOS then mention that with the results
+and ensure there is plenty free memory and no swap while benchmarking.
+Use <code>vm_stat</code> (<code>Pages free</code>) or <code>top</code> (<code>PhysMem</code> -&gt; <code>unused</code>) to check the amount of free memory.
+Unfortunately neither of these tools show the swap usage, illustrating how difficult it is to ensure there is no swapping going on when benchmarking on macOS.
+Use <code>Activity Monitor</code> before and after benchmarking to ensure there is no swap (<code>Swap Used</code>) as a workaround.
+<code>Activity Monitor</code> is too heavy to be used during benchmarking.</p>
 
             </div>
 

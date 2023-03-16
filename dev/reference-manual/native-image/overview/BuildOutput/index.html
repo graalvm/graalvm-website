@@ -756,6 +756,7 @@ GraalVM Native Image: Generating 'helloworld' (executable)...
 [1/8] Initializing...                                            (3.3s @ 0.25GB)
  Version info: 'GraalVM dev Java 19+36-jvmci-23.0-b01 CE'
  Java version info: '19+36-jvmci-23.0-b01'
+ Graal compiler: optimization level: '0', target machine: 'x86-64-v3'
  C compiler: gcc (linux, x86_64, 11.3.0)
  Garbage collector: Serial GC (max heap size: 80% of RAM)
 [2/8] Performing analysis...  [****]                             (6.2s @ 0.47GB)
@@ -789,6 +790,10 @@ Top 10 origins of code area:            Top 10 object types in image heap:
   11.10KB jdk.proxy2                     173.15KB java.lang.String[]
    8.10KB jdk.internal.vm.compiler       163.22KB j.u.c.ConcurrentHashMap$Node
    1.39KB for 2 more origins               1.70MB for 808 more object types
+--------------------------------------------------------------------------------
+Recommendations:
+ HEAP: Set max heap for improved and more predictable memory usage.
+ CPU:  Enable more CPU features with '-march=native' for improved performance.
 --------------------------------------------------------------------------------
     0.5s (1.8% of total time) in 24 GCs | Peak RSS: 5.62GB | CPU load: 8.92
 --------------------------------------------------------------------------------
@@ -846,6 +851,21 @@ Please report this version info when you <a href="https://github.com/oracle/graa
 <p>The Java version info (<code>java.runtime.version</code> property) of the Native Image build process.
 Please report this version info when you <a href="https://github.com/oracle/graal/issues/new">file issues</a>.</p>
     
+      <h4 id="graal-compiler">
+        
+        
+          <a name="glossary-graal-compiler"></a>Graal Compiler
+        
+        
+      </h4>
+<p>The selected optimization level and targeted machine type used by the Graal compiler.
+The optimization level can be controlled with the <code>-O</code> option and defaults to <code>2</code>, which enables aggressive optimizations.
+Use <code>-Ob</code> to enable quick build mode, which speeds up the <a href="#stage-compiling">compilation stage</a> during development.
+The targeted machine type can be selected with the <code>-march</code> option and defaults to <code>x86-64-v3</code> on AMD64 and <code>armv8-a</code> on AArch64.
+See <a href="#recommendation-cpu">here</a> for recommendations on how to use this option.</p>
+
+<p>On Oracle GraalVM, the line also shows whether <a href="#recommendation-pgo">Profile-Guided Optimizations</a> are <em>on</em> or <em>off</em>.</p>
+    
       <h4 id="c-compiler">
         
         
@@ -865,11 +885,11 @@ Please report this version info when you <a href="https://github.com/oracle/graa
 <p>The garbage collector used within the generated executable:</p>
 <ul>
   <li>The <em>Serial GC</em> is the default GC and optimized for low memory footprint and small Java heap sizes.</li>
-  <li>The <em>G1 GC</em> (only available with GraalVM Enterprise Edition) is a multi-threaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency while achieving high throughput.</li>
+  <li>The <em>G1 GC</em> (not available in GraalVM Community Edition) is a multi-threaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency while achieving high throughput.</li>
   <li>The <em>Epsilon GC</em> does not perform any garbage collection and is designed for very short-running applications that only allocate a small amount of memory.</li>
 </ul>
 
-<p>For more information see the <a href="/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">docs on Memory Management at Image Run Time</a>.</p>
+<p>For more information see the <a href="/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">docs on Memory Management</a>.</p>
     
       <h4 id="maximum-heap-size">
         
@@ -1105,6 +1125,87 @@ Therefore, reducing the number of such methods also reduces the size of correspo
       </h4>
 <p>The amount of data in the binary that is neither in the <a href="#glossary-code-area">code area</a>, nor in the <a href="#glossary-image-heap">heap</a>, nor <a href="#glossary-debug-info">debug info</a>.
 This data typically contains internal information for Native Image and should not be dominating.</p>
+    
+      <h2 id="recommendations">
+        
+        
+          Recommendations <a href="#recommendations" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The build output may contain one or more of the following recommendations that help you get the best out of Native Image.</p>
+    
+      <h4 id="awt-missing-reachability-metadata-for-abstract-window-toolkit">
+        
+        
+          <a name="recommendation-awt"></a><code>AWT</code>: Missing Reachability Metadata for Abstract Window Toolkit
+        
+        
+      </h4>
+
+<p>The Native Image analysis has included classes from the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.desktop/java/awt/package-summary.html"><code>java.awt</code> package</a> but could not find any reachability metadata for it.
+Use the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">tracing agent</a> to collect such metadata for your application.
+Otherwise, your application is unlikely to work properly.
+If your application is not a desktop application (for example using Swing or AWT directly), you may want to re-evaluate whether the dependency on AWT is actually needed.</p>
+    
+      <h4 id="cpu-enable-more-cpu-features-for-improved-performance">
+        
+        
+          <a name="recommendation-cpu"></a><code>CPU</code>: Enable More CPU Features for Improved Performance
+        
+        
+      </h4>
+
+<p>The Native Image build process has determined that your CPU supports more features, such as AES or LSE, than currently enabled.
+If you deploy your application on the same machine or a similar machine with support for the same CPU features, consider using <code>-march=native</code> at build time.
+This option allows the Graal compiler to use all CPU features available, which in turn can significantly improve the performance of your application.
+Use <code>-march=list</code> to list all available machine types that can be targeted explicitly.</p>
+    
+      <h4 id="g1gc-use-g1-garbage-collector-for-improved-latency-and-throughput">
+        
+        
+          <a name="recommendation-g1gc"></a><code>G1GC</code>: Use G1 Garbage Collector for Improved Latency and Throughput
+        
+        
+      </h4>
+
+<p>The G1 garbage collector is available for your platform.
+Consider enabling it using <code>--gc=G1</code> at build time to improve the latency and throughput of your application.
+For more information see the <a href="/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">docs on Memory Management</a>.
+For best peak performance, also consider using <a href="#recommendation-pgo">Profile-Guided Optimizations</a>.</p>
+    
+      <h4 id="heap-specify-a-maximum-heap-size">
+        
+        
+          <a name="recommendation-heap"></a><code>HEAP</code>: Specify a Maximum Heap Size
+        
+        
+      </h4>
+
+<p>Please refer to <a href="#glossary-gc-max-heap-size">Maximum Heap Size</a>.</p>
+    
+      <h4 id="pgo-use-profile-guided-optimizations-for-improved-throughput">
+        
+        
+          <a name="recommendation-pgo"></a><code>PGO</code>: Use Profile-Guided Optimizations for Improved Throughput
+        
+        
+      </h4>
+
+<p>Consider using Profile-Guided Optimizations to optimize your application for improved throughput.
+These optimizations allow the Graal compiler to leverage profiling information, similar to when it is running as a JIT compiler, when AOT-compiling your application.
+For this, perform the following steps:</p>
+
+<ol>
+  <li>Build your application with <code>--pgo-instrument</code>.</li>
+  <li>Run your instrumented application with a representative workload to generate profiling information in the form of an <code>.iprof</code> file.</li>
+  <li>Re-build your application and pass in the profiling information with <code>--pgo=&lt;your&gt;.iprof</code> to generate an optimized version of your application.</li>
+</ol>
+
+<p>Relevant guide: <a href="/dev/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Optimize a Native Executable with Profile-Guided Optimizations</a>.</p>
+
+<p>For best peak performance, also consider using the <a href="#recommendation-g1gc">G1 garbage collector</a>.</p>
     
       <h2 id="resource-usage-statistics">
         
