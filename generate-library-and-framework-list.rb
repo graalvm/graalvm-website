@@ -2,6 +2,8 @@ require "json"
 entries = JSON.load File.read("graalvm-reachability-metadata/library-and-framework-list.json")
 
 Dir.glob('graalvm-reachability-metadata/metadata/*/*/*.json') do |metadata_index|
+  next if metadata_index.include? "/samples/" # ignore samples
+
   metadata = JSON.load File.read(metadata_index)
 
   entries.push({

@@ -46,6 +46,11 @@ folders.each do |folder|
       next
     end
 
+    unless header.is_a?(Hash)
+      warn "Unexpected YAML header in #{file}:\n#{header.inspect}"
+      exit(1)
+    end
+
     next if %w[redirected docs_landing].include? header["layout"]
 
     if add_title

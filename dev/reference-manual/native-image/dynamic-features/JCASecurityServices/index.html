@@ -773,14 +773,13 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This section refers to the use of the services provided by the Java Cryptography Architecture (JCA) framework.
-For more details see the following guides: <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/security/crypto/CryptoSpec.html">JDK8</a>, <a href="https://docs.oracle.com/en/java/javase/11/security/java-cryptography-architecture-jca-reference-guide.html">JDK11</a>.</p>
+<p>This page explains Native Image support of the <a href="https://docs.oracle.com/en/java/javase/17/security/java-cryptography-architecture-jca-reference-guide.html">Java Cryptography Architecture (JCA)</a> framework.</p>
 
 <p>The JCA framework uses a provider architecture to access security services such as digital signatures, message digests, certificates and certificate validation, encryption (symmetric/asymmetric block/stream ciphers), key generation and management, and secure random number generation, etc.
 To achieve algorithm independence and extensibility it relies on reflection, therefore it requires a custom configuration in Native Image.
-By default the Native Image builder uses static analysis to discover which of these services are used (see next section for details).
+By default the <code>native-image</code> builder uses static analysis to discover which of these services are used (see next section for details).
 The automatic registration of security services can be disabled with <code>-H:-EnableSecurityServicesFeature</code>.
-Then a custom reflection configuraion file or feature can be used to register the security services required by a specific application.
+Then a custom reflection configuration file or feature can be used to register the security services required by a specific application.
 Note that when automatic registration of security providers is disabled, all providers are, by default, filtered from special JDK caches that are necessary for security functionality.
 In this case, you must manually mark used providers with <code>-H:AdditionalSecurityProviders</code>.</p>
     
@@ -795,16 +794,18 @@ In this case, you must manually mark used providers with <code>-H:AdditionalSecu
 <p>The mechanism, implemented in the <code>com.oracle.svm.hosted.SecurityServicesFeature</code> class, uses reachability of specific API methods in the JCA framework to determine which security services are used.</p>
 
 <p>Each JCA provider registers concrete implementation classes for the algorithms it supports.
-Each of the service classes (<code>Signature</code>, <code>Cipher</code>, <code>Mac</code>, <code>KeyPair</code>, <code>KeyGenerator</code>, <code>KeyFactory</code>, <code>KeyStore</code>, etc.,) declares a series of <code>getInstance(&lt;algorithm&gt;, &lt;provider&gt;)</code> factory methods which provide a concrete service implementation.
-When a specific algorithm is requested the framework searches the registered providers for the corresponding implementation classes and it dynamically allocates objects for concrete service implementations.
-The Native Image builder uses static analysis to discover which of these services are used.
+Each of the service classes (<code>Signature</code>, <code>Cipher</code>, <code>Mac</code>, <code>KeyPair</code>, <code>KeyGenerator</code>, <code>KeyFactory</code>, <code>KeyStore</code>, etc.) declares a series of <code>getInstance(&lt;algorithm&gt;, &lt;provider&gt;</code> factory methods which provide a concrete service implementation.
+When a specific algorithm is requested, the framework searches the registered providers for the corresponding implementation classes and dynamically allocates objects for concrete service implementations.
+The <code>native-image</code> builder uses static analysis to discover which of these services are used.
 It does so by registering reachability handlers for each of the <code>getInstance()</code> factory methods.
-When it determines that a <code>getInstance()</code> method is reachable at run time it automatically performs the reflection registration for all the concrete implementations of the corresponding service type.</p>
+When it determines that a <code>getInstance()</code> method is reachable at run time, it automatically performs the reflection registration for all the concrete implementations of the corresponding service type.</p>
 
 <p>Tracing of the security services automatic registation can be enabled with <code>-H:+TraceSecurityServices</code>.
 The report will detail all registered service classes, the API methods that triggered registration, and the parsing context for each reachable API method.</p>
 
-<p>Note: The <code>--enable-all-security-services</code> option is now deprecated and it will be removed in a future release.</p>
+<blockquote>
+  <p>Note: The <code>--enable-all-security-services</code> option is now deprecated and it will be removed in a future release.</p>
+</blockquote>
     
       <h2 id="provider-registration">
         
@@ -814,20 +815,20 @@ The report will detail all registered service classes, the API methods that trig
         
       </h2>
 
-<p>The native image builder captures the list of providers and their preference order from the underlying JVM.
+<p>The <code>native-image</code> builder captures the list of providers and their preference order from the underlying JVM.
 The provider order is specified in the <code>java.security</code> file under <code>&lt;java-home&gt;/lib/security/java.security</code>.
-New security providers cannot be registered at run time; all providers must be statically configured during a native image building.</p>
+New security providers cannot be registered at run time; all providers must be statically configured at executable build time.</p>
     
-      <h2 id="provider-reordering-at-runtime">
+      <h2 id="providers-reordering-at-run-time">
         
         
-          Provider Reordering at Runtime <a href="#provider-reordering-at-runtime" class="anchor_heading">#</a>
+          Providers Reordering at Run Time <a href="#providers-reordering-at-run-time" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>It is possible to reorder security providers at runtime, however only existing provider instances can be used.
-For example, if the BouncyCastle provider was registered at build time and we wish to insert it at position 1 at runtime:</p>
+<p>It is possible to reorder security providers at run time, however only existing provider instances can be used.
+For example, if the <code>BouncyCastle</code> provider is registered at build time and you want to insert it at position 1 at run time:</p>
 <pre><code class="language-java">Provider bcProvider = Security.getProvider("BC");
 Security.removeProvider("BC");
 Security.insertProviderAt(bcProvider, 1);
@@ -841,9 +842,9 @@ Security.insertProviderAt(bcProvider, 1);
         
       </h2>
 
-<p>The SecureRandom implementations open the <code>/dev/random</code> and <code>/dev/urandom</code> files which are used as sources for entropy.
+<p>The <code>SecureRandom</code> implementations open the <code>/dev/random</code> and <code>/dev/urandom</code> files which are used as sources.
 These files are usually opened in class initializers.
-To avoid capturing state from the machine that runs the Native Image builder these classes need to be initialized at run time.</p>
+To avoid capturing state from the machine that runs the <code>native-image</code> builder, these classes need to be initialized at run time.</p>
     
       <h2 id="custom-service-types">
         
@@ -853,10 +854,9 @@ To avoid capturing state from the machine that runs the Native Image builder the
         
       </h2>
 
-<p>By default, only services specified in the JCA are automatically registered. To automatically register custom service types, you can use <code>-H:AdditionalSecurityServiceTypes</code>.
-Note that for automatic registration to work, the service interface must have a <code>getInstance</code> method and have the same simple name as the service type.
-If relying on third party code that doesn’t comply to the above requirements, manual configuration will be required. In that case, providers for such services must explicitly be registered using <code>-H:AdditionalSecurityProviders</code>.
-Note that these options are only required in very specific cases and should not normally be needed.</p>
+<p>By default, only services specified in the JCA framework are automatically registered. To automatically register custom service types, you can use the <code>-H:AdditionalSecurityServiceTypes</code> option.
+Note that for automatic registration to work, the service interface must have a <code>getInstance</code> method and have the same name as the service type.
+If relying on the third-party code that does not comply to the above requirements, a manual configuration will be required. In that case, providers for such services must explicitly be registered using the <code>-H:AdditionalSecurityProviders</code> option. Note that these options are only required in very specific cases and should not normally be needed.</p>
     
       <h3 id="further-reading">
         
@@ -868,6 +868,7 @@ Note that these options are only required in very specific cases and should not 
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/dynamic-features/URLProtocols/">URL Protocols in Native Image</a></li>
+  <li><a href="/dev/reference-manual/native-image/Jipher/">Jipher JCE with Native Image</a></li>
 </ul>
 
               </div>

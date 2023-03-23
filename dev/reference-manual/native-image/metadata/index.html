@@ -986,16 +986,6 @@ The JSON schema of JNI metadata is identical to the <a href="#specifying-reflect
 <p>Java is capable of accessing any resource on the application class path, or the module path for which the requesting code has permission to access.
 Resource metadata instructs the <code>native-image</code> builder to include specified resources and resource bundles in the produced binary.
 A consequence of this approach is that some parts of the application that use resources for configuration (such as logging) are effectively configured at build time.</p>
-
-<p>The code below accesses a text file and requires providing resource metadata:</p>
-<pre><code class="language-java">class Example {
-    public void conquerTheWorld() {
-        ...
-        InputStream plan = Example.class.getResourceAsStream("plans/v2/conquer_the_world.txt");
-        ...
-    }
-}
-</code></pre>
     
       <h3 id="resource-metadata-in-code">
         
@@ -1004,7 +994,27 @@ A consequence of this approach is that some parts of the application that use re
         
         
       </h3>
-<p>It is not possible to specify used resources and resource bundles in code.</p>
+<p>Native Image will detect calls to <code>java.lang.Class#getResource</code> and <code>java.lang.Class#getResourceAsStream</code> in which:</p>
+<ul>
+  <li>The class on which these methods are called is constant</li>
+  <li>The first parameter, <code>name</code>, is a constant
+and automatically register such resources.</li>
+</ul>
+
+<p>The code below will work out of the box, because:</p>
+<ul>
+  <li>We are using a class literal (<code>Example.class</code>)</li>
+  <li>We are using a string literal as the <code>name</code> parameter
+    <pre><code class="language-java">class Example {
+ public void conquerTheWorld() {
+     ...
+     InputStream plan = Example.class.getResourceAsStream("plans/v2/conquer_the_world.txt");
+     ...
+ }
+}
+</code></pre>
+  </li>
+</ul>
     
       <h3 id="resource-metadata-in-json">
         
@@ -1136,19 +1146,39 @@ class Example {
         
       </h2>
 <p>Java can serialize any class that implements the <code>Serializable</code> interface.
-Serialization usually requires reflectively accessing the class of the object being serialized.
-The JDK also requires additional information about the class to serialize its object.
-Native Image supports serialization with proper metadata.</p>
+Native Image supports serialization with proper serializaiton metadata registration. This is necessary as serialization usually
+requires reflectively accessing the class of the object that is being serialized.</p>
     
-      <h3 id="serialization-metadata-in-code">
+      <h3 id="serialization-metadata-registration-in-code">
         
         
-          Serialization Metadata In Code <a href="#serialization-metadata-in-code" class="anchor_heading">#</a>
+          Serialization Metadata Registration In Code <a href="#serialization-metadata-registration-in-code" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>It is not possible to register classes used for serialization in code.</p>
+<p>Native Image detects calls to <code>ObjectInputFilter.Config#createFilter(String pattern)</code> and if the <code>pattern</code> argument is constant, the exact classes mentioned in the pattern will be registered for serialization. 
+For example, the following pattern will register the class <code>pkg.SerializableClass</code> for serialization:</p>
+<pre><code class="language-java">  var filter = ObjectInputFilter.Config.createFilter("pkg.SerializableClass;!*;")
+  objectInputStream.setObjectInputFilter(proof);
+</code></pre>
+<p>Using this pattern has a positive side effect of improving security on the JVM as only <code>pkg.SerializableClass</code> can be received by the 
+<code>objectInputStream</code>.</p>
+
+<p>Wildcard patterns do the serialization registration only for lambda-proxy classes of an enclosing class. For example, to register lambda serialization in an enclosing class <code>pkg.LambdaHolder</code> use:</p>
+<pre><code class="language-java">  ObjectInputFilter.Config.createFilter("pkg.LambdaHolder$$Lambda$*;")
+</code></pre>
+
+<p>Patterns like <code>"pkg.**"</code> and <code>"pkg.Prefix*"</code> will not perform serialization registration as they are too general and would increase image size significantly.</p>
+
+<p>For calls to the <code>sun.reflect.ReflectionFactory#newConstructorForSerialization(java.lang.Class)</code> and <code>sun.reflect.ReflectionFactory#newConstructorForSerialization(java.lang.Class, )</code> native image detects calls to these functions when all arguments and the receiver are constant. For example, the following call will register <code>SerializlableClass</code> for serialization:</p>
+<pre><code class="language-java">  ReflectionFactory.getReflectionFactory().newConstructorForSerialization(SerializableClass.class);
+</code></pre>
+<p>To create a custom constructor for serialization use:</p>
+<pre><code class="language-java">  var constructor = SuperSuperClass.class.getDeclaredConstructor();
+  var newConstructor = ReflectionFactory.getReflectionFactory().newConstructorForSerialization(BaseClass.class, constructor);
+</code></pre>
+<p>Proxy classes can only be registered for serialization via the JSON files.</p>
     
       <h3 id="serialization-metadata-in-json">
         
@@ -1173,16 +1203,25 @@ Native Image supports serialization with proper metadata.</p>
       "condition": {
         "typeReachable": "&lt;condition-class&gt;"
       },
-      "name": "&lt;fully-qualified-class-name&gt;",
-      "customTargetConstructorClass": "&lt;custom-target-constructor-class&gt;"
+      "name": "&lt;fully-qualified-class-name&gt;"
     }
-  ]
+  ],
+ "proxies": [
+   {
+     "condition": {
+       "typeReachable": "&lt;condition-class&gt;"
+     },
+     "interfaces": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
+   }
+ ]
 }
 </code></pre>
 
 <p>Each entry in <code>types</code> enables serializing and deserializing objects of the class given by <code>name</code>.</p>
 
-<p>Lambda serialization is also supported: all lambdas declared in the methods of the class given by <code>name</code> can be serialized/deserialized.</p>
+<p>Each entry in <code>lambdaCapturingTypes</code> enables lambda serialization: all lambdas declared in the methods of the class given by <code>name</code> can be serialized and deserialized.</p>
+
+<p>Each entry in <code>proxies</code> enables the <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/proxy.html">Proxy</a> serialization by providing an interface list that a proxy implements.</p>
     
       <h2 id="predefined-classes">
         
