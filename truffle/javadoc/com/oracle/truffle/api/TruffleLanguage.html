@@ -44,7 +44,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="../../../../index-all.html">Index</a></li>
 <li><a href="../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.1.0-dev</b><br>32b4f6dc5a9505d8d74849e3559227611e215f37</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.1.0-dev</b><br>f5b13d23b10b9a8baa0dd1101b16730449026988</div>
 </div>
 <div class="subNav">
 <ul class="navList">
@@ -225,8 +225,8 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
 
  There are two kinds of threads that access contexts of Truffle guest languages:
  <ul>
- <li>Internal threads are <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#createThread-java.lang.Runnable-"><code>created</code></a> and managed by a language for
- a context. All internally created threads need to be stopped when the context is
+ <li>Internal threads are <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#newTruffleThreadBuilder-java.lang.Runnable-"><code>TruffleLanguage.Env.newTruffleThreadBuilder(Runnable)</code></a> created} and managed by a
+ language for a context. All internally created threads need to be stopped when the context is
  <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#disposeContext-C-"><code>disposed</code></a>.
  <li>External threads are created and managed by the host application / language launcher. The
  host application is allowed to use language contexts from changing threads, sequentially or at
@@ -239,7 +239,13 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
  override <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#isThreadAccessAllowed-java.lang.Thread-boolean-"><code>TruffleLanguage.isThreadAccessAllowed(Thread, boolean)</code></a> and return <code>true</code> also for
  multi-threaded accesses. Initialization actions for multi-threaded access can be performed by
  overriding <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#initializeMultiThreading-C-"><code>TruffleLanguage.initializeMultiThreading(Object)</code></a>. Threads are
- <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#initializeThread-C-java.lang.Thread-"><code>initialized</code></a> and <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#disposeContext-C-"><code>disposed</code></a> before and after use with a context. Languages may <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#createThread-java.lang.Runnable-"><code>create</code></a> new threads if the environment <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#isCreateThreadAllowed--"><code>allows</code></a> it.</div>
+ <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#initializeThread-C-java.lang.Thread-"><code>initialized</code></a> and <a href="../../../../com/oracle/truffle/api/TruffleLanguage.html#disposeContext-C-"><code>disposed</code></a> before and after use with a context. Languages may
+ <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#newTruffleThreadBuilder-java.lang.Runnable-"><code>TruffleLanguage.Env.newTruffleThreadBuilder(Runnable)</code></a> create} new threads if the environment
+ <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#isCreateThreadAllowed--"><code>allows</code></a> it.
+ <p>
+ In addition to the two kinds of threads described above, there are
+ <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#createSystemThread-java.lang.Runnable-java.lang.ThreadGroup-"><code>system threads</code></a> designed to process language
+ internal tasks in the background. They do not require the <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#isCreateThreadAllowed--"><code>creation permit</code></a>, but they must not enter any language context.</div>
 <dl>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.8 or earlier</dd>
@@ -747,9 +753,9 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
  case, the finalization order may be non-deterministic and/or not respect the order specified
  by language dependencies.
  <p>
- All threads <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#createThread-java.lang.Runnable-"><code>created</code></a> by the language must be stopped and
- joined during finalizeContext. The languages are responsible for fulfilling that contract,
- otherwise, an <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/AssertionError.html?is-external=true" title="class or interface in java.lang"><code>AssertionError</code></a> is thrown. It's not safe to use the
+ All threads <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#newTruffleThreadBuilder-java.lang.Runnable-"><code>TruffleLanguage.Env.newTruffleThreadBuilder(Runnable)</code></a> created} by the language must be
+ stopped and joined during finalizeContext. The languages are responsible for fulfilling that
+ contract, otherwise, an <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/AssertionError.html?is-external=true" title="class or interface in java.lang"><code>AssertionError</code></a> is thrown. It's not safe to use the
  <a href="http://docs.oracle.com/javase/17/docs/api/java/util/concurrent/ExecutorService.html?is-external=true#awaitTermination-long-java.util.concurrent.TimeUnit-" title="class or interface in java.util.concurrent"><code>ExecutorService.awaitTermination(long, java.util.concurrent.TimeUnit)</code></a> to detect
  Thread termination as the polyglot thread may be cancelled before executing the executor
  worker.
@@ -784,12 +790,12 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
         <em>// create and start a Thread for the asynchronous task</em>
         <em>// remeber the Thread reference to stop and join it in</em>
         <em>// the finalizeContext</em>
-        <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Thread.html?is-external=true" title="class or interface in java.lang"><code>Thread</code></a> t = context.env.createThread(<b>new</b> <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang"><code>Runnable</code></a>() {
+        <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Thread.html?is-external=true" title="class or interface in java.lang"><code>Thread</code></a> t = context.env.newTruffleThreadBuilder(<b>new</b> <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Runnable.html?is-external=true" title="class or interface in java.lang"><code>Runnable</code></a>() {
             &#064;<a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Override.html?is-external=true" title="class or interface in java.lang"><code>Override</code></a>
             <b>public</b> <b>void</b> run() {
                 <em>// asynchronous task</em>
             }
-        });
+        }).build();
         context.startedThreads.add(t);
         t.start();
     }
@@ -1344,8 +1350,10 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
  language to perform cleanup actions for each thread and context. Threads might be disposed
  before after or while a context is disposed. The <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Thread.html?is-external=true#currentThread--" title="class or interface in java.lang"><code>current
  thread</code></a> may differ from the disposed thread. Disposal of threads is only guaranteed for
- threads that were created by guest languages, so called <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#createThread-java.lang.Runnable-"><code>polyglot threads</code></a>. Other threads, created by the embedder, may be collected by the garbage
- collector before they can be disposed and may therefore not be disposed.</div>
+ threads that were created by guest languages, so called
+ <a href="../../../../com/oracle/truffle/api/TruffleLanguage.Env.html#newTruffleThreadBuilder-java.lang.Runnable-"><code>TruffleLanguage.Env.newTruffleThreadBuilder(Runnable)</code></a> polyglot threads}. Other threads, created by
+ the embedder, may be collected by the garbage collector before they can be disposed and may
+ therefore not be disposed.</div>
 <dl>
 <dt><span class="simpleTagLabel">Since:</span></dt>
 <dd>0.28</dd>
@@ -1775,7 +1783,7 @@ extends <a href="http://docs.oracle.com/javase/17/docs/api/java/lang/Object.html
 <li><a href="../../../../index-all.html">Index</a></li>
 <li><a href="../../../../help-doc.html">Help</a></li>
 </ul>
-<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.1.0-dev</b><br>32b4f6dc5a9505d8d74849e3559227611e215f37</div>
+<div class="aboutLanguage"><b>GraalVM Truffle Java API Reference<br>23.1.0-dev</b><br>f5b13d23b10b9a8baa0dd1101b16730449026988</div>
 </div>
 <div class="subNav">
 <ul class="navList">
