@@ -761,58 +761,7 @@ Native Image provides the <code>--enable-sbom</code> option to embed an SBOM int
   <p>Note: Embedding a Software Bill of Materials (SBOM) is not available in GraalVM Community Edition. The feature is currently experimental.</p>
 </blockquote>
 
-<p>The CycloneDX format is supported and the default. 
-To embed a CycloneDX SBOM into a native executable, pass the <code>--enable-sbom</code> option to the <code>native-image</code> command.</p>
-
-<p>The implementation constructs the SBOM by recovering all version information observable in external library manifests for classes included in a native executable. 
-The SBOM is also compressed in order to limit the SBOM’s impact on the native executable size. 
-Even though the tool is not yet supported on Windows, Windows users can still embed the SBOM with this experimental option. 
-The SBOM is stored in the <code>gzip</code> format with the exported <code>sbom</code> symbol referencing its start address and the <code>sbom_length</code> symbol its size.</p>
-
-<p>After embedding the compressed SBOM into the executable, the tool is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code> and outputs the SBOM in the following format:</p>
-
-<pre><code class="language-json">{
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.4",
-  "version": 1,
-  "components": [
-    {
-      "type": "library",
-      "group": "io.netty",
-      "name": "netty-codec-http2",
-      "version": "4.1.76.Final",
-      "properties": [
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:codec:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty-codec-http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty_codec_http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        ...
-      ]
-    },
-    ...
-  ],
-  "serialNumber": "urn:uuid:51ec305f-616e-4139-a033-a094bb94a17c"
-}
-</code></pre>
-
-<p>The tool can extract the SBOM from both executables and shared libraries. 
-To scan for any vulnerable libraries, submit the SBOM to a vulnerability scanner. 
-For example, the popular <a href="https://anchore.com/">Anchore software supply chain management platform</a> makes the <code>grype</code> scanner freely available.
-You can check whether the libraries given in your SBOMs have known vulnerabilities documented in Anchore’s database. 
-For this purpose, the output of the tool can be fed directly to the <code>grype</code> scanner to check for vulnerable libraries, using the command <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype</code> which produces the following output:</p>
-<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
-netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
-</code></pre>
-
-<p>You can then use this report to update any vulnerable dependencies found in your executable.</p>
+<p>The tool is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code>.</p>
     
       <h3 id="further-reading">
         
