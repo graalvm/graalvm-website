@@ -896,12 +896,16 @@ The usual Java command-line options for garbage collection apply to the <code>na
 <p>During the creation of a native executable, the representation of the whole application is created to determine which classes and methods will be used at runtime.
 It is a computationally intensive process that uses the following default values for memory usage:</p>
 <pre><code>-Xss10M \
--Xms1G \
+-XX:MaxRAMPercentage=&lt;percentage based on available memory&gt; \
+-XX:GCTimeRatio=19 \
+-XX:+ExitOnOutOfMemoryError \
 </code></pre>
 <p>These defaults can be changed by passing <code>-J + &lt;jvm option for memory&gt;</code> to the <code>native-image</code> tool.</p>
 
-<p>The <code>-Xmx</code> value is computed by using 80% of the physical memory size, but no more than 14G per host.
-You can provide a larger value for <code>-Xmx</code> on the command line, for example, <code>-J-Xmx26G</code>.</p>
+<p>The <code>-XX:MaxRAMPercentage</code> value determines the maximum heap size of the builder and is computed based on available memory of the system.
+It maxes out at 32GB by default and can be overwritten with, for example, <code>-J-XX:MaxRAMPercentage=90.0</code> for 90% of physical memory or <code>-Xmx4g</code> for 4GB.
+<code>-XX:GCTimeRatio=19</code> increases the goal of the total time for garbage collection to 5%, which is more throughput-oriented and reduces peak RSS.
+The build process also exits on the first <code>OutOfMemoryError</code> (<code>-XX:+ExitOnOutOfMemoryError</code>) to provide faster feedback in environments under a lot of memory pressure.</p>
 
 <p>By default, the <code>native-image</code> tool uses up to 32 threads (but not more than the number of processors available). For custom values, use the option <code>-H:NumberOfThreads=...</code>.</p>
 
