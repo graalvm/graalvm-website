@@ -804,6 +804,8 @@ A condition is specified in the following way:</p>
 </code></pre>
 <p>An entry with a <code>typeReachable</code> condition is considered only when the fully-qualified class is reachable.
 Currently, we support only <code>typeReachable</code> as a condition.</p>
+
+<p>Find more examples of the configuration files in the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a>.</p>
     
       <h2 id="metadata-types">
         
@@ -884,8 +886,9 @@ Integer.class.getMethod("parseInt", params2);
         
       </h3>
 
-<p>Reflection metadata can be specified in the <code>reflect-config.json</code> file.
-The JSON file is an array of reflection entries:</p>
+<p>Reflection metadata should be specified in a <em>reflect-config.json</em> file and conform to the JSON schema defined in 
+<a href="/docs/reference-manual/native-image/assets/reflect-config-schema-v1.0.0.json">reflect-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the reflect-config.json:</p>
 <pre><code class="language-json">[
     {
         "condition": {
@@ -901,12 +904,18 @@ The JSON file is an array of reflection entries:</p>
         "fields": [
             {"name": "&lt;fieldName&gt;"}
         ],
+        "allDeclaredClasses": true,
         "allDeclaredMethods": true,
-        "allDeclaredFields": true,
+        "allDeclaredFields": true, 
         "allDeclaredConstructors": true,
+        "allPublicClasses": true,
         "allPublicMethods": true,
         "allPublicFields": true,
         "allPublicConstructors": true,
+        "allRecordComponents": true,
+        "allNestMembers": true,
+        "allSigners": true,
+        "allPermittedSubclasses": true,
         "queryAllDeclaredMethods": true,
         "queryAllDeclaredConstructors": true,
         "queryAllPublicMethods": true,
@@ -915,23 +924,6 @@ The JSON file is an array of reflection entries:</p>
     }
 ]
 </code></pre>
-
-<p>The fields in a reflection entry have the following meaning:</p>
-<ul>
-  <li><code>condition</code>: See <a href="#specifying-metadata-with-json">Conditional Metadata Entries</a></li>
-  <li><code>name</code>: Name of the class that will be reflectively looked up. This property is mandatory.</li>
-  <li><code>methods</code>: List class methods that can be looked up and executed reflectively.
- Each method is described by its name and a list of parameter types.
- The parameter types are fully qualified Java class names.</li>
-  <li><code>queriedMethods</code>: List of class methods that can only be looked up.
- The description of each method is identical to the <code>methods</code> list.</li>
-  <li><code>fields</code>: List of class fields that can be looked up, read, or modified.</li>
-  <li><code>all&lt;access&gt;(Methods/Fields/Constructors)</code>: Registers all methods/fields/constructors for lookup. Methods and constructors can also be invoked.
- <code>&lt;access&gt;</code> refers to different ways of querying these members in Java and can be either <code>Declared</code> or <code>Public</code>.
- For more information, see <code>java.lang.Class.getDeclaredMethods()</code> and <code>java.lang.Class.getPublicMethods()</code>.</li>
-  <li><code>queryAll&lt;access&gt;(Methods/Constructors)</code>: Registers all methods/constructors for lookup only.</li>
-  <li><code>unsafeAllocated</code>: Allows objects of this class to be allocated using <code>Unsafe.allocateInstance</code>.</li>
-</ul>
     
       <h2 id="java-native-interface">
         
@@ -970,8 +962,11 @@ The generated metadata entry for the above call would look like:</p>
         
         
       </h3>
-<p>Metadata for JNI is provided in <code>jni-config.json</code> files.
-The JSON schema of JNI metadata is identical to the <a href="#specifying-reflection-metadata-in-json">Reflection metadata schema</a>.</p>
+
+<p>JNI metadata should be specified in a <em>jni-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/jni-config-schema-v1.0.0.json">jni-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. The example of jni-config.json is the same
+as the example of reflect-config.json described above.</p>
     
       <h2 id="resources-and-resource-bundles">
         
@@ -1020,13 +1015,16 @@ and automatically register such resources.</li>
         
         
       </h3>
-<p>Metadata for resources is provided in <code>resource-config.json</code> files.</p>
+
+<p>Resource metadata should be specified in a <em>resource-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/resource-config-schema-v1.0.0.json">resource-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the resource-config.json:</p>
 <pre><code class="language-json">{
   "resources": {
     "includes": [
       {
         "condition": {
-          "typeReachable": "&lt;condition-class&gt;" 
+          "typeReachable": "&lt;condition-class&gt;"
         },
         "pattern": ".*\\.txt"
       }
@@ -1047,14 +1045,20 @@ and automatically register such resources.</li>
       },
       "name": "fully.qualified.bundle.name",
       "locales": ["en", "de", "sk"]
+    },
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "name": "fully.qualified.bundle.name",
+      "classNames": [
+        "fully.qualified.bundle.name_en",
+        "fully.qualified.bundle.name_de"
+      ]
     }
   ]
 }
 </code></pre>
-
-<p>Native Image will iterate over all resources and match their relative paths against the Java regex specified in <code>includes</code>.
-If the path matches the regex, the resource is included.
-The <code>excludes</code> statement instructs <code>native-image</code> to omit certain included resources that match the given <code>pattern</code>.</p>
     
       <h2 id="dynamic-proxy">
         
@@ -1121,7 +1125,10 @@ class Example {
         
         
       </h3>
-<p>Metadata for dynamic proxies is provided in <code>proxy-config.json</code> files.</p>
+
+<p>Dynamic proxy metadata should be specified in a <em>proxy-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/proxy-config-schema-v1.0.0.json">proxy-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the proxy-config.json:</p>
 <pre><code class="language-json">[
   {
     "condition": {
@@ -1184,7 +1191,10 @@ For example, the following pattern will register the class <code>pkg.Serializabl
         
         
       </h3>
-<p>Metadata for serialization is provided in <code>serialization-config.json</code> files.</p>
+
+<p>Serialization metadata should be specified in a <em>serialization-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/serialization-config-schema-v1.0.0.json">serialization-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the serialization-config.json:</p>
 <pre><code class="language-json">{
   "types": [
     {
@@ -1213,12 +1223,6 @@ For example, the following pattern will register the class <code>pkg.Serializabl
  ]
 }
 </code></pre>
-
-<p>Each entry in <code>types</code> enables serializing and deserializing objects of the class given by <code>name</code>.</p>
-
-<p>Each entry in <code>lambdaCapturingTypes</code> enables lambda serialization: all lambdas declared in the methods of the class given by <code>name</code> can be serialized and deserialized.</p>
-
-<p>Each entry in <code>proxies</code> enables the <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/proxy.html">Proxy</a> serialization by providing an interface list that a proxy implements.</p>
     
       <h2 id="predefined-classes">
         
@@ -1255,7 +1259,10 @@ At runtime, if there is an attempt to load a class with the same name and byteco
         
         
       </h3>
-<p>Metadata for predefined classes is provided in <code>predefined-classes-config.json</code> files.</p>
+
+<p>Predefined classes metadata should be specified in a <em>predefined-classes-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the predefined-classes-config.json:</p>
 <pre><code class="language-json">[
   {
     "type": "agent-extracted",
@@ -1268,8 +1275,6 @@ At runtime, if there is an attempt to load a class with the same name and byteco
   }
 ]
 </code></pre>
-
-<p>The JSON schema is accompanied by the <code>agent-extracted-predefined-classes</code> directory that contains the bytecode of the listed classes.</p>
     
       <h3 id="further-reading">
         

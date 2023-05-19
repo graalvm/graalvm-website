@@ -767,8 +767,7 @@ function wrapper(element, matches) {
 
       index = match[0] + match[1]
 
-      // The next node will now actually be the text we just wrapped, so
-      // we need to skip it
+      // The next node will now actually be the text we just wrapped, so we need to skip it
       walker.nextNode()
       previousMatch = match
       match = matches.shift()
@@ -832,14 +831,19 @@ $(document).ready(function() {
   
   version && $('.display-version > #valueText').html(version);
 
-  // Set width for Search field input
+//Redirect to Latest docs version
+
+// $(document).on('click', '#redirection', () => {
+//   window.location.href = window.location.pathname.replace(/^\/[^/]+/, "/latest");
+// });
+
+// Set width for Search field input
   $('#search-box').keyup(function() {
       $(this).attr('size', $(this).val().length)
   });
 });
 
 // Copy to clipboard
-
 const copyButtonLabel = "Copy";
 
 // Only add a button if browser supports Clipboard API
@@ -868,55 +872,6 @@ async function copyCode(event) {
     button.innerText = copyButtonLabel;
   }, 1000)
 }
-
-// //w3 option for filtering
-// filterSelection("all")
-// function filterSelection(c) {
-//   var x, i;
-//   x = document.getElementsByClassName("filterDiv");
-//   if (c == "all") c = "";
-//   // Add the "show" class (display:block) to the filtered elements, and remove the "show" class from the elements that are not selected
-//   for (i = 0; i < x.length; i++) {
-//     w3RemoveClass(x[i], "show");
-//     if (x[i].className.indexOf(c) > -1) w3AddClass(x[i], "show");
-//   }
-// }
-
-// // Show filtered elements
-// function w3AddClass(element, name) {
-//   var i, arr1, arr2;
-//   arr1 = element.className.split(" ");
-//   arr2 = name.split(" ");
-//   for (i = 0; i < arr2.length; i++) {
-//     if (arr1.indexOf(arr2[i]) == -1) {
-//       element.className += " " + arr2[i];
-//     }
-//   }
-// }
-
-// // Hide elements that are not selected
-// function w3RemoveClass(element, name) {
-//   var i, arr1, arr2;
-//   arr1 = element.className.split(" ");
-//   arr2 = name.split(" ");
-//   for (i = 0; i < arr2.length; i++) {
-//     while (arr1.indexOf(arr2[i]) > -1) {
-//       arr1.splice(arr1.indexOf(arr2[i]), 1);
-//     }
-//   }
-//   element.className = arr1.join(" ");
-// }
-
-// // Add active class to the current control button (highlight it)
-// var btnContainer = document.getElementById("myBtnContainer");
-// var btns = btnContainer.getElementsByClassName("filtertab");
-// for (var i = 0; i < btns.length; i++) {
-//   btns[i].addEventListener("click", function() {
-//     var current = document.getElementsByClassName("active-filter");
-//     current[0].className = current[0].className.replace(" active-filter", "");
-//     this.className += " active-filter";
-//   });
-// }
 
 // ________Filters on the "guides" page___________
 $(".filter-item").click(function() {
@@ -970,4 +925,3 @@ window.addEventListener("resize", function() {
     image.style.display = "block";
   }
 });
-
