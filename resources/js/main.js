@@ -833,9 +833,9 @@ $(document).ready(function() {
 
 //Redirect to Latest docs version
 
-// $(document).on('click', '#redirection', () => {
-//   window.location.href = window.location.pathname.replace(/^\/[^/]+/, "/latest");
-// });
+$(document).on('click', '#redirection', () => {
+  window.location.href = window.location.pathname.replace(/^\/[^/]+/, "/latest");
+});
 
 // Set width for Search field input
   $('#search-box').keyup(function() {
