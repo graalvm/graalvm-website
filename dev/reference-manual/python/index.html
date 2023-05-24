@@ -476,7 +476,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/Packages/">
-              Installing Supported Packages
+              Installing Packages
             </a>
           </li>
 
@@ -498,7 +498,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/native-image/">
-              Python Native Images
+              Python Native Executables
             </a>
           </li>
 
@@ -666,28 +666,63 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM provides a Python 3.8 compliant runtime.
-A primary goal of the GraalVM Python runtime is to support SciPy and its constituent libraries, as well as to work with other data science and machine learning libraries from the rich Python ecosystem.
-At this point, the Python runtime is made available for experimentation and curious end-users.
-See <a href="/dev/reference-manual/python/FAQ/">FAQ</a> for commonly asked questions about this implementation.</p>
-
-<blockquote>
-  <p>Note: The GraalVM Python runtime is currently considered experimental and not yet available for Windows AMD64.</p>
-</blockquote>
+<p>GraalPy provides a Python 3.10 compliant runtime.
+A primary goal is to support PyTorch, SciPy, and their constituent libraries, as well as to work with other data science and machine learning libraries from the rich Python ecosystem..
+GraalPy can usually execute pure Python code faster than CPython, and nearly match CPython performance when C extensions are involved.
+While many workloads run fine, any Python program that uses external packages could hit something unsupported.
+At this point, the Python implementation is made available for experimentation and curious end-users.
+See the <a href="/dev/reference-manual/python/FAQ/">FAQ</a> for commonly asked questions about this implementation.</p>
     
-      <h2 id="installing-python">
+      <h2 id="installing-graalpy">
         
         
-          Installing Python <a href="#installing-python" class="anchor_heading">#</a>
+          Installing GraalPy <a href="#installing-graalpy" class="anchor_heading">#</a>
         
         
       </h2>
+    
+      <h3 id="linux-and-macos">
+        
+        
+          Linux and macOS <a href="#linux-and-macos" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>The Python runtime is not provided by default, and can be added to GraalVM with the <a href="/dev/reference-manual/graalvm-updater/">GraalVM Updater</a>, <code>gu</code>, tool:</p>
-<pre><code class="language-shell">gu install python
+<p>The easiest way to install GraalPy on Linux and macOS platforms is to use <a href="https://github.com/pyenv/pyenv/">pyenv</a>, the Python version manager.
+For example, to install version 22.3.0, for example, run the following commands:</p>
+
+<pre><code class="language-bash">pyenv install graalpy-22.3.0
+pyenv shell graalpy-22.3.0
 </code></pre>
 
-<p>The above command will install Python from the catalog.</p>
+<p>Another option is to use <a href="https://conda-forge.org/">Conda-Forge</a>.
+To get an environment with the latest version of GraalPy, use the following command:</p>
+
+<pre><code class="language-bash">conda create -c conda-forge -n graalpy graalpy
+</code></pre>
+
+<p>Alternatively, <a href="https://github.com/oracle/graalpython/releases">download</a> a compressed GraalPy installation file appropriate for your platform.
+For example, for Linux, download a file that matches the pattern <em>graalpy-XX.Y.Z-linux-amd64.tar.gz</em>.
+Uncompress the file and update your PATH variable as necessary.
+If you are using macOS Catalina or later, you may need to remove the quarantine attribute.
+To do this, run the following command:</p>
+
+<pre><code class="language-bash">sudo xattr -r -d com.apple.quarantine /path/to/GRAALPY_HOME
+</code></pre>
+
+<p>To try GraalPy with a full GraalVM, including support for Java embedding and interoperability with other languages, you can use the bundled releases from <a href="https://www.graalvm.org/downloads/">www.graalvm.org</a>.</p>
+    
+      <h3 id="windows">
+        
+        
+          Windows <a href="#windows" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>There is currently no installer for Windows.
+Instead, follow <a href="https://github.com/oracle/graalpython#user-content-building-from-source">these instructions</a> to build GraalPy from source.</p>
     
       <h2 id="running-python">
         
@@ -697,48 +732,65 @@ See <a href="/dev/reference-manual/python/FAQ/">FAQ</a> for commonly asked quest
         
       </h2>
 
-<p>GraalVM’s Python support targets Python 3.8 compatibility.
-While the support is still limited, you can run simple Python commands or programs with the <code>graalpy</code> launcher:</p>
-<pre><code class="language-shell">graalpy [options] [-c cmd | filename]
+<p>The best way of using GraalPy is from a <code>venv</code> virtual environment.
+This generates wrapper scripts and makes the implementation usable from a shell as the standard Python interpreter.
+To create a <code>venv</code> virtual environment with GraalPy, run the following command in your project directory:</p>
+
+<pre><code class="language-bash">graalpy -m venv &lt;venv-dir&gt;
 </code></pre>
 
-<p>If no program file or command is given, you are dropped into a simple REPL.</p>
+<p>To activate the environment in your shell session run:</p>
 
-<p>GraalVM supports some of the same options as Python 3.8 as well as some additional options to control the underlying Python runtime, GraalVM’s tools, and the execution engine.
-These can be viewed using the following command:</p>
-<pre><code class="language-shell">graalpy --help --help:tools --help:languages
+<pre><code class="language-bash">source &lt;venv-dir&gt;/bin/activate
+</code></pre>
+
+<p>Several executables are available in the virtual environment, including <code>python</code>, <code>python3</code>, and <code>graalpy</code>.</p>
+
+<p>You can run simple Python commands or programs with the <code>graalpy</code> launcher:</p>
+
+<pre><code class="language-bash">graalpy [options] [-c cmd | filename]
+</code></pre>
+
+<p>For example, start the Python interactive shell from the command line using the command <code>graalpy</code>, then enter the following line at the Python shell prompt (identified by <code>&gt;&gt;&gt;</code>), followed by <strong>CR</strong>.</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; print("Hello World!")
+</code></pre>
+
+<p>You should see the output displayed directly, followed by the Python interactive shell prompt</p>
+
+<pre><code class="language-bash">Hello World!
+&gt;&gt;&gt;
+</code></pre>
+
+<p>Alternatively, you can invoke a Python script. 
+Copy the following content into a file named <em>helloworld.py</em>:</p>
+
+<pre><code class="language-python">print("Hello World!")
+</code></pre>
+
+<p>Start <code>graalpy</code> and pass the filename as an argument:</p>
+
+<pre><code class="language-bash">graalpy helloworld.py
+</code></pre>
+
+<p>You should see the following output</p>
+
+<pre><code class="language-bash">Hello World!
 </code></pre>
     
-      <h2 id="installing-supported-packages">
+      <h2 id="python-options">
         
         
-          Installing Supported Packages <a href="#installing-supported-packages" class="anchor_heading">#</a>
+          Python Options <a href="#python-options" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>GraalVM Python runtime comes with a tool called <code>ginstall</code> which may be used to install a small list of packages known to work to some extent with GraalVM’s Python runtime.
-It is recommended to always create a virtual environment first, using the standard Python module <code>venv</code>.
-Creating such an environment avoids any incompatible interaction with the local user’s packages that may have been
-installed using a system installation of CPython:</p>
-<pre><code class="language-shell">graalpy -m venv my_new_venv
-source my_new_venv/bin/activate
-</code></pre>
+<p>GraalPy supports some of the same options as Python 3.10 as well as some additional options to control the underlying Python runtime, GraalVM’s tools, and the execution engine.
+These can be viewed using the following command:</p>
 
-<p>To see the list of installable packages, run:</p>
-<pre><code class="language-shell">graalpy -m ginstall install --help
+<pre><code class="language-bash">graalpy --help --help:tools --help:languages
 </code></pre>
-
-<p>This will print a short help document including a comma-separated list of packages you
-can install. The installation works as described in that help document:</p>
-<pre><code class="language-shell">graalpy -m ginstall install pandas
-</code></pre>
-
-<p>Note that when calling Python from Java, the polyglot shell, or another language on GraalVM, you should always evaluate the piece of Python code first to make installed packages available:</p>
-<pre><code class="language-shell">import site
-</code></pre>
-
-<p>For more information, continue reading to the <a href="/dev/reference-manual/python/Packages/">Installing Supported Packages</a> guide.</p>
     
       <h2 id="native-image-and-jvm-runtime">
         
@@ -748,11 +800,22 @@ can install. The installation works as described in that help document:</p>
         
       </h2>
 
-<p>By default, GraalVM runs Python from a binary, compiled ahead-of-time with <a href="/dev/reference-manual/native-image/">Native Image</a>, yielding faster startup time and lower footprint.
-Although the ahead-of-time compiled binary includes the Python and LLVM interpreters, in order to interoperate with
-other languages you have to supply the <code>--jvm</code> argument.
+<p>By default, GraalVM runs GraalPy from a binary, compiled ahead-of-time with <a href="/dev/reference-manual/native-image/">Native Image</a>, yielding faster startup time and lower footprint.
+Although the ahead-of-time compiled binary includes the Python and LLVM interpreters, to interoperate with
+other languages you must supply the <code>--jvm</code> option.
 This instructs the launcher to run on the JVM instead of in Native Image mode.
 Thus, you will notice a longer startup time.</p>
+    
+      <h2 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+<ul>
+  <li><a href="/dev/reference-manual/python/Packages/">Installing Supported Packages</a></li>
+</ul>
 
             </div>
 

@@ -494,7 +494,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/Packages/">
-              Installing Supported Packages
+              Installing Packages
             </a>
           </li>
 
@@ -516,7 +516,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/native-image/">
-              Python Native Images
+              Python Native Executables
             </a>
           </li>
 
@@ -694,14 +694,14 @@ $(document).ready(function(){
 
 <p>Most Jython code that uses Java integration will be based on a
 stable Jython release, and these only come in Python 2.x versions.
-GraalVM’s Python runtime, in contrast, is only targeting Python 3.x.
-GraalVM does not provide a full compatibility with these earlier 2.x versions of Jython.
+GraalPy, in contrast, is only targeting Python 3.x.
+GraalPy does not provide full compatibility with these earlier 2.x versions of Jython.
 Thus, a significant migration step will have to be taken to migrate all your code to Python 3.</p>
 
-<p>For Jython-specific features, follow this document to learn about migration to GraalVM’s Python runtime.</p>
+<p>For Jython-specific features, follow this document to learn about migration to GraalPy.</p>
 
 <p>Note that some features of Jython have a negative impact on runtime performance, and are disabled by default.
-To make migration easier, you can enable some features with a command line flag on GraalVM: <code>--python.EmulateJython</code>.</p>
+To make migration easier, you can enable some features using a command line option: <code>--python.EmulateJython</code>.</p>
     
       <h2 id="importing-java-packages">
         
@@ -711,10 +711,10 @@ To make migration easier, you can enable some features with a command line flag 
         
       </h2>
 
-<p>There are certain features of Jython’s Java integration that are enabled by default on GraalVM’s Python runtime.
+<p>There are certain features of Jython’s Java integration that are enabled by default on GraalPy.
 Here is an example:</p>
 
-<pre><code>&gt;&gt;&gt; import java.awt as awt
+<pre><code class="language-python">&gt;&gt;&gt; import java.awt as awt
 &gt;&gt;&gt; win = awt.Frame()
 &gt;&gt;&gt; win.setSize(200, 200)
 &gt;&gt;&gt; win.setTitle("Hello from Python!")
@@ -723,21 +723,24 @@ Here is an example:</p>
 &gt;&gt;&gt; win.show()
 </code></pre>
 
-<p>This example works exactly the same on both Jython and Python on GraalVM.
-However, on GraalVM only packages in the <code>java</code> namespace can be directly imported.
+<p>This example works exactly the same on both Jython and GraalPy.
+However, on GraalPy only packages in the <code>java</code> namespace can be directly imported.
 Importing classes from packages outside the <code>java</code> namespace also requires the <code>--python.EmulateJython</code> option to be active.</p>
 
 <p>Additionally, importing Java packages as Python modules is only supported under very specific circumstances.
 For example, this will work:</p>
+
 <pre><code class="language-python">import java.lang as lang
 </code></pre>
 
 <p>This will not work:</p>
+
 <pre><code class="language-python">import javax.swing as swing
 from javax.swing import *
 </code></pre>
 
-<p>Instead, you will have to import one of the classes you are interested in directly:</p>
+<p>Instead, you will have to import one of the classes directly:</p>
+
 <pre><code class="language-python">import javax.swing.Window as Window
 </code></pre>
     
@@ -749,12 +752,12 @@ from javax.swing import *
         
       </h2>
 
-<p>Constructing and working with Java objects and classes is done with natural
+<p>Constructing and working with Java objects and classes is achieved with natural
 Python syntax. The methods of Java objects can also be retrieved and passed
 around as first class objects (bound to their instance), the same as Python
 methods:</p>
 
-<pre><code>&gt;&gt;&gt; from java.util import Random
+<pre><code class="language-python">&gt;&gt;&gt; from java.util import Random
 &gt;&gt;&gt; rg = Random(99)
 &gt;&gt;&gt; rg.nextInt()
 1491444859
@@ -772,10 +775,10 @@ methods:</p>
       </h2>
 
 <p>Method overloads are resolved by matching the Python arguments in a best-effort manner to the available parameter types.
-This also happens during when data conversion.
+This also happens during data conversion.
 The goal here is to make using Java from Python as smooth as possible.
-The matching allowed here is similar to Jython, but GraalVM’s Python runtime uses a more dynamic approach to matching — Python types emulating <code>int</code> or <code>float</code> are also converted to the appropriate Java types.
-This allows, for example, to use Pandas frames as <code>double[][]</code> or NumPy array elements as <code>int[]</code> when the elements fit into those Java primitive types.</p>
+The matching allowed here is similar to Jython, but GraalPy uses a more dynamic approach to matching—Python types emulating <code>int</code> or <code>float</code> are also converted to the appropriate Java types.
+This enables you, for example, to use Pandas frames as <code>double[][]</code> or NumPy array elements as <code>int[]</code> when the elements fit into those Java primitive types.</p>
 
 <table>
   <thead>
@@ -838,20 +841,20 @@ This allows, for example, to use Pandas frames as <code>double[][]</code> or Num
 
 <p>The <code>jarray</code> module which is used to create primitive Java arrays is supported for compatibility.</p>
 
-<pre><code>&gt;&gt;&gt; import jarray
+<pre><code class="language-python">&gt;&gt;&gt; import jarray
 &gt;&gt;&gt; jarray.array([1,2,3], 'i')
 </code></pre>
 
 <p>Note that its usage is equivalent of constructing the array types using the <code>java.type</code> function and filling the array.</p>
 
-<pre><code>&gt;&gt;&gt; import java
+<pre><code class="language-python">&gt;&gt;&gt; import java
 &gt;&gt;&gt; java.type("int[]")(10)
 </code></pre>
 
 <p>The code that only needs to pass a Java array can also use Python types.
-However, implicitly, this may entail a copy of the array data, which can be deceiving when using Java arrays as output parameters:</p>
+However, implicitly, this may entail a copy of the array data, which can be deceptive when using Java arrays as output parameters:</p>
 
-<pre><code>&gt;&gt;&gt; i = java.io.ByteArrayInputStream(b"foobar")
+<pre><code class="language-python">&gt;&gt;&gt; i = java.io.ByteArrayInputStream(b"foobar")
 &gt;&gt;&gt; buf = [0, 0, 0]
 &gt;&gt;&gt; i.read(buf) # buf is automatically converted to a byte[] array
 3
@@ -864,7 +867,7 @@ However, implicitly, this may entail a copy of the array data, which can be dece
 [98, 97, 122]
 </code></pre>
 
-<p>Other modules than <code>jarray</code> are not supported.</p>
+<p>Modules other than <code>jarray</code> are not supported.</p>
     
       <h2 id="exceptions-from-java">
         
@@ -874,9 +877,9 @@ However, implicitly, this may entail a copy of the array data, which can be dece
         
       </h2>
 
-<p>Catching all kinds of Java exceptions comes with a performance penalty and is only enabled with the <code>--python.EmulateJython</code> option.</p>
+<p>Catching all kinds of Java exceptions comes with a performance penalty and is only enabled with the <code>--python.EmulateJython</code> option. For example:</p>
 
-<pre><code>&gt;&gt;&gt; import java
+<pre><code class="language-python">&gt;&gt;&gt; import java
 &gt;&gt;&gt; v = java.util.Vector()
 &gt;&gt;&gt; try:
 ...    x = v.elementAt(7)
@@ -894,9 +897,9 @@ However, implicitly, this may entail a copy of the array data, which can be dece
         
       </h2>
 <p>Java arrays and collections implementing <code>java.util.Collection</code> can be accessed using the <code>[]</code> syntax. Empty collections
-are considered false in boolean conversions. Their length is exposed by <code>len</code> builtin function.</p>
+are considered false in boolean conversions. Their length is exposed by <code>len</code> built-in function. For example:</p>
 
-<pre><code>&gt;&gt;&gt; from java.util import ArrayList
+<pre><code class="language-python">&gt;&gt;&gt; from java.util import ArrayList
 &gt;&gt;&gt; l = ArrayList()
 &gt;&gt;&gt; l.add("foo")
 True
@@ -915,10 +918,10 @@ True
 False
 </code></pre>
 
-<p>Java iterables implementing <code>java.lang.Iterable</code> can be iterated using <code>for</code> loop or <code>iter</code> builtin function
-and are accepted by all builtins that expect iterables.</p>
+<p>Java iterables implementing <code>java.lang.Iterable</code> can be iterated over using a <code>for</code> loop or <code>iter</code> built-in function
+and are accepted by all built-ins that expect iterables. For example:</p>
 
-<pre><code>&gt;&gt;&gt; [x for x in l]
+<pre><code class="language-python">&gt;&gt;&gt; [x for x in l]
 ['foo', 'bar']
 &gt;&gt;&gt; i = iter(l)
 &gt;&gt;&gt; next(i)
@@ -933,9 +936,9 @@ StopIteration
 {'foo', 'bar'}
 </code></pre>
 
-<p>Iterators can be iterated as well.</p>
+<p>Iterators can be iterated as well. For example:</p>
 
-<pre><code>&gt;&gt;&gt; from java.util import ArrayList
+<pre><code class="language-python">&gt;&gt;&gt; from java.util import ArrayList
 &gt;&gt;&gt; l = ArrayList()
 &gt;&gt;&gt; l.add("foo")
 True
@@ -945,9 +948,9 @@ True
 </code></pre>
 
 <p>Map collections implementing <code>java.util.Map</code> can be accessed using <code>[]</code> notation.
-Empty maps are considered false in boolean conversions. Iteration of maps yields the keys, consistent with <code>dict</code>.</p>
+Empty maps are considered <code>false</code> in boolean conversions. Iteration of maps yields the keys, consistent with <code>dict</code>.</p>
 
-<pre><code>&gt;&gt;&gt; from java.util import HashMap
+<pre><code class="language-python">&gt;&gt;&gt; from java.util import HashMap
 &gt;&gt;&gt; m = HashMap()
 &gt;&gt;&gt; m['foo'] = 5
 &gt;&gt;&gt; m['foo']
@@ -977,7 +980,7 @@ False
 class inheriting from a Java class can be created using an ordinary <code>class</code> statement where declared methods will
 override/implement the superclass methods when they match in name. Super calls are performed using a special
 attribute <code>self.__super__</code>. The created object won’t behave like a Python object but like a foreign Java object. Its
-Python-level members can be accessed using its <code>this</code> attribute. Example:</p>
+Python-level members can be accessed using its <code>this</code> attribute. For example:</p>
 
 <pre><code class="language-python">import atexit
 from java.util.logging import Logger, Handler
@@ -1018,15 +1021,15 @@ for record in handler.this.logged:
 
 <p>There are two options for embedding Jython in a Java application.
 One it to use the <code>PythonInterpreter</code> object that Jython provides.
-Existing code using Jython n this manner depends directly on the Jython package (for example, in the Maven configuration), because the Java code has references to Jython internal classes.
+Existing code using Jython in this manner depends directly on the Jython package (for example, in the Maven configuration), because the Java code has references to Jython internal classes.
 These classes do not exist in GraalVM, and no equivalent classes are exposed.
 To migrate from this usage, switch to the <a href="https://mvnrepository.com/artifact/org.graalvm.sdk/graal-sdk">GraalVM SDK</a>.
 Using this SDK, no APIs particular to Python are exposed, everything is done through the GraalVM API, with maximum configurability of the Python runtime.</p>
 
 <p>The other option to embed Jython in Java is via <a href="https://www.jcp.org/en/jsr/detail?id=223">JSR 223</a> by using the classes of the the <code>javax.script</code> package, and, in particular, via the <code>ScriptEngine</code> class.
-We do not recommend this approach, since the <code>ScriptEngine</code> APIs are not a clean fit for the options and capabilities of GraalVM Python.
+We do not recommend this approach, since the <code>ScriptEngine</code> APIs are not a clean fit for the options and capabilities of GraalPy.
 However, to migrate existing code, the NetBeans project provides packages on Maven Central to help here.
-Remove Jython and add the following dependencies instead (using a Maven <code>pom.xml</code> as an example):</p>
+Remove Jython and add the following dependencies instead (using a Maven <em>pom.xml</em>  file as an example):</p>
 
 <pre><code class="language-xml">&lt;dependency&gt;
   &lt;groupId&gt;org.netbeans.api&lt;/groupId&gt;
@@ -1040,22 +1043,21 @@ Remove Jython and add the following dependencies instead (using a Maven <code>po
 &lt;/dependency&gt;
 </code></pre>
 
-<p>Afterwards, basic usage of GraalVM’s Python can be achieved by replacing</p>
+<p>Afterwards, basic usage of GraalPy can be achieved by replacing</p>
 
 <pre><code class="language-java">ScriptEngine python = new ScriptEngineManager().getEngineByName("python");
-`` 
+</code></pre>
 
-with
+<p>with</p>
 
-```java
-import org.netbeans.api.scripting.Scripting;
+<pre><code class="language-java">import org.netbeans.api.scripting.Scripting;
 // ...
 ScriptEngineManager manager = Scripting.newBuilder().allowAllAccess(true).build();
 ScriptEngine python = manager.getEngineByName("GraalVM:python");
 </code></pre>
 
 <p>It is important to note that either of those options will only work if your application is executed on GraalVM with the Python language installed.
-For more details, refer to the <a href="https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md">Embed Languages</a> guide.</p>
+For more details, refer to the <a href="/dev/reference-manual/embed-languages/">Embed Languages</a> guide.</p>
 
             </div>
 

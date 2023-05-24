@@ -476,7 +476,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/Packages/">
-              Installing Supported Packages
+              Installing Packages
             </a>
           </li>
 
@@ -516,7 +516,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/native-image/">
-              Python Native Images
+              Python Native Executables
             </a>
           </li>
 
@@ -692,7 +692,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This guide elaborates on how Python files are parsed on the GraalVM Python runtime.</p>
+<p>This guide describes how Python files are parsed by GraalPy.</p>
     
       <h2 id="creating-and-managing-pyc-files">
         
@@ -701,89 +701,82 @@ $(document).ready(function(){
         
         
       </h2>
-    
-      <h4 id="pyc-files-are-created-automatically-by-the-graalvm-python-runtime-when-no-or-an-invalid-pyc-file-is-found-matching-the-desired-py-file">
-        
-        
-          <code>.pyc</code> files are created automatically by the GraalVM Python runtime when no or an invalid <code>.pyc</code> file is found matching the desired <code>.py</code> file.
-        
-        
-      </h4>
 
-<p>When a Python source file (module) is imported during an execution for the first time, the appropriate <code>.pyc</code> file is created automatically.
-If the same module is imported again, then the already created <code>.pyc</code> file is used.
-That means that there are no <code>.pyc</code> files for source files that were not executed (imported) yet.
-The creation of <code>.pyc</code> files is done entirely through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>, so that embedders can manage the file system access.</p>
+<blockquote>
+  <p>GraalPy automatically creates a <em>.pyc</em> file when there is an invalid or absent <em>.pyc</em> file that matches the corresponding <em>.py</em> file.</p>
+</blockquote>
 
-<p>Every subsequent execution of a script will reuse the already existing <code>.pyc</code> files, or will generate a new one.
-A <code>.pyc</code> file is regenerated if the timestamp or hashcode of the original source file is changed.
-The hashcode is generated only based on the Python source by calling <code>source.hashCode()</code>, which is the JDK hash code over the array of source file bytes, calculated with <code>java.util.Arrays.hashCode(byte[])</code>.</p>
+<p>When a Python source file (module) is imported during an execution for the first time, the appropriate <em>.pyc</em> file is created automatically.
+If the same module is imported again, then the existing <em>.pyc</em> file is used.
+That means that there are no <em>.pyc</em> files for source files that were not executed (imported) yet.
+The creation of <em>.pyc</em> files is achieved entirely through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>, so that embedders can manage file system access.</p>
 
-<p>The <code>.pyc</code> files are also regenerated if a magic number in the Python parser is changed.
+<p>GraalPy never deletes a <em>.pyc</em> file.</p>
+
+<p>Every subsequent execution of a script will reuse existing <em>.pyc</em> files, or will generate new ones.
+A <em>.pyc</em> file is regenerated if the timestamp or hashcode of the original source file is changed.
+The hashcode is generated based only on the Python source file by calling <code>source.hashCode()</code>, which is the JDK hash code over the array of source file bytes, calculated with <code>java.util.Arrays.hashCode(byte[])</code>.</p>
+
+<p>The <em>.pyc</em> files are also regenerated if a magic number in the Python parser is changed.
 The magic number is hard-coded in the Python source and can not be changed by the user (unless of course that user has access to the bytecode of Python).</p>
 
-<p>The developers of GraalVM’s Python runtime change the magic number when the bytecode format changes.
-This is an implementation detail, so the magic number does not have to correspond to the version of GraalVM’s Python runtime (just like in CPython).
-The magic number of pyc is a function of the concrete Python runtime Java code that is running.</p>
+<p>The developers of GraalPy change the magic number when the bytecode format changes.
+This is an implementation detail, so the magic number does not have to correspond to the version of GraalPy (as in CPython).
+The magic number of <code>pyc</code> is a function of the actual Python runtime Java code that is running. Magic number changes will be communicated in the release notes so that embedders or system administrators can delete old <em>.pyc</em> files when upgrading.</p>
 
-<p>Note that if you use <code>.pyc</code> files, you will need to allow write-access to GraalVM’s Python runtime at least when switching versions or changing the original source code.
-Otherwise, the regeneration of source files will fail and every import will have the overhead of accessing the old <code>.pyc</code> file, parsing the code, serializing it, and trying (and failing) to write out a new <code>.pyc</code> file.</p>
+<p>Note that if you use <em>.pyc</em> files, you must allow write-access to GraalPy at least when switching versions or modifying the original source code file.
+Otherwise, the regeneration of source code files will fail and every import will have the overhead of accessing each old <em>.pyc</em> file, parsing the code, serializing it, and trying (and failing) to write out a new <em>.pyc</em> file.</p>
 
-<p>A <code>*.pyc</code> file is never deleted by GraalVM’s Python runtime, only regenerated.
-It is regenerated when the appropriate source file is changed (timestamp of last modification or hashcode of the content) or the magic number of the Python imnplementation parser changes.
-Magic number changes will be communicated in the release notes so that embedders or system administrators can delete old <code>.pyc</code> files when upgrading.</p>
-
-<p>The folder structure created for <code>.pyc</code> files looks like this:</p>
-<pre><code class="language-python">top_folder
+<p>The directory structure created for <em>.pyc</em> files is as follows:</p>
+<pre><code class="language-python">top_directory
+  __pycache__
+    sourceA.graalpy.pyc
+    sourceB.graalpy.pyc
+  sourceA.py
+  sourceB.py
+  sub_directory
     __pycache__
-         sourceA.graalpy.pyc
-         sourceB.graalpy.pyc
-    sourceA.py
-    sourceB.py
-    sub_folder
-        __pycache__
-            sourceX.graalpy.pyc
-        sourceX.py
+      sourceX.graalpy.pyc
+    sourceX.py
 </code></pre>
 
-<p>By default the <code>__pycache__</code> directory is created on the same directory level as a source code file and in this directory all <code>.pyc</code> files from the same directory are stored.
-This folder may store <code>.pyc</code> files created with different versions of Python (including, e.g., CPython), so the user may see files ending in <code>*.cpython3-6.pyc</code> for example.</p>
+<p>By default, the <em>__pycache__</em> directory is created on the same directory level as a source code file and in this directory all <em>.pyc</em> files from the same directory are stored.
+This directory may store <em>.pyc</em> files created with different versions of Python (including, for example, CPython), so the user may see files ending in <em>.cpython3-6.pyc</em>, for example.</p>
 
-<p><code>.pyc</code> files are largely managed automatically by the runtime in a manner compatible to CPython. Like on CPython there are options to specify their location, and if they should be written at all, and both of these options can be changed by guest code.</p>
+<p><em>.pyc</em> files are largely managed automatically by GraalPy in a manner compatible to CPython. GraalPy provides options similar to CPython to specify the location of the <em>.pyc</em> files, and if they should be written at all, and both of these options can be changed by guest code.</p>
 
-<p>The creation of <code>*.pyc</code> files can be controlled in the same ways as on CPython
+<p>The creation of <em>.pyc</em> files can be controlled in the same way as CPython
 (c.f. https://docs.python.org/3/using/cmdline.html):</p>
 
 <ul>
-  <li>GraalVM’s Python launcher (<code>graalpy</code>) reads the <code>PYTHONDONTWRITEBYTECODE</code>
+  <li>The GraalPy launcher (<code>graalpy</code>) reads the <code>PYTHONDONTWRITEBYTECODE</code>
 environment variable. If this is set to a non-empty string, Python will not
-try to write <code>.pyc</code> files when importing modules.</li>
+try to write <em>.pyc</em> files when importing modules.</li>
   <li>The launcher command line option <code>-B</code>, if given, has the same effect as the
 above.</li>
   <li>A guest language code can change the attribute <code>dont_write_bytecode</code> of the
 <code>sys</code> built-in module at runtime to change the behavior for subsequent
 imports.</li>
   <li>The launcher reads the <code>PYTHONPYCACHEPREFIX</code> environment variable. If set,
-the <code>__pycache__</code> directory will be created at the path pointed to by the
+the <em>__pycache__</em> directory will be created at the path specified by the
 prefix, and a mirror of the directory structure of the source tree will be
-created on-demand to house the <code>.pyc</code> files.</li>
+created on-demand to store the <em>.pyc</em> files.</li>
   <li>A guest language code can change the attribute <code>pycache_prefix</code> of the <code>sys</code>
 module at runtime to change the location for subsequent imports.</li>
 </ul>
 
 <p>Since the embedder cannot use environment variables or CPython options to
-communicate these options to GraalVM’s implementation of Python, these options are made available as
-these language options:</p>
+communicate these options to GraalPy, these options are made available as language options:</p>
 
 <ul>
   <li><code>python.DontWriteBytecodeFlag</code> - equivalent to <code>-B</code> or <code>PYTHONDONTWRITEBYTECODE</code></li>
   <li><code>python.PyCachePrefix</code> - equivalent to <code>PYTHONPYCACHEPREFIX</code></li>
 </ul>
 
-<p>Note that a Python context will not enable writing <code>.pyc</code> files by default.
-The <code>graalpy</code> launcher enables it by default, but if this is desired in the embedding use case, care should be taken to ensure that the <code>__pycache__</code> location is properly managed and the files in that location are secured against manipulation just like the source <code>.py</code> files they were derived from.</p>
+<p>Note that a Python context will not enable writing <em>.pyc</em> files by default.
+The <code>graalpy</code> launcher enables it by default, but if this is desired in the embedding use case, care should be taken to ensure that the <em>__pycache__</em> location is properly managed and the files in that location are secured against manipulation in the same way as the source code files (<em>.py</em>) from which they were derived.</p>
 
-<p>Note also that to upgrade the application sources to Oracle GraalVM Python runtime, old <code>.pyc</code>
+<p>Note also that to upgrade the application sources to Oracle GraalPy, old <em>.pyc</em>
 files must be removed by the embedder as required.</p>
     
       <h2 id="security-considerations">
@@ -794,13 +787,13 @@ files must be removed by the embedder as required.</p>
         
       </h2>
 
-<p>All file operations (obtaining the data, timestamps, and writing <code>pyc</code> files)
-are done through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>. Embedders can modify all of these operations by means of custom (e.g., read-only) <code>FileSystem</code> implementations.
-The embedder can also effectively disable the creation of <code>.pyc</code> files by disabling I/O permissions for GraalVM’s Python runtime.</p>
+<p>All file operations (obtaining the data, timestamps, and writing <em>.pyc</em> files)
+are achieved through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>. Embedders can modify all of these operations by means of custom (for example, read-only) <code>FileSystem</code> implementations.
+The embedder can also effectively disable the creation of <em>.pyc</em> files by disabling I/O permissions for GraalPy.</p>
 
-<p>If the <code>.pyc</code> files are not readable, their location is not writable.
-If the <code>.pyc</code> files’ serialization data or magic numbers are corrupted in any way, the deserialization fails and we just parse the <code>.py</code> file again.
-This comes with a minor performance hit <em>only</em> for the parsing of modules, which should not be significant for most applications (provided the application does actual work besides loading Python code).</p>
+<p>If <em>.pyc</em> files are not readable, their location is not writable.
+If the <em>.pyc</em> files’ serialization data or magic numbers are corrupted in any way, the deserialization fails and GraalPy parses the <em>.py</em> source code file again.
+This comes with a minor performance hit <em>only</em> for the parsing of modules, which should not be significant for most applications (provided the application performs actual work in addition to loading Python code).</p>
 
             </div>
 

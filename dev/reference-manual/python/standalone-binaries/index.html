@@ -476,7 +476,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/Packages/">
-              Installing Supported Packages
+              Installing Packages
             </a>
           </li>
 
@@ -498,7 +498,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/python/native-image/">
-              Python Native Images
+              Python Native Executables
             </a>
           </li>
 
@@ -674,13 +674,13 @@ $(document).ready(function(){
         
       </h1>
 
-<p>With GraalVM Python implementation (GraalPy), you can distribute Python applications or libraries as standalone binaries or JAR files without any external dependencies.
-The <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle framework</a> that GraalPy is built on, and the <a href="https://github.com/oracle/graal/tree/master/sulong">Sulong LLVM runtime</a> that GraalPy leverages for managed execution of Python’s native extensions enables users to completely virtualize all filesystem accesses of Python programs, including those to the standard library and installed packages.</p>
+<p>With GraalPy, you can distribute Python applications or libraries as standalone binaries or JAR files without any external dependencies.
+The <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle framework</a> on which GraalPy is built, and the <a href="https://github.com/oracle/graal/tree/master/sulong">Sulong LLVM runtime</a> that GraalPy leverages for managed execution of Python’s native extensions enables users to completely virtualize all filesystem accesses of Python programs, including those to the standard library and installed packages.</p>
 
 <p>GraalPy comes with a module that can create standalone binaries or Java project skeletons.
 The binaries bundle everything into one native executable.
 The Java skeletons are set up with Maven to build and run self-contained JAR files.
-They can also be used to generate a standalone binary from those JARs later, so Java skeletons offer more flexibility and control over the steps.</p>
+They can also be used to generate a standalone binary from those JAR files later, so Java skeletons offer more flexibility and control over the steps.</p>
     
       <h3 id="prerequisite">
         
@@ -700,13 +700,15 @@ They can also be used to generate a standalone binary from those JARs later, so 
         
       </h2>
 
-<p>Suppose there is a simple Python script, <code>my_script.py</code>, that does some useful work when run directly.
+<p>Suppose there is a simple Python script, <em>my_script.py</em>, that does some useful work when run directly.
 To distribute it as a standalone native binary, run the following command:</p>
 
-<pre><code>graalpy -m standalone binary --module my_script.py --output my_binary
+<pre><code class="language-bash">graalpy -m standalone binary \
+      --module my_script.py \
+      --output my_binary
 </code></pre>
 
-<p>It generates a standalone <code>my_binary</code> file which includes the Python code, the GraalPy runtime, and the Python standard library in a single, self-contained executable.
+<p>It generates a standalone <em>my_binary</em> file which includes the Python code, the GraalPy runtime, and the Python standard library in a single, self-contained executable.
 Use <code>graalpy -m standalone binary --help</code> for further options.</p>
     
       <h2 id="embedding-graalpy-in-a-java-application">
@@ -720,14 +722,16 @@ Use <code>graalpy -m standalone binary --help</code> for further options.</p>
 <p>You can distribute the Python script as a JAR file that runs on GraalVM and includes GraalPy.
 To achieve this, run the <code>java</code> subcommand of GraalPy’s <code>standalone</code> module:</p>
 
-<pre><code>graalpy -m standalone java --output-directory MyJavaApplication --module my_script.py
+<pre><code class="language-bash">graalpy -m standalone java \
+      --module my_script.py \
+      --output-directory MyJavaApplication
 </code></pre>
 
-<p>It creates a Java project <em>MyJavaApplication</em>. It includes a <code>pom.xml</code> that makes it easy to generate a JAR or a GraalVM native executable with Maven.
+<p>It creates a Java project <em>MyJavaApplication</em>. It includes a <em>pom.xml</em> file that makes it easy to generate a JAR file or a GraalVM native executable with Maven.
 You can open this Maven project with any Java IDE and edit the main class that was created to modify the Python embedding.
-To build the application, either <code>mvn -Pjar package</code> to create a JAR file, or <code>mvn -Pnative package</code> to create a GraalVM native executable.</p>
+To build the application, either use <code>mvn -Pjar package</code> to create a JAR file, or <code>mvn -Pnative package</code> to create a GraalVM native executable.</p>
 
-<p>Take a look at the generated <code>pom.xml</code>.
+<p>Take a look at the generated <em>pom.xml</em> file.
 There are some options to tweak the performance and footprint trade-off.
 Review the <a href="/dev/reference-manual/python/native-image/">Python Native Images documentation</a> to find out how to remove other unwanted components and further reduce the binary size.</p>
 
@@ -744,8 +748,8 @@ This Java example demonstrates some useful default options for the Python contex
         
       </h2>
 
-<p>Creating a native executable or a JAR that includes the Python code could be seen as a mild form of obfuscation, but it does not protect your source code.
-While the Python sources are not stored verbatim into the image (only the GraalPy bytecode is), that bytecode is easy to convert back into Python sources.
+<p>Creating a native executable or a JAR file that includes the Python code could be seen as a mild form of obfuscation, but it does not protect your source code.
+While the Python sources are not stored verbatim into the executable (only the GraalPy bytecode is stored), that bytecode is easy to convert back into Python sources.
 If stronger protection for the included Python source code is required, consider, for example, encryption of the resources before building the native executable, and adding appropriate decryption into the generated virtual file system.</p>
 
             </div>
