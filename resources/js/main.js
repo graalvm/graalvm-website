@@ -767,7 +767,8 @@ function wrapper(element, matches) {
 
       index = match[0] + match[1]
 
-      // The next node will now actually be the text we just wrapped, so we need to skip it
+      // The next node will now actually be the text we just wrapped, so
+      // we need to skip it
       walker.nextNode()
       previousMatch = match
       match = matches.shift()
@@ -777,7 +778,7 @@ function wrapper(element, matches) {
   }
 }
 
-//Highlight active header menu item
+// Highlight Active Header Menu Item
 $("a").each(function() {
     if ((window.location.pathname.indexOf($(this).attr('href'))) > -1) {
         $(this).addClass('activeMenuItem');
@@ -824,26 +825,26 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-      version = "Latest";
+      version = "GraalVM for JDK 17 / 20";
   } else if (version === "dev") {
       version = "Dev Build";
   }
   
   version && $('.display-version > #valueText').html(version);
 
-//Redirect to Latest docs version
-
+// Redirect to Latest docs version
 $(document).on('click', '#redirection', () => {
   window.location.href = window.location.pathname.replace(/^\/[^/]+/, "/latest");
 });
 
-// Set width for Search field input
+  // Set width for Search field input
   $('#search-box').keyup(function() {
       $(this).attr('size', $(this).val().length)
   });
 });
 
 // Copy to clipboard
+
 const copyButtonLabel = "Copy";
 
 // Only add a button if browser supports Clipboard API
@@ -873,7 +874,8 @@ async function copyCode(event) {
   }, 1000)
 }
 
-// ________Filters on the "guides" page___________
+// Filters on Native Image User Guides page
+
 $(".filter-item").click(function() {
   $(this).addClass("active-filter").siblings().removeClass("active-filter");
 });
@@ -907,7 +909,6 @@ $(document).ready(function () {
   }
   setFilters();
 });
-// ________end of the "guides" page___________
 
 //Close button for survey banner
 

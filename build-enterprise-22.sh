@@ -13,8 +13,11 @@ cp _layouts/ohc.html _layouts/ni-docs.html
 cp _includes/snippet-highlight-ohc _includes/snippet-highlight
 cp ohc-index.md index.md
 cp robots-ohc.txt robots.txt
+
 # This is required to point to Release Notes 22.x
 rm -rf release-notes/enterprise/graalvm-enterprise-release-notes-21.md
+rm -rf release-notes/enterprise/graalvm-for-jdk17.md
+rm -rf release-notes/enterprise/graalvm-for-jdk20.md
 
 # Clone docs sources from graal, js, graalpy, fastr, truffleruby release/graal-vm/22.3 branch into graalvm.org
 ./pull-extra.sh cpu/graal-vm/22.3
