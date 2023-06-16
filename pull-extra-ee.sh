@@ -49,17 +49,17 @@ function clone_or_pull() {
 }
 
 if [ -z "$NOCOPY" ]; then
-  # if [ "$release_branch" = "master" ]; then
-  #   clone_or_pull graal master
-  # else
-  #   clone_or_pull graal $release_branch
-  # fi
-  # To substitute $release_branch with custom for testing use this model:
-  if [ "$release_branch" = "release/graal-vm/23.0" ]; then
-    clone_or_pull graal og/23.0-getting-started
+  if [ "$release_branch" = "master" ]; then
+    clone_or_pull graal master
   else
     clone_or_pull graal $release_branch
   fi
+  # To substitute $release_branch with custom for testing use this model:
+  # if [ "$release_branch" = "release/graal-vm/23.0" ]; then
+  #   clone_or_pull graal og/23.0-getting-started
+  # else
+  #   clone_or_pull graal $release_branch
+  # fi
   DOCS_SRC="repos/graal/docs"
   DOCS_DST=docs/
   mkdir -p ${DOCS_DST}

@@ -26,7 +26,7 @@ function getCPUArchitecture() {
   const platform = navigator.platform.toLowerCase();
   let architecture = "Unknown Architecture";
 
-  if (platform.indexOf("win64") !== -1 || platform.indexOf("wow64") !== -1 || platform.indexOf("macintel") !== -1 || platform.indexOf("x86_64") !== -1) {
+  if (platform.indexOf("win64") !== -1 || platform.indexOf("wow64") !== -1 || platform.indexOf("x86_64") !== -1) {
       architecture = "x64";
   } else if (platform.indexOf("arm") !== -1) {
       architecture = "ARM";
@@ -77,9 +77,9 @@ function changeVersion(javaType, osType) {
   $('#selector-java-version').html(javaTypes[javaType]);
   $('#selector-os-version').html(osTypes[osType]);
   if (currentDownloadLink) {
-    $('#download-main-btn').attr("href", currentDownloadLink).removeClass('btn-secondary');
+    $('#download-main-btn').attr("href", currentDownloadLink).removeClass('download-inactive').removeClass('btn-secondary');
   } else {
-    $('#download-main-btn').attr("href", "#").addClass('download-inactive');
+    $('#download-main-btn').attr("href", "#").addClass('download-inactive').addClass('btn-secondary');
   }
 }
 

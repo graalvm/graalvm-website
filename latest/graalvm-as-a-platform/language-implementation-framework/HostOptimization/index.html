@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-06-15 14:01:24 +0000"/>
+  <meta name="last_modified" content="2023-06-16 09:26:48 +0000"/>
 
   <link href="/resources/img/favicon/favicon_light/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: light)"/>
   <link href="/resources/img/favicon/favicon_dark/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180" media="(prefers-color-scheme: dark)"/>
@@ -833,7 +833,7 @@ Runtime compilable code, also often referred to as partial evaluatable code, has
 The general assumption is that code important for runtime compilation is also important for interpreter execution.
 Whenever a PE boundary is detected, the host inlining phase no longer makes any inlining decisions and defers them to later inlining phases better suited for regular Java code.</p>
 
-<p>The source code for this phase can be found in <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.compiler/src/org/graalvm/compiler/truffle/compiler/phases/HostInliningPhase.java">HostInliningPhase</a>.</p>
+<p>The source code for this phase can be found in <a href="https://github.com/oracle/graal/blob/master/compiler/src/org.graalvm.compiler.truffle.compiler/src/org/graalvm/compiler/truffle/compiler/phases/TruffleHostInliningPhase.java">TruffleHostInliningPhase</a>.</p>
 
 <p>Truffle host inlining is applied when compiling a method annotated with <code>@HostCompilerDirectives.BytecodeInterpreterSwitch</code>.
 The maximum node cost for such methods can be configured using <code>-H:TruffleHostInliningByteCodeInterpreterBudget=100000</code> for native images and <code>-Dgraal.TruffleHostInliningByteCodeInterpreterBudget=100000</code> on HotSpot. 
@@ -863,8 +863,7 @@ If a method exceeds the limit, it is likely that the same code also has a high c
         
       </h2>
 
-<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.
-You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (works for both).</p>
+<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Dgraal.Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.</p>
 
 <p>Consider the following example, which shows previously described common patterns of partial evaluatable code in Truffle interpreters:</p>
 
@@ -967,7 +966,7 @@ You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (wo
 
 <p>We can run this as a unittest in the Graal repository (see class <code>HostInliningBytecodeInterpreterExampleTest</code>) by running the following command line in <code>graal/compiler</code>:</p>
 
-<pre><code>mx unittest  -Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Dgraal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
+<pre><code>mx unittest  -Dgraal.Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Dgraal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
 </code></pre>
 
 <p>This prints:</p>
@@ -976,7 +975,7 @@ You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (wo
   [thread:1] scope: main.Testing
   Context: HotSpotMethod&lt;HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute()&gt;
   Context: StructuredGraph:1{HotSpotMethod&lt;HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute()&gt;}
-      [thread:1] scope: main.Testing.EnterpriseHighTier.HostInliningPhase
+      [thread:1] scope: main.Testing.EnterpriseHighTier.TruffleHostInliningPhase
       Truffle host inlining completed after 2 rounds. Graph cost changed from 136 to 137 after inlining:
       Root[org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute]
           INLINE org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.add(int, int)                      [inlined    2, monomorphic false, deopt false, inInterpreter false, propDeopt false, subTreeInvokes    0, subTreeCost    8, incomplete false,  reason null]
@@ -995,9 +994,7 @@ You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (wo
 </code></pre>
 
 <p>Note that we have also used the <code>-Dgraal.Dump=:3 </code> option, which sends the graphs to any running <code>IdealGraphVisualizer</code> instance for further inspection.
-On Native Image, use <code>-H:Dump=:2 -H:MethodFilter=...</code> to dump host compilation graphs of a given method.</p>
-
-<p>To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
+To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
     
       <h2 id="tuning-host-inlining">
         
