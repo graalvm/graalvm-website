@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-06-20 22:29:03 +0000"/>
+  <meta name="last_modified" content="2023-06-26 11:43:04 +0000"/>
 
   <link rel="icon" id="favicon" href="/resources/img/favicon/favicon-light/favicon-light.ico">
 
@@ -402,7 +402,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/native-image/">
-            Native Image
+            Getting Started with Native Image
           </a>
         </li>
 
@@ -1751,13 +1751,28 @@ When <code>callgrind</code> is used in combination with a viewer like
 information about native image execution aand relate it back to
 specific source code lines.</p>
     
-      <h3 id="related-documentation">
+      <h3 id="call-graph-recording-with-perf-record">
+        
+        
+          Call-graph recording with <code>perf record</code> <a href="#call-graph-recording-with-perf-record" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Normally when perf does stack frame recording (i.e. when <code>--call-graph</code> is used), it uses frame pointers to recognize the individual stack frames.
+This assumes that the executable that gets profiled actually preserves frame pointers whenever a function gets called.
+For native images, this can be achieved by using <code>-H:+PreserveFramePointer</code> as an image build argument.</p>
+
+<p>An alternative solution is to make perf use dwarf debug info (specifically debug_frame data) to help unwind stack frames.
+To make this work, the image needs to be built with <code>-g</code> (to generate debuginfo), and <code>perf record</code> needs to use the argument <code>--call-graph dwarf</code> to make sure dwarf debug info (instead of frame pointers) is used for stack unwinding.</p>
+    
+      <h2 id="related-documentation">
         
         
           Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/guides/debug-native-image-process/">Debug Native Executables with GDB</a></li>
