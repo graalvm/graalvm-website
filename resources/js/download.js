@@ -70,6 +70,17 @@ let currentOsType = osTypes[currentOS + '_' + cpuArchitecture] ? currentOS + '_'
 let currentDownloadLink = null;
 
 function changeVersion(javaType, osType) {
+
+  let fullVersionText='';
+  if(javaType === '20'){
+    fullVersionText = '20.0.1'
+  }else if(javaType === '17'){
+    fullVersionText = '17.0.7'
+  }
+  const sdkCommand = `sdk install java ${fullVersionText}-graal`
+
+  $('#sdk_command').text(sdkCommand);
+
   currentDownloadLink = downloadLinks[javaType + '_' + osType];
   currentJavaType = javaType;
   currentOsType = osType;

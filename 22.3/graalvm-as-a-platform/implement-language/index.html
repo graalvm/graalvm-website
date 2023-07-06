@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-06-29 11:00:35 +0000"/>
+  <meta name="last_modified" content="2023-07-06 15:37:57 +0000"/>
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
 
@@ -619,43 +619,63 @@ $(document).ready(function(){
         
       </h1>
 
-<p>We have found that the easiest way to get started with implementing your own language is by extending an existing language such as SimpleLanguage.
+<p>To implement your own language, get started by extending an existing language such as SimpleLanguage.
 <a href="https://github.com/graalvm/simplelanguage">SimpleLanguage</a> is a demonstration language built using the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/package-summary.html">Language API</a>.
 The SimpleLanguage project provides a showcase on how to use the Language APIs for writing your own language.
 It aims to use most of the available <a href="/22.3/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a> (henceforth “Truffle”) features, and documents their use extensively with inline source documentation.</p>
 
-<p>To start, ensure <a href="https://maven.apache.org/download.cgi">Maven3</a> and GraalVM are available in your system.</p>
+<p>The SimpleLanguage demonstration language is licensed under the <a href="https://opensource.org/licenses/UPL">Universal Permissive License (UPL)</a>.</p>
+    
+      <h3 id="prerequisites">
+        
+        
+          Prerequisites <a href="#prerequisites" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="https://maven.apache.org/download.cgi">Maven</a> available in your system.</li>
+  <li><a href="https://www.graalvm.org/downloads/">GraalVM</a> installed.</li>
+  <li>The <a href="https://github.com/graalvm/mx"><code>mx</code> tool</a> for the development of GraalVM projects (see below).</li>
+</ul>
+    
+      <h2 id="get-started">
+        
+        
+          Get Started <a href="#get-started" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
 <ol>
-  <li>Clone the SimpleLanguage repository using:
-    <pre><code class="language-shell">git clone https://github.com/graalvm/simplelanguage
+  <li>Clone the SimpleLanguage repository by running:
+    <pre><code class="language-shell"> git clone https://github.com/graalvm/simplelanguage
 </code></pre>
   </li>
-  <li>Set the <code>JAVA_HOME</code> and <code>PATH</code> environment variables to the GraalVM home and bin folders using a command-line shell for Linux:
-    <pre><code class="language-shell">export JAVA_HOME=/path/to/graalvm
-export PATH=/path/to/graalvm/bin:$PATH
+  <li>Execute <code>mvn package</code> from the SimpleLanguage folder to build the language. Before that, verify that <code>native-image</code> is available with your GraalVM installation to avoid a build failure:
+    <pre><code class="language-shell"> cd simplelanguage
 </code></pre>
-    <p>For macOS, use:</p>
-    <pre><code class="language-shell">export JAVA_HOME=/path/to/graalvm/Contents/Home
-export PATH=/path/to/graalvm/Contents/Home/bin:$PATH
+    <pre><code class="language-shell"> native-image --version
 </code></pre>
-  </li>
-  <li>Execute <code>mvn package</code> from the SimpleLanguage folder to build the language. The command also builds a <code>slnative</code> executable in the <code>simplelanguage/native</code> directory and a <code>sl-component.jar</code> language component which later can be installed into GraalVM using the <a href="/22.3/reference-manual/graalvm-updater/">GraalVM Updater</a> tool. Please verify ithat the <code>native-image</code> plugin is available in your GraalVM distribution to avoid build failure:
-    <pre><code class="language-shell">gu list
-gu install native-image
+    <pre><code class="language-shell"> mvn package
 </code></pre>
+    <p>The command builds the <code>slnative</code> executable in the <code>simplelanguage/native</code> directory and the <code>sl-component.jar</code> language component which can be later installed into GraalVM using the <a href="/22.3/reference-manual/graalvm-updater/">GraalVM Updater</a> tool.</p>
+
     <p>You can disable the SimpleLanguage native executable build during the packaging phase by running:</p>
-    <pre><code class="language-shell">export SL_BUILD_NATIVE=false
-mvn package
+    <pre><code class="language-shell"> export SL_BUILD_NATIVE=false
+ mvn package
 </code></pre>
   </li>
-  <li>Run in the SimpleLanguage root folder:
-    <pre><code class="language-shell">./sl ./language/tests/HelloWorld.sl
+  <li>Run SimpleLanguage from the project root folder:
+    <pre><code class="language-shell"> ./sl language/tests/HelloWorld.sl
+</code></pre>
+  </li>
+  <li>To see assembly code for the compiled functions, run:
+    <pre><code class="language-shell"> ./sl -disassemble language/tests/SumPrint.sl
 </code></pre>
   </li>
 </ol>
-
-<p>The SimpleLanguage demonstration language is licensed under the <a href="https://opensource.org/licenses/UPL">Universal Permissive License</a> (UPL).</p>
     
       <h2 id="ide-setup">
         
@@ -691,7 +711,7 @@ If you would like to experiment with your language and get the benefits of an ID
         
       </h3>
 
-<p>NetBeans provides GUI support for debugging arbitrary languages. In order to upload SimpleLanguage to NetBeans interface, proceed to File -&gt; Open Project -&gt; select <code>simplelanguage</code> folder -&gt; check Open Required Projects -&gt; open Project.</p>
+<p>NetBeans provides GUI support for debugging arbitrary languages. To upload SimpleLanguage to NetBeans interface, go to File -&gt; Open Project -&gt; select <code>simplelanguage</code> folder -&gt; check Open Required Projects -&gt; open Project.</p>
     
       <h3 id="intellij-idea">
         
@@ -700,22 +720,8 @@ If you would like to experiment with your language and get the benefits of an ID
         
         
       </h3>
-<p>The SimpleLanguage project has been tested with IntelliJ IDEA. Open IntelliJ IDEA and, from the main menu bar, select  File -&gt; Open -&gt; Navigate to and select the <code>simplelanguage</code> folder -&gt; Press OK. All dependencies will be included automatically.</p>
-    
-      <h2 id="run-simplelanguage">
-        
-        
-          Run SimpleLanguage <a href="#run-simplelanguage" class="anchor_heading">#</a>
-        
-        
-      </h2>
 
-<p>To run a SimpleLanguage source file, execute:</p>
-<pre><code class="language-shell">./sl language/tests/HelloWorld.sl
-</code></pre>
-<p>To see assembly code for the compiled functions, run:</p>
-<pre><code class="language-shell">./sl -disassemble language/tests/SumPrint.sl
-</code></pre>
+<p>The SimpleLanguage project was tested with IntelliJ IDEA. Open IntelliJ IDEA and, from the main menu bar, select  File -&gt; Open -&gt; Navigate to and select the <code>simplelanguage</code> folder -&gt; Press OK. All dependencies will be included automatically.</p>
     
       <h2 id="dump-graphs">
         
@@ -725,21 +731,44 @@ If you would like to experiment with your language and get the benefits of an ID
         
       </h2>
 
-<p>To investigate performance issues, we recommend the <a href="/22.3/tools/igv/">Ideal Graph Visualizer (IGV)</a> – an essential tool for any language implementer building on
-top of <strong>Oracle GraalVM Enterprise Edition</strong>.
-It is available as a separate download on the <a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle Technology Network Downloads</a> page.</p>
+<p>To investigate performance issues, consider using the <a href="/22.3/tools/igv/">Ideal Graph Visualizer (IGV)</a> on top of GraalVM. 
+IGV is developed to view and inspect intermediate representation graphs – a language-independent intermediate representation (IR) between the source language and the machine code, generated by the compiler. IGV is free to use.</p>
 
 <ol>
-  <li>Unzip the downloaded package, enter the <code>bin</code> directory and start IGV:
-    <pre><code class="language-shell">cd idealgraphvisualizer/bin
-idealgraphvisualizer
+  <li>Set up the <a href="https://github.com/graalvm/mx/blob/master/README.md"><code>mx</code> tool</a> on your computer.
+    <ul>
+      <li>Clone the <code>mx</code> repository by running:
+        <pre><code class="language-shell"> git clone https://github.com/graalvm/mx.git
+</code></pre>
+      </li>
+      <li>Clone the <a href="https://github.com/oracle/graal.git">Graal repository</a> to your work directory:
+        <pre><code class="language-shell"> git clone https://github.com/oracle/graal.git
+</code></pre>
+      </li>
+      <li>Add <code>mx</code> to the <code>PATH</code> environment variable:
+        <pre><code class="language-shell"> export PATH="/path/to/mx:$PATH"
+</code></pre>
+      </li>
+      <li>To check whether the installation was successful, run the command:
+        <pre><code class="language-shell"> mx --version 
+</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>Launch IGV with <code>mx</code>:
+    <pre><code class="language-shell"> mx -p graal/compiler igv
 </code></pre>
   </li>
   <li>Execute the following from the SimpleLanguage root folder to dump graphs to IGV:
-    <pre><code class="language-shell">./sl -dump language/tests/SumPrint.sl
+    <pre><code class="language-shell"> ./sl -dump language/tests/SumPrint.sl
 </code></pre>
   </li>
 </ol>
+
+<p>This dumps compiler graphs in the IGV format over the network to an IGV process listening on <em>127.0.0.1:4445</em>. 
+Once the connection is made, you are able to see the graphs in the Outline window. 
+Open a specific graph, search for nodes by name, ID, or by <code>property=value</code> data, and all matching results will be shown. 
+Learn more <a href="/22.3/tools/igv/">here</a>.</p>
     
       <h2 id="debug">
         

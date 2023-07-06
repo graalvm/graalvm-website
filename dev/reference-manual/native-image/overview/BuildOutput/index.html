@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-06-29 11:06:38 +0000"/>
+  <meta name="last_modified" content="2023-07-06 15:46:27 +0000"/>
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
 
@@ -774,13 +774,17 @@ GraalVM Native Image: Generating 'helloworld' (executable)...
  Graal compiler: optimization level: 2, target machine: x86-64-v3
  C compiler: gcc (linux, x86_64, 12.2.0)
  Garbage collector: Serial GC (max heap size: 80% of RAM)
+--------------------------------------------------------------------------------
+ Build resources:
+ - 13.24GB of memory (42.7% of 31.00GB system memory, determined at start)
+ - 16 thread(s) (100.0% of 16 available processor(s), determined at start)
 [2/8] Performing analysis...  [****]                             (4.5s @ 0.54GB)
-   3,175 (72.62%) of  4,372 types reachable
-   3,842 (50.58%) of  7,596 fields reachable
-  15,260 (45.61%) of 33,458 methods reachable
-     962 types,    83 fields, and   492 methods registered for reflection
-      57 types,    55 fields, and    52 methods registered for JNI access
-       4 native libraries: dl, pthread, rt, z
+    3,163 reachable types   (72.5% of    4,364 total)
+    3,801 reachable fields  (50.3% of    7,553 total)
+   15,183 reachable methods (45.5% of   33,405 total)
+      957 types,    81 fields, and   480 methods registered for reflection
+       57 types,    55 fields, and    52 methods registered for JNI access
+        4 native libraries: dl, pthread, rt, z
 [3/8] Building universe...                                       (0.8s @ 0.99GB)
 [4/8] Parsing methods...      [*]                                (0.6s @ 0.75GB)
 [5/8] Inlining methods...     [***]                              (0.3s @ 0.32GB)
@@ -925,6 +929,25 @@ Use the <code>-R:MaxHeapSize</code> option when building with Native Image to pr
       </h4>
 <p>All <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html"><code>Features</code></a> that are either provided or specifically enabled by the user, or implicitly registered for the user, for example, by a framework.
 GraalVM Native Image deploys a number of internal features, which are excluded from this list.</p>
+    
+      <h4 id="build-resources">
+        
+        
+          <a name="glossary-build-resources"></a>Build Resources
+        
+        
+      </h4>
+<p>The memory limit and number of threads used by the build process.</p>
+
+<p>More precisely, the memory limit of the Java heap, so actual memory consumption can be even higher.
+Please check the <a href="#glossary-peak-rss">peak RSS</a> reported at the end of the build to understand how much memory was actually used.
+By default, the process will only use <em>available</em> memory: memory that the operating system can make available without swapping out memory used by other processes.
+Therefore, consider freeing up memory if your build process is slow, for example, by closing applications that you do not need.
+Note that, by default, the build process will not use more than 32GB available memory.</p>
+
+<p>By default, the build process uses all available CPU cores to maximize speed.
+Use the <code>--parallelism</code> option to set the number of threads explicitly (for example, <code>--parallelism=4</code>).
+Use fewer threads to reduce load on your system as well as memory consumption (at the cost of a slower build process).</p>
     
       <h3 id="performing-analysis">
         
@@ -1261,10 +1284,8 @@ Increase the amount of available memory to reduce the time to build the native b
       </h4>
 <p>Peak <a href="https://en.wikipedia.org/wiki/Resident_set_size">resident set size</a> as reported by the operating system.
 This value indicates the maximum amount of memory consumed by the build process.
-By default, the process will only use available memory, so memory that the operating system can make available without having to swap out memory used by other processes.
-Therefore, consider freeing up memory if builds are slow, for example, by closing applications that you do not need.
-Note that, by default, the build process will also not use more than 32GB if available.
-If the <a href="#glossary-garbage-collection">GC statistics</a> do not show any problems, the amount of total memory of the system can be reduced to a value closer to the peak RSS to lower operational costs.</p>
+You may want to compare this value to the memory limit reported in the <a href="#glossary-build-resources">build resources section</a>.
+If there is enough headroom and the <a href="#glossary-garbage-collection">GC statistics</a> do not show any problems, the amount of total memory of the system can be reduced to a value closer to the peak RSS to lower operational costs.</p>
     
       <h4 id="cpu-load">
         
@@ -1286,7 +1307,7 @@ Increase the number of CPU cores to reduce the time to build the native binary.<
 
 <p>The build output produced by the <code>native-image</code> builder is designed for humans, can evolve with new releases, and should thus not be parsed in any way by tools.
 Instead, use the <code>-H:BuildOutputJSONFile=&lt;file.json&gt;</code> option to instruct the builder to produce machine-readable build output in JSON format that can be used, for example, for building monitoring tools.
-The JSON files validate against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.1.json"><code>build-output-schema-v0.9.1.json</code></a>.
+The JSON files validate against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.2.json"><code>build-output-schema-v0.9.2.json</code></a>.
 Note that a JSON file is produced if and only if a build succeeds.</p>
 
 <p>The following example illustrates how this could be used in a CI/CD build pipeline to check that the number of reachable methods does not exceed a certain threshold:</p>
