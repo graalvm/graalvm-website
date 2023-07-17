@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-14 12:13:30 +0000"/>
+  <meta name="last_modified" content="2023-07-17 16:39:40 +0000"/>
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
 
@@ -744,6 +744,43 @@ $(document).ready(function(){
 <p>GraalVM provides a JSR-223 compliant <code>javax.script.ScriptEngine</code> implementation for running JavaScript.
 Note that this feature is provided for legacy reasons in order to allow easier migration for implementations currently based on a <code>ScriptEngine</code>.
 We strongly encourage users to use the <code>org.graalvm.polyglot.Context</code> interface in order to control many of the settings directly and benefit from finer-grained security settings in GraalVM.</p>
+    
+      <h2 id="recommendation-use-compiledscript-api">
+        
+        
+          Recommendation: use <code>CompiledScript</code> API <a href="#recommendation-use-compiledscript-api" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To avoid unnecessary re-compilation of JS sources, it is recommended to use <code>CompiledScript.eval</code> instead of <code>ScriptEngine.eval</code>. This prevents
+JIT-compiled code from being garbage-collected as long as the corresponding <code>CompiledScript</code> object is alive.</p>
+
+<p>Single-threaded example:</p>
+<pre><code class="language-java">ScriptEngineManager manager = new ScriptEngineManager();
+ScriptEngine engine = manager.getEngineByName("js");
+CompiledScript script = ((Compilable) engine).compile("console.log('hello world');");
+script.eval();
+</code></pre>
+
+<p>Multi-threaded example:</p>
+<pre><code class="language-java">ScriptEngineManager manager = new ScriptEngineManager();
+ScriptEngine engine = manager.getEngineByName("js");
+CompiledScript script = ((Compilable) engine).compile("console.log('start');var start = Date.now(); while (Date.now()-start &lt; 2000);console.log('end');");
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        try {
+            // Create ScriptEngine for this thread (with a shared polyglot Engine)
+            ScriptEngine engine = manager.getEngineByName("js");
+            script.eval(engine.getContext());
+        } catch (ScriptException scriptException) {
+            scriptException.printStackTrace();
+        }
+    }
+}).start();
+script.eval();
+</code></pre>
     
       <h2 id="setting-options-via-bindings">
         
