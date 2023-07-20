@@ -14,7 +14,11 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-19 16:03:21 +0000"/>
+  <meta name="last_modified" content="2023-07-20 14:13:52 +0000"/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/build-and-run-native-executable-with-remote-jmx/">
+  
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
 
@@ -24,7 +28,6 @@
 
   <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
   <link rel="stylesheet" href='/assets/main.css'>
-  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/build-and-run-native-executable-with-remote-jmx/">
   <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
   <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
   <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
@@ -275,20 +278,23 @@
 </blockquote>
 
 <p>This guide covers the steps required to build, run, and interact with such a native executable using JMX.
-It also shows you how to register a custom managed bean (MBean), with the JMX server and the additional steps required for it to work with Native Image.</p>
+It also shows you how to register a custom managed bean (MBean) with the JMX server and the additional steps required for it to work with Native Image.</p>
+
 <h2 id="currently-supported-features-and-limitations">Currently Supported Features and Limitations</h2>
-<p>Currently, JMX connection from a client to a remote MBean server is supported. The client, server, or both may be a native executable.
-For now, only MXBeans, and standard user-defined MBeans are supported. Dynamic and model MBeans are not currently supported because 
-their management interfaces are defined at runtime. Although remote management of MXBeans is supported, not all platform MXBean functionality 
-is implemented or is applicable in SubstrateVM. Additionally, in order to define and use standard MBeans, metadata configuration must be specified. 
-This is further explained later in this guide.</p>
+
+<p>A JMX connection from a client to a remote MBean server is supported. 
+The client, the server, or both may be a native executable.
+Only MXBeans, and standard user-defined MBeans, are supported. 
+Dynamic and model MBeans are not supported because their management interfaces are defined at run time. 
+Although remote management of MXBeans is supported, not all platform MXBean functionality is implemented or is applicable in Native Image. Additionally, to define and use standard MBeans, you must specify metadata configuration. 
+This is further explained in this guide.</p>
 
 <h2 id="step-1-create-a-demo-application">Step 1: Create a Demo Application</h2>
 
-<p>Create a demo application in a directory named <code>demo</code>.
-Change your working directory to there and run the commands from this directory.</p>
+<p>Create a demo application in a directory named <em>demo</em>.
+Change your working directory to there and run the commands from that directory.</p>
 
-<p>Save the following code to a file named <code>SimpleJmx.java</code>.
+<p>Save the following code to a file named <em>SimpleJmx.java</em>.
 The <code>main()</code> method registers a custom MBean, then loop endlessly, so you have time to inspect the process using VisualVM.</p>
 
 <pre><code class="language-java">import javax.management.MBeanServer;
@@ -339,17 +345,25 @@ public class SimpleJmx {
 
 <h2 id="step-2-compile-to-java-bytecode">Step 2: Compile to Java Bytecode</h2>
 
-<p>Compile the Java file using the GraalVM JDK:</p>
-
-<pre><code class="language-shell">$JAVA_HOME/bin/javac SimpleJmx.java
+<ol>
+  <li>
+    <p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+  </li>
+  <li>
+    <p>Compile the Java file using the GraalVM JDK:</p>
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac SimpleJmx.java
 </code></pre>
-<p>This creates <code>SimpleJmx.class</code>, <code>SimpleJmx$Simple.class</code>, and <code>SimpleJmx$SimpleMBean.class</code> files.</p>
+    <p>This creates <em>SimpleJmx.class</em>, <em>SimpleJmx$Simple.class</em>, and <em>SimpleJmx$SimpleMBean.class</em> files.</p>
+  </li>
+</ol>
 
 <h2 id="step-3-make-a-dynamic-proxy-configuration">Step 3: Make a Dynamic Proxy Configuration</h2>
 
 <p>JMX uses dynamic proxies, a <a href="/dev/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans.
 To be able to interact with the custom <code>SimpleMBean</code> at run time, you need to provide Native Image with additional <a href="/dev/reference-manual/native-image/dynamic-features/DynamicProxy/">dynamic proxy configuration</a> for the MBean interface.
-For this, create a JSON file named <code>proxy-config.json</code> with the following contents:</p>
+For this, create a JSON file named <em>proxy-config.json</em> with the following contents:</p>
 
 <pre><code class="language-json">[
   { "interfaces": [ "SimpleJmx$SimpleMBean"] }

@@ -832,11 +832,6 @@ $(document).ready(function() {
   
   version && $('.display-version > #valueText').html(version);
 
-// Redirect to Latest docs version
-$(document).on('click', '#redirection', () => {
-  window.location.href = window.location.pathname.replace(/^\/[^/]+/, "/latest");
-});
-
   // Set width for Search field input
   $('#search-box').keyup(function() {
       $(this).attr('size', $(this).val().length)

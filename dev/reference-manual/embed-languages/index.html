@@ -14,7 +14,11 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-19 16:03:21 +0000"/>
+  <meta name="last_modified" content="2023-07-20 14:13:51 +0000"/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/embed-languages/">
+  
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
 
@@ -24,7 +28,6 @@
 
   <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
   <link rel="stylesheet" href='/assets/main.css'>
-  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/embed-languages/">
   <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
   <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
   <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
@@ -3650,7 +3653,7 @@ public class ExecutionListenerTest {
       </h2>
 
 <p>On Oracle GraalVM, a Polyglot engine can be configured to run in a dedicated <code>native-image</code> isolate.
-This experimental feature is enabled with the <code>--engine.SpawnIsolate</code> option.
+This feature is enabled with the <code>--engine.SpawnIsolate</code> option.
 An engine running in this mode executes within a VM-level fault domain with its own garbage collector and JIT compiler.
 The fact that an engine runs within an isolate is completely transparent with respect to the Polyglot API and interoperability:</p>
 
@@ -3660,7 +3663,6 @@ public class PolyglotIsolate {
   public static void main(String[] args) {
     Context context = Context.newBuilder("js")
       .allowHostAccess(HostAccess.SCOPED)
-      .allowExperimentalOptions(true)
       .option("engine.SpawnIsolate", "true").build();
     Value function = context.eval("js", "x =&gt; x+1")
     assert function.canExecute();
@@ -3678,7 +3680,6 @@ We thus strongly recommend to use <a href="#controlling-host-callback-parameter-
 <pre><code class="language-java">public class PolyglotIsolateMultipleContexts {
     public static void main(String[] args) {
         try (Engine engine = Engine.newBuilder()
-                .allowExperimentalOptions(true)
                 .option("engine.SpawnIsolate", "js").build()) {
             Source source = Source.create("js", "21 + 21");
             try (Context context = Context.newBuilder()
@@ -3698,7 +3699,7 @@ We thus strongly recommend to use <a href="#controlling-host-callback-parameter-
 }
 </code></pre>
 
-<p>Note how we need to specify the language for the isolated engine as a parameter to <code>--engine.SpawnIsolate</code> in this case.
+<p>Note how you need to specify the language for the isolated engine as a parameter to <code>--engine.SpawnIsolate</code> in this case.
 The reason is that an isolated engine needs to know which set of languages should be available.
 Behind the scenes, GraalVM will then locate the corresponding Native Image language library.
 If only a single language is selected, then the library for the language will be loaded.
@@ -3734,7 +3735,6 @@ public class PolyglotIsolateMaxHeap {
     try {
       Context context = Context.newBuilder("js")
         .allowHostAccess(HostAccess.SCOPED)
-        .allowExperimentalOptions(true)
         .option("engine.SpawnIsolate", "true")
         .option("engine.IsolateOption.MaxHeapSize", "64m").build()
       context.eval("js", "var a = [];while (true) {a.push('foobar');}");
@@ -3756,7 +3756,7 @@ public class PolyglotIsolateMaxHeap {
         
       </h3>
 
-<p>With Polyglot Isolates, the experimental <code>--engine.HostCallStackHeadRoom</code> option can require a minimum stack size that is guaranteed when performing a host callback.
+<p>With Polyglot Isolates, the <code>--engine.HostCallStackHeadRoom</code> option can require a minimum stack size that is guaranteed when performing a host callback.
 If the available stack size drops below the specified threshold, the host callback fails.</p>
     
       <h3 id="memory-protection">
@@ -3767,7 +3767,7 @@ If the available stack size drops below the specified threshold, the host callba
         
       </h3>
 
-<p>In Linux environments that support Memory Protection Keys, the experimental <code>--engine.MemoryProtection=true</code> option can be used to isolate the heaps of Polyglot Isolates at the hardware level.
+<p>In Linux environments that support Memory Protection Keys, the <code>--engine.MemoryProtection=true</code> option can be used to isolate the heaps of Polyglot Isolates at the hardware level.
 If an engine is created with this option, a dedicated protection key will be allocated for the isolated engine’s heap.
 GraalVM will only enable access to the engine’s heap when executing code of the Polyglot Isolate.</p>
     
@@ -3779,10 +3779,10 @@ GraalVM will only enable access to the engine’s heap when executing code of th
         
       </h2>
 
-<p>To best make use of the embedding API of GraalVM (i.e. <code>org.graalvm.polyglot.*</code>) your project should use a GraalVM as <code>JAVA_HOME</code>.
+<p>To best make use of the GraalVM Embedding API (i.e. <code>org.graalvm.polyglot.*</code>), your project should use a GraalVM as <code>JAVA_HOME</code>.
 In addition to that, you should specify the <code>graal-sdk.jar</code> (which is included in GraalVM) as a provided dependency to your projects.
 This is mainly to provide IDEs and other tools with the information that the project uses this API.
-An example of this for Maven means adding the following to the <code>pom.xml</code> file.</p>
+For example, add the following to the <code>pom.xml</code> file of your Maven project:</p>
 
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.sdk&lt;/groupId&gt;
