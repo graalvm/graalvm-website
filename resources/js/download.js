@@ -73,9 +73,9 @@ function changeVersion(javaType, osType) {
 
   let fullVersionText='';
   if(javaType === '20'){
-    fullVersionText = '20.0.1'
+    fullVersionText = '20.0.2'
   }else if(javaType === '17'){
-    fullVersionText = '17.0.7'
+    fullVersionText = '17.0.8'
   }
   const sdkCommand = `sdk install java ${fullVersionText}-graal`
 
