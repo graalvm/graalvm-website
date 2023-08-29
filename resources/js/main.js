@@ -825,23 +825,13 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-      version = "Latest (GraalVM for JDK 20)";
+    version = "Latest (GraalVM for JDK 20)";
   } else if (version === "dev") {
-      version = "Dev Build";
-  } else if (version === "jdk20") {
-    version = "GraalVM for JDK 20";
-  } else if (version === "jdk17") {
-    version = "GraalVM for JDK 17";
-  } else if (version === "22.3") {
-    version = "GraalVM 22.3";
-  } else if (version === "22.2") {
-    version = "GraalVM 22.2";
-  } else if (version === "22.1") {
-    version = "GraalVM 22.1";
-  } else if (version === "22.0") {
-    version = "GraalVM 22.0";
-  } else if (version === "21.3") {
-    version = "GraalVM 21.3";
+    version = "Dev Build";
+  } else if (version.indexOf("jdk") === 0) {
+    version = `GraalVM for JDK ${version.substr(3)}`;
+  } else {
+    version = `GraalVM ${version}`;
   }
 
   version && $('.display-version > #valueText').html(version);
