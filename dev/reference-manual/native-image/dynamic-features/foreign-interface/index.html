@@ -10,11 +10,11 @@
 
   <title>
     
-      Foreign Interface in Native Image
+      Foreign Function &amp; Memory API in Native Image
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-25 08:20:42 +0000"/>
+  <meta name="last_modified" content="2023-08-21 16:08:10 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/dynamic-features/foreign-interface/">
@@ -739,17 +739,18 @@ $(document).ready(function(){
 
 
         
-        <h1 id="foreign-interface-in-native-image">
+        <h1 id="foreign-function--memory-api-in-native-image">
         
         
-          Foreign Interface in Native Image
+          Foreign Function &amp; Memory API in Native Image
         
         
       </h1>
 
-<p>The Foreign Interface is a native API that enables Java code to interact with native code and vice versa.
-It is currently a preview API of the Java platform and must be enabled with <code>--enable-preview</code>.
-This page gives an overview of its support in Native Image.</p>
+<p>The Foreign Function &amp; Memory (FFM) API is a native interface that enables Java code to interact with native code and vice versa.
+As of <a href="https://openjdk.org/jeps/442" target="_blank">JEP 442</a>, it is a preview API of the Java platform and must be enabled with <code>--enable-preview</code>.
+Modules that are permitted to perform “restricted” native operations (including creating handles for calls to or from native code) must be specified using <code>--enable-native-access=</code>.
+This page gives an overview of support for the FFM API in Native Image.</p>
     
       <h2 id="foreign-memory">
         
@@ -758,7 +759,7 @@ This page gives an overview of its support in Native Image.</p>
         
         
       </h2>
-<p>Shared arenas are not supported.</p>
+<p>Foreign memory functionality is generally supported. Shared arenas are currently not supported.</p>
     
       <h2 id="foreign-functions">
         
@@ -767,10 +768,10 @@ This page gives an overview of its support in Native Image.</p>
         
         
       </h2>
-<p>The Foreign Functions Interface (FFI) allows Java code to call native functions, and conversely allows native code to invoke Java method handles.
-These two kind of calls are referred to as “downcalls” and “upcalls” respectively and are collectively referred to as “foreign calls”.</p>
+<p>The FFM API enables Java code to call <em>down</em> to native functions, and conversely allows native code to call <em>up</em> to invoke Java code via method handles.
+These two kinds of calls are referred to as “downcalls” and “upcalls” respectively and are collectively referred to as “foreign calls”.</p>
 
-<p>This feature is currently only supported on the AMD64 platform.</p>
+<p>Currently, only downcalls are supported, and only on the AMD64 architecture.</p>
     
       <h3 id="looking-up-native-functions">
         
@@ -779,8 +780,8 @@ These two kind of calls are referred to as “downcalls” and “upcalls” res
         
         
       </h3>
-<p>FFI provides the <code>SymbolLookup</code> interface which allows to search native libraries for functions by name.
-<code>loaderLookup</code> is currently the only supported <code>SymbolLookup</code>.</p>
+<p>The FFM API provides the <code>SymbolLookup</code> interface to find functions in native libraries by name.
+<code>SymbolLookup.loaderLookup()</code> is currently the only supported kind of <code>SymbolLookup</code>.</p>
     
       <h3 id="registering-foreign-calls">
         
@@ -789,11 +790,13 @@ These two kind of calls are referred to as “downcalls” and “upcalls” res
         
         
       </h3>
-<p>In order to perform a call to native, some glue code is required and thus must be generated at build time.
-Therefore, a list of the types of downcall which will be performed must be provided to the <code>native-image</code> builder.</p>
+<p>In order to perform calls to native code at runtime, supporting code must be generated at image build time.
+Therefore, the <code>native-image</code> tool must be provided with descriptors that characterize functions to which downcalls may be performed at runtime.</p>
 
-<p>This list can be specified using a custom <code>Feature</code>. For example:</p>
-<pre><code class="language-java">class ForeignRegistrationFeature implements Feature { 
+<p>These descriptors can be registered using a custom <code>Feature</code>, for example:</p>
+<pre><code class="language-java">import static java.lang.foreign.ValueLayout.*;
+
+class ForeignRegistrationFeature implements Feature { 
   public void duringSetup(DuringSetupAccess access) {
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid());
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid(), Linker.Option.isTrivial());
@@ -803,10 +806,18 @@ Therefore, a list of the types of downcall which will be performed must be provi
   }
 }
 </code></pre>
-<p>To activate the custom feature <code>--features=&lt;fully qualified name of ForeignRegistrationFeature class&gt;</code> needs to be passed to native-image.
-<a href="/dev/reference-manual/native-image/overview/BuildConfiguration/#embed-a-configuration-file">Native Image Build Configuration</a> explains how this can be automated with a <code>native-image.properties</code> file in <code>META-INF/native-image</code>.</p>
+<p>To activate the custom feature, <code>--features=com.example.ForeignRegistrationFeature</code> (the fully-qualified name of the feature class) needs to be passed to <code>native-image</code>.
+It is recommended to do so <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/#embed-a-configuration-file">with a <em>native-image.properties</em> file</a>.</p>
+    
+      <h3 id="upcalls">
+        
+        
+          Upcalls <a href="#upcalls" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>Upcalls are currently not supported.</p>
+<p>Upcalls are not yet supported.</p>
 
       </div>
 
