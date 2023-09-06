@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-18 14:03:31 +0000"/>
+  <meta name="last_modified" content="2023-08-31 14:33:44 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/containerise-native-executable-and-run-in-docker-container/">
@@ -268,119 +268,149 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="containerise-a-native-executable-and-run-in-a-docker-container">Containerise a Native Executable and Run in a Docker Container</h1>
 
-<p>Docker containers provide the flexibility of development environments to match a production environment, to help isolate your application, and to minimize overhead. For self-contained executables, generated with GraalVM Native Image, containers are an obvious deployment scenario.</p>
+<p>Docker containers provide the flexibility of development environments to match a production environment, to help isolate your application, and to minimize overhead. 
+For self-contained executables, generated with GraalVM Native Image, containers are an obvious deployment choice.</p>
 
 <p>To support container-based development, there are several GraalVM container images available, depending on the platform, the architecture, the Java version, and the edition:</p>
 
 <ul>
-  <li>Oracle GraalVM container images can be found in the <a href="https://container-registry.oracle.com/ords/f?p=113:10::::::">Oracle Container Registry</a></li>
-  <li>GraalVM Community Edition container images can be found in the <a href="https://github.com/orgs/graalvm/packages">GitHub Container Registry</a></li>
+  <li>Oracle GraalVM container images, available in <a href="https://container-registry.oracle.com">Oracle Container Registry (OCR)</a> under the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC) license</a>.</li>
+  <li>GraalVM Community Edition container images published in the <a href="https://github.com/orgs/graalvm/packages">GitHub Container Registry</a>.</li>
 </ul>
 
-<p>This guide shows how to containerise a Java application with Docker on macOS. 
-You will use <code>ghcr.io/graalvm/jdk:ol8-java17</code> which is a size compact GraalVM Community container image with the GraalVM JDK pre-installed. 
-The Dockerfile will be provided.</p>
+<p>This guide shows how to containerise a native executable for your Java application.
+You will use a GraalVM container image with Native Image to compile a Java application ahead-of-time into a native executable.</p>
 
-<h3 id="prerequisites">Prerequisites</h3>
+<h3 id="sample-application">Sample Application</h3>
 
-<ul>
-  <li>Docker-API compatible container runtime like <a href="https://docs.rancherdesktop.io/getting-started/installation/">Rancher Desktop</a> or <a href="https://www.docker.io/gettingstarted/">Docker</a> installed to run MySQL and to run tests using <a href="https://www.testcontainers.org">Testcontainers</a>.</li>
-</ul>
+<p>This guide uses the <a href="https://github.com/graalvm/graalvm-demos/blob/master/spring-native-image/README.md">Spring Boot 3 Native Image Microservice example</a>. 
+The example is a minimal REST-based API application, built on top of Spring Boot 3.
+If you call the HTTP endpoint <code>/jibber</code>, it will return some nonsense verse generated in the style of the Jabberwocky poem, by Lewis Carroll.</p>
 
-<h2 id="note-on-a-sample-application">Note on a Sample Application</h2>
-
-<p>For the demo you will use the <a href="https://github.com/graalvm/graalvm-demos/blob/master/spring-native-image/README.md">Spring Boot 3 Native Image Microservice example</a>.</p>
+<h2 id="prerequisites">Prerequisites</h2>
 
 <ol>
   <li>
-    <p>Make sure you have installed a GraalVM JDK.
-The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
-For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+    <p>Download and install the latest Oracle GraalVM from <a href="https://www.graalvm.org/downloads/">Downloads</a>.
+The easiest option is to use <a href="https://sdkman.io">SDKMAN!</a>. Run the following command to install Oracle GraalVM for JDK 17:</p>
+
+    <pre><code class="language-bash"> sdk install java 17.0.8-graal 
+</code></pre>
   </li>
   <li>
-    <p>Clone the <a href="https://github.com/graalvm/graalvm-demos">GraalVM Demos repository</a> and enter the application directory:</p>
+    <p>Install and run a Docker-API compatible container runtime such as <a href="https://docs.rancherdesktop.io/getting-started/installation/">Rancher Desktop</a>, <a href="https://www.docker.io/gettingstarted/">Docker</a>, or <a href="https://podman.io/docs/installation">Podman</a>.</p>
+  </li>
+  <li>
+    <p>Clone the GraalVM Demos repository:</p>
 
     <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos
 </code></pre>
+  </li>
+  <li>
+    <p>Change directory to the demo directory:</p>
+
     <pre><code class="language-shell"> cd spring-native-image
 </code></pre>
   </li>
-  <li>
-    <p>Build a native executable and run the application:</p>
-
-    <pre><code class="language-shell"> mvn -Pnative native:compile
-</code></pre>
-    <p>The <code>-Pnative</code> profile is used to turn on building a native executable with Maven.</p>
-
-    <p>This will create a binary executable <code>target/benchmark-jibber</code>. Start it to see the application running:</p>
-
-    <pre><code class="language-shell"> ./target/benchmark-jibber &amp;
- curl http://localhost:8080/jibber
- fg
-</code></pre>
-  </li>
 </ol>
 
-<p>Now that you have a native executable version of the sample application (<code>target/jibber</code>) and seen it working, you can proceed to the next steps.</p>
+<h2 id="build-and-run-as-a-native-executable">Build and Run as a Native Executable</h2>
 
-<h2 id="containerise-a-native-executable">Containerise a Native Executable</h2>
-
-<p>The output of a native executable is platform-dependent.
-If you use a Mac or Windows, to build a Docker image containing your native executable, you build a native executable <strong>within</strong> a Docker container - so you need a container with a JDK distribution.
-If you are a Linux user, you can just pass a native executable to Docker and use the simplest slim or distroless container, depending on static libraries your application is linked against. 
-For example:</p>
-
-<pre><code>FROM gcr.io/distroless/base
-ARG APP_FILE
-EXPOSE 8080
-COPY target/${APP_FILE} app 
-ENTRYPOINT ["/jibber"]
-</code></pre>
-
-<p>For user’s convenience, Dockerfiles are provided with the sample application.</p>
+<p>With the built-in support for GraalVM Native Image in Spring Boot 3, it has become much easier to compile a Spring Boot 3 application into a native executable.</p>
 
 <ol>
-  <li>From application root folder, run this command to create a native executable within a container and then build a Docker image containing that native executable:
-    <pre><code class="language-shell"> docker build -f Dockerfiles/Dockerfile \
-             --build-arg APP_FILE=./target/jibber \
-             -t localhost/jibber:native.01 .
+  <li>
+    <p>Build a native executable:</p>
+
+    <pre><code class="language-shell"> ./mvnw native:compile -Pnative
 </code></pre>
-    <p>It will take several minutes to set up Maven in the container and do rest of the job.</p>
+
+    <p>The <code>-Pnative</code> profile is used to generate a native executable for your platform.
+ This will generate a native executable called <em>benchmark-jibber</em> in the <em>target</em> directory.</p>
   </li>
-  <li>Query Docker to look at your newly built image:
-    <pre><code class="language-shell"> docker images | head -n2
+  <li>
+    <p>Run the native executable and put it into the background by appending <code>&amp;</code>:</p>
+
+    <pre><code class="language-shell"> ./target/benchmark-jibber &amp;
 </code></pre>
-    <p>You should see a new image listed.</p>
   </li>
-  <li>Run the image as follows:
-    <pre><code class="language-shell"> docker run --rm --name native -d -p 8080:8080 localhost/jibber:native.01 
-</code></pre>
-  </li>
-  <li>Then call the endpoint using the <code>curl</code> command in the same console window:
+  <li>
+    <p>Call the endpoint using <code>curl</code>:</p>
+
     <pre><code class="language-shell"> curl http://localhost:8080/jibber
 </code></pre>
-    <p>You should receive a nonsense verse in the style of the poem Jabberwocky.</p>
+
+    <p>You should get a random nonsense verse.</p>
+  </li>
+  <li>
+    <p>Bring the application to the foreground using <code>fg</code>, and then enter <code>&lt;CTRL-c&gt;</code> to terminate the application.</p>
   </li>
 </ol>
 
-<p>You can take a look at how long the application took to startup by looking at the logs:</p>
+<h2 id="containerise-the-native-executable">Containerise the Native Executable</h2>
 
-<pre><code class="language-shell">docker logs &lt;CONTAINER ID&gt;
-</code></pre>
-<p>You can also query Docker to get the size of the produced container:</p>
-<pre><code>docker images localhost/jibber:native.01
-</code></pre>
-<p>The difference will be more visible if you build a Docker image of the same Spring Boot application containing a JAR file instead of a native executable, and compare images startup times and file sizes.</p>
+<p>The generated native executable is platform-dependent.</p>
 
-<p>On Linux, you can shrink your container size even more.
-With GraalVM Native Image you have the ability to build a statically linked native executable by packaging the native executable directly into an empty Docker image, also known as a scratch container. Continue to <a href="/jdk20/reference-manual/native-image/guides/build-static-executables/">Build a Static or Mostly-Static Native Executable guide</a> to learn more.</p>
+<ol>
+  <li>
+    <p>Containerise the native executable using the following command:</p>
+
+    <ul>
+      <li>
+        <p>On Linux, containerise the native executable generated in the previous step using the following command:</p>
+
+        <pre><code class="language-shell">  docker build -f Dockerfiles/Dockerfile.native --build-arg APP_FILE=benchmark-jibber -t jibber-benchmark:native.0.0.1-SNAPSHOT .
+</code></pre>
+      </li>
+      <li>
+        <p>On MacOS, Windows, or Linux, use multistage Docker builds to build a native executable inside a container, and package the native executable in a lightweight container image:</p>
+
+        <pre><code class="language-shell">  docker build -f Dockerfiles/Dockerfile -t jibber-benchmark:native.0.0.1-SNAPSHOT .
+</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Run the application:</p>
+
+    <pre><code class="language-shell"> docker run --rm --name native -p 8080:8080 jibber-benchmark:native.0.0.1-SNAPSHOT
+</code></pre>
+  </li>
+  <li>
+    <p>From a new terminal window, call the endpoint using <code>curl</code>:</p>
+
+    <pre><code class="language-shell"> curl http://localhost:8080/jibber
+</code></pre>
+
+    <p>It should generate a random nonsense verse.</p>
+  </li>
+  <li>
+    <p>To stop the application, first get the container id using <code>docker ps</code>, and then run:</p>
+
+    <pre><code class="language-shell"> docker rm -f &lt;container_id&gt;
+</code></pre>
+  </li>
+  <li>
+    <p>To delete the container images, first get the image id using <code>docker images</code>, and then run:</p>
+
+    <pre><code class="language-shell"> docker rmi -f &lt;image_1_id&gt; &lt;image_n_id&gt;
+</code></pre>
+  </li>
+</ol>
+
+<h2 id="summary">Summary</h2>
+
+<p>In this guide, you saw how to use GraalVM container images to containerize a native executable for your Java application.</p>
+
+<p>With GraalVM Native Image you can build a statically linked native executable by packaging the native executable directly into tiny containers such as scratch or distroless images. 
+Continue to <a href="/jdk20/reference-manual/native-image/guides/build-static-executables/">Build a Static or Mostly-Static Native Executable guide</a> to learn more.</p>
 
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
-  <li><a href="https://luna.oracle.com/lab/fdfd090d-e52c-4481-a8de-dccecdca7d68">GraalVM Native Image, Spring and Containerisation</a></li>
-  <li><a href="https://github.com/graalvm/container/">GraalVM Community Images</a></li>
   <li><a href="/jdk20/reference-manual/native-image/guides/build-static-executables/">Build a Static or Mostly-Static Native Executable</a></li>
+  <li><a href="https://docs.oracle.com/en/graalvm/jdk/17/docs/getting-started/container-images/" target="_blank">Oracle GraalVM Container Images</a></li>
+  <li><a href="https://luna.oracle.com/lab/fdfd090d-e52c-4481-a8de-dccecdca7d68" target="_blank">Hands-on Lab: GraalVM Native Image, Spring and Containerisation</a></li>
 </ul>
 
       </div>
