@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-05-24 06:18:03 +0000"/>
+  <meta name="last_modified" content="2023-09-01 12:36:44 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/python/standalone-binaries/">
@@ -700,10 +700,9 @@ $(document).ready(function(){
 <p>With GraalPy, you can distribute Python applications or libraries as standalone binaries or JAR files without any external dependencies.
 The <a href="https://github.com/oracle/graal/tree/master/truffle">Truffle framework</a> on which GraalPy is built, and the <a href="https://github.com/oracle/graal/tree/master/sulong">Sulong LLVM runtime</a> that GraalPy leverages for managed execution of Python’s native extensions enables users to completely virtualize all filesystem accesses of Python programs, including those to the standard library and installed packages.</p>
 
-<p>GraalPy comes with a module that can create standalone binaries or Java project skeletons.
+<p>GraalPy comes with a module that can create standalone binaries or Java-Python polyglot project skeletons.
 The binaries bundle everything into one native executable.
-The Java skeletons are set up with Maven to build and run self-contained JAR files.
-They can also be used to generate a standalone binary from those JAR files later, so Java skeletons offer more flexibility and control over the steps.</p>
+The polyglot skeletons are set up with Maven to to generate a standalone binary for a simple java - python hello world example and can be used as a starting point or inspiration for further java-python polyglot development.</p>
     
       <h3 id="prerequisite">
         
@@ -713,12 +712,13 @@ They can also be used to generate a standalone binary from those JAR files later
         
       </h3>
 
-<p>Set <code>JAVA_HOME</code> to use a GraalVM distribution.</p>
+<p>A GraalPy distribution.
+TODO - add link</p>
     
-      <h2 id="creating-graalpy-binaries">
+      <h2 id="creating-graalpy-native-binaries">
         
         
-          Creating GraalPy Binaries <a href="#creating-graalpy-binaries" class="anchor_heading">#</a>
+          Creating GraalPy Native Binaries <a href="#creating-graalpy-native-binaries" class="anchor_heading">#</a>
         
         
       </h2>
@@ -726,13 +726,13 @@ They can also be used to generate a standalone binary from those JAR files later
 <p>Suppose there is a simple Python script, <em>my_script.py</em>, that does some useful work when run directly.
 To distribute it as a standalone native binary, run the following command:</p>
 
-<pre><code class="language-bash">graalpy -m standalone binary \
+<pre><code class="language-bash">graalpy -m standalone native \
       --module my_script.py \
       --output my_binary
 </code></pre>
 
 <p>It generates a standalone <em>my_binary</em> file which includes the Python code, the GraalPy runtime, and the Python standard library in a single, self-contained executable.
-Use <code>graalpy -m standalone binary --help</code> for further options.</p>
+Use <code>graalpy -m standalone native --help</code> for further options.</p>
     
       <h2 id="embedding-graalpy-in-a-java-application">
         
@@ -742,17 +742,15 @@ Use <code>graalpy -m standalone binary --help</code> for further options.</p>
         
       </h2>
 
-<p>You can distribute the Python script as a JAR file that runs on GraalVM and includes GraalPy.
-To achieve this, run the <code>java</code> subcommand of GraalPy’s <code>standalone</code> module:</p>
+<p>You can also generate a Java-Python polyglot project skeleton.
+To achieve this, run the <code>polyglot_app</code> subcommand of GraalPy’s <code>standalone</code> module:</p>
 
-<pre><code class="language-bash">graalpy -m standalone java \
-      --module my_script.py \
-      --output-directory MyJavaApplication
+<pre><code class="language-bash">graalpy -m standalone polyglot_app --output-directory MyJavaApplication
 </code></pre>
 
-<p>It creates a Java project <em>MyJavaApplication</em>. It includes a <em>pom.xml</em> file that makes it easy to generate a JAR file or a GraalVM native executable with Maven.
+<p>It creates a Java project <em>MyJavaApplication</em>. It includes a <em>pom.xml</em> file that makes it easy to generate a GraalVM native executable with Maven.
 You can open this Maven project with any Java IDE and edit the main class that was created to modify the Python embedding.
-To build the application, either use <code>mvn -Pjar package</code> to create a JAR file, or <code>mvn -Pnative package</code> to create a GraalVM native executable.</p>
+To build the application, either use <code>mvn -Pnative package</code> to create a GraalVM native executable.</p>
 
 <p>Take a look at the generated <em>pom.xml</em> file.
 There are some options to tweak the performance and footprint trade-off.
