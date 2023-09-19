@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-06-14 10:26:00 +0000"/>
+  <meta name="last_modified" content="2023-06-30 14:37:44 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -515,6 +516,17 @@ $(document).ready(function(){
             
             <a href="/latest/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">
               Implementing a New Language with Truffle
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/truffle/docs/ModuleMigration.html">
+              Truffle Language Safepoint Tutorial
             </a>
           </li>
 
@@ -851,7 +863,8 @@ If a method exceeds the limit, it is likely that the same code also has a high c
         
       </h2>
 
-<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Dgraal.Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.</p>
+<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.
+You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (works for both).</p>
 
 <p>Consider the following example, which shows previously described common patterns of partial evaluatable code in Truffle interpreters:</p>
 
@@ -954,7 +967,7 @@ If a method exceeds the limit, it is likely that the same code also has a high c
 
 <p>We can run this as a unittest in the Graal repository (see class <code>HostInliningBytecodeInterpreterExampleTest</code>) by running the following command line in <code>graal/compiler</code>:</p>
 
-<pre><code>mx unittest  -Dgraal.Log=TruffleHostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Dgraal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
+<pre><code>mx unittest  -Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Dgraal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
 </code></pre>
 
 <p>This prints:</p>
@@ -963,7 +976,7 @@ If a method exceeds the limit, it is likely that the same code also has a high c
   [thread:1] scope: main.Testing
   Context: HotSpotMethod&lt;HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute()&gt;
   Context: StructuredGraph:1{HotSpotMethod&lt;HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute()&gt;}
-      [thread:1] scope: main.Testing.EnterpriseHighTier.TruffleHostInliningPhase
+      [thread:1] scope: main.Testing.EnterpriseHighTier.HostInliningPhase
       Truffle host inlining completed after 2 rounds. Graph cost changed from 136 to 137 after inlining:
       Root[org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.execute]
           INLINE org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.add(int, int)                      [inlined    2, monomorphic false, deopt false, inInterpreter false, propDeopt false, subTreeInvokes    0, subTreeCost    8, incomplete false,  reason null]
@@ -972,7 +985,7 @@ If a method exceeds the limit, it is likely that the same code also has a high c
           CUTOFF org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.protectedByInIntepreter()          [inlined   -1, monomorphic false, deopt false, inInterpreter  true, propDeopt false, subTreeInvokes    1, subTreeCost    0, incomplete false,  reason protected by inInterpreter()]
           INLINE com.oracle.truffle.api.CompilerDirectives.transferToInterpreterAndInvalidate()                                               [inlined    3, monomorphic false, deopt  true, inInterpreter false, propDeopt false, subTreeInvokes    0, subTreeCost   32, incomplete false,  reason null]
             INLINE com.oracle.truffle.api.CompilerDirectives.inInterpreter()                                                                  [inlined    3, monomorphic false, deopt  true, inInterpreter false, propDeopt false, subTreeInvokes    0, subTreeCost    6, incomplete false,  reason null]
-            CUTOFF org.graalvm.compiler.truffle.runtime.hotspot.AbstractHotSpotTruffleRuntime.traceTransferToInterpreter()                    [inlined   -1, monomorphic false, deopt  true, inInterpreter  true, propDeopt false, subTreeInvokes    0, subTreeCost    0, incomplete false,  reason dominated by transferToInterpreter()]
+            CUTOFF com.oracle.truffle.runtime.hotspot.AbstractHotSpotTruffleRuntime.traceTransferToInterpreter()                              [inlined   -1, monomorphic false, deopt  true, inInterpreter  true, propDeopt false, subTreeInvokes    0, subTreeCost    0, incomplete false,  reason dominated by transferToInterpreter()]
           CUTOFF org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.dominatedByTransferToInterpreter() [inlined   -1, monomorphic false, deopt  true, inInterpreter false, propDeopt false, subTreeInvokes    0, subTreeCost    0, incomplete false,  reason dominated by transferToInterpreter()]
           INLINE org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.recursive(int)                     [inlined    4, monomorphic false, deopt false, inInterpreter false, propDeopt false, subTreeInvokes    1, subTreeCost   20, incomplete false,  reason null]
             CUTOFF org.graalvm.compiler.truffle.test.HostInliningBytecodeInterpreterExampleTest$BytecodeNode.recursive(int)                   [inlined   -1, monomorphic false, deopt false, inInterpreter false, propDeopt false, subTreeInvokes    1, subTreeCost    0, incomplete false,  reason recursive]
@@ -982,7 +995,9 @@ If a method exceeds the limit, it is likely that the same code also has a high c
 </code></pre>
 
 <p>Note that we have also used the <code>-Dgraal.Dump=:3 </code> option, which sends the graphs to any running <code>IdealGraphVisualizer</code> instance for further inspection.
-To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
+On Native Image, use <code>-H:Dump=:2 -H:MethodFilter=...</code> to dump host compilation graphs of a given method.</p>
+
+<p>To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
     
       <h2 id="tuning-host-inlining">
         

@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-20 09:58:03 +0000"/>
+  <meta name="last_modified" content="2023-09-15 14:10:43 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/security-guide/polyglot-sandbox/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -609,7 +610,7 @@ For example, host code can execute untrusted guest code using the <a href="https
 Host code can also execute multiple mutually distrusting instances of guest code that will be protected from one another.
 Used this way, polyglot sandboxing supports a multi-tenant scenario:</p>
 
-<p><img src="/docs/security/sandbox_security_boundary.png" alt="" /></p>
+<p><img src="/docs/security/sandbox_security_boundary.png" alt="Sandbox Security Boundary" /></p>
 
 <p>Use cases that benefit from introducing a security boundary are:</p>
 <ul>
@@ -724,6 +725,19 @@ This means that they no longer share runtime elements such as the JIT compiler o
     context.eval("js", "print('Hello JavaScript!');");
 }
 </code></pre>
+
+<p>Since Polyglot version 23.1, the isolated and untrusted policy also requires isolated images of the languages to be specified on the class or module path.
+Isolated versions of the languages can be downloaded from Maven using the following dependency:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
+    &lt;version&gt;${graalvm.version}&lt;/version&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>The <a href="https://github.com/oracle/graal/blob/master/reference-manual/embed-languages/#polyglot-isolates">embedding guide</a> contains more details on using polyglot isolate dependencies.</p>
     
       <h3 id="untrusted-policy">
         
@@ -744,7 +758,7 @@ The attack surface of GraalVM when running untrusted code consists of the entire
   <li>Requires setting the maximum AST depth of the guest code. Together with the stack frame limit, this puts a bound on the stack space consumed by guest code.</li>
   <li>Requires setting the maximum output and error stream sizes. As output and error streams have to be redirected, the receiving ends are on the host side. Limiting the output and error stream sizes protects against availability issues on the host.</li>
   <li>Requires untrusted code mitigations to be enabled. Untrusted code mitigations address risks from JIT spraying and speculative execution attacks. They include constant blinding as well as comprehensive use of speculative execution barriers.</li>
-  <li>Further restricts host access to ensure there are no implicit entry points to host code. This means that guest-code access to host arrays, lists, maps, buffers, iterables and iterators is disallowed. The reason is that there may be various implementations of these APIs on the host side, resulting in implicit entry points. In addition, direct mappings of guest implementations to host interfaces via <a href="https://www.graalvm.org/23.0/javadoc/sdk/org/graalvm/polyglot/HostAccess.Builder.html">HostAccess.Builder#allowImplementationsAnnotatedBy</a> are disallowed. The <a href="https://www.graalvm.org/23.0/javadoc/sdk/org/graalvm/polyglot/HostAccess.html#UNTRUSTED">HostAccess.UNTRUSTED</a> host access policy is preconfigured to fulfil the requirements for the UNTRUSTED sandboxing policy.</li>
+  <li>Further restricts host access to ensure there are no implicit entry points to host code. This means that guest-code access to host arrays, lists, maps, buffers, iterables and iterators is disallowed. The reason is that there may be various implementations of these APIs on the host side, resulting in implicit entry points. In addition, direct mappings of guest implementations to host interfaces via <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html">HostAccess.Builder#allowImplementationsAnnotatedBy</a> are disallowed. The <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html#UNTRUSTED">HostAccess.UNTRUSTED</a> host access policy is preconfigured to fulfil the requirements for the UNTRUSTED sandboxing policy.</li>
 </ul>
 
 <p>Example:</p>

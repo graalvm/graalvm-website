@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2022-05-16 16:56:45 +0000"/>
+  <meta name="last_modified" content="2023-09-19 08:56:13 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/Polyglot/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -837,6 +838,28 @@ The JVM configuration automatically has access to other languages.</p>
   <li><a href="#embedded-configuration">Embedded configuration</a></li>
 </ul>
     
+      <h2 id="installing-other-languages">
+        
+        
+          Installing Other Languages <a href="#installing-other-languages" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To use other GraalVM languages, you need the <a href="/dev/reference-manual/ruby/#getting-started">JVM Standalone</a>.
+The Native Standalone does not support installing extra languages.</p>
+
+<p>Note that <code>ruby</code>, <code>llvm</code>, the LLVM toolchain and host Java interop are available without installing anything extra.</p>
+
+<p>Then you can install other languages with <code>truffleruby-polyglot-get $LANGUAGE</code>, for instance:</p>
+<pre><code class="language-bash">truffleruby-polyglot-get js
+truffleruby-polyglot-get python
+truffleruby-polyglot-get wasm
+truffleruby-polyglot-get java # for Java on Truffle (aka Espresso)
+</code></pre>
+
+<p>In TruffleRuby versions before 23.1 this was done through installing GraalVM (e.g. via <code>truffleruby+graalvm</code>) and using <code>gu install $LANGUAGE</code>.</p>
+    
       <h2 id="running-ruby-code-from-another-language">
         
         
@@ -858,6 +881,8 @@ This is similar to most REPL semantics.</p>
         
         
       </h2>
+
+<p>Note the ruby command line needs to be passed <code>--polyglot</code> to enable access to foreign languages.</p>
 
 <p><code>Polyglot.eval(id, string)</code> executes code in a foreign language identified by its ID.</p>
 
@@ -1164,6 +1189,27 @@ functionality.</p>
 
 <p>Note: Unlike for example pure JavaScript, Ruby is more than a self-contained expression language.
 It has a large core library that includes low-level I/O and system and native-memory routines which may interfere with other embedded contexts or the host system.</p>
+    
+      <h2 id="inner-contexts">
+        
+        
+          Inner Contexts <a href="#inner-contexts" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>TruffleRuby supports creating <em>inner contexts</em>, that is multiple isolated execution/evaluation contexts (this is generally supported in GraalVM languages).
+Conceptually it is similar to running multiple Ruby interpreters in the same process.
+This can also be used with other languages, so for instance the outer/default context might run some Ruby code and some inner contexts run JavaScript code.
+This is very useful to interoperate with languages which do not support shared-memory multithreading like JavaScript, as one can then create one or more inner contexts per thread and still have the outer context use multithreaded Ruby.</p>
+
+<p>Objects from an inner context can be passed to other contexts and they are treated as foreign objects:</p>
+<pre><code class="language-ruby">Polyglot::InnerContext.new do |context|
+  context.eval('ruby', "p Object.new") # prints #&lt;Object:0xd8&gt;
+  p context.eval('ruby', "Object.new") # prints #&lt;Polyglot::ForeignObject[Ruby] Object:0x131d576b&gt;
+end
+</code></pre>
+<p>This works by automatically wrapping every object leaving its context in a proxy, which means e.g. if a method is called on a foreign object it is executed in the context to which the object belongs.</p>
 
       </div>
 

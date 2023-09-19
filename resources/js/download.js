@@ -44,11 +44,12 @@ const downloadLinks = {
   '17_Linux_x64': "https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_linux-x64_bin.tar.gz",
   '17_Windows_x64': "https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_windows-x64_bin.zip",
 
-  '20_macOS_ARM': "https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_macos-aarch64_bin.tar.gz",
-  '20_macOS_x64': "https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_macos-x64_bin.tar.gz",
-  '20_Linux_ARM': "https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_linux-aarch64_bin.tar.gz",
-  '20_Linux_x64': "https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_linux-x64_bin.tar.gz",
-  '20_Windows_x64': "https://download.oracle.com/graalvm/20/latest/graalvm-jdk-20_windows-x64_bin.zip"
+  '21_macOS_ARM': "https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_macos-aarch64_bin.tar.gz",
+  '21_macOS_x64': "https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_macos-x64_bin.tar.gz",
+  '21_Linux_ARM': "https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_linux-aarch64_bin.tar.gz",
+  '21_Linux_x64': "https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_linux-x64_bin.tar.gz",
+  '21_Windows_x64': "https://download.oracle.com/graalvm/21/latest/graalvm-jdk-21_windows-x64_bin.zip"
+
 };
 
 const osTypes = {
@@ -62,20 +63,50 @@ const osTypes = {
 
 const javaTypes = {
   '17': "Java 17",
-  '20': "Java 20"
+  '21': "Java 21"
 };
 
-let currentJavaType = '20';
+let currentJavaType = '21';
 let currentOsType = osTypes[currentOS + '_' + cpuArchitecture] ? currentOS + '_' + cpuArchitecture : 'empty_choice';
 let currentDownloadLink = null;
+
+// function changeVersion(javaType, osType) {
+
+//   let fullVersionText='';
+//   if (javaType === '21') {
+//     fullVersionText = '21.0.0'
+//   } else if (javaType === '17') {
+//     fullVersionText = '17.0.8'
+//   }
+//   const sdkCommand = `sdk install java ${fullVersionText}-graal`
+
+//   $('#sdk_command').text(sdkCommand);
+
+//   currentDownloadLink = downloadLinks[javaType + '_' + osType];
+//   currentJavaType = javaType;
+//   currentOsType = osType;
+
+//   $('#selector-java-version').html(javaTypes[javaType]);
+//   $('#selector-os-version').html(osTypes[osType]);
+//   if (currentDownloadLink) {
+//     $('#download-main-btn').attr("href", currentDownloadLink).removeClass('download-inactive').removeClass('btn-secondary');
+//   } else {
+//     $('#download-main-btn').attr("href", "#").addClass('download-inactive').addClass('btn-secondary');
+//   }
+// }
 
 function changeVersion(javaType, osType) {
 
   let fullVersionText='';
-  if(javaType === '20'){
-    fullVersionText = '20.0.2'
-  }else if(javaType === '17'){
+  if (javaType === '21') {
+    fullVersionText = '21.35'
+    $("div.sdk__text").css("display", "none").css("overflow", "hidden");
+    $("div.sdk__snippet").css("display", "none").css("overflow", "hidden");
+  } else if (javaType === '17') {
     fullVersionText = '17.0.8'
+    $("div.sdk__text").css("display", "block");
+    $("div.sdk__snippet").css("display", "flex");
+    $("div.sdk__snippet").addClass("sdk__snippet");
   }
   const sdkCommand = `sdk install java ${fullVersionText}-graal`
 

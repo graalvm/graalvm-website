@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2021-05-13 14:08:35 +0000"/>
+  <meta name="last_modified" content="2023-09-14 12:41:23 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/StandaloneDistribution/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -818,132 +819,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>For details regarding the three ways to install TruffleRuby, see <a href="/latest/reference-manual/ruby/#getting-started">Getting Started</a>.
-The recommended way is to install <a href="/latest/reference-manual/ruby/InstallingGraalVM/">GraalVM</a> as it provides the most flexibility.
-However, you can also use what we call the standalone distribution of TruffleRuby, either via your Ruby manager/installer, or as a simple binary tarball.</p>
-
-<p>Releases of the standalone distribution are <a href="https://github.com/oracle/truffleruby/releases/latest">available on GitHub</a>.
-Nightly builds are <a href="https://github.com/ruby/truffleruby-dev-builder/releases/latest">also available</a>.</p>
-
-<p>The standalone distributions are the files:</p>
-<pre><code class="language-bash">truffleruby-VERSION-linux-amd64.tar.gz
-truffleruby-VERSION-macos-amd64.tar.gz
-</code></pre>
-    
-      <h2 id="testing-truffleruby-in-travisci">
-        
-        
-          Testing TruffleRuby in TravisCI <a href="#testing-truffleruby-in-travisci" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby is now integrated in TravisCI.
-Just add <code>truffleruby</code> in the build matrix, such as:</p>
-
-<pre><code class="language-yaml">language: ruby
-rvm:
-  - 2.6.1
-  - truffleruby
-  - truffleruby-head
-</code></pre>
-
-<p>See <a href="https://docs.travis-ci.com/user/languages/ruby#truffleruby">the TravisCI documentation</a> for details.
-Please <a href="https://github.com/oracle/truffleruby/issues">report</a> any issue you might find.</p>
-    
-      <h2 id="testing-truffleruby-in-github-actions">
-        
-        
-          Testing TruffleRuby in GitHub Actions <a href="#testing-truffleruby-in-github-actions" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>In GitHub Actions, you can easily setup TruffleRuby with <a href="https://github.com/ruby/setup-ruby">ruby/setup-ruby</a>:</p>
-
-<pre><code class="language-yaml">name: My workflow
-on: [push]
-jobs:
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        ruby: [ 2.6, truffleruby, truffleruby-head ]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: $
-    - run: ruby -v
-</code></pre>
-
-<p>See the <a href="https://github.com/marketplace/actions/setup-ruby-jruby-and-truffleruby">README</a> of that action for more documentation.</p>
-    
-      <h2 id="testing-truffleruby-in-ci">
-        
-        
-          Testing TruffleRuby in CI <a href="#testing-truffleruby-in-ci" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>If you use another continuous integration system, simply follow these instructions to run TruffleRuby in CI: download and extract the archive, add it to <code>PATH</code>, and run the post-install script.</p>
-    
-      <h2 id="latest-release">
-        
-        
-          Latest Release <a href="#latest-release" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Set <code>TRUFFLERUBY_VERSION</code> to the latest TruffleRuby version from <a href="https://github.com/oracle/truffleruby/releases/latest">GitHub releases</a>.</p>
-
-<pre><code class="language-bash">export TRUFFLERUBY_VERSION=&lt;desired_version&gt;
-curl -L https://github.com/oracle/truffleruby/releases/download/vm-$TRUFFLERUBY_VERSION/truffleruby-$TRUFFLERUBY_VERSION-linux-amd64.tar.gz | tar xz
-export PATH="$PWD/truffleruby-$TRUFFLERUBY_VERSION-linux-amd64/bin:$PATH"
-$PWD/truffleruby-$TRUFFLERUBY_VERSION-linux-amd64/lib/truffle/post_install_hook.sh
-ruby -v
-</code></pre>
-    
-      <h2 id="latest-nightly-build">
-        
-        
-          Latest Nightly Build <a href="#latest-nightly-build" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Here are the instructions for manually installing the latest nightly build:</p>
-
-<pre><code class="language-bash">curl -L https://github.com/ruby/truffleruby-dev-builder/releases/latest/download/truffleruby-head-ubuntu-18.04.tar.gz | tar xz
-export PATH="$PWD/truffleruby-head/bin:$PATH"
-$PWD/truffleruby-head/lib/truffle/post_install_hook.sh
-ruby -v
-</code></pre>
-    
-      <h2 id="rubygems-configuration">
-        
-        
-          RubyGems Configuration <a href="#rubygems-configuration" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Note that you also need to ensure <code>GEM_HOME</code> and <code>GEM_PATH</code> are not set, so TruffleRuby uses the correct <code>GEM_HOME</code> and <code>GEM_PATH</code>.
-See <a href="/latest/reference-manual/ruby/RubyManagers/#using-truffleruby-without-a-ruby-manager">Using TruffleRuby without a Ruby manager</a>
-for details.</p>
-    
-      <h2 id="dependencies">
-        
-        
-          Dependencies <a href="#dependencies" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p><a href="/latest/reference-manual/ruby/#dependencies">TruffleRuby’s dependencies</a> need to be installed for TruffleRuby to run correctly.</p>
+<p>This documentation has moved to <a href="/latest/reference-manual/ruby/InstallingTruffleRuby/">Installing TruffleRuby</a>.</p>
 
       </div>
 

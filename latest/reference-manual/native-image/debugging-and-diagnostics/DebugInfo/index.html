@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -1753,13 +1754,28 @@ When <code>callgrind</code> is used in combination with a viewer like
 information about native image execution aand relate it back to
 specific source code lines.</p>
     
-      <h3 id="related-documentation">
+      <h3 id="call-graph-recording-with-perf-record">
+        
+        
+          Call-graph recording with <code>perf record</code> <a href="#call-graph-recording-with-perf-record" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Normally when perf does stack frame recording (i.e. when <code>--call-graph</code> is used), it uses frame pointers to recognize the individual stack frames.
+This assumes that the executable that gets profiled actually preserves frame pointers whenever a function gets called.
+For native images, this can be achieved by using <code>-H:+PreserveFramePointer</code> as an image build argument.</p>
+
+<p>An alternative solution is to make perf use dwarf debug info (specifically debug_frame data) to help unwind stack frames.
+To make this work, the image needs to be built with <code>-g</code> (to generate debuginfo), and <code>perf record</code> needs to use the argument <code>--call-graph dwarf</code> to make sure dwarf debug info (instead of frame pointers) is used for stack unwinding.</p>
+    
+      <h2 id="related-documentation">
         
         
           Related Documentation <a href="#related-documentation" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <ul>
   <li><a href="/latest/reference-manual/native-image/guides/debug-native-image-process/">Debug Native Executables with GDB</a></li>

@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-07-20 09:58:03 +0000"/>
+  <meta name="last_modified" content="2023-02-01 14:38:39 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/debugging-and-diagnostics/StaticAnalysisReports/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -735,6 +736,8 @@ $(document).ready(function(){
 <p>The points-to analysis produces two kinds of reports: an analysis call tree and an object tree. 
 This information is produced by an intermediate step in the building process and represents the static analysis view of the call graph and heap object graph. 
 These graphs are further transformed in the building process before they are compiled ahead-of-time into the binary and written into the binary heap, respectively.</p>
+
+<p>In addition to the comprehensive report of the whole analysis universe, the points-to analysis can also produce reachability reports on why certain type/method/field is reachable.</p>
     
       <h2 id="call-tree">
         
@@ -924,13 +927,61 @@ The pattern accepts the <code>*</code> modifier:</p>
   <li><code>-H:ImageObjectTreeExpandRoots=*</code> - force the expansion of all roots, including those suppressed by default</li>
 </ul>
     
-      <h3 id="report-files">
+      <h2 id="reachability-report">
+        
+        
+          Reachability Report <a href="#reachability-report" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>In diagnosing code size or security problems, the developer often has the need to know why certain code element (type/method/field) is reachable.
+Reachability reports are designed for the purpose.
+There are three options for diagnosing the reachability reasons for types, methods, and fields respectively:</p>
+
+<ul>
+  <li><code>-H:AbortOnTypeReachable=&lt;pattern&gt;</code></li>
+  <li><code>-H:AbortOnMethodReachable=&lt;pattern&gt;</code></li>
+  <li><code>-H:AbortOnFieldReachable=&lt;pattern&gt;</code></li>
+</ul>
+
+<p>For each option, the right-hand side specifies the pattern of the code element to be diagnosed.</p>
+
+<ul>
+  <li>The syntax for specifying types and fields is the same as that of suppression/expansion (See documentation for <code>-H:ImageObjectTreeSuppressTypes</code> above).</li>
+  <li>The syntax for specifying methods is the same as that of method filters (See documentation for <code>-Dgraal.MethodFilter</code>).</li>
+</ul>
+
+<p>When one of the option is enabled and the corresponding code element is reachable, a reachability trace will be dumped to a TXT file and Native Image will abort.
+Here is an example of the reachability report for <code>-H:AbortOnTypeReachable=java.io.File</code>:</p>
+
+<pre><code>Type java.io.File is marked as allocated
+at virtual method com.oracle.svm.core.jdk.NativeLibrarySupport.loadLibraryRelative(NativeLibrarySupport.java:105), implementation invoked
+├── at virtual method com.oracle.svm.core.jdk.JNIPlatformNativeLibrarySupport.loadJavaLibrary(JNIPlatformNativeLibrarySupport.java:44), implementation invoked
+│       ├── at virtual method com.oracle.svm.core.posix.PosixNativeLibrarySupport.loadJavaLibrary(PosixNativeLibraryFeature.java:117), implementation invoked
+│       │       ├── at virtual method com.oracle.svm.core.posix.PosixNativeLibrarySupport.initializeBuiltinLibraries(PosixNativeLibraryFeature.java:98), implementation invoked
+│       │       │       ├── at static method com.oracle.svm.core.graal.snippets.CEntryPointSnippets.initializeIsolate(CEntryPointSnippets.java:346), implementation invoked
+│       │       │       │       str: static root method
+│       │       │       └── type com.oracle.svm.core.posix.PosixNativeLibrarySupport is marked as in-heap
+│       │       │               scanning root com.oracle.svm.core.posix.PosixNativeLibrarySupport@4839bf0d: com.oracle.svm.core.posix.PosixNativeLibrarySupport@4839bf0d embedded in
+│       │       │                   org.graalvm.nativeimage.ImageSingletons.lookup(ImageSingletons.java)
+│       │       │                   at static method org.graalvm.nativeimage.ImageSingletons.lookup(Class), intrinsified
+│       │       │                       at static method com.oracle.svm.core.graal.snippets.CEntryPointSnippets.createIsolate(CEntryPointSnippets.java:209), implementation invoked
+│       │       └── type com.oracle.svm.core.posix.PosixNativeLibrarySupport is marked as in-heap
+│       └── type com.oracle.svm.core.jdk.JNIPlatformNativeLibrarySupport is reachable
+└── type com.oracle.svm.core.jdk.NativeLibrarySupport is marked as in-heap
+        scanning root com.oracle.svm.core.jdk.NativeLibrarySupport@6e06bbea: com.oracle.svm.core.jdk.NativeLibrarySupport@6e06bbea embedded in
+            org.graalvm.nativeimage.ImageSingletons.lookup(ImageSingletons.java)
+            at static method org.graalvm.nativeimage.ImageSingletons.lookup(Class), intrinsified
+</code></pre>
+    
+      <h2 id="report-files">
         
         
           Report Files <a href="#report-files" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <p>The reports are generated in the <code>reports</code> subdirectory, relative to the build directory.
 When executing the <code>native-image</code> executable the build directory defaults to the working directory and can be modified using the <code>-H:Path=&lt;dir&gt;</code> option.</p>
@@ -940,14 +991,23 @@ When producing <code>CSV</code> formatted call tree reports, symbolic links foll
 The object tree report name has the structure: <code>object_tree_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code>.
 The binary name is the name of the generated binary, which can be set with the <code>-H:Name=&lt;name&gt;</code> option.
 The <code>&lt;date_time&gt;</code> is in the <code>yyyyMMdd_HHmmss</code> format.</p>
+
+<p>The reachability reports are also located in the reports directory.
+They follow the same naming convention:</p>
+
+<ul>
+  <li>Type reachability report: <code>trace_types_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+  <li>Method reachability report: <code>trace_methods_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+  <li>Field reachability report: <code>trace_fields_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+</ul>
     
-      <h3 id="further-reading">
+      <h2 id="further-reading">
         
         
           Further Reading <a href="#further-reading" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <ul>
   <li><a href="/latest/reference-manual/native-image/overview/HostedvsRuntimeOptions/">Hosted and Runtime Options</a></li>

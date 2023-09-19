@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-03-05 10:52:24 +0000"/>
+  <meta name="last_modified" content="2023-09-08 11:21:37 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Options/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -497,6 +498,17 @@ $(document).ready(function(){
             
             <a href="/latest/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">
               Implementing a New Language with Truffle
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/truffle/docs/ModuleMigration.html">
+              Truffle Language Safepoint Tutorial
             </a>
           </li>
 
@@ -802,7 +814,7 @@ $(document).ready(function(){
 
 <p>In addition, the Graal Compiler options can be listed with:</p>
 
-<pre><code class="language-shell">language-launcher --jvm --vm.XX:+JVMCIPrintProperties
+<pre><code class="language-shell">language-launcher --vm.XX:+JVMCIPrintProperties
 </code></pre>
 <p>See <a href="https://chriswhocodes.com/graalvm_ce_jdk8_options.html">graalvm_ce_jdk8_options</a> for a list of Graal Compiler options.</p>
     
@@ -815,10 +827,7 @@ $(document).ready(function(){
       </h2>
 
 <ul>
-  <li><code>--polyglot</code> : Run with all other guest languages accessible.</li>
-  <li><code>--native</code> : Run using the native launcher with limited Java access (default).</li>
-  <li><code>--jvm</code> : Run on the Java Virtual Machine with Java access.</li>
-  <li><code>--vm.[option]</code> : Pass options to the host VM. To see available options, use ‘–help:vm’.</li>
+  <li><code>--vm.[option]</code> : Pass options to the host VM. To see available options, use <code>--help:vm</code>.</li>
   <li><code>--log.file=&lt;String&gt;</code> : Redirect guest languages logging into a given file.</li>
   <li><code>--log.[logger].level=&lt;String&gt;</code> : Set language log level to OFF, SEVERE, WARNING, INFO, CONFIG, FINE, FINER, FINEST or ALL.</li>
   <li><code>--help</code> : Print this help message.</li>
@@ -852,18 +861,10 @@ They are useful to users and language and tool implementers.</p>
   <li><code>--engine.Compilation=true|false</code> : Enable or disable Truffle compilation.</li>
   <li><code>--engine.CompilerIdleDelay=&lt;ms&gt;</code> : Set the time in milliseconds an idle Truffle compiler thread will wait for new tasks before terminating. New compiler threads will be started once new compilation tasks are submitted. Select ‘0’ to never terminate the Truffle compiler thread. The option is not supported by all Truffle runtimes. On the runtime which doesn’t support it the option has no effect. default: 10000</li>
   <li><code>--engine.CompilerThreads=[1, inf)</code> : Manually set the number of compiler threads. By default, the number of compiler threads is scaled with the number of available cores on the CPU.</li>
-  <li><code>--engine.EncodedGraphCache=true|false</code> : Cache encoded graphs across Truffle compilations to speed up partial evaluation. (default: true).</li>
   <li><code>--engine.EncodedGraphCachePurgeDelay=&lt;ms&gt;</code> : Delay, in milliseconds, after which the encoded graph cache is dropped when a Truffle compiler thread becomes idle (default: 10000).</li>
   <li><code>--engine.FirstTierBackedgeCounts=true|false</code> : Whether to emit look-back-edge counters in the first-tier compilations. (default: true)</li>
   <li><code>--engine.FirstTierCompilationThreshold=[1, inf)</code> : Number of invocations or loop iterations needed to compile a guest language root in first tier under normal compilation load.Might be reduced/increased when compilation load is low/high if DynamicCompilationThresholds is enabled. (default: 400).</li>
   <li><code>--engine.FirstTierMinInvokeThreshold=[1, inf)</code> : Minimum number of calls before a call target is compiled in the first tier (default: 1)</li>
-  <li><code>--engine.FirstTierUseEconomy=true|false</code> : Whether to use the economy configuration in the first-tier compilations. (default: true)</li>
-  <li><code>--engine.ForceFrameLivenessAnalysis</code> : Forces the frame clearing mechanism to be executed, even if Frame.clear() is not used.</li>
-  <li><code>--engine.Inlining=true|false</code> : Enable automatic inlining of guest language call targets (default: true).</li>
-  <li><code>--engine.InliningExpansionBudget=[1, inf)</code> : The base expansion budget for language-agnostic inlining (default: 12000).</li>
-  <li><code>--engine.InliningInliningBudget=[1, inf)</code> : The base inlining budget for language-agnostic inlining (default: 12000)</li>
-  <li><code>--engine.InliningRecursionDepth=[0, inf)</code> : Maximum depth for recursive inlining (default: 2).</li>
-  <li><code>--engine.InvalidationReprofileCount=</code> : Delay compilation after an invalidation to allow for reprofiling. Deprecated: no longer has any effect.</li>
   <li><code>--engine.LastTierCompilationThreshold=[1, inf)</code> : Number of invocations or loop iterations needed to compile a guest language root in first tier under normal compilation load.Might be reduced/increased when compilation load is low/high if DynamicCompilationThresholds is enabled. (default: 10000).</li>
   <li><code>--engine.MinInvokeThreshold=[1, inf)</code> : Minimum number of calls before a call target is compiled (default: 3).</li>
   <li><code>--engine.Mode=latency|throughput</code> : Configures the execution mode of the engine. Available modes are ‘latency’ and ‘throughput’. The default value balances between the two.</li>
@@ -872,10 +873,57 @@ They are useful to users and language and tool implementers.</p>
   <li><code>--engine.PartialBlockCompilation=true|false</code> : Enable partial compilation for BlockNode (default: true).</li>
   <li><code>--engine.PartialBlockCompilationSize=[1, inf)</code> : Sets the target non-trivial Truffle node size for partial compilation of BlockNode nodes (default: 3000).</li>
   <li><code>--engine.PartialBlockMaximumSize=[1, inf)</code> : Sets the maximum non-trivial Truffle node size for partial compilation of BlockNode nodes (default: 10000).</li>
-  <li><code>--engine.ReplaceReprofileCount=</code> : Delay compilation after a node replacement. Deprecated: no longer has any effect.</li>
   <li><code>--engine.SingleTierCompilationThreshold=[1, inf)</code> : Minimum number of invocations or loop iterations needed to compile a guest language root when not using multi tier (default: 1000).</li>
   <li><code>--engine.Splitting=true|false</code> : Enable automatic duplication of compilation profiles (splitting) (default: true).</li>
   <li><code>--engine.TraceCompilation</code> : Print information for compilation results.</li>
+  <li><code>--compiler.EncodedGraphCache=</code> : Cache encoded graphs across Truffle compilations to speed up partial evaluation. (default: true).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.FirstTierUseEconomy=</code> : Whether to use the economy configuration in the first-tier compilations. (default: true, syntax: true</td>
+          <td>false)</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.Inlining=</code> : Enable automatic inlining of guest language call targets (default: true, usage: true</td>
+          <td>false).</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--compiler.InliningExpansionBudget=</code> : The base expansion budget for language-agnostic inlining (default: 12000). Syntax: [1, inf)</li>
+  <li><code>--compiler.InliningInliningBudget=</code> : The base inlining budget for language-agnostic inlining (default: 12000). Syntax: [1, inf)</li>
+  <li><code>--compiler.InliningRecursionDepth=</code> : Maximum depth for recursive inlining (default: 2, usage: [0, inf)).</li>
+  <li><code>--engine.EncodedGraphCache=</code> : Cache encoded graphs across Truffle compilations to speed up partial evaluation. (default: true).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.FirstTierUseEconomy=</code> : Whether to use the economy configuration in the first-tier compilations. (default: true, syntax: true</td>
+          <td>false)</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.Inlining=</code> : Enable automatic inlining of guest language call targets (default: true, usage: true</td>
+          <td>false).</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--engine.InliningExpansionBudget=</code> : The base expansion budget for language-agnostic inlining (default: 12000). Syntax: [1, inf)</li>
+  <li><code>--engine.InliningInliningBudget=</code> : The base inlining budget for language-agnostic inlining (default: 12000). Syntax: [1, inf)</li>
+  <li><code>--engine.InliningRecursionDepth=</code> : Maximum depth for recursive inlining (default: 2, usage: [0, inf)).</li>
   <li><code>--engine.HostCallStackHeadRoom=[1, inf)&lt;B&gt;|&lt;KB&gt;|&lt;MB&gt;|&lt;GB&gt;</code> : Stack space headroom for calls to the host.</li>
   <li><code>--engine.IsolateMemoryProtection=true|false</code> : Enable memory protection for the isolate.</li>
   <li><code>--engine.IsolateOption.&lt;key&gt;=&lt;value&gt;</code> : Isolate VM options.
@@ -897,6 +945,7 @@ They are useful to users and language and tool implementers.</p>
   <li><code>--engine.DisableCodeSharing</code> : Option to force disable code sharing for this engine, even if the context was created with an explicit engine. This option is intended for testing purposes only.</li>
   <li><code>--engine.ForceCodeSharing</code> : Option to force enable code sharing for this engine, even if the context was created with a bound engine. This option is intended for testing purposes only.</li>
   <li><code>--engine.InstrumentExceptionsAreThrown=true|false</code> : Propagates exceptions thrown by instruments. (default: true)</li>
+  <li><code>--engine.PrintInternalStackTrace</code> : Printed PolyglotException stacktrace unconditionally contains the stacktrace of the original internal exception as well as the stacktrace of the creation of the PolyglotException instance.</li>
   <li><code>--engine.SafepointALot</code> : Repeadly submits thread local actions and collects statistics about safepoint intervals in the process. Prints event and interval statistics when the context is closed for each thread. This option significantly slows down execution and is therefore intended for testing purposes only.</li>
   <li><code>--engine.ShowInternalStackFrames</code> : Show internal frames specific to the language implementation in stack traces.</li>
   <li><code>--engine.SpecializationStatistics</code> : Enables specialization statistics for nodes generated with Truffle DSL and prints the result on exit. In order for this flag to be functional -Atruffle.dsl.GenerateSpecializationStatistics=true needs to be set at build time. Enabling this flag and the compiler option has major implications on the performance and footprint of the interpreter. Do not use in production environments.</li>
@@ -920,9 +969,6 @@ They are useful to users and language and tool implementers.</p>
   <li><code>--engine.DebugCacheStore</code> : Prepares the engine for caching and stores it a static field instead of writing it to disk.</li>
   <li><code>--engine.DebugTraceCache</code> : Enables tracing for the engine cache debug feature.</li>
   <li><code>--engine.ArgumentTypeSpeculation=true|false</code> : Speculate on arguments types at call sites (default: true)</li>
-  <li><code>--engine.CompilationExceptionsAreFatal</code> : Treat compilation exceptions as fatal exceptions that will exit the application</li>
-  <li><code>--engine.CompilationExceptionsArePrinted</code> : Prints the exception stack trace for compilation exceptions</li>
-  <li><code>--engine.CompilationExceptionsAreThrown</code> : Treat compilation exceptions as thrown runtime exceptions</li>
   <li><code>--engine.CompilationFailureAction=Silent|Print|Throw|Diagnose|ExitVM</code> : Specifies the action to take when Truffle compilation fails.<br />
 The accepted values are:<br />
   Silent - Print nothing to the console.<br />
@@ -939,42 +985,8 @@ Diagnose - Retry compilation with extra diagnostics enabled.<br />
   <li><code>--engine.DynamicCompilationThresholdsMaxNormalLoad=[1, inf)</code> : The desired maximum compilation queue load. When the load rises above this value, the compilation thresholds are increased. The load is scaled by the number of compiler threads.  (default: 10)</li>
   <li><code>--engine.DynamicCompilationThresholdsMinNormalLoad=[1, inf)</code> : The desired minimum compilation queue load. When the load falls bellow this value, the compilation thresholds are decreased. The load is scaled by the number of compiler threads (default: 10).</li>
   <li><code>--engine.DynamicCompilationThresholdsMinScale=[0.0, inf)</code> : The minimal scale the compilation thresholds can be reduced to (default: 0.1).</li>
-  <li><code>--engine.ExcludeAssertions=true|false</code> : Exclude assertion code from Truffle compilations (default: true)</li>
-  <li><code>--engine.FirstTierInliningPolicy=&lt;policy&gt;</code> : Explicitly pick a first tier inlining policy by name (None, TrivialOnly). If empty (default) the lowest priority policy (TrivialOnly) is chosen.</li>
-  <li><code>--engine.InlineAcrossTruffleBoundary</code> : Enable inlining across Truffle boundary</li>
-  <li><code>--engine.InlineOnly=&lt;name&gt;,&lt;name&gt;,...</code> : Restrict inlined methods to ‘,’-separated list of includes (or excludes prefixed with ‘~’). No restriction by default.</li>
-  <li><code>--engine.InliningPolicy=&lt;policy&gt;</code> : Explicitly pick a inlining policy by name. If empty (default) the highest priority chosen by default.</li>
-  <li><code>--engine.InliningUseSize</code> : Use the graph size as a cost model during inlining (default: false).</li>
-  <li><code>--engine.InstrumentBoundaries</code> : Instrument Truffle boundaries and output profiling information to the standard output.</li>
-  <li><code>--engine.InstrumentBoundariesPerInlineSite</code> : Instrument Truffle boundaries by considering different inlining sites as different branches.</li>
-  <li><code>--engine.InstrumentBranches</code> : Instrument branches and output profiling information to the standard output.</li>
-  <li><code>--engine.InstrumentBranchesPerInlineSite</code> : Instrument branches by considering different inlining sites as different branches.</li>
-  <li><code>--engine.InstrumentFilter=&lt;method&gt;,&lt;method&gt;,...</code> : Method filter for host methods in which to add instrumentation.</li>
-  <li><code>--engine.InstrumentationTableSize=[1, inf)</code> : Maximum number of instrumentation counters available (default: 10000).</li>
-  <li><code>--engine.IterativePartialEscape</code> : Run the partial escape analysis iteratively in Truffle compilation.</li>
-  <li><code>--engine.MaximumGraalGraphSize=[1, inf)</code> : Stop partial evaluation when the graph exceeded this size (default: 150000).</li>
-  <li><code>--engine.MaximumGraalNodeCount=[1, inf)</code> : Stop partial evaluation when the graph exceeded this many nodes (default: 40000).</li>
-  <li><code>--engine.MaximumInlineNodeCount=[1, inf)</code> : Ignore further truffle inlining decisions when the graph exceeded this many nodes (default: 150000).</li>
-  <li><code>--engine.MethodExpansionStatistics=true|false|peTier|truffleTier|lowTier|&lt;tier&gt;,&lt;tier&gt;,...</code> : Print statistics on expanded Java methods during partial evaluation at the end of a run.Accepted values are:<br />
-  true - Collect data for the default tier ‘truffleTier’.<br />
-  false - No data will be collected.<br />
-Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
-  peTier - After partial evaluation without additional phases applied.<br />
-  truffleTier - After partial evaluation with additional phases applied.<br />
-  lowTier - After low tier phases were applied.</li>
-  <li><code>--engine.NodeExpansionStatistics=true|false|peTier|truffleTier|lowTier|&lt;tier&gt;,&lt;tier&gt;,...</code> : Print statistics on expanded Truffle nodes during partial evaluation at the end of a run.Accepted values are:<br />
-  true - Collect data for the default tier ‘truffleTier’.<br />
-  false - No data will be collected.<br />
-Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
-  peTier - After partial evaluation without additional phases applied.<br />
-  truffleTier - After partial evaluation with additional phases applied.<br />
-  lowTier - After low tier phases were applied.</li>
-  <li><code>--engine.NodeSourcePositions</code> : Enable node source positions in truffle partial evaluations.</li>
   <li><code>--engine.OSRCompilationThreshold=[1, inf)</code> : Number of loop iterations until on-stack-replacement compilation is triggered (default 100352).</li>
   <li><code>--engine.OSRMaxCompilationReAttempts=[0, inf)</code> : Number of compilation re-attempts before bailing out of OSR compilation for a given method (default 30). This number is an approximation of the acceptable number of deopts.</li>
-  <li><code>--engine.ParsePEGraphsWithAssumptions=true|false</code> : Allow assumptions during parsing of seed graphs for partial evaluation. Disables the persistent encoded graph cache ‘engine.EncodedGraphCache’. (default: false).</li>
-  <li><code>--engine.PerformanceWarningsAreFatal=</code> : Treat performance warnings as fatal occurrences that will exit the applications</li>
-  <li><code>--engine.PrintExpansionHistogram</code> : Prints a histogram of all expanded Java methods.</li>
   <li><code>--engine.PriorityQueue=true|false</code> : Use the priority of compilation jobs in the compilation queue (default: true).</li>
   <li><code>--engine.Profiling=true|false</code> : Enable/disable builtin profiles in com.oracle.truffle.api.profiles. (default: true)</li>
   <li><code>--engine.PropagateLoopCountToLexicalSingleCaller=true|false</code> : Enables hotness propagation to lexical parent to lexically parent single callers.</li>
@@ -992,23 +1004,6 @@ Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
   <li><code>--engine.TraceCompilationDetails</code> : Print information for compilation queuing.</li>
   <li><code>--engine.TraceCompilationPolymorphism</code> : Print all polymorphic and generic nodes after each compilation</li>
   <li><code>--engine.TraceDeoptimizeFrame</code> : Print stack trace when deoptimizing a frame from the stack with <code>FrameInstance#getFrame(READ_WRITE|MATERIALIZE)</code>.</li>
-  <li><code>--engine.TraceInlining</code> : Print information for inlining decisions.</li>
-  <li><code>--engine.TraceInliningDetails</code> : Print detailed information for inlining (i.e. the entire explored call tree).</li>
-  <li><code>--engine.TraceMethodExpansion=true|false|peTier|truffleTier|lowTier|&lt;tier&gt;,&lt;tier&gt;,...</code> : Print a tree of all expanded Java methods with statistics after each compilation. Accepted values are:<br />
-  true - Collect data for the default tier ‘truffleTier’.<br />
-  false - No data will be collected.<br />
-Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
-  peTier - After partial evaluation without additional phases applied.<br />
-  truffleTier - After partial evaluation with additional phases applied.<br />
-  lowTier - After low tier phases were applied.</li>
-  <li><code>--engine.TraceNodeExpansion=true|false|peTier|truffleTier|lowTier|&lt;tier&gt;,&lt;tier&gt;,...</code> : Print a tree of all expanded Truffle nodes with statistics after each compilation. Accepted values are:<br />
-  true - Collect data for the default tier ‘truffleTier’.<br />
-  false - No data will be collected.<br />
-Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
-  peTier - After partial evaluation without additional phases applied.<br />
-  truffleTier - After partial evaluation with additional phases applied.<br />
-  lowTier - After low tier phases were applied.</li>
-  <li><code>--engine.TracePerformanceWarnings=none|all|&lt;perfWarning&gt;,&lt;perfWarning&gt;,...</code> : Print potential performance problems, Performance warnings are: call, instanceof, store, frame_merge, trivial.</li>
   <li><code>--engine.TraceSplitting</code> : Print information for splitting decisions.</li>
   <li><code>--engine.TraceSplittingSummary</code> : Used for debugging the splitting implementation. Prints splitting summary directly to stdout on shutdown</li>
   <li><code>--engine.TraceStackTraceLimit=[1, inf)</code> : Number of stack trace elements printed by TraceTruffleTransferToInterpreter, TraceTruffleAssumptions and TraceDeoptimizeFrame (default: 20).</li>
@@ -1017,7 +1012,204 @@ Or one or multiple tiers separated by comma (e.g. truffleTier,lowTier):<br />
   <li><code>--engine.TraversingQueueFirstTierBonus=[0.0, inf)</code> : Controls how much of a priority should be given to first tier compilations (default 15.0).</li>
   <li><code>--engine.TraversingQueueFirstTierPriority</code> : Traversing queue gives first tier compilations priority.</li>
   <li><code>--engine.TraversingQueueWeightingBothTiers=true|false</code> : Traversing queue uses rate as priority for both tier. (default: true)</li>
-  <li><code>--engine.TreatPerformanceWarningsAsErrors=none|all|&lt;perfWarning&gt;,&lt;perfWarning&gt;,...</code> : Treat performance warnings as error. Handling of the error depends on the CompilationFailureAction option value. Performance warnings are: call, instanceof, store, frame_merge, trivial.</li>
+  <li><code>--compiler.DiagnoseFailure=</code> : Forces diagnostics for compilation failures (default: false).</li>
+  <li><code>--compiler.ExcludeAssertions=</code> : Exclude assertion code from Truffle compilations (default: true)</li>
+  <li><code>--compiler.FirstTierInliningPolicy=</code> : Explicitly pick a first tier inlining policy by name (None, TrivialOnly). If empty (default) the lowest priority policy (TrivialOnly) is chosen.</li>
+  <li><code>--compiler.InlineAcrossTruffleBoundary=</code> : Enable inlining across Truffle boundary</li>
+  <li><code>--compiler.InlineOnly=</code> : Restrict inlined methods to ‘,’-separated list of includes (or excludes prefixed with ‘~’). No restriction by default. (usage: <name>,<name>,...)</name></name></li>
+  <li><code>--compiler.InliningPolicy=</code> : Explicitly pick a inlining policy by name. If empty (default) the highest priority chosen by default.</li>
+  <li><code>--compiler.InliningUseSize=</code> : Use the graph size as a cost model during inlining (default: false).</li>
+  <li><code>--compiler.InstrumentBoundaries=</code> : Instrument Truffle boundaries and output profiling information to the standard output.</li>
+  <li><code>--compiler.InstrumentBoundariesPerInlineSite=</code> : Instrument Truffle boundaries by considering different inlining sites as different branches.</li>
+  <li><code>--compiler.InstrumentBranches=</code> : Instrument branches and output profiling information to the standard output.</li>
+  <li><code>--compiler.InstrumentBranchesPerInlineSite=</code> : Instrument branches by considering different inlining sites as different branches.</li>
+  <li><code>--compiler.InstrumentFilter=</code> : Method filter for host methods in which to add instrumentation (syntax: <method>,<method>,....)</method></method></li>
+  <li><code>--compiler.InstrumentationTableSize=</code> : Maximum number of instrumentation counters available (default: 10000, syntax: [1, inf))</li>
+  <li><code>--compiler.IterativePartialEscape=</code> : Run the partial escape analysis iteratively in Truffle compilation.</li>
+  <li><code>--compiler.LogInlinedTargets=</code> : Logs inlined targets for statistical purposes (default: false).</li>
+  <li><code>--compiler.MaximumGraalGraphSize=</code> : Stop partial evaluation when the graph exceeded this size (default: 150000, syntax: [1, inf))</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.MethodExpansionStatistics=</code> : Print statistics on expanded Java methods during partial evaluation at the end of a run.(syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.NodeExpansionStatistics=</code> : Print statistics on expanded Truffle nodes during partial evaluation at the end of a run.(syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--compiler.NodeSourcePositions=</code> : Enable node source positions in truffle partial evaluations.</li>
+  <li><code>--compiler.ParsePEGraphsWithAssumptions=</code> : Allow assumptions during parsing of seed graphs for partial evaluation. Disables the persistent encoded graph cache ‘engine.EncodedGraphCache’. (default: false).</li>
+  <li><code>--compiler.TraceInlining=</code> : Print information for inlining decisions.</li>
+  <li><code>--compiler.TraceInliningDetails=</code> : Print detailed information for inlining (i.e. the entire explored call tree).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.TraceMethodExpansion=</code> : Print a tree of all expanded Java methods with statistics after each compilation. (syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.TraceNodeExpansion=</code> : Print a tree of all expanded Truffle nodes with statistics after each compilation. (syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.TracePerformanceWarnings=</code> : Print potential performance problems, Performance warnings are: call, instanceof, store, frame_merge, trivial. (syntax: none</td>
+          <td>all</td>
+          <td><perfWarning>,<perfWarning>,...)</perfWarning></perfWarning></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--compiler.TraceStackTraceLimit=</code> : Number of stack trace elements printed by TraceTruffleTransferToInterpreter, TraceTruffleAssumptions and TraceDeoptimizeFrame (default: 20). Syntax: [1, inf).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--compiler.TreatPerformanceWarningsAsErrors=</code> : Treat performance warnings as error. Handling of the error depends on the CompilationFailureAction option value. Performance warnings are: call, instanceof, store, frame_merge, trivial. (syntax: none</td>
+          <td>all</td>
+          <td><perfWarning>,<perfWarning>,...)</perfWarning></perfWarning></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--engine.DiagnoseFailure=</code> : Forces diagnostics for compilation failures (default: false).</li>
+  <li><code>--engine.ExcludeAssertions=</code> : Exclude assertion code from Truffle compilations (default: true)</li>
+  <li><code>--engine.FirstTierInliningPolicy=</code> : Explicitly pick a first tier inlining policy by name (None, TrivialOnly). If empty (default) the lowest priority policy (TrivialOnly) is chosen.</li>
+  <li><code>--engine.InlineAcrossTruffleBoundary=</code> : Enable inlining across Truffle boundary</li>
+  <li><code>--engine.InlineOnly=</code> : Restrict inlined methods to ‘,’-separated list of includes (or excludes prefixed with ‘~’). No restriction by default. (usage: <name>,<name>,...)</name></name></li>
+  <li><code>--engine.InliningPolicy=</code> : Explicitly pick a inlining policy by name. If empty (default) the highest priority chosen by default.</li>
+  <li><code>--engine.InliningUseSize=</code> : Use the graph size as a cost model during inlining (default: false).</li>
+  <li><code>--engine.InstrumentBoundaries=</code> : Instrument Truffle boundaries and output profiling information to the standard output.</li>
+  <li><code>--engine.InstrumentBoundariesPerInlineSite=</code> : Instrument Truffle boundaries by considering different inlining sites as different branches.</li>
+  <li><code>--engine.InstrumentBranches=</code> : Instrument branches and output profiling information to the standard output.</li>
+  <li><code>--engine.InstrumentBranchesPerInlineSite=</code> : Instrument branches by considering different inlining sites as different branches.</li>
+  <li><code>--engine.InstrumentFilter=</code> : Method filter for host methods in which to add instrumentation (syntax: <method>,<method>,....)</method></method></li>
+  <li><code>--engine.InstrumentationTableSize=</code> : Maximum number of instrumentation counters available (default: 10000, syntax: [1, inf))</li>
+  <li><code>--engine.IterativePartialEscape=</code> : Run the partial escape analysis iteratively in Truffle compilation.</li>
+  <li><code>--engine.LogInlinedTargets=</code> : Logs inlined targets for statistical purposes (default: false).</li>
+  <li><code>--engine.MaximumGraalGraphSize=</code> : Stop partial evaluation when the graph exceeded this size (default: 150000, syntax: [1, inf))</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.MethodExpansionStatistics=</code> : Print statistics on expanded Java methods during partial evaluation at the end of a run.(syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.NodeExpansionStatistics=</code> : Print statistics on expanded Truffle nodes during partial evaluation at the end of a run.(syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--engine.NodeSourcePositions=</code> : Enable node source positions in truffle partial evaluations.</li>
+  <li><code>--engine.ParsePEGraphsWithAssumptions=</code> : Allow assumptions during parsing of seed graphs for partial evaluation. Disables the persistent encoded graph cache ‘engine.EncodedGraphCache’. (default: false).</li>
+  <li><code>--engine.TraceInlining=</code> : Print information for inlining decisions.</li>
+  <li><code>--engine.TraceInliningDetails=</code> : Print detailed information for inlining (i.e. the entire explored call tree).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.TraceMethodExpansion=</code> : Print a tree of all expanded Java methods with statistics after each compilation. (syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.TraceNodeExpansion=</code> : Print a tree of all expanded Truffle nodes with statistics after each compilation. (syntax: true</td>
+          <td>false</td>
+          <td>peTier</td>
+          <td>truffleTier</td>
+          <td>lowTier</td>
+          <td><tier>,<tier>,...)%nAccepted values are:%n    true - Collect data for the default tier 'truffleTier'.%n    false - No data will be collected.%nOr one or multiple tiers separated by comma (e.g. truffleTier,lowTier):%n    peTier - After partial evaluation without additional phases applied.%n    truffleTier - After partial evaluation with additional phases applied.%n    lowTier - After low tier phases were applied.</tier></tier></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.TracePerformanceWarnings=</code> : Print potential performance problems, Performance warnings are: call, instanceof, store, frame_merge, trivial. (syntax: none</td>
+          <td>all</td>
+          <td><perfWarning>,<perfWarning>,...)</perfWarning></perfWarning></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><code>--engine.TraceStackTraceLimit=</code> : Number of stack trace elements printed by TraceTruffleTransferToInterpreter, TraceTruffleAssumptions and TraceDeoptimizeFrame (default: 20). Syntax: [1, inf).</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td><code>--engine.TreatPerformanceWarningsAsErrors=</code> : Treat performance warnings as error. Handling of the error depends on the CompilationFailureAction option value. Performance warnings are: call, instanceof, store, frame_merge, trivial. (syntax: none</td>
+          <td>all</td>
+          <td><perfWarning>,<perfWarning>,...)</perfWarning></perfWarning></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
   <li><code>--engine.IsolateLibrary=&lt;path&gt;</code> : Path to the isolate library.
 <!-- END: internal-engine-options --></li>
 </ul>

@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2022-12-06 14:00:56 +0000"/>
+  <meta name="last_modified" content="2023-09-14 12:41:23 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/Compatibility/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -819,7 +820,7 @@ $(document).ready(function(){
       </h1>
 
 <p>TruffleRuby aims to be fully compatible with the standard implementation of
-Ruby, MRI, version 3.1.3, <a href="#c-extension-compatibility">including C extensions</a>.
+Ruby, MRI, version 3.2.2, <a href="#c-extension-compatibility">including C extensions</a>.
 TruffleRuby is still in development, so it is not 100% compatible yet.</p>
 
 <p>TruffleRuby can run Rails and is compatible with many gems, including C extensions.
@@ -848,7 +849,7 @@ In a few limited cases, TruffleRuby is deliberately incompatible with MRI in ord
   <li><code>RUBY_REVISION</code> is the full <code>git</code> commit hash used to build TruffleRuby (similar to MRI 2.7+).</li>
   <li><code>RUBY_RELEASE_DATE</code> is the <code>git</code> commit date.</li>
   <li><code>RUBY_PATCHLEVEL</code> is always zero.</li>
-  <li><code>RUBY_ENGINE_VERSION</code> is the GraalVM version, or <code>0.0-</code> and the Git commit hash if your build is not part of a GraalVM release.</li>
+  <li><code>RUBY_ENGINE_VERSION</code> is the TruffleRuby version, or <code>0.0-</code> and the Git commit hash if your build is not part of a TruffleRuby release.</li>
 </ul>
 
 <p>In the C API, the preprocessor macro <code>TRUFFLERUBY</code> is defined, which can be checked with <code>#ifdef TRUFFLERUBY</code>.</p>
@@ -1073,6 +1074,21 @@ Additionally, <code>FPE</code>, <code>ILL</code>, <code>KILL</code>, <code>SEGV<
       </h3>
 
 <p>TruffleRuby provides similar <code>GC.stat</code> statistics to MRI, but not all statistics are available, and some statistics may be approximations. Use <code>GC.stat.keys</code> to see which are provided with real or approximate values. Missing values will return <code>0</code>.</p>
+    
+      <h3 id="caller-locations">
+        
+        
+          Caller locations <a href="#caller-locations" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Using <code>Kernel#caller_locations</code> or <code>Thread.each_caller_location</code> might contain engine specific location objects and/or
+paths. This is expected and should be filtered in application code where necessary.</p>
+
+<p>The enumerator returned by <code>Thread.to_enum(:each_caller_location)</code> is not supporting iteration with <code>.next</code>. In CRuby
+this raises a <code>StopIteration</code>, while in TruffleRuby it iterates on an undetermined (related to where and how <code>.next</code> is
+called) call stack. It is not recommended to use this in any circumstance (neither CRuby nor TruffleRuby).</p>
     
       <h2 id="features-with-very-low-performance">
         

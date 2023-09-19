@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-05-24 06:18:03 +0000"/>
+  <meta name="last_modified" content="2023-09-14 09:12:46 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/python/">
@@ -326,8 +326,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 20)', 'latest');">Latest (GraalVM for JDK 20)</li>
+        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
         <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -672,11 +673,71 @@ $(document).ready(function(){
       </h1>
 
 <p>GraalPy provides a Python 3.10 compliant runtime.
-A primary goal is to support PyTorch, SciPy, and their constituent libraries, as well as to work with other data science and machine learning libraries from the rich Python ecosystem..
+A primary goal is to support PyTorch, SciPy, and their constituent libraries, as well as to work with other data science and machine learning libraries from the rich Python ecosystem.
 GraalPy can usually execute pure Python code faster than CPython, and nearly match CPython performance when C extensions are involved.
 While many workloads run fine, any Python program that uses external packages could hit something unsupported.
 At this point, the Python implementation is made available for experimentation and curious end-users.
 See the <a href="/latest/reference-manual/python/FAQ/">FAQ</a> for commonly asked questions about this implementation.</p>
+    
+      <h2 id="graalpy-distributions">
+        
+        
+          GraalPy Distributions <a href="#graalpy-distributions" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>As of GraalVM for JDK 21, the Python runtime (GraalPy) is available as a standalone distribution.</p>
+
+<p>A GraalPy standalone built on top of Oracle GraalVM (Oracle GraalPy) is licensed under the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC)</a> license, which permits use by any user including commercial and production use. Redistribution is permitted as long as it is not for a fee.
+Oracle GraalPy provides the best experience: it comes with additional optimizations, is significantly faster and more memory-efficient.</p>
+
+<p>A GraalPy standalone built on top of GraalVM Community Edition (GraalPy Community) is fully open-source.
+To distinguish between them, GraalPy Community has the suffix <code>-community</code> in the name.</p>
+
+<pre><code class="language-bash"># Oracle GraalPy
+graalpy-VERSION-PLATFORM.tar.gz
+# GraalPy Community
+graalpy-community-VERSION-PLATFORM.tar.gz
+</code></pre>
+
+<p>Two language runtime options are available for both Oracle and Community GraalPy: Native and JVM.
+In the Native configuration, GraalPy is ahead-of-time compiled to a standalone native executable. 
+This means that you do not need a JVM installed on your system to use it and it is size-compact.
+In the JVM configuration, you can use Java interoperability easily, and peak performance may be higher than the native configuration.
+A JVM standalone that comes with a JVM has the <code>-jvm</code> suffix in a name: <code>graalpy-jvm-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz</code>.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Configuration:</th>
+      <th style="text-align: right">Native (default)</th>
+      <th style="text-align: right">JVM</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Time to start</td>
+      <td style="text-align: right">faster</td>
+      <td style="text-align: right">slower</td>
+    </tr>
+    <tr>
+      <td>Time to reach peak performance</td>
+      <td style="text-align: right">faster</td>
+      <td style="text-align: right">slower</td>
+    </tr>
+    <tr>
+      <td>Peak performance (also considering GC)</td>
+      <td style="text-align: right">good</td>
+      <td style="text-align: right">best</td>
+    </tr>
+    <tr>
+      <td>Java host interoperability</td>
+      <td style="text-align: right">needs configuration</td>
+      <td style="text-align: right">works</td>
+    </tr>
+  </tbody>
+</table>
     
       <h2 id="installing-graalpy">
         
@@ -685,20 +746,61 @@ See the <a href="/latest/reference-manual/python/FAQ/">FAQ</a> for commonly aske
         
         
       </h2>
+
+<p>You can install GraalPy either using a Python manager or downloading a compressed GraalPy tarball appropriate for your platform.</p>
     
-      <h3 id="linux-and-macos">
+      <h3 id="downloading">
         
         
-          Linux and macOS <a href="#linux-and-macos" class="anchor_heading">#</a>
+          Downloading <a href="#downloading" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>The easiest way to install GraalPy on Linux and macOS platforms is to use <a href="https://github.com/pyenv/pyenv/">pyenv</a>, the Python version manager.
-For example, to install version 22.3.0, for example, run the following commands:</p>
+<ol>
+  <li>Navigate to <a href="https://github.com/oracle/graalpython/releases/">GitHub releases</a> and select a desired standalone for your operating system.</li>
+  <li>
+    <p>Uncompress the archive:</p>
 
-<pre><code class="language-bash">pyenv install graalpy-22.3.0
-pyenv shell graalpy-22.3.0
+    <blockquote>
+      <p>Note: If you are using macOS Catalina and later, first remove the quarantine attribute:</p>
+      <pre><code class="language-shell"> sudo xattr -r -d com.apple.quarantine &lt;archive&gt;.tar.gz
+</code></pre>
+      <p>Now extract:</p>
+      <pre><code class="language-shell"> tar -xzf &lt;archive&gt;.tar.gz
+</code></pre>
+      <p>Alternatively, open the file in the Finder.</p>
+    </blockquote>
+  </li>
+  <li>Check the version to see if the runtime is active:
+    <pre><code class="language-shell"> ./path/to/bin/graalpy --version
+</code></pre>
+  </li>
+</ol>
+    
+      <h3 id="using-pyenv">
+        
+        
+          Using <code>pyenv</code> <a href="#using-pyenv" class="anchor_heading">#</a>
+        
+        
+      </h3>
+    
+      <h4 id="linux-and-macos">
+        
+        
+          Linux and macOS
+        
+        
+      </h4>
+
+<p>The other way to install GraalPy on Linux and macOS platforms is to use <a href="https://github.com/pyenv/pyenv/">pyenv</a>, the Python version manager.
+For example, to install version 23.1.1, run the following command:</p>
+
+<pre><code class="language-bash"># To install Oracle GraalPy  
+pyenv install graalpy-23.1.1
+# To install GraalPy Community
+pyenv install graalpy-community-23.1.1
 </code></pre>
 
 <p>Another option is to use <a href="https://conda-forge.org/">Conda-Forge</a>.
@@ -706,28 +808,34 @@ To get an environment with the latest version of GraalPy, use the following comm
 
 <pre><code class="language-bash">conda create -c conda-forge -n graalpy graalpy
 </code></pre>
-
-<p>Alternatively, <a href="https://github.com/oracle/graalpython/releases">download</a> a compressed GraalPy installation file appropriate for your platform.
-For example, for Linux, download a file that matches the pattern <em>graalpy-XX.Y.Z-linux-amd64.tar.gz</em>.
-Uncompress the file and update your PATH variable as necessary.
-If you are using macOS Catalina or later, you may need to remove the quarantine attribute.
-To do this, run the following command:</p>
-
-<pre><code class="language-bash">sudo xattr -r -d com.apple.quarantine /path/to/GRAALPY_HOME
-</code></pre>
-
-<p>To try GraalPy with a full GraalVM, including support for Java embedding and interoperability with other languages, you can use the bundled releases from <a href="https://www.graalvm.org/downloads/">www.graalvm.org</a>.</p>
     
-      <h3 id="windows">
+      <h4 id="windows">
         
         
-          Windows <a href="#windows" class="anchor_heading">#</a>
+          Windows
         
         
-      </h3>
+      </h4>
 
-<p>There is currently no installer for Windows.
-Instead, follow <a href="https://github.com/oracle/graalpython#user-content-building-from-source">these instructions</a> to build GraalPy from source.</p>
+<p>There is a GraalPy preview build for Windows that you can <a href="https://github.com/oracle/graalpython/releases/">download</a>.
+It supports installation of pure Python packages via <code>pip</code>. Native extensions are a work in progress.</p>
+
+<p>The Windows build has several known issues:</p>
+
+<ul>
+  <li>JLine treats Windows a dumb terminal, no autocomplete and limited editing capabilities in the REPL</li>
+  <li>Interactive help() in the REPL doesn’t work</li>
+  <li>Inside venvs:
+    <ul>
+      <li>graalpy.cmd and graalpy.exe are broken</li>
+      <li>pip.exe cannot be used directly</li>
+      <li>pip has trouble with cache file loading, use <code>--no-cache-dir</code></li>
+      <li>Only pure Python binary wheels can be installed, no native extensions or source builds</li>
+      <li>To install a package, use <code>myvenv/Scripts/python.cmd -m pip --no-cache-dir install &lt;pkg&gt;</code></li>
+    </ul>
+  </li>
+  <li>Running from PowerShell works better than running from CMD, various scripts will fail on the latter</li>
+</ul>
     
       <h2 id="running-python">
         
@@ -797,19 +905,39 @@ These can be viewed using the following command:</p>
 <pre><code class="language-bash">graalpy --help --help:tools --help:languages
 </code></pre>
     
-      <h2 id="native-image-and-jvm-runtime">
+      <h2 id="interoperability-with-java">
         
         
-          Native Image and JVM Runtime <a href="#native-image-and-jvm-runtime" class="anchor_heading">#</a>
+          Interoperability with Java <a href="#interoperability-with-java" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>By default, GraalVM runs GraalPy from a binary, compiled ahead-of-time with <a href="/latest/reference-manual/native-image/">Native Image</a>, yielding faster startup time and lower footprint.
-Although the ahead-of-time compiled binary includes the Python and LLVM interpreters, to interoperate with
-other languages you must supply the <code>--jvm</code> option.
-This instructs the launcher to run on the JVM instead of in Native Image mode.
-Thus, you will notice a longer startup time.</p>
+<p>The best way to embed GraalPy is to use the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">GraalVM SDK Polyglot API</a>.</p>
+
+<p>As of GraalVM for JDK 21, all necessary artifacts can be downloaded directly from Maven Central. 
+All artifacts relevant to embedders can be found in the Maven dependency group <a href="https://central.sonatype.com/namespace/org.graalvm.polyglot"><code>org.graalvm.polyglot</code></a>.</p>
+
+<p>To embed GraalPy into a Java host application, add GraalPy as a Maven dependency or explicitly put the JAR on the module path. Below is the Maven configuration for a Python embedding:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+    &lt;version&gt;23.1.0&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;python&lt;/artifactId&gt;
+    &lt;version&gt;23.1.0&lt;/version&gt;
+    &lt;scope&gt;runtime&lt;/scope&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>The <code>&lt;scope&gt;runtime&lt;/scope&gt;</code> parameter is only necessary if you need the runtime dependency.</p>
+
+<p>Depending on which supported JDK you run embedded GraalPy, the level of optimizations varies, as described <a href="https://www.graalvm.org/reference-manual/embed-languages/#runtime-optimization-support">here</a>.</p>
+
+<p>Learn more in a dedicated <a href="/latest/reference-manual/python/Interoperability/">GraalPy Interoperability guide</a>. See also the <a href="https://www.graalvm.org/reference-manual/embed-languages/">Embedding Languages documentation</a> on how a guest language like Python can possibly interract with Java.</p>
     
       <h2 id="related-documentation">
         
@@ -818,6 +946,7 @@ Thus, you will notice a longer startup time.</p>
         
         
       </h2>
+
 <ul>
   <li><a href="/latest/reference-manual/python/Packages/">Installing Supported Packages</a></li>
 </ul>

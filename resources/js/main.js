@@ -825,7 +825,7 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "Latest (GraalVM for JDK 20)";
+    version = "Latest (GraalVM for JDK 21)";
   } else if (version === "dev") {
     version = "Dev Build";
   } else if (version.indexOf("jdk") === 0) {
