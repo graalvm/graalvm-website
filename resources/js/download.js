@@ -70,43 +70,13 @@ let currentJavaType = '21';
 let currentOsType = osTypes[currentOS + '_' + cpuArchitecture] ? currentOS + '_' + cpuArchitecture : 'empty_choice';
 let currentDownloadLink = null;
 
-// function changeVersion(javaType, osType) {
-
-//   let fullVersionText='';
-//   if (javaType === '21') {
-//     fullVersionText = '21.0.0'
-//   } else if (javaType === '17') {
-//     fullVersionText = '17.0.8'
-//   }
-//   const sdkCommand = `sdk install java ${fullVersionText}-graal`
-
-//   $('#sdk_command').text(sdkCommand);
-
-//   currentDownloadLink = downloadLinks[javaType + '_' + osType];
-//   currentJavaType = javaType;
-//   currentOsType = osType;
-
-//   $('#selector-java-version').html(javaTypes[javaType]);
-//   $('#selector-os-version').html(osTypes[osType]);
-//   if (currentDownloadLink) {
-//     $('#download-main-btn').attr("href", currentDownloadLink).removeClass('download-inactive').removeClass('btn-secondary');
-//   } else {
-//     $('#download-main-btn').attr("href", "#").addClass('download-inactive').addClass('btn-secondary');
-//   }
-// }
-
 function changeVersion(javaType, osType) {
 
   let fullVersionText='';
   if (javaType === '21') {
-    fullVersionText = '21.35'
-    $("div.sdk__text").css("display", "none").css("overflow", "hidden");
-    $("div.sdk__snippet").css("display", "none").css("overflow", "hidden");
+    fullVersionText = '21'
   } else if (javaType === '17') {
     fullVersionText = '17.0.8'
-    $("div.sdk__text").css("display", "block");
-    $("div.sdk__snippet").css("display", "flex");
-    $("div.sdk__snippet").addClass("sdk__snippet");
   }
   const sdkCommand = `sdk install java ${fullVersionText}-graal`
 
@@ -124,6 +94,36 @@ function changeVersion(javaType, osType) {
     $('#download-main-btn').attr("href", "#").addClass('download-inactive').addClass('btn-secondary');
   }
 }
+
+// function changeVersion(javaType, osType) {
+
+//   let fullVersionText='';
+//   if (javaType === '21') {
+//     fullVersionText = '21.35'
+//     $("div.sdk__text").css("display", "none").css("overflow", "hidden");
+//     $("div.sdk__snippet").css("display", "none").css("overflow", "hidden");
+//   } else if (javaType === '17') {
+//     fullVersionText = '17.0.8'
+//     $("div.sdk__text").css("display", "block");
+//     $("div.sdk__snippet").css("display", "flex");
+//     $("div.sdk__snippet").addClass("sdk__snippet");
+//   }
+//   const sdkCommand = `sdk install java ${fullVersionText}-graal`
+
+//   $('#sdk_command').text(sdkCommand);
+
+//   currentDownloadLink = downloadLinks[javaType + '_' + osType];
+//   currentJavaType = javaType;
+//   currentOsType = osType;
+
+//   $('#selector-java-version').html(javaTypes[javaType]);
+//   $('#selector-os-version').html(osTypes[osType]);
+//   if (currentDownloadLink) {
+//     $('#download-main-btn').attr("href", currentDownloadLink).removeClass('download-inactive').removeClass('btn-secondary');
+//   } else {
+//     $('#download-main-btn').attr("href", "#").addClass('download-inactive').addClass('btn-secondary');
+//   }
+// }
 
 function downloadGraalVMJDK() {
   if (!currentDownloadLink) {
