@@ -925,3 +925,17 @@ window.addEventListener("resize", function() {
     image.style.display = "block";
   }
 });
+
+//Quick Reference page popup function
+function openPopup(imgSrc, imgAlt) {
+  var popup = document.getElementById('qr-popup');
+  var popupImg = document.getElementById('qr-popup-img');
+  popup.style.display = 'block';
+  popupImg.src = imgSrc;
+  popupImg.alt = imgAlt;
+}
+
+function closePopup() {
+  var popup = document.getElementById('qr-popup');
+  popup.style.display = 'none';
+}
