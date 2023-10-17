@@ -10,14 +10,14 @@
 
   <title>
     
-      TruffleRuby
+      GraalPy Package Compatibility
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-10-17 14:33:38 +0000"/>
+  <meta name="last_modified" content="2023-10-16 15:26:10 +0000"/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/">
+  <link rel="canonical" href="https://www.graalvm.org/python/compatibility/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -261,886 +261,448 @@
 </header>
 
       <main class="content" aria-label="Content">
-        <div class="wrapper wrapper-content">
-  <article>
-  <div class="row d-flex flex-wrap">
-    <div class="col-sm-3 docsimpro col-bg">
-      <div class="sidebar-wrap">
-        <div class="sidebar">
-          <div class="menuabout">
-            <img id="sidebarClose" src="/resources/img/docs-sidebar/arrow-sidebar(close).svg"
-              alt="Expand or collapse sidebar" class="btn-color no-display">
-            <img id="sidebarOpen" src="/resources/img/docs-sidebar/arrow-sidebar.svg" alt="Expand or collapse sidebar">
-          </div>
-          
-<div class="toc-floating">
-
-
+        <script src="/compatibility/check_compatibility_helpers.js"></script>
 <script>
-var sidebar = document.currentScript.parentElement;
+    const show_percentages = true;
+    const dbs = {};
+    var module_query = '';
 
-// 
-//   $(document).ready(function(){
-//     $('.sidebar-wrap').stickySidebar({
-//       topSpacing: 74,
-//       bottomSpacing: 40
-//     });
-//   });
+    const load_db = function () {
+        return new Promise(function (resolve, reject) {
+            const xhr = new XMLHttpRequest();
+            const url = '/compatibility/module_results/python-module-testing.csv';
+            xhr.open('GET', url);
+            xhr.overrideMimeType('text/plain');
 
-// 
+            xhr.onload = function () {
+                if (this.status === 200) {
+                    resolve(this.responseText);
+                } else {
+                    reject(this.statusText);
+                }
+            };
 
+            xhr.onerror = function () {
+                reject(url);
+            };
 
-$(document).ready(function(){
-  var header = $('.header').height();
-  var invisibleBlock;
+            xhr.send();
+        });
+    };
 
-  $("#content-wrapper h1, #content-wrapper h2").each(function() {
-    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
-  });
+    let pageNumber = 0;
+    let database;
 
-  $(window).scroll(function() {
-    var lastitem = null;
-    $("#content-wrapper h1, #content-wrapper h2").each(function() {
-      var heading = $(this);
-      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
-      var listitem = $(sidebar).find("li").filter(function() {
-        return $(this).find("a").attr("href") == "#" + heading.attr("id");
-      });
-      listitem.removeClass("toc-bullets-focused");
-      if (position <= 0) {
-        lastitem = listitem;
-      }
+    const getRowsPerPage = function () {
+        return parseInt($('#rowsPerPage').val());
+    }
+
+    const updatePagination = function (reset) {
+        if (reset) {
+            pageNumber = 0;
+        }
+
+        $('#pagination-previous').attr('disabled', pageNumber == 0);
+
+        const rowsPerPage = getRowsPerPage();
+        const count = $('#dataTable tbody tr:not(.dataTable-filtered-out)').length;
+        let pageText;
+        if (count < rowsPerPage) {
+            pageText = `1-${count}`;
+            pageNumber = 0;
+        } else {
+            const start = pageNumber * rowsPerPage;
+            const end = start + rowsPerPage;
+            $('#pagination-next').attr('disabled', end >= count);
+
+            pageText = `${start}-${Math.min(end, count)}`
+
+            if (!reset) {
+                let numberOfRowsToSkip = start
+                let numberOfVisibleRows = 0;
+                const rows = $('#dataTable tbody tr');
+                rows.each(function () {
+                    if (!$(this).hasClass('dataTable-filtered-out')) {
+                        if (numberOfRowsToSkip > 0) {
+                            $(this).hide();
+                            numberOfRowsToSkip--;
+                        } else {
+                            if (numberOfVisibleRows < rowsPerPage) {
+                                $(this).show();
+                                numberOfVisibleRows++;
+                            } else {
+                                $(this).hide();
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        $('#pagination-label').text(`${pageText} of ${count}`)
+    }
+
+    $(document).ready(function () {
+        load_db().then(function (db_contents) {
+            database = new DB("python", db_contents);
+            const rowsPerPage = getRowsPerPage();
+            let count = 0;
+            for (let package in database.db) {
+                const versions = database.db[package]
+                for (let version in versions) {
+                    if (version.startsWith('~')) {
+                        continue;
+                    }
+                    const info = versions[version];
+                    const styling = count++ < rowsPerPage ? '' : ' style="display: none;"';
+                    $('#dataTable tbody').append(`
+                            <tr${styling}>
+                                <td class="dataTable-name">${info.name}</td>
+                                <td>${info.version}</td>
+                                <td>${info.pass_percentage}</td>
+                                <td><a href="https://pypi.org/project/${info.name}/" target="_blank">${info.name} on pypi.org</td>
+                            </tr>`);
+                }
+            }
+            updatePagination(true);
+        });
+        $('#graalpy__search-field').on('input', function () {
+            const searchTerms = this.value.split(',');
+            let numberOfVisibleRows = 0;
+            const rowsPerPage = getRowsPerPage();
+            const rows = $('#dataTable tbody tr');
+            rows.each(function () {
+                if (searchTerms.some(term => (searchTerms.length <= 1 || term !== '') && $(this).find('.dataTable-name').first().text().includes(term))) {
+                    $(this).removeClass('dataTable-filtered-out');
+                    if (numberOfVisibleRows < rowsPerPage) {
+                        $(this).show();
+                        numberOfVisibleRows++;
+                    } else {
+                        $(this).hide();
+                    }
+                } else {
+                    $(this).addClass('dataTable-filtered-out');
+                    $(this).hide();
+                }
+            });
+            updatePagination(true);
+        });
+        $('#add-requirements-btn').on('change', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+            const file = this.files[0];
+            const fileReader = new FileReader();
+            fileReader.onloadend = function (e) {
+                const contents = e.target.result;
+                const searchTerms = [];
+                for (const line of contents.split('\n')) {
+                    const trimmedLine = line.trim();
+                    const pythonPackageName = trimmedLine.match(/^[a-zA-Z0-9]+/);
+                    if (pythonPackageName !== null) {
+                        searchTerms.push(pythonPackageName);
+                    }
+                }
+                const searchField = $('#graalpy__search-field');
+                searchField.val(searchTerms.join(','));
+                searchField.trigger('input').change();
+            }
+            fileReader.readAsText(file);
+        });
+        $('#rowsPerPage').on('input', function () {
+            const rowsPerPage = parseInt(this.value);
+            let numberOfVisibleRows = 0;
+            const rows = $('#dataTable tbody tr');
+            rows.each(function () {
+                if (numberOfVisibleRows < rowsPerPage && !$(this).hasClass('dataTable-filtered-out')) {
+                    $(this).show();
+                    numberOfVisibleRows++;
+                } else {
+                    $(this).hide();
+                }
+            });
+            updatePagination(true);
+        });
+        $('#pagination-previous').on('click', function () {
+            pageNumber--;
+            updatePagination(false);
+        });
+        $('#pagination-next').on('click', function () {
+            pageNumber++;
+            updatePagination(false);
+        });
     });
-    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
-  });
-});
-
 </script>
 
-<!-- Docs vesion dropdown -->
-<section class="versions">
-  <div class="dropdown">
-    <div class="d-flex align-items-center version-dropdown">
-      <input name="select_value" type="hidden" id="selectedValue">
-      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
-        <span class="value-text" id="valueText">Version</span>
-      </div>
-      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('Latest (GraalVM for JDK 21)', 'latest');">Latest (GraalVM for JDK 21)</li>
-        <li class="select-option" onclick="selected('Dev Build', 'dev');">Dev Build</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
-        <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
-        <li class="select-option" onclick="selected('GraalVM 22.2', '22.2');">GraalVM 22.2</li>
-        <li class="select-option" onclick="selected('GraalVM 22.1', '22.1');">GraalVM 22.1</li>
-        <li class="select-option" onclick="selected('GraalVM 22.0', '22.0');">GraalVM 22.0</li>
-        <li class="select-option" onclick="selected('GraalVM 21.3', '21.3');">GraalVM 21.3</li>
-      </ul>
+<section class="content-section pycomp__screenback versions">
+    <div class="wrapper">
+        <div class="pycomp__homescreen">
+            <div class="container">
+                <h2 class="pycomp__title">GraalPy: Package Compatibility</h2>
+                <div class="graalpy-filter">
+                    <div class="row">
+                        <p class="graalpy-item graalpy-module" data-filter="v231">GraalPy 23.1</p>
+                        <p class="graalpy-item graalpy-module" data-filter="v230">GraalPy 23.0</p>
+                        <p class="graalpy-item graalpy-module" data-filter="v223">GraalPy 22.3</p>
+                        <p class="graalpy-item graalpy-module" data-filter="v213">GraalPy 21.3</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </section>
 
-<ul class="toc-bullets">
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/java/">
-            Java Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/java-on-truffle/">
-            Java on Truffle
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/js/">
-            JavaScript and Node.js Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/llvm/">
-            LLVM Languages Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/python/">
-            Python Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main toc-bullets-highlight">
-        
-          
-          <a href="/21.3/reference-manual/ruby/">
-            Ruby Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Compatibility/">
-              Compatibility
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Debugging/">
-              Debugging Ruby
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/RuntimeConfigurations/">
-              Runtime Configurations
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/InstallingGraalVM/">
-              Using Ruby with GraalVM
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Installinglibssl/">
-              Installing `libssl`
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/InstallingLLVM/">
-              Installing Make and GCC
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Installingzlib/">
-              Installing `zlib`
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/JRubyMigration/">
-              Migration from JRuby to Ruby
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Options/">
-              TruffleRuby Options and Command Line
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Polyglot/">
-              Polyglot Programming
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/RubyManagers/">
-              Ruby Managers and Installers
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/StandaloneDistribution/">
-              Standalone Distribution
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Tools/">
-              Development Tools for Ruby
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/TruffleRubyAdditions/">
-              Ruby Additional Functionality
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/UTF8Locale/">
-              Setting up a UTF-8 Locale
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/ReportingPerformanceProblems/">
-              Reporting Performance Problems
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/KnownCVEs/">
-              Security
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/Optcarrot/">
-              Optcarrot Example
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/21.3/reference-manual/ruby/FAQ/">
-              FAQ
-            </a>
-          </li>
-
-          
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/r/">
-            R Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/21.3/reference-manual/wasm/">
-            WebAssembly Reference
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-</div>
-
-        </div>
-      </div>
-    </div>
-
-    <div class="col-sm-9 docsmod">
-      <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-        <div class="docsnote">
-          <div class="docsnote__body">
-            <div class="docsnote__column">
-              <div class="docsnote__card">
-                <div class="leftside">
-                  <img src='/resources/img/note-icon-docs.svg' >
-                  <p>Note</p>
-                </div>
-                <div class="rightside">
-                  <p class="docsnote__subtitle">This documentation may be out of date. See the <a href="/latest/reference-manual/ruby/">latest version</a>.</p>
-                </div>
-              </div>
+<section class="content-section">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container">
+                <h5 class="pycomp-text">To ensure compatibility with Python packages, the GraalVM developers conduct
+                    testing, which includes verifying the presence and correct functioning of necessary libraries and
+                    frameworks, such as NumPy, Pandas, and Django.</h5>
+                <h5 class="pycomp-text">Compatibility testing of Python packages with GraalVM is an important process
+                    that enables developers to leverage the powerful capabilities of GraalVM for working with Python.
+                    Such support allows for the creation of more efficient and productive solutions in the areas of
+                    machine learning, data analysis, and web development using the convenient and powerful Python
+                    toolset.</h5>
             </div>
-          </div>
         </div>
-        
-        
-  <ul class="breadcrumb">
-    <!-- <li><a href='/'>GraalVM</a></li> -->
-    <li><a href='/'>Home</a></li>
-    
-    
-      
-      <li>
-        <a href="/21.3/">
-          21.3
-        </a>
-      </li>
-      
-    
-      
-      <li>
-        <a href="/21.3/reference-manual/">
-          Reference Manual
-        </a>
-      </li>
-      
-    
-      
-    
-  </ul>
-
-
-        
-        <h1 id="truffleruby">
-        
-        
-          TruffleRuby
-        
-        
-      </h1>
-
-<p><img src="https://raw.githubusercontent.com/oracle/truffleruby/master/logo/png/truffleruby_logo_horizontal_medium_outlined.png" alt="TruffleRuby logo" /></p>
-
-<p>TruffleRuby is the <a href="http://graalvm.org/">GraalVM</a> high-performance implementation
-of the <a href="https://www.ruby-lang.org/en/">Ruby programming language</a>.</p>
-    
-      <h2 id="getting-started">
-        
-        
-          Getting Started <a href="#getting-started" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>There are four ways to install TruffleRuby releases and nightly builds:</p>
-
-<ul>
-  <li>
-    <p>Via <a href="/21.3/reference-manual/ruby/InstallingGraalVM/">GraalVM</a>, which includes support for
-other languages such as JavaScript, R, and Python, and supports both the
-<a href="#truffleruby-runtime-configurations">Native and JVM configurations</a>.
-Inside GraalVM will then be a <code>bin/ruby</code> command that runs TruffleRuby.
-We recommend that you use a <a href="/21.3/reference-manual/ruby/RubyManagers/#configuring-ruby-managers-for-the-full-graalvm-distribution">Ruby manager</a>
-to use TruffleRuby inside GraalVM.</p>
-  </li>
-  <li>
-    <p>Via your <a href="/21.3/reference-manual/ruby/RubyManagers/">Ruby manager/installer</a> (RVM, rbenv,
-chruby, ruby-build, ruby-install). This contains only TruffleRuby, in the
-<a href="#truffleruby-runtime-configurations">Native configuration</a>, making it a smaller
-download. It is meant for users who only want a Ruby implementation and are already
-using a Ruby manager.</p>
-  </li>
-  <li>
-    <p>Via Docker: <a href="https://github.com/graalvm/container/blob/master/truffleruby/README.md">Oracle Linux-based images</a>
-and <a href="https://github.com/flavorjones/truffleruby/pkgs/container/truffleruby">Debian-based images</a>.</p>
-  </li>
-  <li>
-    <p>Via the <a href="/21.3/reference-manual/ruby/StandaloneDistribution/">standalone distribution</a>
-as a simple binary tarball.</p>
-  </li>
-</ul>
-
-<p>We recommend trying TruffleRuby nightly builds which contain the latest fixes and improvements:</p>
-
-<pre><code class="language-bash">RVM:    $ rvm install truffleruby-head
-rbenv:  $ rbenv install truffleruby-dev
-chruby: $ ruby-build truffleruby-dev ~/.rubies/truffleruby-dev
-</code></pre>
-
-<p>See the <a href="/21.3/reference-manual/ruby/RubyManagers/">Ruby installers</a> documentation for more details.</p>
-
-<p>Testing TruffleRuby in CI is easy.
-On GitHub Actions, you can use:</p>
-
-<pre><code class="language-yaml">- uses: ruby/setup-ruby@v1
-  with:
-    ruby-version: truffleruby # or truffleruby-head
-</code></pre>
-
-<p>See <a href="/21.3/reference-manual/ruby/StandaloneDistribution/">Testing TruffleRuby in CI</a> for more details and other CIs.</p>
-
-<p>You can use <code>gem</code> and <code>bundle</code> to install gems, as usual.</p>
-
-<p>Please report any issues you might find on <a href="https://github.com/oracle/truffleruby/issues">GitHub</a>.</p>
-    
-      <h2 id="aim">
-        
-        
-          Aim <a href="#aim" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby aims to:</p>
-
-<ul>
-  <li>Run idiomatic Ruby code faster.
-    <ul>
-      <li>TruffleRuby is the fastest Ruby implementation for many CPU-intensive benchmarks.</li>
-    </ul>
-  </li>
-  <li>Run Ruby code in parallel.
-    <ul>
-      <li>TruffleRuby does not have a global interpreter lock and runs Ruby code in parallel.</li>
-    </ul>
-  </li>
-  <li>Support C extensions.
-    <ul>
-      <li>Many C extensions work out of the box, including database drivers.</li>
-    </ul>
-  </li>
-  <li>Add fast and low-overhead interoperability with languages like Java, JavaScript, Python, and R.
-    <ul>
-      <li>Provided by GraalVM, see the <a href="/21.3/reference-manual/ruby/Polyglot/">Polyglot documentation</a>.</li>
-    </ul>
-  </li>
-  <li>Provide new tooling, such as debuggers and monitoring, that works across languages.
-    <ul>
-      <li>Includes a profiler, debugger, VisualVM, and more. See the <a href="/21.3/reference-manual/ruby/Tools/">Tools documentation</a>.</li>
-    </ul>
-  </li>
-  <li>Provide all of the above while maintaining very high compatibility with the standard implementation of Ruby.</li>
-</ul>
-    
-      <h2 id="truffleruby-runtime-configurations">
-        
-        
-          TruffleRuby Runtime Configurations <a href="#truffleruby-runtime-configurations" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>There are two main runtime configurations of TruffleRuby, Native and JVM, which have different trade-offs.</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Configuration:</th>
-      <th style="text-align: right">Native (<code>--native</code>, default)</th>
-      <th style="text-align: right">JVM (<code>--jvm</code>)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>Time to start TruffleRuby</td>
-      <td style="text-align: right">about as fast as MRI startup</td>
-      <td style="text-align: right">slower</td>
-    </tr>
-    <tr>
-      <td>Time to reach peak performance</td>
-      <td style="text-align: right">faster</td>
-      <td style="text-align: right">slower</td>
-    </tr>
-    <tr>
-      <td>Peak performance (also considering GC)</td>
-      <td style="text-align: right">good</td>
-      <td style="text-align: right">best</td>
-    </tr>
-    <tr>
-      <td>Java host interoperability</td>
-      <td style="text-align: right">needs reflection configuration</td>
-      <td style="text-align: right">just works</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>To find out which runtime configuration is being used, run <code>ruby --version</code> on the command line,
-or check the value of <code>RUBY_DESCRIPTION</code> or <code>TruffleRuby.native?</code> in Ruby code.
-Runtime configurations are further detailed in <a href="/21.3/reference-manual/ruby/RuntimeConfigurations/">Deploying TruffleRuby</a>.</p>
-    
-      <h2 id="system-compatibility">
-        
-        
-          System Compatibility <a href="#system-compatibility" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby is actively tested on the following systems:</p>
-
-<ul>
-  <li>Oracle Linux 7</li>
-  <li>Ubuntu 18.04 LTS</li>
-  <li>Ubuntu 16.04 LTS</li>
-  <li>Fedora 28</li>
-  <li>macOS 10.14 (Mojave)</li>
-  <li>macOS 10.15 (Catalina)</li>
-</ul>
-
-<p>Architectures:</p>
-
-<ul>
-  <li>AMD64 (aka <code>x86_64</code>): Supported</li>
-  <li>AArch64 (aka <code>arm64</code>): Supported on Linux (from 21.2)</li>
-</ul>
-
-<p>You may find that TruffleRuby will not work if you severely restrict the
-environment, for example, by unmounting system filesystems such as <code>/dev/shm</code>.</p>
-    
-      <h2 id="dependencies">
-        
-        
-          Dependencies <a href="#dependencies" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<ul>
-  <li><a href="/21.3/reference-manual/ruby/InstallingLLVM/">make and gcc</a> for building C and C++ extensions</li>
-  <li><a href="/21.3/reference-manual/ruby/Installinglibssl/">libssl</a> for the <code>openssl</code> C extension</li>
-  <li><a href="/21.3/reference-manual/ruby/Installingzlib/">zlib</a> for the <code>zlib</code> C extension</li>
-</ul>
-
-<p>Without these dependencies, many libraries including RubyGems will not work.
-TruffleRuby will try to print a nice error message if a dependency is missing, but this can only be done on a best effort basis.</p>
-
-<p>You may also need to set up a <a href="/21.3/reference-manual/ruby/UTF8Locale/">UTF-8 locale</a>.</p>
-
-<p>See the <a href="https://github.com/oracle/truffleruby/blob/master/doc/contributor/workflow.md">contributor workflow</a> document if you wish to build TruffleRuby from source.</p>
-    
-      <h2 id="current-status">
-        
-        
-          Current Status <a href="#current-status" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>We recommend that people trying TruffleRuby on their gems and applications <a href="#contact">get in touch with us</a> for help.</p>
-
-<p>TruffleRuby can run Rails and is compatible with many gems, including C extensions.
-However, TruffleRuby is not 100% compatible with MRI 2.7 yet. Please report any compatibility issues you might find.
-TruffleRuby <a href="https://eregon.me/blog/2020/06/27/ruby-spec-compatibility-report.html">passes around 97% of ruby/spec</a>,
-more than any other alternative Ruby implementation.</p>
-
-<p>TruffleRuby might not be fast yet on Rails applications and large programs.
-Notably, large programs currently take a long time to warmup on TruffleRuby and
-this is something the TruffleRuby team is currently working on.
-Large programs often involve more performance-critical code
-so there is a higher chance of hitting an area of TruffleRuby which has not been optimized yet.</p>
-    
-      <h2 id="releases">
-        
-        
-          Releases <a href="#releases" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby has the same version, and is released at the same time as GraalVM.
-There is a release every 3 months. See the <a href="https://www.graalvm.org/release-notes/version-roadmap/">release roadmap</a>.</p>
-    
-      <h2 id="migration-from-mri">
-        
-        
-          Migration from MRI <a href="#migration-from-mri" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby should in most cases work as a drop-in replacement for MRI, but you
-should read about our <a href="/21.3/reference-manual/ruby/Compatibility/">compatibility</a>.</p>
-    
-      <h2 id="migration-from-jruby">
-        
-        
-          Migration from JRuby <a href="#migration-from-jruby" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>For many use cases TruffleRuby should work as a drop-in replacement for JRuby.
-However, our approach to integration with Java is different to JRuby so you
-should read our <a href="/21.3/reference-manual/ruby/JRubyMigration/">migration guide</a>.</p>
-    
-      <h2 id="contact">
-        
-        
-          Contact <a href="#contact" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>The best way to get in touch with us is to join the <code>#truffleruby</code> channel on
-<a href="https://www.graalvm.org/community/#community-support">GraalVM Slack</a>.
-You can also Tweet to <a href="https://twitter.com/truffleruby">@TruffleRuby</a>, or email
-<em>benoit.daloze@oracle.com</em>.</p>
-
-<p>Please report security vulnerabilities via the process outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">reporting vulnerabilities guide</a>, rather than by something public such as a GitHub issue or a Gitter conversation.</p>
-    
-      <h2 id="mailing-list">
-        
-        
-          Mailing List <a href="#mailing-list" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Announcements about GraalVM, including TruffleRuby, are made on the
-<a href="http://mail.openjdk.java.net/mailman/listinfo/graal-dev">graal-dev</a> mailing list.</p>
-    
-      <h2 id="authors">
-        
-        
-          Authors <a href="#authors" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>The main authors of TruffleRuby ordered by first contribution are:
-Chris Seaton, Benoit Daloze, Kevin Menard, Petr Chalupa, Brandon Fish, Duncan MacGregor, Christian Wirth, Rafael França, Alan Wu, Nicolas Laurent, Carol Chen, Nikolay Sverchkov, Lillian Zhang, Tom Stuart, and Maple Ong.</p>
-    
-      <h2 id="security">
-        
-        
-          Security <a href="#security" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>See <a href="https://github.com/oracle/truffleruby/blob/master/SECURITY.md">SECURITY</a> for how to report security vulnerabilities to Oracle.
-For known vulnerabilities in Ruby, please refer to the <a href="/21.3/reference-manual/ruby/KnownCVEs/">known-cves</a> file.</p>
-    
-      <h2 id="licence">
-        
-        
-          Licence <a href="#licence" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby is copyright (c) 2013-2021 Oracle and/or its affiliates, and is made
-available to you under the terms of any one of the following three licenses:</p>
-
-<ul>
-  <li>Eclipse Public License version 2.0, or</li>
-  <li>GNU General Public License version 2, or</li>
-  <li>GNU Lesser General Public License version 2.1.</li>
-</ul>
-
-<p>For further licensing information, see <a href="https://github.com/oracle/truffleruby/blob/master/LICENCE.md">LICENCE</a>, <a href="https://github.com/oracle/truffleruby/blob/master/3rd_party_licenses.txt">3rd_party_licenses</a>, and <a href="https://github.com/oracle/truffleruby/blob/master/doc/legal/legal.md">doc/legal/legal</a>.</p>
-    
-      <h2 id="attribution">
-        
-        
-          Attribution <a href="#attribution" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>TruffleRuby includes infrastructure code from <a href="https://github.com/jruby/jruby">JRuby</a> (e.g. parser, JCodings, Joni), core library code from the <a href="https://github.com/rubinius/rubinius">Rubinius</a> project, as well as code from the standard implementation of Ruby, <a href="https://github.com/ruby/ruby">MRI</a>.</p>
-
-      </div>
-
-      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
-        <div class="hamburger">
-          <div class="inner"></div>
-        </div>
-      </div>
     </div>
-  </div>
-</article>
-</div>
+</section>
 
+<section class="boxes">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container graalpy-box v231 all">
+                <div class="pycomp__mid">
+                    <div class="container">
+                        <div class="pycomp__chart">
+                            <div class="pycomp__chart-row">
+                                <div class="chart">
+                                    <img src="/resources/img/graalpy-compatibility/jdk21.svg">
+                                </div>
+                                <div class="legend">
+                                    <div>
+                                        <div class="legend-item legend-item-1"
+                                            title="The Tests Run On GraalPy And More Than 90% Pass">Compatible: 276
+                                            (45%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-2"
+                                            title="The Package Either Doesn't Install On GraalPy, But We Are Working On It">
+                                            Currently Untested: 72 (11%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                    <div>
+                                        <div class="legend-item legend-item-3"
+                                            title="The Package Installs, But Less Than 90% Of The Tests Pass">Currently
+                                            Incompatible: 253 (42%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-4"
+                                            title="We Are Not Currently Looking To Make That Package Work">Not
+                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="boxes">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container graalpy-box v230 all">
+                <div class="pycomp__mid">
+                    <div class="container">
+                        <div class="pycomp__chart">
+                            <div class="pycomp__chart-row">
+                                <div class="chart">
+                                    <img src="/resources/img/graalpy-compatibility/jdk17.svg">
+                                </div>
+                                <div class="legend">
+                                    <div>
+                                        <div class="legend-item legend-item-1"
+                                            title="The Tests Run On GraalPy And More Than 90% Pass">Compatible: 232
+                                            (46%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-2"
+                                            title="The Package Either Doesn't Install On GraalPy, But We Are Working On It">
+                                            Currently Untested: 6 (1%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                    <div>
+                                        <div class="legend-item legend-item-3"
+                                            title="The Package Installs, But Less Than 90% Of The Tests Pass">Currently
+                                            Incompatible: 261 (52%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-4"
+                                            title="We Are Not Currently Looking To Make That Package Work">Not
+                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="boxes">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container graalpy-box v223 all">
+                <div class="pycomp__mid">
+                    <div class="container">
+                        <div class="pycomp__chart">
+                            <div class="pycomp__chart-row">
+                                <div class="chart">
+                                    <img src="/resources/img/graalpy-compatibility/v223.svg">
+                                </div>
+                                <div class="legend">
+                                    <div>
+                                        <div class="legend-item legend-item-1"
+                                            title="The Tests Run On GraalPy And More Than 90% Pass">Compatible: 56
+                                            (12%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-2"
+                                            title="The Package Either Doesn't Install On GraalPy, But We Are Working On It">
+                                            Currently Untested: 368 (84%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                    <div>
+                                        <div class="legend-item legend-item-3"
+                                            title="The Package Installs, But Less Than 90% Of The Tests Pass">Currently
+                                            Incompatible: 13 (2%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-4"
+                                            title="We Are Not Currently Looking To Make That Package Work">Not
+                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="boxes">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container graalpy-box v213 all">
+                <div class="pycomp__mid">
+                    <div class="container">
+                        <div class="pycomp__chart">
+                            <div class="pycomp__chart-row">
+                                <div class="chart">
+                                    <img src="/resources/img/graalpy-compatibility/v213.svg">
+                                </div>
+                                <div class="legend">
+                                    <div>
+                                        <div class="legend-item legend-item-1"
+                                            title="The Tests Run On GraalPy And More Than 90% Pass">Compatible: 40
+                                            (8%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-2"
+                                            title="The Package Either Doesn't Install On GraalPy, But We Are Working On It">
+                                            Currently Untested: 344 (68%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                    <div>
+                                        <div class="legend-item legend-item-3"
+                                            title="The Package Installs, But Less Than 90% Of The Tests Pass">Currently
+                                            Incompatible: 115 (23%)<sup class="info-tooltip"></sup></div>
+                                        <div class="legend-item legend-item-4"
+                                            title="We Are Not Currently Looking To Make That Package Work">Not
+                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="content-section module-table">
+    <div class="wrapper">
+        <div class="pycomp">
+            <div class="container">
+                <h3 class="pypage__title-02">Python Packages</h3>
+                <div class="pypackage__row">
+                    <input type="text" id="graalpy__search-field" placeholder="Comma-separated list of packages">
+                    <div class='input-file'>
+                        <label for="add-requirements-btn" class="btn-link">
+                            Filter by requirements.txt
+                            <input type="file" id="add-requirements-btn" accept=".txt">
+                        </label>
+                    </div>
+                    <div>
+                        <a href="/compatibility/module_results/python-module-testing.csv"
+                            target="_blank"><button class="download-data-btn">Download data</button></a>
+                    </div>
+                </div>
+                <div>
+                    <table class="pytable" id="dataTable">
+                        <thead>
+                            <tr class="add-radius">
+                                <th>Name</th>
+                                <th>Version</th>
+                                <th>Test Level %</th>
+                                <th>Package URL</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="tablebot">
+                    <div class="tablebot__elements">
+                        <label for="rowsPerPage">Rows per page:</label>
+                        <select id="rowsPerPage">
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <div class="pagination-group">
+                            <div class="pagination-lab" id="pagination-label"></div>
+                            <button class="pagination-dis" id="pagination-previous" disabled>
+                                <</button>
+                                    <button class="pagination-act" id="pagination-next">></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    $(".graalpy-item").click(function () {
+        $(this).addClass("graalpy-active").siblings().removeClass("graalpy-active");
+    });
+    
+    $(document).ready(function () {
+        function filterItems(graalpyModuleValue) {
+            let filterString = `.${graalpyModuleValue}`
+    
+            $(".graalpy-box")
+                .not(filterString)
+                .hide();
+            $(".graalpy-box")
+                .filter(filterString)
+                .show();
+        }
+    $(".graalpy-item").click(function () {
+            const graalpyModuleValue = $(".graalpy-item.graalpy-module.graalpy-active").attr("data-filter");
+            filterItems(graalpyModuleValue)
+    
+            window.history.pushState("", window.location.title, `?topic=${graalpyModuleValue}`);
+        });
+        function setFilters() {
+            const params = new URLSearchParams(window.location.search);
+            const graalpyModuleValue = params.get('topic') || 'v231';
+            const moduleFilterElement = $(`.graalpy-module[data-filter=${graalpyModuleValue}]`);
+            moduleFilterElement.addClass("graalpy-active").siblings().removeClass("graalpy-active");
+            filterItems(graalpyModuleValue);
+        }
+        setFilters();
+    });
+</script>
       </main>
 
       <!-- Connect with us -->
