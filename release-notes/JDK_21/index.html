@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-09-25 14:03:13 +0000"/>
+  <meta name="last_modified" content="2023-10-23 13:54:52 +0200"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/release-notes/JDK_21/">
@@ -517,7 +517,32 @@
 
     <div class="col-sm-9 docsmod">
       <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-        <h1 id="graalvm-for-jdk-21">GraalVM for JDK 21</h1>
+        <h1 id="graalvm-for-jdk-2101">GraalVM for JDK 21.0.1</h1>
+<p>(2023-10-24)</p>
+
+<p>This is the October 2023 Critical Patch Update (CPU) for GraalVM Community Edition.
+It is based on OpenJDK CPU and includes all the OpenJDK security fixes released as part of that CPU, platform updates, and some GraalVM features bug fixes.
+It is a full distribution and supersedes the previous release of GraalVM Community Edition for JDK 21.</p>
+
+<ul>
+  <li>Updated GraalVM Community Edition for JDK 21 to <strong>21.0.1+12</strong>. See the <a href="https://wiki.openjdk.org/display/JDKUpdates/JDK+21u" title="OpenJDK 21 Updates">OpenJDK 21 Updates</a>.</li>
+  <li>Compiler fixes:
+    <ul>
+      <li>Changed constant blinding to use <code>RuntimeRandomness</code> for ahead-of-time compilation.</li>
+      <li>Added <code>FarBranch</code> support for <code>BranchOp</code> for the AArch64 architecture.</li>
+    </ul>
+  </li>
+  <li>Native Image fixes:
+    <ul>
+      <li>Fixed process crashing when uncommitting unused memory.</li>
+      <li>Added <code>CEntryPointError</code> if the stack boundaries cannot be determined.</li>
+      <li>Removed no longer needed JDK-specific Java Flight Recorder code.</li>
+      <li>Fixed an occasional crash using <code>ProcessBuilder</code> on macOS.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="graalvm-for-jdk-21">GraalVM for JDK 21</h1>
 <p>(2023-09-19)</p>
 
 <ul>
@@ -587,11 +612,11 @@ Learn more about <code>UseBranchProtection</code> <a href="https://blogs.oracle.
   <li>Users can now use G1 Garbage Collector on the Linux AArch64 architecture to build efficient native executables with large heaps and minimal pause times (not available in GraalVM Community Edition).
 Previously, it was only available for Linux AMD64. 
 To enable it, pass the option <code>--gc=G1</code> to the <code>native-image</code> builder.
-Learn more about <a href="/latest/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Memory Management in Native Image</a>.</li>
+Learn more about <a href="/jdk21/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Memory Management in Native Image</a>.</li>
   <li>Introduced a new class initialization approach that will become the default in the future: all classes are now allowed to be used and initialized at build time, regardless of the class initialization configuration. For classes that are configured as <code>--initialize-at-run-time</code> this means that they will appear as uninitialized again at run time. To enable the new approach, pass the <code>--strict-image-heap</code> flag to Native Image. For more information and implementation details, take a look at the <a href="https://github.com/oracle/graal/pull/4684">proposal #4684</a>. Note that there is a known issue when a build that does not satisfy the new policy would fail with the following error: <code>Boolean option value can be only + or -</code>. This will be resolved in a patch release on October 24, 2023 and we will share more details on the new policy and best practices in the upcoming blog post.</li>
   <li>Improved the reporting of missing metadata by throwing <code>MissingReflectionRegistrationError</code> when attempting to create a <code>Proxy</code> class without having it registered at build time, instead of <code>VMError</code>.</li>
   <li>Added optimization level 3 to the <code>native-image</code> builder for the best peak performance (not available in GraalVM Community Edition).
-This new level includes optimizations that previously were part of optimization level 2 and that work best together with <a href="/latest/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Profile-Guided Optimizations</a>.
+This new level includes optimizations that previously were part of optimization level 2 and that work best together with <a href="/jdk21/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Profile-Guided Optimizations</a>.
 As a result, the compilation time when building with the default <code>-O2</code> is significantly reduced.
 Also, the <code>--pgo</code> option automatically enables <code>-O3</code>.</li>
   <li>Added experimental support for foreign down calls (<a href="https://openjdk.org/jeps/424">OpenJDK project Panama</a>) in Native Image. Please test it and provide feedback. Support for upcalls is planned for the future.</li>
@@ -699,7 +724,7 @@ Below is an example of the Maven configuration:
   &lt;/dependency&gt;
 </code></pre>
     <p>These dependencies use the language and tools built on top of Oracle GraalVM.
-  To use the GraalVM Community Edition version, add the suffix <code>-community</code> to <code>artifactId</code>, for example, <code>js-community</code>. Please refer to the updated <a href="/latest/reference-manual/embed-languages/">Embedding Languages documentation</a> for further details.</p>
+  To use the GraalVM Community Edition version, add the suffix <code>-community</code> to <code>artifactId</code>, for example, <code>js-community</code>. Please refer to the updated <a href="/jdk21/reference-manual/embed-languages/">Embedding Languages documentation</a> for further details.</p>
   </li>
   <li>
     <p>Removed the option <code>--language:&lt;language&gt;</code> (to enable a specific language runtime at build time) and some macro options, namely:</p>
@@ -762,7 +787,7 @@ Below is the Maven configuration for a JavaScript embedding:
 Two standalone options are available: Oracle GraalVM and GraalVM Community Edition with a native launcher included.
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>espresso-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
-See the <a href="/latest/reference-manual/java-on-truffle/">Java on Truffle Getting Started</a>.
+See the <a href="/jdk21/reference-manual/java-on-truffle/">Java on Truffle Getting Started</a>.
 Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-builds/releases/">available on GitHub</a>.</li>
   <li>To enable Java on Truffle, you no longer install it with <code>gu install espresso</code> (since GraalVM Updater is removed), but add it as a Maven dependency (see below), or explicitly put the JAR on the module path.
     <pre><code class="language-xml">  &lt;dependency&gt;
@@ -794,7 +819,7 @@ Two standalone language runtime options are available for both Oracle GraalVM an
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>graalpy-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
 A standalone that comes with a JVM has the <code>-jvm</code> suffix in a name.
-See the <a href="/latest/reference-manual/python/">GraalPy Getting Started</a>.</p>
+See the <a href="/jdk21/reference-manual/python/">GraalPy Getting Started</a>.</p>
 
     <p>You can install a GraalPy Community standalone also with <code>pyenv</code>:</p>
     <pre><code class="language-bash">  # To install GraalPy Community Edition
@@ -841,7 +866,7 @@ Two standalone language runtime options are available for both Oracle GraalVM an
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>wasm-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
 A standalone that comes with a JVM has the <code>-jvm</code> suffix in a name.
-See the <a href="/latest/reference-manual/wasm/">WebAssembly Getting Started</a>.
+See the <a href="/jdk21/reference-manual/wasm/">WebAssembly Getting Started</a>.
 Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-builds/releases/">available on GitHub</a>.</li>
   <li>Implemented the <a href="https://github.com/WebAssembly/extended-const">extended const expressions</a> proposal. The feature can be enabled with the option <code>--wasm.ExtendedConstExpressions=true</code>.</li>
   <li>Added the option to enable multiple memories within a Wasm module: <code>--wasm.MultiMemory=true</code>.</li>
@@ -856,7 +881,7 @@ Two standalone language runtime options are available for both Oracle GraalVM an
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>llvm-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
 A standalone that comes with a JVM has the <code>-jvm</code> suffix in a name.
-See the <a href="/latest/reference-manual/llvm/">LLVM Getting Started</a>.
+See the <a href="/jdk21/reference-manual/llvm/">LLVM Getting Started</a>.
 Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-builds/releases/">available on GitHub</a>.</li>
   <li>Updated LLVM toolchain to version 16.0.1.</li>
   <li>Added the <code>flang</code> toolchain wrapper to enable Fortran compilation with embedded bitcode.</li>
