@@ -267,10 +267,10 @@
     const dbs = {};
     var module_query = '';
 
-    const load_db = function () {
+    const load_db = function (graalpyVersion) {
         return new Promise(function (resolve, reject) {
             const xhr = new XMLHttpRequest();
-            const url = '/compatibility/module_results/python-module-testing.csv';
+            const url = `/compatibility/module_results/python-module-testing-${graalpyVersion}.csv`;
             xhr.open('GET', url);
             xhr.overrideMimeType('text/plain');
 
@@ -341,11 +341,38 @@
         $('#pagination-label').text(`${pageText} of ${count}`)
     }
 
-    $(document).ready(function () {
-        load_db().then(function (db_contents) {
+    const toStatisticsText = function (part, total) {
+        return `${part} (${Math.round(part / total * 100 * 100) / 100}%)`
+    }
+
+    const updateStatistics = function (count, countCompatible, countUntested, countIncompatible, countNotSupported) {
+        let currentShare = countCompatible / count * 360;
+        $('#pycomp-chart-compatible').css('transform', `rotate(${currentShare}deg)`);
+        currentShare += countUntested / count * 360;
+        $('#pycomp-chart-untested').css('transform', `rotate(${currentShare}deg)`);
+        currentShare += countIncompatible / count * 360;
+        $('#pycomp-chart-incompatible').css('transform', `rotate(${currentShare}deg)`);
+        currentShare += countNotSupported / count * 360;
+        $('#pycomp-chart-not-supported').css('transform', `rotate(${currentShare}deg)`);
+    
+        $('#pycomp-stats-compatible').text(toStatisticsText(countCompatible, count));
+        $('#pycomp-stats-untested').text(toStatisticsText(countUntested, count));
+        $('#pycomp-stats-incompatible').text(toStatisticsText(countIncompatible, count));
+        $('#pycomp-stats-not-supported').text(toStatisticsText(countNotSupported, count));
+    }
+
+    const updatePageData = function () {
+        const params = new URLSearchParams(window.location.search);
+        const graalpyModuleValue = params.get('version') || 'v231';
+        load_db(graalpyModuleValue).then(function (db_contents) {
             database = new DB("python", db_contents);
             const rowsPerPage = getRowsPerPage();
             let count = 0;
+            let countCompatible = 0;
+            let countUntested = 0;
+            let countIncompatible = 0;
+            let countNotSupported = 0;
+            $('#dataTable tbody').empty();
             for (let package in database.db) {
                 const versions = database.db[package]
                 for (let version in versions) {
@@ -353,6 +380,23 @@
                         continue;
                     }
                     const info = versions[version];
+                    switch (info.test_status) {
+                        case 0:
+                            countCompatible++;
+                            break;
+                        case 1:
+                            countUntested++;
+                            break;
+                        case 2:
+                            countIncompatible++;
+                            break;
+                        case 3:
+                            countNotSupported++;
+                            break;
+                        default:
+                            console.log(`Unknown test_status: ${info.test_status}`);
+                            break;
+                    }
                     const styling = count++ < rowsPerPage ? '' : ' style="display: none;"';
                     $('#dataTable tbody').append(`
                             <tr${styling}>
@@ -363,8 +407,13 @@
                             </tr>`);
                 }
             }
+            updateStatistics(count, countCompatible, countUntested, countIncompatible, countNotSupported);
             updatePagination(true);
         });
+    }
+
+    $(document).ready(function () {
+        updatePageData();
         $('#graalpy__search-field').on('input', function () {
             const searchTerms = this.value.split(',');
             let numberOfVisibleRows = 0;
@@ -429,6 +478,21 @@
             pageNumber++;
             updatePagination(false);
         });
+
+        /* top-level version switcher */
+        $(".graalpy-item").click(function () {
+            $(this).addClass("graalpy-active").siblings().removeClass("graalpy-active");
+            const graalpyModuleValue = $(".graalpy-item.graalpy-module.graalpy-active").attr("data-filter");
+            window.history.pushState("", window.location.title, `?version=${graalpyModuleValue}`);
+            updatePageData();
+        });
+        function setFilters() {
+            const params = new URLSearchParams(window.location.search);
+            const graalpyModuleValue = params.get('version') || 'v231';
+            const moduleFilterElement = $(`.graalpy-module[data-filter=${graalpyModuleValue}]`);
+            moduleFilterElement.addClass("graalpy-active").siblings().removeClass("graalpy-active");
+        }
+        setFilters();
     });
 </script>
 
@@ -439,10 +503,10 @@
                 <h2 class="pycomp__title">GraalPy: Package Compatibility</h2>
                 <div class="graalpy-filter">
                     <div class="pycomp__row">
-                        <p class="graalpy-item graalpy-module" data-filter="v231">GraalPy 23.1</p>
+                        <p class="graalpy-item graalpy-module graalpy-active" data-filter="v231">GraalPy 23.1</p>
                         <p class="graalpy-item graalpy-module" data-filter="v230">GraalPy 23.0</p>
                         <p class="graalpy-item graalpy-module" data-filter="v223">GraalPy 22.3</p>
-                        <p class="graalpy-item graalpy-module" data-filter="v213">GraalPy 21.3</p>
+                        <!-- <p class="graalpy-item graalpy-module" data-filter="v213">GraalPy 21.3</p> -->
                     </div>
                 </div>
             </div>
@@ -477,138 +541,27 @@
                         <div class="pycomp__chart">
                             <div class="pycomp__chart-row">
                                 <div class="chart">
-                                    <img src="/resources/img/graalpy-compatibility/jdk21.svg">
+                                    <div class="slice slice-1" id="pycomp-chart-compatible"></div>
+                                    <div class="slice slice-2" id="pycomp-chart-untested"></div>
+                                    <div class="slice slice-3" id="pycomp-chart-incompatible"></div>
+                                    <div class="slice slice-4" id="pycomp-chart-not-supported"></div>
+                                    <div class="center"></div>
                                 </div>
                                 <div class="legend">
                                     <div>
                                         <div class="legend-item legend-item-1"
-                                            title="More than 90% of the package's tests run successfully on GraalPy">Compatible: 276
-                                            (45%)<sup class="info-tooltip"></sup></div>
+                                            title="More than 90% of the package's tests run successfully on GraalPy">Compatible: <span id="pycomp-stats-compatible">loading...</span><sup class="info-tooltip"></sup></div>
                                         <div class="legend-item legend-item-2"
                                             title="The package either does not install on GraalPy or is not currently tested">
-                                            Currently Untested: 72 (11%)<sup class="info-tooltip"></sup></div>
+                                            Currently Untested: <span id="pycomp-stats-untested">loading...</span><sup class="info-tooltip"></sup></div>
                                     </div>
                                     <div>
                                         <div class="legend-item legend-item-3"
                                             title="Fewer than 90% of the package's tests run successfully on GraalPy">Currently
-                                            Incompatible: 253 (42%)<sup class="info-tooltip"></sup></div>
+                                            Incompatible: <span id="pycomp-stats-incompatible">loading...</span><sup class="info-tooltip"></sup></div>
                                         <div class="legend-item legend-item-4"
                                             title="We have no plans to test the package">Not
-                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="boxes">
-    <div class="wrapper">
-        <div class="pycomp">
-            <div class="container graalpy-box v230 all">
-                <div class="pycomp__mid">
-                    <div class="container">
-                        <div class="pycomp__chart">
-                            <div class="pycomp__chart-row">
-                                <div class="chart">
-                                    <img src="/resources/img/graalpy-compatibility/jdk17.svg">
-                                </div>
-                                <div class="legend">
-                                    <div>
-                                        <div class="legend-item legend-item-1"
-                                            title="More than 90% of the package's tests run successfully on GraalPy">Compatible: 232
-                                            (46%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-2"
-                                            title="The package either does not install on GraalPy or is not currently tested">
-                                            Currently Untested: 6 (1%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                    <div>
-                                        <div class="legend-item legend-item-3"
-                                            title="Fewer than 90% of the package's tests run successfully on GraalPy">Currently
-                                            Incompatible: 261 (52%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-4"
-                                            title="We have no plans to test the package">Not
-                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="boxes">
-    <div class="wrapper">
-        <div class="pycomp">
-            <div class="container graalpy-box v223 all">
-                <div class="pycomp__mid">
-                    <div class="container">
-                        <div class="pycomp__chart">
-                            <div class="pycomp__chart-row">
-                                <div class="chart">
-                                    <img src="/resources/img/graalpy-compatibility/v223.svg">
-                                </div>
-                                <div class="legend">
-                                    <div>
-                                        <div class="legend-item legend-item-1"
-                                            title="More than 90% of the package's tests run successfully on GraalPy">Compatible: 56
-                                            (12%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-2"
-                                            title="The package either does not install on GraalPy or is not currently tested">
-                                            Currently Untested: 368 (84%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                    <div>
-                                        <div class="legend-item legend-item-3"
-                                            title="Fewer than 90% of the package's tests run successfully on GraalPy">Currently
-                                            Incompatible: 13 (2%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-4"
-                                            title="We have no plans to test the package">Not
-                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="boxes">
-    <div class="wrapper">
-        <div class="pycomp">
-            <div class="container graalpy-box v213 all">
-                <div class="pycomp__mid">
-                    <div class="container">
-                        <div class="pycomp__chart">
-                            <div class="pycomp__chart-row">
-                                <div class="chart">
-                                    <img src="/resources/img/graalpy-compatibility/v213.svg">
-                                </div>
-                                <div class="legend">
-                                    <div>
-                                        <div class="legend-item legend-item-1"
-                                            title="More than 90% of the package's tests run successfully on GraalPy">Compatible: 40
-                                            (8%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-2"
-                                            title="The package either does not install on GraalPy or is not currently tested">
-                                            Currently Untested: 344 (68%)<sup class="info-tooltip"></sup></div>
-                                    </div>
-                                    <div>
-                                        <div class="legend-item legend-item-3"
-                                            title="Fewer than 90% of the package's tests run successfully on GraalPy">Currently
-                                            Incompatible: 115 (23%)<sup class="info-tooltip"></sup></div>
-                                        <div class="legend-item legend-item-4"
-                                            title="We have no plans to test the package">Not
-                                            Supported: 0 (0%)<sup class="info-tooltip"></sup></div>
+                                            Supported: <span id="pycomp-stats-not-supported">loading...</span><sup class="info-tooltip"></sup></div>
                                     </div>
                                 </div>
                             </div>
@@ -637,7 +590,7 @@
                             </label>
                         </div>
                         <div>
-                            <a href="/compatibility/module_results/python-module-testing.csv"
+                            <a href="/compatibility/module_results/python-module-testing-v231.csv"
                                 target="_blank"><button class="download-data-btn">Download data</button></a>
                         </div>
                     </div>
@@ -665,9 +618,8 @@
                         </select>
                         <div class="pagination-group">
                             <div class="pagination-lab" id="pagination-label"></div>
-                            <button class="pagination-dis" id="pagination-previous" disabled>
-                                <</button>
-                                    <button class="pagination-act" id="pagination-next">></button>
+                            <button class="pagination-dis" id="pagination-previous" disabled>&#60;</button>
+                            <button class="pagination-act" id="pagination-next">&#62;</button>
                         </div>
                     </div>
                 </div>
@@ -675,39 +627,6 @@
         </div>
     </div>
 </section>
-
-<script>
-    $(".graalpy-item").click(function () {
-        $(this).addClass("graalpy-active").siblings().removeClass("graalpy-active");
-    });
-    
-    $(document).ready(function () {
-        function filterItems(graalpyModuleValue) {
-            let filterString = `.${graalpyModuleValue}`
-    
-            $(".graalpy-box")
-                .not(filterString)
-                .hide();
-            $(".graalpy-box")
-                .filter(filterString)
-                .show();
-        }
-    $(".graalpy-item").click(function () {
-            const graalpyModuleValue = $(".graalpy-item.graalpy-module.graalpy-active").attr("data-filter");
-            filterItems(graalpyModuleValue)
-    
-            window.history.pushState("", window.location.title, `?topic=${graalpyModuleValue}`);
-        });
-        function setFilters() {
-            const params = new URLSearchParams(window.location.search);
-            const graalpyModuleValue = params.get('topic') || 'v231';
-            const moduleFilterElement = $(`.graalpy-module[data-filter=${graalpyModuleValue}]`);
-            moduleFilterElement.addClass("graalpy-active").siblings().removeClass("graalpy-active");
-            filterItems(graalpyModuleValue);
-        }
-        setFilters();
-    });
-</script>
 
       </main>
 
