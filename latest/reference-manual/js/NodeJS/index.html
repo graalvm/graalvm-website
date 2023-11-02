@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-09-13 15:05:50 +0000"/>
+  <meta name="last_modified" content="2023-02-03 11:39:35 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/NodeJS/">
@@ -618,7 +618,7 @@ $(document).ready(function(){
         
           
           <a href="/latest/reference-manual/r/">
-            GraalVM R Runtime
+            R Reference
           </a>
         </li>
 
@@ -731,36 +731,50 @@ $(document).ready(function(){
 <p>GraalVM can run unmodified Node.js applications.
 Applications can freely import and use NPM packages, including native ones.</p>
 
-<p>To enable the GraalVM Node.js runtime, install the Node.js distribution based on Oracle GraalVM or GraalVM Community Edition for your operating system.</p>
+<p>For the differences between running the <code>node</code> native launcher and accessing Node.js/npm modules/ECMAScript modules from a Java Context, see <a href="/latest/reference-manual/js/NodeJSvsJavaScriptContext/">NodeJSVSJavaScriptContext</a>.</p>
+    
+      <h2 id="installing-nodejs-component">
+        
+        
+          Installing Node.js Component <a href="#installing-nodejs-component" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<ol>
-  <li>
-    <p>Navigate to <a href="https://github.com/oracle/graaljs/releases/">GitHub releases</a> and download Node.js.</p>
-  </li>
-  <li>
-    <p>Unzip the archive:</p>
+<p>Since GraalVM 21.1, the Node.js support is packaged in a separate GraalVM component.
+It can be installed with the <em>GraalVM Updater</em>.</p>
 
-    <blockquote>
-      <p>Note: If you are using macOS Catalina and later, first remove the quarantine attribute:</p>
-      <pre><code class="language-shell"> sudo xattr -r -d com.apple.quarantine &lt;archive&gt;.tar.gz
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install nodejs
 </code></pre>
-      <p>Unzip:</p>
-      <pre><code class="language-shell"> tar -xzf &lt;archive&gt;.tar.gz
-</code></pre>
-      <p>Alternatively, open the file in the Finder.</p>
-    </blockquote>
-  </li>
-  <li>
-    <p>Check the version to see if the runtime is active:</p>
-    <pre><code class="language-shell"> ./path/to/bin/node --version
-</code></pre>
-  </li>
-</ol>
 
-<p>The Node.js standalone provides <code>node</code> and <code>npm</code> launchers.
-The <code>npm</code> command is equivalent to the default Node.js command and supports all Node.js APIs.</p>
+<p>This installs the <code>node</code> and <code>npm</code> binaries in the <code>$JAVA_HOME/bin</code> directory.</p>
+    
+      <h3 id="polyglot-support-in-nodejs">
+        
+        
+          Polyglot Support in Node.js <a href="#polyglot-support-in-nodejs" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>For the differences between running the <code>node</code> native launcher and accessing Node.js NPM modules or ECMAScript modules from a Java Context, see <a href="/latest/reference-manual/js/NodeJSvsJavaScriptContext/">NodeJSVSJavaScriptContext</a>.</p>
+<p>The Node.js component is able to use the polyglot language interoperability (flag: <code>--polyglot</code>) with other installed polyglot languages.
+This feature is available by default in JVM mode (flag: <code>--jvm</code>).
+For polyglot access to the Ruby language, you can e.g. use this command:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/node --jvm --polyglot -e 'var array = Polyglot.eval("ruby", "[1,2,42,4]"); console.log(array[2]);'
+</code></pre>
+
+<p>To use the polyglot capabilities of <code>node</code> in the native mode (flag: <code>--native</code>), the <code>libpolyglot</code> needs to be rebuilt first.
+For this, the <code>native-image</code> component and the other languages need to be installed first, before the image can be rebuilt:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install native-image
+$JAVA_HOME/bin/gu rebuild-images libpolyglot
+</code></pre>
+
+<p>After a successfull rebuild, the polyglot access is also available in the <code>--native</code> mode:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/node --native --polyglot -e 'var array = Polyglot.eval("ruby", "[1,2,42,4]"); console.log(array[2]);'
+</code></pre>
     
       <h2 id="running-nodejs-applications">
         
@@ -770,12 +784,12 @@ The <code>npm</code> command is equivalent to the default Node.js command and su
         
       </h2>
 
-<p>To run a Node.js-based application, use the <code>node</code> launcher:</p>
-<pre><code class="language-shell">node [options] [filename] [args]
+<p>To run Node.js-based applications, use the <code>node</code> launcher in the GraalVM distribution:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/node [options] [filename] [args]
 </code></pre>
 
-<p>GraalVM’s Node.js runtime is based on a recent version of Node.js, and runs the GraalVM JavaScript engine instead of Google V8. 
-Thus, some internal features (e.g., VM-internal statistics, configuration, profiling, debugging, etc.) are unsupported, or supported with potentially different behavior.</p>
+<p>GraalVM’s Node.js runtime is based on a recent version of Node.js, and runs the
+GraalVM JavaScript engine instead of Google V8. Thus, some internal features (e.g., VM-internal statistics, configuration, profiling, debugging, etc.) are unsupported, or supported with potentially different behavior.</p>
 
 <p>The <code>node</code> command is largely compatible with Node.js, and features additional GraalVM-specific functionalities (e.g., interoperability with Java and all other GraalVM languages).
 A list of available options can be obtained with <code>node --help</code>.</p>
@@ -788,14 +802,14 @@ A list of available options can be obtained with <code>node --help</code>.</p>
         
       </h2>
 
-<p>To install a Node.js package, use the <code>npm</code> launcher.
+<p>To install a Node.js package, you can use the <code>npm</code> launcher from the GraalVM’s <code>/bin</code> folder.
 The <code>npm</code> command is equivalent to the default NPM command, and supports most of its options.</p>
 
 <p>An NPM package can be installed with:</p>
-<pre><code class="language-shell">npm install &lt;package&gt;
+<pre><code class="language-shell">$JAVA_HOME/bin/npm install &lt;package&gt;
 </code></pre>
 
-<p>As the <code>npm</code> command of GraalVM Node.js is largely compatible with NPM, packages will be installed in the <code>node_modules</code> folder, as expected.</p>
+<p>As the <code>npm</code> command of GraalVM is largely compatible with NPM, packages will be installed in the <code>node_modules</code> folder, as expected.</p>
     
       <h3 id="installing-npm-packages-globally">
         
@@ -807,12 +821,13 @@ The <code>npm</code> command is equivalent to the default NPM command, and suppo
 
 <p>Node packages can be installed globally using <code>npm</code> and the <code>-g</code> option.
 By default, <code>npm</code> installs global packages (links to their executables) in the path where the <code>node</code> executable is installed, typically <code>NODE/bin</code>.
+In GraalVM, while there is a <code>node</code> executable in <code>JAVA_HOME/bin</code>, this is just a link to the actual executable in the <code>JAVA_HOME/jre/languages/js/bin</code> folder.
 That folder is where global packages are installed.
 You might want to add that directory to your <code>$PATH</code> if you regularly use globally installed packages, especially their command line interfaces.</p>
 
 <p>Another option is to specify the global installation folder of <code>npm</code> by setting the <code>$PREFIX</code> environment variable, or by specifying the <code>--prefix</code> option when running <code>npm install</code>.
 For example, the following command will install global packages in the <code>/foo/bar</code> folder:</p>
-<pre><code class="language-shell">npm install --prefix /foo/bar -g &lt;package&gt;
+<pre><code class="language-shell">$JAVA_HOME/bin/npm install --prefix /foo/bar -g &lt;package&gt;
 </code></pre>
 <p>More details about <code>prefix</code> can be found in the <a href="https://docs.npmjs.com/cli/prefix.html">official NPM documentation</a>.</p>
 
