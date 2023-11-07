@@ -911,9 +911,9 @@ $(document).ready(function () {
 
 //Close button for survey banner
 
-// document.querySelector(".banner-survey__close").addEventListener("click", function() {
-//   this.closest(".banner-survey").style.display = "none";
-// });
+document.querySelector(".banner-survey__close").addEventListener("click", function() {
+  this.closest(".banner-survey").style.display = "none";
+});
 
 //Removing rabbit on the home screen while browser window reducing
 window.addEventListener("resize", function() {

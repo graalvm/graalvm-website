@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-04-18 16:24:50 +0000"/>
+  <meta name="last_modified" content="2023-11-03 13:46:30 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/Options/">
@@ -213,7 +213,24 @@
 
   
 
-  
+
+  <div class="banner-survey">
+    <div class="container-fluid container-fluid--custom-sm">
+      <div class="align-items-center banner-survey__content">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12 text-center banner-survey__text"> 
+          <p class="banner-survey__mobile">Help us improve GraalVM! Tell us what we should add or change (takes <5 minutes)
+            <a href="https://graalvm.typeform.com/survey" class="btn-primary start"> Start survey</a>
+          </p>
+        </div>
+        <button class="banner-survey__close" type="button">
+          <span class="material-icons">
+            close
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <div class="d-flex">
     <nav class="menu">
@@ -748,6 +765,10 @@ $(document).ready(function(){
     <pre><code class="language-shell">js -f myfile.js
 </code></pre>
   </li>
+  <li><code>--module FILE</code>: load and execute the provided module file. Note that <code>.mjs</code> files are treated as modules by default.
+    <pre><code class="language-shell">js --module myfile.mjs
+</code></pre>
+  </li>
   <li><code>--version</code>: print the version information of GraalVM JavaScript, then exit.</li>
   <li><code>--strict</code>: execute the engine in JavaScript’s <em>strict mode</em>.</li>
 </ul>
@@ -763,7 +784,7 @@ $(document).ready(function(){
 <p>There are several options to configure the behavior of the GraalVM JavaScript engine.
 Depending on how the engine is started, the options can be passed either to the launcher or programmatically.</p>
 
-<p>For a full list of options of the JavaScript engine, pass the <code>--help:js</code> flag to the <code>js</code> launcher (available from GraalVM 22.1., for older releases use <code>--help:languages</code>).
+<p>For a full list of options of the JavaScript engine, pass the <code>--help:js</code> flag to the <code>js</code> launcher (available from GraalVM 22.1, for older releases use <code>--help:languages</code>).
 To include internal options, use <code>--help:js:internal</code>.
 Note that those lists both include stable, supported options and experimental options.</p>
     
@@ -775,7 +796,7 @@ Note that those lists both include stable, supported options and experimental op
         
       </h3>
 <p>To the launcher, the options are passed with <code>--js.&lt;option-name&gt;=&lt;value&gt;</code>:</p>
-<pre><code class="language-shell">js --js.ecmascript-version=6
+<pre><code class="language-shell">js --js.ecmascript-version=2015
 </code></pre>
     
       <h3 id="provide-options-programmatically-using-the-context-api">
@@ -787,7 +808,7 @@ Note that those lists both include stable, supported options and experimental op
       </h3>
 <p>When started from Java using GraalVM’s Polyglot API, the options are passed programmatically to the <code>Context</code> object:</p>
 <pre><code class="language-java">Context context = Context.newBuilder("js")
-                         .option("js.ecmascript-version", "6")
+                         .option("js.ecmascript-version", "2015")
                          .build();
 context.eval("js", "42");
 </code></pre>
@@ -821,9 +842,13 @@ See <a href="/dev/reference-manual/js/ScriptEngine/">ScriptEngine Implementation
 <ul>
   <li><code>--js.ecmascript-version</code>: emulate a specific ECMAScript version. Integer value (<code>5</code>, <code>6</code>, etc., <code>2015</code>-<code>2022</code>), <code>"latest"</code> (latest supported version of the spec, including finished proposals), or <code>"staging"</code> (latest version including supported unfinished proposals), default is <code>"latest"</code>.</li>
   <li><code>--js.foreign-object-prototype</code>: provide JavaScript’s default prototype to foreign objects that mimic JavaScript’s own types (foreign Arrays, Objects and Functions). Boolean value, default is <code>true</code>.</li>
-  <li><code>--js.intl-402</code>: enable ECMAScript Internationalization API. Boolean value, default is <code>false</code>.</li>
+  <li><code>--js.intl-402</code>: enable ECMAScript Internationalization API. Boolean value, default is <code>true</code>.</li>
   <li><code>--js.regexp-static-result</code>: provide static <code>RegExp</code> properties containing the results of the last successful match, e.g., <code>RegExp.$1</code> (legacy). Boolean value, default is <code>true</code>.</li>
   <li><code>--js.strict</code>: enable strict mode for all scripts. Boolean value, default is <code>false</code>.</li>
+  <li><code>--js.console</code>: enable the <code>console</code> global property. Boolean value, default is <code>true</code>.</li>
+  <li><code>--js.allow-eval</code>: allow the code generation from strings, e.g. using <code>eval()</code> or the <code>Function</code> constructor. Boolean value, default is <code>true</code>.</li>
+  <li><code>--js.timer-resolution</code>: sets the resolution of timing functions, like <code>Date.now()</code> and <code>performance.now()</code>, in nanoseconds. Default: <code>1000000</code> (i.e. 1 ms).</li>
+  <li><code>--js.unhandled-rejections</code>: configure unhandled promise rejection tracking. Accepted values are <code>none</code> (default, no tracking), <code>warn</code> (print a warning to stderr), <code>throw</code> (throw an exception), and <code>handler</code> (invoke a custom handler).</li>
 </ul>
 
 <p>For a complete list, use <code>js --help:js:internal</code></p>
@@ -837,23 +862,24 @@ See <a href="/dev/reference-manual/js/ScriptEngine/">ScriptEngine Implementation
       </h4>
 
 <p>This option provides compatibility to a specific version of the ECMAScript specification.
-It expects an integer value, where both the counting version numbers (<code>5</code>, <code>6</code>, …) and the publication years (starting from <code>2015</code>) are supported.
+It expects an integer value, where both the edition numbers (<code>5</code>, <code>6</code>, …) and the publication years (starting from <code>2015</code>) are supported.
 As of GraalVM 21.2, <code>latest</code>, <code>staging</code> are supported, too.
-The default in GraalVM 22.x is the <a href="https://tc39.es/ecma262/"><code>ECMAScript 2022 specification</code></a>.
+The default in GraalVM 23.1 is the <a href="https://262.ecma-international.org/14.0/"><code>ECMAScript 2023 specification</code></a>.
 GraalVM JavaScript implements some features of the future draft specification and of open proposals, if you explicitly select that version and/or enable specific experimental flags.
 For production settings, it is recommended to set the <code>ecmascript-version</code> to a released, finalized version of the specification (e.g., <code>2022</code>).</p>
 
 <p>Available versions are:</p>
 <ul>
   <li><code>5</code> for ECMAScript 5.x</li>
-  <li><code>6</code> or <code>2015</code> for ECMAScript 2015</li>
-  <li><code>7</code> or <code>2016</code> for ECMAScript 2016</li>
-  <li><code>8</code> or <code>2017</code> for ECMAScript 2017</li>
-  <li><code>9</code> or <code>2018</code> for ECMAScript 2018</li>
-  <li><code>10</code> or <code>2019</code> for ECMAScript 2019</li>
-  <li><code>11</code> or <code>2020</code> for ECMAScript 2020</li>
-  <li><code>12</code> or <code>2021</code> for ECMAScript 2021 (<strong>default</strong> in 21.3)</li>
-  <li><code>13</code> or <code>2022</code> for ECMAScript 2022 (<strong>default</strong> in 22.0+, latest released version, <a href="https://262.ecma-international.org/13.0/">ECMAScript 2022 specification</a>)</li>
+  <li><code>2015</code> (or <code>6</code>) for ECMAScript 2015</li>
+  <li><code>2016</code> (or <code>7</code>) for ECMAScript 2016</li>
+  <li><code>2017</code> (or <code>8</code>) for ECMAScript 2017</li>
+  <li><code>2018</code> (or <code>9</code>) for ECMAScript 2018</li>
+  <li><code>2019</code> (or <code>10</code>) for ECMAScript 2019</li>
+  <li><code>2020</code> (or <code>11</code>) for ECMAScript 2020</li>
+  <li><code>2021</code> (or <code>12</code>) for ECMAScript 2021 (<strong>default</strong> in 21.3)</li>
+  <li><code>2022</code> (or <code>13</code>) for ECMAScript 2022 (<strong>default</strong> in 22.0+)</li>
+  <li><code>2023</code> (or <code>14</code>) for <a href="https://262.ecma-international.org/14.0/">ECMAScript 2023</a> (<strong>default</strong> in 23.1)</li>
   <li><code>latest</code> for the latest supported language version (the default version)</li>
   <li><code>staging</code> for the latest supported language features including experimental unstable, unfinished <a href="https://github.com/tc39/proposals">proposals</a> (<em>do not use in production!</em>)</li>
 </ul>
@@ -867,7 +893,7 @@ For production settings, it is recommended to set the <code>ecmascript-version</
       </h4>
 
 <p>This option enables ECMAScript’s <a href="https://tc39.github.io/ecma402/">Internationalization API</a>.
-It expects a Boolean value and the default is <code>false</code>.</p>
+It expects a Boolean value and the default is <code>true</code>.</p>
     
       <h4 id="strict-mode">
         
@@ -894,6 +920,9 @@ To use them, the <code>--experimental-options</code> flag is required or the exp
   <li><code>--js.nashorn-compat</code>: provide compatibility mode with the Nashorn engine. Sets ECMAScript version to 5 by default. Might conflict with newer ECMAScript versions. Boolean value, default is <code>false</code>.</li>
   <li><code>--js.timezone</code>: set the local time zone. String value, default is the system default.</li>
   <li><code>--js.v8-compat</code>: provide better compatibility with Google’s V8 engine. Boolean value, default is <code>false</code>.</li>
+  <li><code>--js.esm-eval-returns-exports</code>: <code>context.eval</code> of an ES module <code>Source</code> returns its exported symbols.</li>
+  <li><code>--js.temporal</code>: enable  <a href="https://github.com/tc39/proposal-temporal"><code>Temporal</code> API</a>.</li>
+  <li><code>--js.webassembly</code>: enable <code>WebAssembly</code> API.</li>
 </ul>
 
       </div>

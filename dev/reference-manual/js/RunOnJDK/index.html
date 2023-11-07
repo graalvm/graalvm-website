@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2022-06-17 14:46:14 +0000"/>
+  <meta name="last_modified" content="2023-11-03 13:46:30 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/RunOnJDK/">
@@ -213,7 +213,24 @@
 
   
 
-  
+
+  <div class="banner-survey">
+    <div class="container-fluid container-fluid--custom-sm">
+      <div class="align-items-center banner-survey__content">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12 text-center banner-survey__text"> 
+          <p class="banner-survey__mobile">Help us improve GraalVM! Tell us what we should add or change (takes <5 minutes)
+            <a href="https://graalvm.typeform.com/survey" class="btn-primary start"> Start survey</a>
+          </p>
+        </div>
+        <button class="banner-survey__close" type="button">
+          <span class="material-icons">
+            close
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <div class="d-flex">
     <nav class="menu">
@@ -732,7 +749,7 @@ $(document).ready(function(){
 This guarantees best possible performance by using the <a href="https://github.com/oracle/graal">GraalVM compiler</a> as the optimizing compiler, and potentially <a href="/dev/reference-manual/native-image/">Native Image</a> to ahead-of-time compile the engine into a native binary.</p>
 
 <p>As GraalVM JavaScript is a Java application, it is possible to execute it on a stock Java VM like OpenJDK.
-When executed without the GraalVM compiler, JavaScript performance will be significantly worse.
+When executed without the Graal Compiler, JavaScript performance will be significantly worse.
 While the JIT compilers available on stock JVMs can execute and JIT-compile the GraalVM JavaScript codebase, they cannot optimize it to its full performance potential.
 This document describes how to run GraalVM JavaScript on stock Java VMs, and shows how you can use the GraalVM compiler as a JIT compiler to guarantee the best possible performance.</p>
     
@@ -744,40 +761,19 @@ This document describes how to run GraalVM JavaScript on stock Java VMs, and sho
         
       </h2>
 <p>GraalVM JavaScript is open source and regularly pushed to Maven Central Repository by the community.
-You can find it as package <a href="https://mvnrepository.com/artifact/org.graalvm.js/js">org.graalvm.js</a>.</p>
+You can find it as a POM artifact, under <a href="https://mvnrepository.com/artifact/org.graalvm.polyglot/js"><code>org.graalvm.polyglot:js</code></a>.</p>
 
-<p>There is an example Maven project for GraalVM JavaScript on JDK11 (or later) using the GraalVM compiler at <a href="https://github.com/graalvm/graal-js-jdk11-maven-demo">graal-js-jdk11-maven-demo</a>.
-The example contains a Maven project for a JavaScript benchmark (a prime number generator).
+<p>There are example Maven projects for GraalVM JavaScript on JDK 21 (or later) using the Graal compiler:</p>
+<ul>
+  <li><a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demo</a>.
+Example Maven and Gradle projects for a simple JavaScript “Hello World” application.</li>
+  <li><a href="https://github.com/oracle/graaljs/tree/master/graal-js/test/maven-demo">JS Maven Demo</a>.
+This example contains a Maven project for a JavaScript benchmark (a prime number generator).
 It allows a user to compare the performance of GraalVM JavaScript running with or without the GraalVM compiler as the optimizing compiler.
-Running with the GraalVM compiler will siginificantly improve the execution performance of any relatively large JavaScript codebase.</p>
+Running with the GraalVM compiler will significantly improve the execution performance of any relatively large JavaScript codebase.</li>
+</ul>
 
-<p>In essence, the example POM file activates JVMCI to install additional JIT compilers, and configures the JIT compiler to be the GraalVM compiler by providing it on <code>--module-path</code> and <code>--upgrade-module-path</code>.</p>
-    
-      <h2 id="graalvm-javascript-on-jdk-11">
-        
-        
-          GraalVM JavaScript on JDK 11+ <a href="#graalvm-javascript-on-jdk-11" class="anchor_heading">#</a>
-        
-        
-      </h2>
-<p>The Maven example given above is the preferred way to start on JDK 11 (or newer).
-Working without Maven, you can provide the JAR files manually to the <code>java</code> command.
-Using <code>--upgrade-module-path</code> executes GraalVM JavaScript with the GraalVM compiler, guaranteeing the best performance.
-The GraalVM JAR files can be downloaded from <a href="https://mvnrepository.com/artifact/org.graalvm">org.graalvm at Maven</a>, and the ICU4J library from <a href="https://mvnrepository.com/artifact/com.ibm.icu/icu4j">org.ibm.icu at Maven</a>.</p>
-
-<p><em>On Linux and MacOS</em></p>
-<pre><code class="language-shell">JARS=/path/to/JARs
-JDK=/path/to/JDK
-$JDK/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler --module-path=$JARS/graal-sdk-22.2.0.jar:$JARS/truffle-api-22.2.0.jar --upgrade-module-path=$JARS/compiler-22.2.0.jar:$JARS/compiler-management-22.2.0.jar -cp $JARS/launcher-common-22.2.0.jar:$JARS/js-launcher-22.2.0.jar:$JARS/js-22.2.0.jar:$JARS/truffle-api-22.2.0.jar:$JARS/graal-sdk-22.2.0.jar:$JARS/js-scriptengine-22.2.0.jar:$JARS/regex-22.2.0.jar:$JARS/icu4j-71.1.jar com.oracle.truffle.js.shell.JSLauncher
-</code></pre>
-
-<p><em>On Windows</em> - similar to the Linux/MacOS command but adapted to the syntax of Window’s shell:</p>
-<pre><code class="language-shell">set JARs=c:\path\to\jars
-set JDK=c:\path\to\jdk
-%JDK%\bin\java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler --module-path=%JARS%\graal-sdk-22.2.0.jar;%JARS%\truffle-api-22.2.0.jar --upgrade-module-path=%JARS%\compiler-22.2.0.jar;%JARS%\compiler-management-22.2.0.jar -cp %JARS%\launcher-common-22.2.0.jar;%JARS%\js-launcher-22.2.0.jar;%JARS%\js-22.2.0.jar;%JARS%\truffle-api-22.2.0.jar;%JARS%\graal-sdk-22.2.0.jar;%JARS%\js-scriptengine-22.2.0.jar;%JARS%\regex-22.2.0.jar;%JARS\icu4j-71.1.jar com.oracle.truffle.js.shell.JSLauncher
-</code></pre>
-
-<p>To start a Java application instead and launch GraalVM JavaScript via GraalVM SDK’s <code>Context</code> (encouraged) or a <code>ScriptEngine</code> (supported, but discouraged), <em>launcher-common-*.jar</em> and  <em>js-launcher-*.jar</em> can be omitted.</p>
+<p>In essence, the example <code>pom.xml</code> file activates the JVM Compiler Interface (JVMCI) and configures the JIT compiler to be the Graal compiler by providing it on <code>--module-path</code> and <code>--upgrade-module-path</code>.</p>
     
       <h3 id="scriptengine-jsr-223">
         
@@ -786,20 +782,20 @@ set JDK=c:\path\to\jdk
         
         
       </h3>
-<p>GraalVM JavaScript can be started via <code>ScriptEngine</code> when <em>js-scriptengine.jar</em> is included on the classpath.
-The engine registers under several different names, e.g., <code>Graal.js</code>.
-Note that the Nashorn engine might be available under its names as well, if available on the JDK.</p>
+<p>GraalVM JavaScript can be started via <code>ScriptEngine</code> when <em>js-scriptengine.jar</em> is included on the module path.
+The engine registers under several different names, including <code>Graal.js</code>, <code>js</code>, <code>JavaScript</code>, and <code>javascript</code>.
+Note that the Nashorn engine might be available under its names as well, if on the module path.</p>
 
 <p>To start GraalVM JavaScript from <code>ScriptEngine</code>, the following code can be used:</p>
 
-<pre><code class="language-java">new ScriptEngineManager().getEngineByName("graal.js");
+<pre><code class="language-java">new ScriptEngineManager().getEngineByName("Graal.js");
 </code></pre>
 
 <p>To list all available engines:</p>
 
-<pre><code class="language-java">List&lt;ScriptEngineFactory&gt; engines = (new ScriptEngineManager()).getEngineFactories();
-for (ScriptEngineFactory f: engines) {
-    System.out.println(f.getLanguageName()+" "+f.getEngineName()+" "+f.getNames().toString());
+<pre><code class="language-java">List&lt;ScriptEngineFactory&gt; engines = new ScriptEngineManager().getEngineFactories();
+for (ScriptEngineFactory f : engines) {
+    System.out.println(f.getLanguageName() + " " + f.getEngineName() + " " + f.getNames());
 }
 </code></pre>
     

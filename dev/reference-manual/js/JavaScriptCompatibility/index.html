@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2022-08-24 15:22:16 +0000"/>
+  <meta name="last_modified" content="2023-11-03 13:46:30 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/JavaScriptCompatibility/">
@@ -213,7 +213,24 @@
 
   
 
-  
+
+  <div class="banner-survey">
+    <div class="container-fluid container-fluid--custom-sm">
+      <div class="align-items-center banner-survey__content">
+        <div class="col-12 col-sm-12 col-md-12 col-lg-12 text-center banner-survey__text"> 
+          <p class="banner-survey__mobile">Help us improve GraalVM! Tell us what we should add or change (takes <5 minutes)
+            <a href="https://graalvm.typeform.com/survey" class="btn-primary start"> Start survey</a>
+          </p>
+        </div>
+        <button class="banner-survey__close" type="button">
+          <span class="material-icons">
+            close
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
 
   <div class="d-flex">
     <nav class="menu">
@@ -746,15 +763,15 @@ This document explains the public API it presents for user applications written 
       </h2>
 
 <p>GraalVM JavaScript implements JavaScript as prescribed in the ECMAScript (ECMA-262) specification.
-It is fully compatible with the <a href="https://262.ecma-international.org/13.0/">ECMAScript 2022 specification</a> (sometimes referred to as the 13th edition or “ES13”).
-New features are frequently added to GraalVM when they are confirmed to be part of ECMAScript 2023, see the <a href="https://github.com/oracle/graaljs/blob/master/CHANGELOG.md">CHANGELOG.md</a> for details.
+It is fully compatible with the <a href="https://262.ecma-international.org/14.0/">ECMAScript 2023 specification</a> (sometimes referred to as the 14th edition).
+New features are frequently added to GraalVM when they are confirmed to be part of ECMAScript 2024, see the <a href="https://github.com/oracle/graaljs/blob/master/CHANGELOG.md">CHANGELOG.md</a> for details.
 Older versions starting from ECMAScript 5 can be enabled with a config flag (by number: <code>--js.ecmascript-version=5</code> or by year: <code>--js.ecmascript-version=2019</code>).
 In a production setup you might consider specifying a fixed ECMAScript version to be used, as future versions of GraalVM JavaScript will use newer versions of the specification once available.</p>
 
 <p>GraalVM JavaScript provides the following function objects in the global scope as specified by ECMAScript, representing the JavaScript core library:
 Array, ArrayBuffer, Boolean, DataView, Date, Error, Function, JSON, Map, Math, Number, Object, Promise, Proxy, Reflect, RegExp, Set, SharedArrayBuffer, String, Symbol, TypedArray, WeakMap, and WeakSet.</p>
 
-<p>Additional objects are available under flags, for instance <code>Intl</code> (flag: <code>--js.intl-402</code>).
+<p>Additional objects are available under flags, for instance <code>Temporal</code> (flag: <code>--js.temporal</code>).
 Run <code>js --help</code> or <code>js --help:languages</code> for the list of available flags.</p>
 
 <p>Several of these function objects and some of their members are only available when a certain version of the specification is selected for execution.
@@ -769,21 +786,22 @@ Extensions to the specification are specified below.</p>
         
       </h3>
 
-<p>Internationalization API implementation (see <a href="https://tc39.github.io/ecma402">https://tc39.github.io/ecma402</a>) can be activated using the following flag: <code>--js.intl-402=true</code>.
-If you run in native mode (default option), you also need to specify the path to your ICU data directory using the following option: <code>--vm.Dcom.ibm.icu.impl.ICUBinary.dataPath=$GRAAL_VM_DIR/jre/languages/js/icu4j/icudt</code>,
-where <code>$GRAAL_VM_DIR</code> refers to your GraalVM installation directory.
-If you run in the JVM mode (the <code>--jvm</code> flag is used), you do not need to specify where your ICU data are located, although you can do it with the above option.</p>
-
-<p>Once you activate the Internationalization API, you can use the following built-ins:</p>
+<p>GraalVM JavaScript comes with an implementation of the <a href="https://tc39.github.io/ecma402">ECMA-402 Internationalization API</a>, enabled by default (can be disabled using the following flag: <code>--js.intl-402=false</code>).
+This includes the following extensions:</p>
 
 <ul>
-  <li><code>Intl.NumberFormat</code></li>
-  <li><code>Intl.DateTimeFormat</code></li>
   <li><code>Intl.Collator</code></li>
+  <li><code>Intl.DateTimeFormat</code></li>
+  <li><code>Intl.DisplayNames</code></li>
+  <li><code>Intl.ListFormat</code></li>
+  <li><code>Intl.Locale</code></li>
+  <li><code>Intl.NumberFormat</code></li>
   <li><code>Intl.PluralRules</code></li>
+  <li><code>Intl.RelativeTimeFormat</code></li>
+  <li><code>Intl.Segmenter</code></li>
 </ul>
 
-<p>The functionality of a few other built-ins is then also updated according to the specification linked above.</p>
+<p>The functionality of a few other built-ins, like <code>toLocaleString</code>, is also updated according to the ECMA-402 specification.</p>
     
       <h3 id="javascript-modules">
         
@@ -808,7 +826,7 @@ Loading with the <code>import</code> keyword is not limited by that, and can <co
         
       </h2>
 
-<p>The following objects and methods are available in GraalVM JavaScript for compatibility with other JavaScript execution engines.
+<p>The following objects and methods are available in GraalVM JavaScript for compatibility with other JavaScript engines.
 Note that the behavior of such methods might not strictly match the semantics of those methods in all existing engines.</p>
     
       <h3 id="language-features">
@@ -1140,8 +1158,8 @@ The existence of the property can be used to identify whether the GraalVM JavaSc
 
 <ul>
   <li>provides the unhandled promise rejection handler when using option (<code>js.unhandled-rejections=handler</code>).</li>
-  <li>the handler is called with two arguments: (rejection, promise).</li>
-  <li><code>Graal.setUnhandledPromiseRejectionHandler</code> can be called with null, undefined, or empty args to clear the handler.</li>
+  <li>the handler is called with two arguments: (rejectionReason, unhandledPromise).</li>
+  <li><code>Graal.setUnhandledPromiseRejectionHandler</code> can be called with <code>null</code>, <code>undefined</code>, or empty arguments to clear the handler.</li>
 </ul>
     
       <h3 id="java">
@@ -1152,11 +1170,12 @@ The existence of the property can be used to identify whether the GraalVM JavaSc
         
       </h3>
 
-<p>The <code>Java</code> object is only available when the engine is started in JVM mode (<code>--jvm</code> flag).</p>
+<p>The <code>Java</code> object is only available when <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostClassLookup-java.util.function.Predicate-">host class lookup</a> is allowed.
+In order to access Java host classes and its members, they first need to be allowed by the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html">host access policy</a>, and when running from a Native Image, be registered for <a href="https://www.graalvm.org/latest/reference-manual/native-image/dynamic-features/Reflection/">run time reflection</a>.</p>
 
-<p>Note that some functions require a Nashorn compatibility mode flag to be set.
-On GraalVM, this flag can be set with:</p>
-<pre><code class="language-shell">js --jvm --experimental-options --js.nashorn-compat=true
+<p>Note that some functions require the Nashorn compatibility mode flag to be set.
+When running from the JVM standalone distribution, this flag can be set with:</p>
+<pre><code class="language-shell">js --experimental-options --js.nashorn-compat=true
 </code></pre>
     
       <h4 id="javatypeclassname">
@@ -1167,15 +1186,15 @@ On GraalVM, this flag can be set with:</p>
         
       </h4>
 
-<ul>
-  <li>loads the specified Java class and provides it as an object</li>
-  <li>fields of this object can be read directly from it, and new instances can be created with the JavaScript <code>new</code> keyword:
-    <pre><code class="language-js">var BigDec = Java.type('java.math.BigDecimal');
-var bd = new BigDec("0.1");
-console.log(bd.add(bd).toString());
+<p><code>Java.type</code> loads the specified Java class and returns a constructible object that has the static members (i.e. methods and fields) of the class and can be used with the <code>new</code> keyword to construct new instances:</p>
+<pre><code class="language-js">var BigDecimal = Java.type('java.math.BigDecimal');
+var point1 = new BigDecimal("0.1");
+var two = BigDecimal.TWO;
+console.log(point1.multiply(two).toString());
 </code></pre>
-  </li>
-</ul>
+<p>Note that when used directly with the <code>new</code> operator, <code>Java.type(...)</code> needs to be enclosed in parentheses:</p>
+<pre><code class="language-js">console.log(new (Java.type('java.math.BigDecimal'))("1.1").pow(15));
+</code></pre>
     
       <h4 id="javafromjavadata">
         
@@ -1185,36 +1204,35 @@ console.log(bd.add(bd).toString());
         
       </h4>
 
-<ul>
-  <li>creates a shallow copy of the Java datastructure (Array, List) as a JavaScript array</li>
-</ul>
+<p><code>Java.from</code> creates a shallow copy of the Java data structure (Array, List) as a JavaScript array.</p>
 
-<p>In many cases, this is not necessary; you can typically use the Java datastructure directly from JavaScript.</p>
+<p>In many cases, this is not necessary; you can typically use the Java data structure directly from JavaScript.</p>
     
-      <h4 id="javatojsdata-totype">
+      <h4 id="javatojsdata-javatype">
         
         
-          <code>Java.to(jsData, toType)</code>
+          <code>Java.to(jsData, javaType)</code>
         
         
       </h4>
 
-<ul>
-  <li>converts the argument to a Java dataype</li>
-</ul>
+<p><code>Java.to</code> converts the argument to the Java type.</p>
 
-<p>The source object <code>jsData</code> is expected to be a JavaScript array, or an object with a <code>length</code> property.
-The target <code>toType</code> can either be a String (e.g. <code>"int[]"</code>) or a type object (e.g., <code>Java.type("int[]")</code>).
+<p>The source object <code>jsData</code> is expected to be a JavaScript array, or an array-like object with a <code>length</code> property.
+The target <code>javaType</code> can either be a String (e.g. <code>"int[]"</code>) or a type object (e.g., <code>Java.type("int[]")</code>).
 Valid target types are Java arrays.
-When no target type is provided, <code>Object[]</code> is assumed:</p>
-<pre><code class="language-js">var jsArr = ["a", "b", "c"];
-var strArrType = Java.type("java.lang.String[]");
-var javaArr = Java.to(jsArr, strArrType);
-assertEquals('class java.lang.String[]', String(javaArr.getClass()));
+When the target type is omitted, it defaults to <code>Object[]</code>.</p>
+
+<pre><code class="language-js">var jsArray = ["a", "b", "c"];
+var stringArrayType = Java.type("java.lang.String[]");
+var javaArray = Java.to(jsArray, stringArrayType);
+assertEquals('class java.lang.String[]', String(javaArray.getClass()));
+var javaArray = Java.to(jsArray);
+assertEquals('class java.lang.Object[]', String(javaArray.getClass()));
 </code></pre>
 
 <p>The conversion methods as defined by ECMAScript (e.g., <code>ToString</code> and <code>ToDouble</code>) are executed when a JavaScript value has to be converted to a Java type.
-Lossy conversion is disallowed and results in a TypeError.</p>
+Lossy conversion is disallowed and results in a <code>TypeError</code>.</p>
     
       <h4 id="javaisjavaobjectobj">
         
@@ -1225,7 +1243,7 @@ Lossy conversion is disallowed and results in a TypeError.</p>
       </h4>
 
 <ul>
-  <li>returns whether <code>obj</code> is an object of the Java language</li>
+  <li>returns <code>true</code> if <code>obj</code> is a Java host object</li>
   <li>returns <code>false</code> for native JavaScript objects, as well as for objects of other polyglot languages</li>
 </ul>
     
@@ -1238,7 +1256,7 @@ Lossy conversion is disallowed and results in a TypeError.</p>
       </h4>
 
 <ul>
-  <li>returns <code>true</code> if <code>obj</code> is an object representing the constructor and static members of a Java class, as obtained (for example) by <code>Java.type()</code></li>
+  <li>returns <code>true</code> if <code>obj</code> is an object representing the constructor and static members of a Java class, as obtained by <code>Java.type()</code> or package objects.</li>
   <li>returns <code>false</code> for all other arguments</li>
 </ul>
     
@@ -1268,7 +1286,9 @@ Lossy conversion is disallowed and results in a TypeError.</p>
   <li>returns <code>false</code> for all other types, including native JavaScript function, and functions of other polyglot languages</li>
 </ul>
 
-<p>This function requires the Nashorn compatibility mode flag.</p>
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
     
       <h4 id="javaisscriptobjectobj">
         
@@ -1283,7 +1303,9 @@ Lossy conversion is disallowed and results in a TypeError.</p>
   <li>returns <code>false</code> for all other types, including objects of Java and other polyglot languages</li>
 </ul>
 
-<p>This function requires the Nashorn compatibility mode flag.</p>
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
     
       <h4 id="javaisscriptfunctionfn">
         
@@ -1298,7 +1320,9 @@ Lossy conversion is disallowed and results in a TypeError.</p>
   <li>returns <code>false</code> for all other types, including Java function, and functions of other polyglot languages</li>
 </ul>
 
-<p>This function requires the Nashorn compatibility mode flag.</p>
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
     
       <h4 id="javaaddtoclasspathlocation">
         
@@ -1309,7 +1333,7 @@ Lossy conversion is disallowed and results in a TypeError.</p>
       </h4>
 
 <ul>
-  <li>adds the specified location (file name or path name, as String) to Java’s classpath</li>
+  <li>adds the specified location (a <code>.jar</code> file or directory path string) to Java’s classpath</li>
 </ul>
     
       <h3 id="polyglot">
