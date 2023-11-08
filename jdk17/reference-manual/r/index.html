@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-02-03 14:48:03 +0000"/>
+  <meta name="last_modified" content="2023-11-06 09:36:05 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/$version/reference-manual/r/">
@@ -499,74 +499,26 @@ $(document).ready(function(){
 
         
         
+          <div>
+  <script>
+    var scriptElement = document.currentScript;
+    var div = $(scriptElement.parentElement);
+    $(window).on("load", function() {
+      // $("#content-wrapper h1, #content-wrapper h2").each(function() {
+      $("#content-wrapper h2").each(function() {
+        var li = $("<li></li>", { class: "toc-bullets-sub" });
+        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+        a.text($(this).text().replace('#', ''));
+        li.append(a);
+        div.append(li);
+      });
+    });
+  </script>
+</div>
 
         
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/Compatibility/">
-              GraalVM R Engine Compatibility
-            </a>
-          </li>
 
-          
         
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/ExtensionsSupport/">
-              R Extensions Support
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/Interoperability/">
-              Interoperability
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/JavaInteroperability/">
-              Interoperability with Java
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/ParallelExecution/">
-              Parallel Execution
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/jdk17/reference-manual/r/Performance/">
-              GraalVM R Engine Performance
-            </a>
-          </li>
-
-          
         
       
     
@@ -626,7 +578,7 @@ $(document).ready(function(){
                   <p>Note</p>
                 </div>
                 <div class="rightside">
-                  <p class="docsnote__subtitle">This documentation may be out of date. See the <a href="/latest/$version/reference-manual/r/">latest version</a>.</p>
+                  <p class="docsnote__subtitle">Check the last released version documentation: <a href='/22.3/reference-manual/r/'>FastR 22.3</a>.</p>
                 </div>
               </div>
             </div>
@@ -660,7 +612,6 @@ $(document).ready(function(){
   </ul>
 
 
-        
         <h1 id="graalvm-r-runtime">
         
         
@@ -669,139 +620,12 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM provides a GNU-compatible R runtime to run R programs directly or in the REPL mode.
-It can run R code at <a href="/jdk17/reference-manual/r/Performance/">unparalleled performance</a>, and seamlessly <a href="#graalvm-integration">integrates with the GraalVM ecosystem</a>.
-The project name behind GraalVM’s R runtime development is <a href="https://github.com/oracle/fastr">FastR</a>.</p>
+<p>GraalVM R runtime, also known as <a href="https://github.com/oracle/fastr">FastR</a>, is a GNU-compatible implementation of the R programming language.
+FastR is no longer under active development and is in maintenance mode, however we always welcome contributions from the community!</p>
 
-<blockquote>
-  <p>Note: The GraalVM R runtime is currently considered experimental, and not available for Windows AMD64 and macOS AArch64 (Apple Silicon).</p>
-</blockquote>
-    
-      <h2 id="installing-r">
-        
-        
-          Installing R <a href="#installing-r" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>The R language runtime is not provided by default, and can be added to GraalVM with the <a href="/jdk17/reference-manual/graalvm-updater/">GraalVM Updater</a>, <code>gu</code>, tool:</p>
-<pre><code class="language-shell">gu install r
-</code></pre>
-
-<p>After this step, the <code>R</code> and <code>Rscript</code> launchers will become available in the <code>JAVA_HOME/bin</code> directory.</p>
-
-<p>The R language home directory, which will be further referenced as <code>$R_HOME</code>, is located in <code>languages/R</code>.</p>
-    
-      <h2 id="prerequisites">
-        
-        
-          Prerequisites <a href="#prerequisites" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>GraalVM’s R runtime requires <a href="https://zlib.net/">zlib</a> and the <a href="https://www.openmp.org">OpenMP runtime library</a>.
-Zlib is default part of MacOS and most modern Linux distributions.
-The following commands should install the OpenMP runtime library:</p>
-
-<ul>
-  <li>Ubuntu 18.04 and 19.10: <code>apt-get install libgomp1</code></li>
-  <li>Oracle Linux 7 and 8: <code>yum install libgomp</code></li>
-  <li>macOS: <code>libgomp</code> should be already installed</li>
-</ul>
-
-<p>As of version 20.1.0 and later, GraalVM’s R runtime on Linux supports and bundles the GFortran version 3 runtime libraries.
-On macOS it bundles and supports the GFortran version 8.3.0 runtime libraries.
-It is not necessary to install the runtime libraries.
-However, note that a runtime library is only compatible with the GFortran compiler of that same library version or later.</p>
-
-<p>On a Linux system, <code>$R_HOME/bin/configure_fastr</code> can be used to check that the necessary libraries are installed, and if not, it will suggest how to install them.</p>
-
-<p>Moreover, to install R packages that contain C/C++ or Fortran code, compilers for those languages must be present on the target system.
-The following packages satisfy the dependencies of the most common R packages:</p>
-
-<ul>
-  <li>Ubuntu 18.04 and 19.10:
-    <pre><code class="language-shell">apt-get install build-essential gfortran libxml2 libc++-dev
-</code></pre>
-  </li>
-  <li>Oracle Linux 7 and 8:
-    <pre><code class="language-shell">yum groupinstall 'Development Tools' &amp;&amp; yum install gcc-gfortran bzip2 libxml2-devel
-</code></pre>
-  </li>
-  <li>macOS
-    <pre><code class="language-shell">brew install gcc
-</code></pre>
-  </li>
-</ul>
-
-<p>Note: If the <code>gfortran</code> executable is not on your system path, you will need to configure
-the full path to it in <code>$R_HOME/etc/Makeconf</code>, the <code>FC</code> variable.</p>
-    
-      <h3 id="search-paths-for-packages">
-        
-        
-          Search Paths for Packages <a href="#search-paths-for-packages" class="anchor_heading">#</a>
-        
-        
-      </h3>
-<p>The default R library location is within the GraalVM installation directory.
-In order to allow installation of additional packages for users who do not have write access to the GraalVM installation directory, edit the <code>R_LIBS_USER</code> variable in the <code>$JAVA_HOME/etc/Renviron</code> file.</p>
-    
-      <h2 id="running-r">
-        
-        
-          Running R <a href="#running-r" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Run R code directly or in the REPL mode with the <code>R</code> and <code>Rscript</code> commands:</p>
-<pre><code class="language-shell">R [polyglot options] [R options] [filename]
-</code></pre>
-<pre><code class="language-shell">Rscript [polyglot options] [R options] [filename]
-</code></pre>
-
-<p>The GraalVM R runtime uses the same <a href="/jdk17/reference-manual/polyglot-programming/#polyglot-options">polyglot options</a> as other GraalVM languages runtimes and the same R options as <a href="https://cran.r-project.org/doc/manuals/r-release/R-intro.html#Invoking-R-from-the-command-line">GNU R</a>, e.g., <code>bin/R --vanilla</code>.
-Use <code>--help</code> to print the list of supported options. The most important options include:</p>
-<ul>
-  <li><code>--jvm</code>: to enable Java interoperability</li>
-  <li><code>--polyglot</code>: to enable interoperability with other GraalVM languages</li>
-  <li><code>--vm.Djava.net.useSystemProxies=true</code>: to pass any options to the JVM; this will be translated to <code>-Djava.net.useSystemProxies=true</code>.</li>
-</ul>
-
-<p>Note: Unlike other GraalVM languages runtimes, R does not yet ship with a <a href="/jdk17/reference-manual/native-image/">Native Image</a> version of its runtime.
-Therefore the <code>--native</code> option, which is the default, will still start <code>Rscript</code> on top of the JVM,
-but for the sake of future compatibility the Java interoperability will not be available in this case.</p>
-
-<p>You can optionally build the native image:</p>
-<pre><code class="language-shell">gu rebuild-images R
-</code></pre>
-<p>The native launcher for R is intended only for curious users and experiments.
-There are known issues and limitations. Once the native launcher is built, you can use
-the <code>--jvm</code> flag to run R again in the JVM mode.</p>
-    
-      <h2 id="graalvm-integration">
-        
-        
-          GraalVM Integration <a href="#graalvm-integration" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>The R language integration with the GraalVM ecosystem includes:</p>
-<ul>
-  <li>seamless interoperability with other GraalVM languages and with Java</li>
-  <li>debugging with <a href="/jdk17/tools/chrome-debugger/">Chrome DevTools</a></li>
-  <li><a href="/jdk17/tools/profiling/">CPU and memory profiling</a></li>
-  <li><a href="/jdk17/tools/visualvm/">VisualVM integration</a></li>
-</ul>
-
-<p>To start debugging R code, start the launcher with the <code>--inspect</code> option:</p>
-<pre><code class="language-shell">Rscript --inspect myScript.R
-</code></pre>
-<p>Note: The GNU-compatible debugging using, for example, <code>debug(myFunction)</code>, is also supported.</p>
+<p>The last released version is 22.3.1, but FastR continues to be available in a source form. 
+See how to <a href="https://github.com/oracle/fastr/blob/master/documentation/dev/building.md">build FastR from source</a>. 
+Find FastR 22.3.1 user documentation <a href="https://www.graalvm.org/22.3/reference-manual/r/">here</a>.</p>
 
       </div>
 
