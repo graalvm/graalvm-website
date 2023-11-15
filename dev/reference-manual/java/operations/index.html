@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-10-21 09:29:04 +0000"/>
+  <meta name="last_modified" content="2023-11-07 23:25:09 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/operations/">
@@ -255,6 +255,53 @@
         </li>
         <li class="menu__item">
           <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <p class="stack__menu-title">Graal Websites</p>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gcn.svg">
+                    <a href="https://graal.cloud/gcn/" class="item-line">Graal Cloud Native</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <p class="stack__menu-title">GraalVM Languages</p>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="/python/" class="item-line">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href="/java/" class="item-line">GraalVM for Java</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/ruby-navi.svg">
+                    <a href="/ruby/" class="item-line">Ruby</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/r-navi.svg">
+                    <a href="/r/" class="item-line">FastR</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
         <div class="menu__item icons githubstar" tabindex="0">
           <span class="github-widget">
@@ -659,7 +706,7 @@ It can be disabled with <code>-XX:-UseJVMCINativeLibrary</code>.</p>
 
 <p>The first thing to be sure of when measuring performance is to ensure the JVM is using the Oracle GraalVM compiler.
 In the GraalVM binary, the JVM is configured to use the Graal compiler as the top tier compiler by default.
-You can confirm this by adding <code>-Dgraal.ShowConfiguration=info</code> to the command line.
+You can confirm this by adding <code>-Djdk.graal.ShowConfiguration=info</code> to the command line.
 It will produce a line of output similar to the one below when the compiler is initialized:</p>
 
 <pre><code class="language-shell">Using "Graal Community compiler" loaded from class files
@@ -751,7 +798,7 @@ The location of the crash is also often indicated near the top of the file with 
 
 <p>When filing an issue on <a href="https://github.com/oracle/graal/issues">GitHub</a> for such a crash, you should first attempt to reproduce the crash with extra diagnostics enabled for the compilation of the problematic method.
 In this example, you would add the following to your command line:</p>
-<pre><code class="language-shell">-Dgraal.MethodFilter=NodeLIRBuilder.matchComplexExpressions, -Dgraal.Dump=:2
+<pre><code class="language-shell">-Djdk.graal.MethodFilter=NodeLIRBuilder.matchComplexExpressions, -Djdk.graal.Dump=:2
 </code></pre>
 
 <p>These options are described in more detail <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">here</a>.
@@ -763,7 +810,7 @@ The complete format of the <code>MethodFilter</code> option is described in the 
 <p>In such a case, simply filtering for the problematic method might not capture an erroneous compilation causing a crash.</p>
 
 <p>To improve the likelihood of capturing an erroneous compilation, you need to broaden the <code>MethodFilter</code> value.
-To guide this, add <code>-Dgraal.PrintCompilation=true</code> when trying to reproduce the crash so you can see what was compiled just before the crash.</p>
+To guide this, add <code>-Djdk.graal.PrintCompilation=true</code> when trying to reproduce the crash so you can see what was compiled just before the crash.</p>
 
 <p>The following shows sample output from the console:</p>
 <pre><code class="language-shell">HotSpotCompilation-1218        Ljdk.graal.compiler/core/amd64/AMD64NodeLIRBuilder;                  peephole                                      (Ljdk.graal.compiler/nodes/ValueNode;)Z           |   87ms   428B   447B  1834kB
@@ -782,13 +829,13 @@ HotSpotCompilation-1221        Ljdk.graal.compiler/hotspot/amd64/AMD64HotSpotLIR
 # Failed to write core dump. Core dumps have been disabled. To enable core dumping, try "ulimit -c unlimited" before starting Java again
 </code></pre>
 <p>Here we see that the crash happened in a different method than the first crash.
-As such, we expand the filter argument to be <code>-Dgraal.MethodFilter=NodeLIRBuilder.matchComplexExpressions,AMD64HotSpotLIRGenerator.getResult</code> and run again.</p>
+As such, we expand the filter argument to be <code>-Djdk.graal.MethodFilter=NodeLIRBuilder.matchComplexExpressions,AMD64HotSpotLIRGenerator.getResult</code> and run again.</p>
 
 <p>When the VM crashes in this way, it does not execute the shutdown code that archives the Graal compiler diagnostic output or delete the directory it was written to.
 This must be done manually after the crash.</p>
 
 <p>By default, the directory is <code>$PWD/graal-dumps/&lt;timestamp&gt;</code>; for example, <code>./graal-dumps/1499938817387</code>.
-However, you can set the directory with <code>-Dgraal.DumpPath=&lt;path&gt;</code>.</p>
+However, you can set the directory with <code>-Djdk.graal.DumpPath=&lt;path&gt;</code>.</p>
 
 <p>A message, such as the following, is printed to the console when this directory is first used by the compiler:</p>
 <pre><code class="language-shell">Dumping debug output in /Users/demo/graal-dumps/1499768882600

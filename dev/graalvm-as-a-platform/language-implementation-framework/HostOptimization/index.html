@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-10-21 09:29:04 +0000"/>
+  <meta name="last_modified" content="2023-11-07 23:25:09 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">
@@ -255,6 +255,53 @@
         </li>
         <li class="menu__item">
           <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <p class="stack__menu-title">Graal Websites</p>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gcn.svg">
+                    <a href="https://graal.cloud/gcn/" class="item-line">Graal Cloud Native</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <p class="stack__menu-title">GraalVM Languages</p>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="/python/" class="item-line">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href="/java/" class="item-line">GraalVM for Java</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/ruby-navi.svg">
+                    <a href="/ruby/" class="item-line">Ruby</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/r-navi.svg">
+                    <a href="/r/" class="item-line">FastR</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </li>
         <div class="menu__item icons githubstar" tabindex="0">
           <span class="github-widget">
@@ -853,7 +900,7 @@ Whenever a PE boundary is detected, the host inlining phase no longer makes any 
 <p>The source code for this phase can be found in <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/truffle/host/HostInliningPhase.java">HostInliningPhase</a>.</p>
 
 <p>Truffle host inlining is applied when compiling a method annotated with <code>@HostCompilerDirectives.BytecodeInterpreterSwitch</code>.
-The maximum node cost for such methods can be configured using <code>-H:TruffleHostInliningByteCodeInterpreterBudget=100000</code> for native images and <code>-Dgraal.TruffleHostInliningByteCodeInterpreterBudget=100000</code> on HotSpot. 
+The maximum node cost for such methods can be configured using <code>-H:TruffleHostInliningByteCodeInterpreterBudget=100000</code> for native images and <code>-Djdk.graal.TruffleHostInliningByteCodeInterpreterBudget=100000</code> on HotSpot. 
 If a method that is annotated with  <code>@BytecodeInterpreterSwitch</code> calls a method with the same annotation then the method is directly inlined as long as the cost of both methods do not exceed the budget.
 In other words, any such method will be treated by the inlining phase just as if they would be part of the root bytecode switch method.
 This allows bytecode interpreter switches to be composed of multiple methods if needed.</p>
@@ -880,8 +927,8 @@ If a method exceeds the limit, it is likely that the same code also has a high c
         
       </h2>
 
-<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.
-You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (works for both).</p>
+<p>The inlining decisions performed by this phase is best debugged with <code>-H:Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> for native images or  <code>-Djdk.graal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase</code> on HotSpot.
+You can redirect the output to a file with <code>-Djdk.graal.LogFile=FILE</code> (works for both).</p>
 
 <p>Consider the following example, which shows previously described common patterns of partial evaluatable code in Truffle interpreters:</p>
 
@@ -984,7 +1031,7 @@ You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (wo
 
 <p>We can run this as a unittest in the Graal repository (see class <code>HostInliningBytecodeInterpreterExampleTest</code>) by running the following command line in <code>graal/compiler</code>:</p>
 
-<pre><code>mx unittest  -Dgraal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Dgraal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
+<pre><code>mx unittest  -Djdk.graal.Log=HostInliningPhase,~CanonicalizerPhase,~GraphBuilderPhase -Djdk.graal.Dump=:3  HostInliningBytecodeInterpreterExampleTest
 </code></pre>
 
 <p>This prints:</p>
@@ -1011,10 +1058,10 @@ You can redirect the output to a file with <code>-Dgraal.LogFile=FILE</code> (wo
           CUTOFF com.oracle.truffle.api.CompilerDirectives.shouldNotReachHere()                                                               [inlined   -1, monomorphic false, deopt false, inInterpreter false, propDeopt  true, subTreeInvokes    0, subTreeCost   98, incomplete false,  reason propagates transferToInterpreter]
 </code></pre>
 
-<p>Note that we have also used the <code>-Dgraal.Dump=:3 </code> option, which sends the graphs to any running <code>IdealGraphVisualizer</code> instance for further inspection.
+<p>Note that we have also used the <code>-Djdk.graal.Dump=:3 </code> option, which sends the graphs to any running <code>IdealGraphVisualizer</code> instance for further inspection.
 On Native Image, use <code>-H:Dump=:2 -H:MethodFilter=...</code> to dump host compilation graphs of a given method.</p>
 
-<p>To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
+<p>To debug CUTOFF decisions for incomplete exploration (entries with <code>incomplete  true</code>) use the <code>-Djdk.graal.TruffleHostInliningPrintExplored=true</code> option to see all incomplete subtrees in the log.</p>
     
       <h2 id="tuning-host-inlining">
         
@@ -1048,7 +1095,7 @@ For example, the tracing may print the following:</p>
 </code></pre>
 
 <p>This indicates that there are too many fast-path invokes (by default 10) in the subtree, it also stops exploring after that number.
-The <code>-Dgraal.TruffleHostInliningPrintExplored=true</code> flag may be provided to see the entire subtree for the decision.
+The <code>-Djdk.graal.TruffleHostInliningPrintExplored=true</code> flag may be provided to see the entire subtree for the decision.
 The following calls are considered fast-path invokes:</p>
 
 <ul>
