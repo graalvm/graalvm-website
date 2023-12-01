@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM compiles your Java applications ahead of time into standalone binaries that start instantly, provide peak performance with no warmup, and use fewer r..."/>
-  <meta name="last_modified" content="2023-09-14 09:12:46 +0000"/>
+  <meta name="last_modified" content="2023-11-29 18:05:38 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/python/Interoperability/">
@@ -1143,6 +1143,365 @@ Instead, the <code>foreign</code> type defines all of the Python special methods
     </tr>
   </tbody>
 </table>
+    
+      <h2 id="the-truffle-interoperability-extension-api">
+        
+        
+          The Truffle Interoperability Extension API <a href="#the-truffle-interoperability-extension-api" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>It is possible to extend the Truffle Interoperability protocol directly from python via a simple API defined in the <code>polyglot</code> module. 
+The purpose of this API is to allow custom / user defined types to take part in the interop ecosystem. 
+This is particularly useful for external types which are not compatible by default with the interop protocol. 
+An example in this sense are the <code>numpy</code> numeric types (e.g., <code>numpy.int32</code>) which are not supported by default by the interop protocol.</p>
+    
+      <h3 id="the-api">
+        
+        
+          The API <a href="#the-api" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">function</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">register_interop_behavior</td>
+      <td style="text-align: left">Takes the receiver <strong>type</strong> as first argument. The remainder keyword arguments correspond to the respective Truffle Interop messages. Not All interop messages are supported.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">get_registered_interop_behavior</td>
+      <td style="text-align: left">Takes the receiver <strong>type</strong> as first argument. Returns the list of extended Truffle Interop messages for the given type.</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h4 id="supported-messages">
+        
+        
+          Supported messages
+        
+        
+      </h4>
+
+<p>The majority (with some exceptions) of the Truffle Interop messages are supported by the interop behavior extension API, as seen in the table below.<br />
+The naming convention for the <code>register_interop_behavior</code> keyword arguments follows the <em>snake_case</em> naming convention, i.e.: the Truffle Interop <code>fitsInLong</code> message 
+becomes <code>fits_in_long</code> and so on. Each message can be extended with a <strong>pure python function</strong> (default keyword arguments, free vars and cell vars are not allowed) or a <strong>boolean constant</strong>. 
+Following is the list of currently supported interop messages:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Truffle Message</th>
+      <th style="text-align: left">Extension argument name</th>
+      <th>Expected return type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">isBoolean</td>
+      <td style="text-align: left">is_boolean</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isDate</td>
+      <td style="text-align: left">is_date</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isDuration</td>
+      <td style="text-align: left">is_duration</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isIterator</td>
+      <td style="text-align: left">is_iterator</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isNumber</td>
+      <td style="text-align: left">is_number</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isString</td>
+      <td style="text-align: left">is_string</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isTime</td>
+      <td style="text-align: left">is_time</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isTimeZone</td>
+      <td style="text-align: left">is_time_zone</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isExecutable</td>
+      <td style="text-align: left">is_executable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInBigInteger</td>
+      <td style="text-align: left">fits_in_big_integer</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInByte</td>
+      <td style="text-align: left">fits_in_byte</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInDouble</td>
+      <td style="text-align: left">fits_in_double</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInFloat</td>
+      <td style="text-align: left">fits_in_float</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInInt</td>
+      <td style="text-align: left">fits_in_int</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInLong</td>
+      <td style="text-align: left">fits_in_long</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInShort</td>
+      <td style="text-align: left">fits_in_short</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asBigInteger</td>
+      <td style="text-align: left">as_big_integer</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asBoolean</td>
+      <td style="text-align: left">as_boolean</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asByte</td>
+      <td style="text-align: left">as_byte</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDate</td>
+      <td style="text-align: left">as_date</td>
+      <td>a python object with the following attributes: <code>year</code>, <code>month</code>, <code>day</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDouble</td>
+      <td style="text-align: left">as_double</td>
+      <td>float</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDuration</td>
+      <td style="text-align: left">as_duration</td>
+      <td>a python object with the following attributes: <code>seconds</code>, <code>nano_adjustment</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asFloat</td>
+      <td style="text-align: left">as_float</td>
+      <td>float</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asInt</td>
+      <td style="text-align: left">as_int</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asLong</td>
+      <td style="text-align: left">as_long</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asShort</td>
+      <td style="text-align: left">as_short</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asString</td>
+      <td style="text-align: left">as_string</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asTime</td>
+      <td style="text-align: left">as_time</td>
+      <td>a python object with the following attributes:  <code>hour</code>, <code>minute</code>, <code>second</code>, <code>microsecond</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asTimeZone</td>
+      <td style="text-align: left">as_time_zone</td>
+      <td>a python object with the following attributes:  <code>tm_zone</code>, <code>tm_gmtoff</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left">execute</td>
+      <td style="text-align: left">execute</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">readArrayElement</td>
+      <td style="text-align: left">read_array_element</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getArraySize</td>
+      <td style="text-align: left">get_array_size</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasArrayElements</td>
+      <td style="text-align: left">has_array_elements</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementReadable</td>
+      <td style="text-align: left">is_array_element_readable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementModifiable</td>
+      <td style="text-align: left">is_array_element_modifiable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementInsertable</td>
+      <td style="text-align: left">is_array_element_insertable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementRemovable</td>
+      <td style="text-align: left">is_array_element_removable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">removeArrayElement</td>
+      <td style="text-align: left">remove_array_element</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">writeArrayElement</td>
+      <td style="text-align: left">write_array_element</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasIterator</td>
+      <td style="text-align: left">has_iterator</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasIteratorNextElement</td>
+      <td style="text-align: left">has_iterator_next_element</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getIterator</td>
+      <td style="text-align: left">get_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getIteratorNextElement</td>
+      <td style="text-align: left">get_iterator_next_element</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasHashEntries</td>
+      <td style="text-align: left">has_hash_entries</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashEntriesIterator</td>
+      <td style="text-align: left">get_hash_entries_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashKeysIterator</td>
+      <td style="text-align: left">get_hash_keys_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashSize</td>
+      <td style="text-align: left">get_hash_size</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashValuesIterator</td>
+      <td style="text-align: left">get_hash_values_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryReadable</td>
+      <td style="text-align: left">is_hash_entry_readable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryModifiable</td>
+      <td style="text-align: left">is_hash_entry_modifiable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryInsertable</td>
+      <td style="text-align: left">is_hash_entry_insertable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryRemovable</td>
+      <td style="text-align: left">is_hash_entry_removable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">readHashValue</td>
+      <td style="text-align: left">read_hash_value</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">writeHashEntry</td>
+      <td style="text-align: left">write_hash_entry</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">removeHashEntry</td>
+      <td style="text-align: left">remove_hash_entry</td>
+      <td>NoneType</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="usage-example">
+        
+        
+          Usage Example <a href="#usage-example" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<pre><code class="language-python">import polyglot
+
+class MyType(object):
+    data = 10
+
+polyglot.register_interop_behavior(MyType,
+    is_string=True,
+    as_string=lambda t: f"MyType({t.data})",
+)
+</code></pre>
 
       </div>
 
