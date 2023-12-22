@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-11-27 13:01:08 +0000"/>
+  <meta name="last_modified" content="2023-12-06 14:33:51 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/Compatibility/">
@@ -1131,15 +1131,15 @@ For example, if you <code>$stdout.reopen</code>, as some logging frameworks do, 
         
       </h3>
 
-<p>The set of signals that TruffleRuby can handle is different from MRI.
-When using the native configuration, TruffleRuby allows trapping all the same signals that MRI does, as well as a few that MRI does not.
-The only signals that can’t be trapped are <code>KILL</code>, <code>STOP</code>, and <code>VTALRM</code>.
+<p>First, <code>KILL</code> and <code>STOP</code> can never be trapped, per POSIX (<code>man 2 signal</code>).
+Some signals are reserved on CRuby, and they are also reserved on TruffleRuby, because trapping those would cause all sorts of problems: <code>SEGV</code>, <code>BUS</code>, <code>ILL</code>, <code>FPE</code> and <code>VTALRM</code>.</p>
+
+<p>When using the native configuration, TruffleRuby allows trapping all the same signals that MRI does.
 Consequently, any signal handling code that runs on MRI can run on TruffleRuby without modification in the native configuration.</p>
 
-<p>However, when run on the JVM, TruffleRuby is unable to trap <code>USR1</code> or <code>QUIT</code>, as these signals are reserved by the JVM.
-In such a case <code>trap(:USR1) {}</code> will raise an <code>ArgumentError</code>.
-Any code that relies on being able to trap those signals will need to fall back to another available signal.
-Additionally, <code>FPE</code>, <code>ILL</code>, <code>KILL</code>, <code>SEGV</code>, <code>STOP</code>, and <code>VTALRM</code> cannot be trapped, but these signals are also unavailable on MRI.</p>
+<p>However, when run on the JVM, TruffleRuby is unable to trap <code>QUIT</code>, as this signal is reserved by the JVM.
+In such a case <code>trap(:QUIT) {}</code> will raise an <code>ArgumentError</code>.
+Any code that relies on being able to trap this signal will need to fall back to another available signal.</p>
 
 <p>When TruffleRuby is run as part of a polyglot application, any signals that are handled by another language become unavailable for TruffleRuby to trap.</p>
     

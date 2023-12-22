@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-07-20 09:58:03 +0000"/>
+  <meta name="last_modified" content="2023-12-15 12:39:56 +0000"/>
 
   
   <link rel="canonical" href="/latest/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">
@@ -790,12 +790,40 @@ $(document).ready(function(){
         
         
       </h1>
+    
+      <h3 id="table-of-contents">
+        
+        
+          Table of Contents <a href="#table-of-contents" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
-<p>To add debug information to a generated native image, provide the <code>-g</code> option to the <code>native-image</code> builder:</p>
-<pre><code class="language-shell">native-image -g Hello
+<ul>
+  <li><a href="#introduction">Introduction</a></li>
+  <li><a href="#source-file-caching">Source File Caching</a></li>
+  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
+  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
+  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
+  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
+  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
+  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
+  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
+</ul>
+    
+      <h2 id="introduction">
+        
+        
+          Introduction <a href="#introduction" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To build a native executable with debug information, provide the <code>-g</code> command-line option for <code>javac</code> when compiling the application, and then to the <code>native-image</code> builder:</p>
+<pre><code class="language-shell">javac -g Hello.java
+native-image -g Hello
 </code></pre>
-
-<p>The <code>-g</code> flag instructs <code>native-image</code> to generate debug information.
+<p>This enables source-level debugging, and the debugger (GDB) then correlates machine instructions with specific source lines in Java files.
 The resulting image will contain debug records in a format the GNU Debugger (GDB) understands.
 Additionally, you can pass <code>-O0</code> to the builder which specifies that no compiler optimizations should be performed.
 Disabling all optimizations is not required, but in general it makes the debugging experience better.</p>
@@ -804,10 +832,7 @@ Disabling all optimizations is not required, but in general it makes the debuggi
 
 <p>By default, debug info will only include details of some of the values of parameters and local variables.
 This means that the debugger will report many parameters and local variables as being undefined. If you pass <code>-O0</code> to the builder then full debug information will be included.
-If you
-want more parameter and local variable information to be included when employing higher
-levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command
-line flag to the <code>native-image</code> command</p>
+If you want more parameter and local variable information to be included when employing higher levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command line flag to the <code>native-image</code> command:</p>
 
 <pre><code class="language-shell">native-image -g -H:+SourceLevelDebug Hello
 </code></pre>
@@ -836,25 +861,6 @@ resulting image file.</p>
 <blockquote>
   <p>Note: Debug info support for <code>perf</code> and <code>valgrind</code> on Linux is an experimental feature.</p>
 </blockquote>
-    
-      <h3 id="table-of-contents">
-        
-        
-          Table of Contents <a href="#table-of-contents" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<ul>
-  <li><a href="#source-file-caching">Source File Caching</a></li>
-  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
-  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
-  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
-  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
-  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
-  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
-  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
-</ul>
     
       <h2 id="source-file-caching">
         

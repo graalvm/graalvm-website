@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-11-29 18:05:38 +0000"/>
+  <meta name="last_modified" content="2023-12-18 13:40:27 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/python/Interoperability/">
@@ -1181,6 +1181,10 @@ An example in this sense are the <code>numpy</code> numeric types (e.g., <code>n
       <td style="text-align: left">get_registered_interop_behavior</td>
       <td style="text-align: left">Takes the receiver <strong>type</strong> as first argument. Returns the list of extended Truffle Interop messages for the given type.</td>
     </tr>
+    <tr>
+      <td style="text-align: left">@interop_behavior</td>
+      <td style="text-align: left">Class decorator, takes the receiver <strong>type</strong> as only argument. The interop messages are extended via <strong>static</strong> methods defined in the decorated class (supplier).</td>
+    </tr>
   </tbody>
 </table>
     
@@ -1304,7 +1308,7 @@ Following is the list of currently supported interop messages:</p>
     <tr>
       <td style="text-align: left">asDate</td>
       <td style="text-align: left">as_date</td>
-      <td>a python object with the following attributes: <code>year</code>, <code>month</code>, <code>day</code></td>
+      <td>3-tuple with the following elements: (<code>year</code>: int, <code>month</code>: int, <code>day</code>: int)</td>
     </tr>
     <tr>
       <td style="text-align: left">asDouble</td>
@@ -1314,7 +1318,7 @@ Following is the list of currently supported interop messages:</p>
     <tr>
       <td style="text-align: left">asDuration</td>
       <td style="text-align: left">as_duration</td>
-      <td>a python object with the following attributes: <code>seconds</code>, <code>nano_adjustment</code></td>
+      <td>2-tuple with the following elements: (<code>seconds</code>: long, <code>nano_adjustment</code>: long)</td>
     </tr>
     <tr>
       <td style="text-align: left">asFloat</td>
@@ -1344,12 +1348,12 @@ Following is the list of currently supported interop messages:</p>
     <tr>
       <td style="text-align: left">asTime</td>
       <td style="text-align: left">as_time</td>
-      <td>a python object with the following attributes:  <code>hour</code>, <code>minute</code>, <code>second</code>, <code>microsecond</code></td>
+      <td>4-tuple with the following elements:  (<code>hour</code>: int, <code>minute</code>: int, <code>second</code>: int, <code>microsecond</code>: int)</td>
     </tr>
     <tr>
       <td style="text-align: left">asTimeZone</td>
       <td style="text-align: left">as_time_zone</td>
-      <td>a python object with the following attributes:  <code>tm_zone</code>, <code>tm_gmtoff</code></td>
+      <td>a string (the timezone) or int (utc delta in seconds)</td>
     </tr>
     <tr>
       <td style="text-align: left">execute</td>
@@ -1491,6 +1495,14 @@ Following is the list of currently supported interop messages:</p>
         
         
       </h3>
+    
+      <h4 id="the-simple-register_interop_behavior-api">
+        
+        
+          the simple <code>register_interop_behavior</code> API
+        
+        
+      </h4>
 
 <pre><code class="language-python">import polyglot
 
@@ -1501,6 +1513,33 @@ polyglot.register_interop_behavior(MyType,
     is_string=True,
     as_string=lambda t: f"MyType({t.data})",
 )
+</code></pre>
+    
+      <h4 id="the-decorator-interop_behavior-api">
+        
+        
+          the decorator <code>@interop_behavior</code> API
+        
+        
+      </h4>
+
+<p>This API is sugar for the simpler <code>register_interop_behavior</code> API and requires that interop message extension is achieved via <strong>static</strong> methods of the decorated class. <br />
+The names of the static methods are identical to the keyword names expected by <code>register_interop_behavior</code>.</p>
+
+<pre><code class="language-python">import polyglot
+
+class MyType(object):
+    data = 10
+
+@polyglot.interop_behavior(MyType)
+class MyTypeInteropBehaviorSupplier:
+    @staticmethod
+    def is_string(t): 
+        return True
+
+    @staticmethod
+    def as_string(t):
+        return f"MyType({t.data})"
 </code></pre>
 
       </div>

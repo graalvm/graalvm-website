@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-11-30 11:02:12 +0000"/>
+  <meta name="last_modified" content="2023-12-20 12:36:39 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/embed-languages/">
@@ -710,7 +710,7 @@ $(document).ready(function(){
 You can use the tabs beneath each code example to choose between JavaScript, R, Ruby, and Python.</p>
 
 <blockquote>
-  <p>Note: The usage description for polyglot embeddings was revised with the GraalVM for JDK 21 (23.1.0) release. If you are still using an older GraalVM version, ensure the correct version of the documentation is displayed. More information on the change can be found in the <a href="https://www.graalvm.org/release-notes/JDK_21/">release notes</a>.</p>
+  <p>Note: The usage description for polyglot embeddings was revised with the GraalVM for JDK 21 (23.1.1) release. If you are still using an older GraalVM version, ensure the correct version of the documentation is displayed. More information on the change can be found in the <a href="https://www.graalvm.org/release-notes/JDK_21/">release notes</a>.</p>
 </blockquote>
     
       <h2 id="dependency-setup">
@@ -721,7 +721,7 @@ You can use the tabs beneath each code example to choose between JavaScript, R, 
         
       </h2>
 
-<p>Since Polyglot version 23.1, all necessary artifacts can be downloaded directly from Maven Central.
+<p>Since GraalVM Polyglot API version 23.1.0, all necessary artifacts can be downloaded directly from Maven Central.
 All artifacts relevant to embedders can be found in the Maven dependency group <a href="https://central.sonatype.com/namespace/org.graalvm.polyglot"><code>org.graalvm.polyglot</code></a>.
 See the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot embedding demonstration</a> on GitHub for a complete runnable example.</p>
 
@@ -730,13 +730,13 @@ See the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot em
 <pre><code class="language-xml">&lt;dependency&gt; 
 	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt; 
 	&lt;artifactId&gt;polyglot&lt;/artifactId&gt; 
-	&lt;version&gt;23.1.0&lt;/version&gt; 
+	&lt;version&gt;23.1.1&lt;/version&gt; 
 &lt;/dependency&gt;
 &lt;dependency&gt; 
 	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt; 
 	&lt;!-- Select language: js, ruby, python, java, llvm, wasm, languages--&gt;
 	&lt;artifactId&gt;js&lt;/artifactId&gt; 
-	&lt;version&gt;23.1.0&lt;/version&gt; 
+	&lt;version&gt;23.1.1&lt;/version&gt; 
 	&lt;type&gt;pom&lt;/type&gt;
 &lt;/dependency&gt;
 &lt;!-- add additional languages if needed --&gt;
@@ -744,18 +744,22 @@ See the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot em
 	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt; 
 	&lt;!-- Select tools: profiler, inspect, coverage, dap, tools --&gt;
 	&lt;artifactId&gt;tools&lt;/artifactId&gt; 
-	&lt;version&gt;23.1.0&lt;/version&gt; 
+	&lt;version&gt;23.1.1&lt;/version&gt; 
 	&lt;type&gt;pom&lt;/type&gt;
 &lt;/dependency&gt;
-&lt;!-- add additional tools if needed --&gt;
+&lt;!-- add specific tools if needed --&gt;
 </code></pre>
 
 <p>Language and tool dependencies use the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC)</a> license
 To use community-licensed versions instead, add the <code>-community</code> suffix to each artifact (e.g., <code>js-community</code>).
 To access <a href="#polyglot-isolates">polyglot isolate</a> artifacts, use the <code>-isolate</code> suffix instead (e.g. <code>js-isolate</code>).</p>
 
-<p>The artifacts <code>languages</code> and <code>tools</code> include all available languages and tools as dependencies. 
-This artifact might grow or shrink between major releases. We recommend selecting only the needed languages for a production deployment.</p>
+<p>The artifacts <code>polyglot</code> and <code>tools</code> include all available languages and tools as dependencies. 
+This artifact might grow or shrink between major releases. We recommend selecting only the needed language(s) for a production deployment.</p>
+
+<blockquote>
+  <p>The <code>pom</code> type is a requirement for language or tool dependencies.</p>
+</blockquote>
 
 <p>Additionally, your <em>module-info.java</em> file should require <code>org.graalvm.polyglot</code> when using Java modules.</p>
 
@@ -3470,7 +3474,7 @@ public class PolyglotIsolate {
 			  .allowHostAccess(HostAccess.SCOPED)
 			  .option("engine.SpawnIsolate", "true").build()) {
 			  
-			Value function = context.eval("js", "x =&gt; x+1")
+			Value function = context.eval("js", "x =&gt; x+1");
 			assert function.canExecute();
 			int x = function.execute(41).asInt();
 			assert x == 42;
