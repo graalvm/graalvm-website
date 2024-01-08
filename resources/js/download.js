@@ -7,35 +7,41 @@ $(window).on("load", function () {
 // Download Oracle GraalVM JDK Scripts
 function getOS() {
   const userAgent = navigator.userAgent;
-  let os = "Unknown OS";
 
   if (userAgent.indexOf("Win") !== -1) {
-      os = "Windows";
+      return "Windows";
   } else if (userAgent.indexOf("Mac") !== -1) {
-      os = "macOS";
+      return "macOS";
   } else if (userAgent.indexOf("Linux") !== -1) {
-      os = "Linux";
+      return "Linux";
   }
-
-  return os;
+  return "Unknown OS";
 }
   
 const currentOS = getOS();
 
-function getCPUArchitecture() {
-  const platform = navigator.platform.toLowerCase();
-  let architecture = "Unknown Architecture";
-
-  if (platform.indexOf("win64") !== -1 || platform.indexOf("wow64") !== -1 || platform.indexOf("x86_64") !== -1) {
-      architecture = "x64";
-  } else if (platform.indexOf("arm") !== -1) {
-      architecture = "ARM";
+async function getCPUArchitecture() {
+  if (navigator.userAgent.indexOf("Mac") !== -1) {
+    try {
+      const platformInfo = await navigator.userAgentData.getHighEntropyValues(['architecture']);
+      if (platformInfo.architecture === 'arm') {
+        return "ARM";
+      } else if (platformInfo.architecture === "x86") {
+        return "x64";
+      }
+    } catch (error) {
+    }
   }
 
-  return architecture;
-}
+  const platform = navigator.platform.toLowerCase();
+  if (platform.indexOf("win32") !== -1 || platform.indexOf("wow64") !== -1 || platform.indexOf("x86_64") !== -1) {
+    return "x64";
+  } else if (platform.indexOf("arm") !== -1) {
+    return "ARM";
+  }
 
-const cpuArchitecture = getCPUArchitecture();
+  return "Unknown Architecture";
+}
 
 const downloadLinks = {
   '17_macOS_ARM': "https://download.oracle.com/graalvm/17/latest/graalvm-jdk-17_macos-aarch64_bin.tar.gz",
@@ -67,8 +73,13 @@ const javaTypes = {
 };
 
 let currentJavaType = '21';
-let currentOsType = osTypes[currentOS + '_' + cpuArchitecture] ? currentOS + '_' + cpuArchitecture : 'empty_choice';
+let currentOsType = 'empty_choice';
 let currentDownloadLink = null;
+
+(async () => {
+  const cpuArchitecture = await getCPUArchitecture();
+  currentOsType = osTypes[currentOS + '_' + cpuArchitecture] ? currentOS + '_' + cpuArchitecture : currentOsType;
+})();
 
 function changeVersion(javaType, osType) {
 
