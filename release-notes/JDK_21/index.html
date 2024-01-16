@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-11-20 13:03:20 +0000"/>
+  <meta name="last_modified" content="2024-01-09 16:43:14 +0000"/>
 
   
   <link rel="canonical" href="/release-notes/JDK_21/">
@@ -575,7 +575,125 @@
 
     <div class="col-sm-9 docsmod">
       <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-        <h1 id="graalvm-for-jdk-2101">GraalVM for JDK 21.0.1</h1>
+        <h1 id="graalvm-for-jdk-2102">GraalVM for JDK 21.0.2</h1>
+<p>(2024-01-16)</p>
+
+<p>This is the January 2024 Critical Patch Update (CPU) for GraalVM Community Edition.
+It is based on the OpenJDK CPU and includes all the OpenJDK security fixes released as part of that CPU, platform updates, and some GraalVM bug fixes.
+It is a full distribution and supersedes the previous release of GraalVM Community Edition for JDK 21.</p>
+
+<ul>
+  <li>Updated <em>GraalVM Community Edition for JDK 21.0.1</em> to <strong>21.0.2+13</strong>. See the <a href="https://wiki.openjdk.org/display/JDKUpdates/JDK+21u" title="OpenJDK 21 Updates">OpenJDK 21 Updates</a>.</li>
+  <li>Version compatibility:
+    <ul>
+      <li><a href="https://www.graalvm.org/jdk21/reference-manual/#specific-languages">Truffle languages and other components</a> version <strong>23.1.2</strong> are designed for use with <strong>GraalVM for JDK 21.0.2</strong>.</li>
+    </ul>
+  </li>
+  <li>Compiler fixes:
+    <ul>
+      <li>Rearranged binary arithmetic operations that may be re-associated for loop invariants and constants.</li>
+      <li>Fixed Sulong benchmarks failing because of compilation failures.</li>
+      <li>Improved the AArch64 architecture support: allowed <code>BranchOp</code> to emit <code>FarBranch</code>; made AArch64 HotSpot null constant code generation more generic.</li>
+      <li>Ensured Guards Anchor to <code>CaptureStateBegin</code>.</li>
+      <li>The compiler now checks stamps before casting in <code>IntegerLessThanNode</code>.</li>
+      <li><code>HeapImpl.dirtyAllReferencesOf</code> must be no-op for the Epsilon garbage collector.</li>
+      <li>Simplified the <code>ValueAnchorNode</code> implementation.</li>
+      <li>Removed explicit null check exceptions during generation of <code>checkcast</code> and <code>instanceof</code>.</li>
+    </ul>
+  </li>
+  <li>Native Image fixes:
+    <ul>
+      <li>Updated OS detection code to recognize Windows 11 and Windows Server 2022.</li>
+      <li>Added an option that allows VM operations to exceed the max heap size.</li>
+      <li>Fixed a problem with <code>-XX:+PrintGCSummary</code> if assertions are enabled.</li>
+      <li>Fixed crashes during isolate teardown.</li>
+      <li>Native Image now ignores crashed threads.</li>
+      <li>Improved the OutOfMemoryError messages.</li>
+      <li>Native Image now reports consistent values when memory usage is queried via <code>MemoryPoolMXBean</code>.</li>
+      <li>Introduced the <code>--disable-debuginfo-stripping</code> argument for the <code>mx</code> tool.</li>
+      <li>Fixed handling <code>native-image</code> JSON properties stored in the wrong location.</li>
+      <li>Added a fix to prevent <code>System.console().readPassword</code> failures.</li>
+      <li>Improved mangling of primitive types in BFD name mangler#7423.</li>
+      <li>Fixed the <code>native-image --bundle-create,container</code> command failing if a driver is an image.</li>
+      <li>Made the initialization cycle break in NIO/cgroups code.</li>
+      <li>Fixed a transient guarantee failure in <code>PointsToAnalysisMethod.getContextInsensitiveVirtualInvoke</code>.</li>
+      <li>Improved the JFR support: switched to <code>PlatformThreads.getCurrentThreadOrNull()</code> instead of <code>Thread.currentThread()</code>; fixed race condition in <code>JVM.commit(long)</code>.</li>
+      <li>Ensured <code>DeoptTargets</code> are generated for methods requiring <code>FrameInformation</code>.</li>
+      <li>Now the Native Image builder uses synchronized data structures for reachability handlers registration.</li>
+      <li>Added an async-signal-safe way to dump crash logs.</li>
+      <li>Added an option to artificially increase the header size.</li>
+      <li>Fixed stack walking heuristic used for the Native Image crash log.</li>
+      <li>Fixed <code>joinThreadUnmanaged</code> on Windows.</li>
+      <li>Used the vendor version for <code>__svm_version_info</code>.</li>
+      <li>Made the builder use <code>ThreadLocal</code> for <code>AccessControlContext</code> stack.</li>
+      <li>Fixed class-path order when MANIFEST files include “Class-Path” attributes.</li>
+      <li>Added support for execution of bootstrap methods at image run time, and support “constant dynamic” execution at image run time.</li>
+      <li>Native Image now prints crash log when exception handling fails.</li>
+      <li>Fixed <code>clinit</code> simulation for <code>arraycopy</code> with null values.</li>
+      <li>Included signers in the native executable only if registered.</li>
+      <li>Do not use the shadow heap for fields annotated with <code>@Unknown*Field</code>.</li>
+    </ul>
+  </li>
+  <li>Truffle framework fixes:
+    <ul>
+      <li>Handle <em>json-23.1.0.jar</em> <em>native-image.properties</em> stored in the wrong location.</li>
+      <li>Upgraded the JSON parser library, <a href="https://www.json.org/json-en.html">org.json</a>, to version 20231013.</li>
+      <li>Fixed regression in spawning an Espresso context on platforms where it runs on Sulong.</li>
+      <li>Fixed handling unlinked types in runtime compilation.</li>
+      <li>Disabled the class-path isolation by default.</li>
+      <li>Added polyglot version checks for unchained.</li>
+      <li>Added assertion triggers check that fails and throws an exception.</li>
+    </ul>
+  </li>
+  <li>Tools:
+    <ul>
+      <li>Added the mandatory experimental property <code>debuggerId</code> and handle GET of the <em>/json/list</em> path.</li>
+    </ul>
+  </li>
+  <li>Javascript:
+    <ul>
+      <li>Updated the expected Node.js structure after the update to version 18.18.2.</li>
+      <li>Prevent automatic leave of an explicitly entered context during close called from a host call.</li>
+    </ul>
+  </li>
+  <li>LLVM:
+    <ul>
+      <li>Initializing LLVM fails if built with Xcode 15.</li>
+      <li>Regression in the Sulong library loading when IO access is denied.</li>
+    </ul>
+  </li>
+  <li>Java on Truffle (Espresso):
+    <ul>
+      <li>Removed the need for a foreign field in <code>EspressoForeignList</code>.</li>
+      <li>Added missing Espresso artifacts on Maven.</li>
+      <li>Fixed <code>ToEspresso</code> collection type nodes not handling Espresso objects.</li>
+      <li>Fixed type converter combination for foreign exceptions and custom type converters.</li>
+    </ul>
+  </li>
+  <li>Python:
+    <ul>
+      <li>Fixed Python JVM standalones only working on GraalVM Community Edition.</li>
+    </ul>
+  </li>
+  <li>WebAssembly:
+    <ul>
+      <li>File system access from GraalWasm.</li>
+    </ul>
+  </li>
+  <li>TRegex:
+    <ul>
+      <li>Added OracleDB flavor.</li>
+    </ul>
+  </li>
+  <li>GraalVM integration:
+    <ul>
+      <li>Fixed a list of deployed artifacts.</li>
+      <li>Lambda without a target invoke.</li>
+    </ul>
+  </li>
+</ul>
+
+<h1 id="graalvm-for-jdk-2101">GraalVM for JDK 21.0.1</h1>
 <p>(2023-10-24)</p>
 
 <p>This is the October 2023 Critical Patch Update (CPU) for GraalVM Community Edition.
@@ -584,6 +702,11 @@ It is a full distribution and supersedes the previous release of GraalVM Communi
 
 <ul>
   <li>Updated <em>GraalVM Community Edition for JDK 21</em> to <strong>21.0.1+12</strong>. See the <a href="https://wiki.openjdk.org/display/JDKUpdates/JDK+21u" title="OpenJDK 21 Updates">OpenJDK 21 Updates</a>.</li>
+  <li>Version compatibility:
+    <ul>
+      <li><a href="https://www.graalvm.org/jdk21/reference-manual/#specific-languages">Truffle languages and other components</a> version <strong>23.1.1</strong> are designed for use with <strong>GraalVM for JDK 21.0.1</strong>.</li>
+    </ul>
+  </li>
   <li>Compiler fixes:
     <ul>
       <li>Changed constant blinding to use <code>RuntimeRandomness</code> for ahead-of-time compilation.</li>
