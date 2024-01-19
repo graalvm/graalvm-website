@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-11-17 08:53:32 +0000"/>
+  <meta name="last_modified" content="2024-01-10 10:16:35 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/security-guide/polyglot-sandbox/">
@@ -1220,6 +1220,17 @@ Absent knowledge of the random key, the attacker cannot predict the encrypted co
 
 <p>GraalVM blinds all immediate values and data embedded in code pages of runtime compiled guest code down to a size of four bytes.</p>
     
+      <h3 id="randomized-function-entry-points">
+        
+        
+          Randomized Function Entry Points <a href="#randomized-function-entry-points" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>A predictable code layout makes it easier for attackers to find gadgets that have been introduced, for example, via the aforementioned JIT spray attack.
+While runtime compiled methods are already placed in memory that is subject to address space layout randomization (ASLR) by the operating system, GraalVM additionally pads the starting offset of functions with a random number of trap instructions.</p>
+    
       <h3 id="speculative-execution-attack-mitigations">
         
         
@@ -1234,8 +1245,7 @@ However, the execution may have caused side effects in the micro-architectural s
 For example, data may have been pulled into the cache during transient execution - a side-channel that can be read by timing data access.</p>
 
 <p>GraalVM protects against Spectre attacks by inserting speculative execution barrier instructions in runtime compiled guest code to prevent attackers from crafting speculative execution gadgets.
-A speculative execution barrier is placed at each target of a conditional branch to stop speculative execution based on the pattern history table (Spectre V1).
-Speculative execution barriers are also placed at each possible indirect branch target to stop speculative execution based on the branch target buffer (Spectre V2).</p>
+A speculative execution barrier is placed at each target of a conditional branch that is relevant to Java memory safety to stop speculative execution.</p>
     
       <h2 id="sharing-execution-engines">
         
