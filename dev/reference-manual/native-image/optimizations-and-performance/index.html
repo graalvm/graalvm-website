@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-06-07 15:40:37 +0000"/>
+  <meta name="last_modified" content="2024-02-19 09:43:38 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/">
@@ -37,6 +37,9 @@
   <link rel="stylesheet" href='/resources/styles/fiddle.css'>
   <script async defer src="https://buttons.github.io/buttons.js"></script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <!-- Add TRUSTe Consent Script and Analytics -->
+  <script async="async" type="text/javascript" src='//consent.trustarc.com/notice?domain=oracle.com&c=teconsent&js=bb&noticeType=bb&text=true&cdn=1&pcookie&gtm=1' crossorigin></script>
+  <script src="https://www.oracle.com/assets/truste-oraclelib.js"></script>
 </head>
 
 
@@ -727,7 +730,82 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Native Image provides advanced mechanisms to further optimize the generated binary:</p>
+<p>Native Image provides different mechanisms that enable users to optimize a generated binary in terms of performance, file size, build time, debuggability, and other metrics.</p>
+    
+      <h3 id="optimization-levels">
+        
+        
+          Optimization Levels <a href="#optimization-levels" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Similar to <code>gcc</code> and <code>clang</code>, users can control the optimization level using the <code>-O</code> option.
+By default, <code>-O2</code> is used which aims for a good tradeoff between performance, file size, and build time.
+The following table provides an overview of the different optimization levels and explains when they are useful:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Level</th>
+      <th style="text-align: center">Optimizations</th>
+      <th>Use Cases</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code>-Ob</code></td>
+      <td style="text-align: center">Reduced</td>
+      <td>Quick build mode: Speeds up builds during development by avoiding time-consuming optimizations. This can also reduce file size sometimes.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O0</code></td>
+      <td style="text-align: center">None</td>
+      <td>Typically used together with <code>-g</code> to improve the debugging experience.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O1</code></td>
+      <td style="text-align: center">Basic</td>
+      <td>Trades performance for reduced file size and build time. Oracle GraalVM’s <code>-O1</code> is somewhat comparable to <code>-O2</code> in GraalVM Community Edition.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O2</code></td>
+      <td style="text-align: center">Advanced</td>
+      <td><strong>Default:</strong> Aims for good performance at a reasonable file size.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O3</code></td>
+      <td style="text-align: center">All</td>
+      <td>Aims for the best performance at the cost of longer build times. Used automatically by Oracle GraalVM for <a href="/dev/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">PGO builds</a> (<code>--pgo</code> option). <code>-O3</code> and <code>-O2</code> are identical in GraalVM Community Edition.</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="optimizing-for-specific-machines">
+        
+        
+          Optimizing for Specific Machines <a href="#optimizing-for-specific-machines" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Native Image provides a <code>-march</code> option that works similarly to the ones in <code>gcc</code> and <code>clang</code>: it enables users to control the set of instructions that the Graal compiler can use when compiling code to native.
+By default, Native Image uses <a href="https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels" target="_blank"><code>x86-64-v3</code> on x64</a> and <a href="https://en.wikipedia.org/wiki/ARM_architecture_family#Cores" target="_blank"><code>armv8-a</code> on AArch64</a>.
+Use <code>-march=list</code> to list all available machine types.
+If the generated binary is built on the same or similar machine type that it is also deployed on, use <code>-march=native</code>.
+This option instructs the compiler to use all instructions that it finds available on the machine the binary is generated on.
+If the generated binary, on the other hand, is distributed to users with many different, and potentially very old machines, use <code>-march=compatibility</code>.
+This reduces the set of instructions used by the compiler to a minimum and thus improves the compatibility of the generated binary.</p>
+    
+      <h3 id="additional-features">
+        
+        
+          Additional Features <a href="#additional-features" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Native Image provides additional features to further optimize a generated binary:</p>
 
 <ul>
   <li>Profile-Guided Optimizations (PGO) can provide additional performance gain and higher throughput for most native images. See <a href="/dev/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Optimize a Native Executable with PGO</a>.</li>
@@ -909,6 +987,7 @@ $(document).ready(function(){
                 registered trademarks. Other names may be trademarks of their respective owners.
               </p>
             </div>
+            <div id="teconsent"></div>
           </div>
 
         </div>
@@ -931,7 +1010,37 @@ $(document).ready(function(){
         */
   }
 
+  // Check TRUSTe Consent for Functional or Implied Approval
+  // The if test verifies if the user has given the consent
+  if ( (oracle.truste.api.getGdprConsentDecision().consentDecision) &&
+      (oracle.truste.api.getGdprConsentDecision().consentDecision.indexOf(0) != -1 ||
+        oracle.truste.api.getGdprConsentDecision().consentDecision.indexOf(2) != -1) ) {
 
+      //The following is a sample of a Maxymiser Tag being written to the DOM
+      //If the user did not give consent, then the tag is not included and not invoked in the Browser
+      document.write('<script type="text/javascript" src="//service.maxymiser.net/cdn/oracle/js/mmcore.js"><\/script>');
+  }
+
+  // Check TRUSTe Consent for Advertising or Implied Approval
+  // The if test verifies if the user has given the consent
+  if ( (oracle.truste.api.getGdprConsentDecision().consentDecision) &&
+      (oracle.truste.api.getGdprConsentDecision().consentDecision.indexOf(0) != -1 ||
+        oracle.truste.api.getGdprConsentDecision().consentDecision.indexOf(3) != -1) ) {
+
+      //The following is a sample of a BlueKai Core Tag being written to the DOM
+      //If the user did not give consent, then the tag is not included and not invoked in the Browser
+      document.write('<script type="text/javascript">' +
+      'window.bk_async = function() { ' +
+      'BKTAG.doTag(62581, 1); }; ' +
+      '(function() { ' +
+      'var scripts = document.getElementsByTagName(\'script\')[0]; ' +
+      'var s = document.createElement(\'script\'); ' +
+      's.async = true; ' +
+      's.src = "https://tags.bkrtx.com/js/bk-coretag.js"; ' +
+      'scripts.parentNode.insertBefore(s, scripts); ' +
+      '}()); ' +
+      '<\/script>');
+  }
 </script>
     </div>
     <div class="overlay"></div>
