@@ -10,14 +10,14 @@
 
   <title>
     
-      Profile Guided Optimization for Native Image
+      Tracking Profile Quality
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-05 15:02:44 +0000"/>
+  <meta name="last_modified" content="2024-02-14 12:08:01 +0000"/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/pgo/PGO">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/PGO/profile-quality/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -485,7 +485,15 @@ $(document).ready(function(){
     
       
       <li>
-        <a href="/dev/reference-manual/native-image/pgo/">
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
+          Optimizations And Performance
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
           Pgo
         </a>
       </li>
@@ -497,121 +505,186 @@ $(document).ready(function(){
 
 
         
-        <h1 id="profile-guided-optimization-for-native-image">
+        <h1 id="tracking-profile-quality">
         
         
-          Profile Guided Optimization for Native Image
+          Tracking Profile Quality
         
         
       </h1>
 
-<p>One of the advantages that JIT compilers have over AOT compilers is the ability to analyze the run-time behaviour of the application they are compiling.
-For example, HotSpot keeps track of how many times each branch of an <code>if</code> statement is executed.
-This information is passed to the tier-2 JIT compiler (i.e. Graal) as information that we call a profile.
-The profile is a summary of how a particular method has been executing during run time.
-The JIT compiler then assumes that the method will continue to behave in the same manner, and uses the information in the profile to optimize that method better.</p>
-
-<p>AOT compilers typically do not have profiling information, and are usually limited to a static view of the code they are compiling.
-This means that, barring heuristics, an AOT compiler sees each branch of every if statement as equally likely to happen at run time,
-each method is as likely to be invoked as every other and each loop will repeat an equal number of times.
-This puts the AOT compiler at a disadvantage - without profile information, it is hard to generate machine code of the same quality as a JIT compiler.</p>
-
-<p>Profile Guided Optimization (PGO), described in this document,
-is a technique that brings profile information to an AOT compiler to improve the quality of it’s output in terms of performance and size.</p>
+<p>The most challenging step when using PGO for Native Image is gathering a profile for a relevant workload.
+Because your source code evolves, your application is rarely static in time.
+It is sometimes very time consuming to go through the steps of “build-instrumented-image”, “gather-profile”, and “build-optimized-image” for every change to your source code.
+This document gives some answers to the question “How long can I continue to use an existing profile as my application’s source code changes over time?”</p>
     
-      <h2 id="what-is-a-profile">
+      <h2 id="approach-1-reuse-the-profile-indefinitely">
         
         
-          What is a <em>profile</em>? <a href="#what-is-a-profile" class="anchor_heading">#</a>
+          Approach 1: Reuse the Profile Indefinitely <a href="#approach-1-reuse-the-profile-indefinitely" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>As mentioned earlier, during JIT compilation, a profile is a summary of the run-time behaviour of the methods in the code.
-The same is true for AOT compilers, with the caveat that we have no runtime to provide this information to the compiler since compilation happens ahead-of-time.
-This makes the gathering of the profiles more challenging, but at a high level the content of the profile is very similar.
-In practice, the profile is a summarised log of how many times certain events happened during run time.
-These events are chosen based on what information will be useful for the compiler to make better decisions.
-Examples of such events are:</p>
+<p>When you build an optimized application, Native Image aims to do the best it can with the given profile.
+This means that providing an out-of-date profile for your application (or even a profile for a completely different application) should not stop Native Image from producing a native executable.</p>
+
+<blockquote>
+  <p>Note: An incorrect profile can result in worse performance than no profile. This is because an incorrect profile can lead the compiler to spend optimization resources on the wrong elements of the application and deprioritize the important elements.</p>
+</blockquote>
+
+<p>All that said, reusing a single profile indefinitely for an evolving application will sooner or later turn counterproductive.</p>
+    
+      <h2 id="approach-2-collect-profiles-periodically">
+        
+        
+          Approach 2: Collect Profiles Periodically <a href="#approach-2-collect-profiles-periodically" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Since your application can periodically change, it is logical to periodically collect a fresh profile.
+One way to achieve this would be a daily Linux cron job that builds an instrumented version of the application using the tip of the master branch, runs a workload to gather a profile, and uploads the resulting <em>iprof</em> file to an FTP server from which other optimizing builds can download it.
+This ensures that the difference between the application version that is being built and the profile that is being used is never greater than a fixed time interval (24h in this example).</p>
+
+<p>However, gathering a profile periodically extends compute time, so it should be balanced against the frequency at which the application changes.
+If your application is relatively stable and the source code changes infrequently, then it is fine to re-profile less often.
+Some things to keep in mind:</p>
 <ul>
-  <li>How many times was this method called?</li>
-  <li>How many times did this <code>if</code>-statement take the true branch? How many times did it take the false branch?</li>
-  <li>How many times did this method allocate an object?</li>
-  <li>How many times was a <code>String</code> value passed to a particular <code>instanceof</code> check?</li>
+  <li>Align your profiling schedule with the application-release schedule, to avoid building an application with a stale profile.</li>
+  <li>Ideally, convert the production workload into a reproducible workload, collect the profiles as part of your build, and then create an optimized native executable with profiles that are always fresh.</li>
 </ul>
+
+<p>That way, you do not risk having stale or misaligned profiles as long as your workload executes the same parts of the application that will later execute in production.</p>
     
-      <h2 id="how-do-i-obtain-a-profile-of-my-application">
+      <h2 id="approach-3-track-the-profile-quality-metrics-over-time">
         
         
-          How Do I Obtain a Profile of My Application? <a href="#how-do-i-obtain-a-profile-of-my-application" class="anchor_heading">#</a>
+          Approach 3: Track the Profile-Quality Metrics Over Time <a href="#approach-3-track-the-profile-quality-metrics-over-time" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>When running an application on a runtime with a JIT compiler the profiling of the application is handled by the runtime environment, with no extra steps needed from the developer.
-While this is undoubtedly simpler, the profiling that the runtime does is not free - it introduces execution overheads of the code being profiled -
-both in terms of execution time and memory usage.
-This causes warmup issues -
-the application will reach predictable peak performance only after sufficient time has passed for the key parts of the application to be profiled and JIT compiled.
-For long-running applications, this overhead usually pays for itself, yielding a performance boost later.
-On the other hand, for short-lived applications and applications that need to start with good, predictable performance as soon as possible, this is counterproductive.</p>
+<p>To better understand the quality of a profile, Native Image provides two metrics that you can request when building an optimized executable: <em>profile relevance</em> and <em>profile applicability</em>.
+These metrics reflect the relationship between a profile and the methods and classes that appear in an optimized executable.</p>
 
-<p>Gathering a profile for an AOT-compiled application is more involved, and requires extra steps by the developer, but introduces no overhead in the final application.
-Here, profiles must be gathered by observing the application while it is running.
-This is commonly done by compiling the application in a special mode that inserts <em>instrumentation code</em> into the application binary.
-The instrumentation code increments counters for the events that are of interest to the profile.
-We call this an <em>instrumented image</em>, and the process of adding these counters is called <em>instrumentation</em>.
-Naturally, the instrumented image of the application will not be as performant as the default build due to the overhead of the instrumentation code,
-so it is not recommended to regularly run instrumented images in production.
-But, executing synthetic representative workloads on the instrumented build allows us to gather a representative profile of the application
-(just as the runtime would do for the JIT compiler).
-When building an optimized image, the AOT compiler has both the static view and the dynamic profile of the application -
-an optimized image performs better than the default AOT-compiled image.</p>
+<p>A change in the values of these two metrics between builds (that use the same profile) indicates that the set of classes and/or methods in those builds has also changed (between the time the profile was collected and the current build).</p>
     
-      <h2 id="how-does-a-profile-guide-optimization">
+      <h3 id="how-to-obtain-profile-quality-metrics">
         
         
-          How Does a Profile “Guide” Optimization? <a href="#how-does-a-profile-guide-optimization" class="anchor_heading">#</a>
+          How to Obtain Profile-Quality Metrics <a href="#how-to-obtain-profile-quality-metrics" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p>Compiler optimizations often have to make decisions during compilation.
-For example, in the following method, the function-inlining optimization needs to decide which call sites to inline, and which not.</p>
+<p>To calculate and print the profile-quality metrics, pass the <code>-H:+PGOPrintProfileQuality</code> option when building an optimized native executable. (This option is experimental.)</p>
 
-<pre><code>private int run(String[] args) {
-    if (args.length &lt; 3) {
-        return handleNotEnoughArguments(args);
-    } else {
-        return doActualWork(args);
-    }
-}
+<p>Let’s consider the Game Of Life example application which was introduced in <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimizationthe</a>:</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof -H:+PGOPrintProfileQuality
 </code></pre>
 
-<p>For illustrative purposes, let’s imagine that the inlining optimization has a limit on how much code can be generated, and can hence only inline one of the calls.
-Looking only at the static view of the code being compiled, both the <code>doActualWork</code> and <code>handleNotEnoughArguments</code> invocations look pretty much indistinguishable.
-Without any heuristics, the phase would have to guess which is the better choice to inline.
-However, making the incorrect choice can lead to code that is less efficient.
-Let’s assume that <code>run</code> is most commonly called with the right number of arguments at run time.
-Then inlining <code>handleNotEnoughArguments</code> would increase the code size of the compilation unit without giving any performance benefit since the call to <code>doActualWork</code>
-needs to still be made most of the time.</p>
+<p>In the build output, at phase 5, you should see an additional line about profile applicability and profile relevance:</p>
+<pre><code class="language-bash">GraalVM Native Image: Generating 'gameoflife-pgo' (executable)
+...
+[5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
+Info: PGO: Profile applicability is 21.74%. Profile relevance is 72.71%.
+...
+</code></pre>
 
-<p>Having a run-time profile of the application can give the compiler data with which differentiating between which call should be inlined is trivial.
-For example, if our run-time profile recorded this if condition as being <code>false</code> 100 times and <code>true</code> 3 times - we probably should inline <code>doActualWork</code>.
-This is the essence of PGO - using information from the profile i.e. from the run time behaviour of the application being compiled,
-to give the compiler grounding in data when making decisions.
-The actual decisions and the actual events the profile records vary from phase to phase, but the preceding example illustrates the general idea.</p>
+<p>The absolute values of these metrics do not tell you much, and should not be considered in isolation.
+As mentioned earlier, these metrics describe the relationship between the profile and application’s code.
+If you change the application and reuse the profile, you should see a change in the values of the metrics.</p>
 
-<p>Notice here that PGO expects a representative workload to be run on the instrumented build of the application.
-Providing a counter-productive profile - i.e. a profile that records the exact opposite of the actual run-time behaviour of the app - will be counter-productive.
-In our example this would be running the instrumented build with a workload that invokes the run method with too few arguments,
-while the actual application does not.
-This would lead to the inlining phase choosing to inline <code>handleNotEnoughArguments</code> reducing the performance of the optimized build.</p>
+<p>For example, apply a simple “method-rename” refactoring to the <code>applyRules ()</code> application method.
+From the profile’s perspective, the <code>applyRules ()</code> method was removed from the set of methods in the application and a new method called <code>applyGameRules</code> was introduced.
+Rerunning the optimized build with the same profile and the modified application returns the following output:</p>
 
-<p>Hence, the goal is to gather profiles on workload that match the production workloads as much as possible.
-The gold standard for this is to run the exact same workloads we expect to run in production on the instrumented build.</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof -H:+PGOPrintProfileQuality
+========================================================================================================================
+GraalVM Native Image: Generating 'gameoflife-pgo' (executable)...
+...
+[5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
+Info: PGO: Profile applicability is 21.67%. Profile relevance is 72.66%.                                                                  (6.8s @ 0.29GB)
+...
+</code></pre>
 
-<p>For an overview of how to use PGO for Native Image on an example application please consult the <a href="/dev/reference-manual/native-image/pgo/basic-usage">Basic Usage of Profile-Guided Optimizations</a> document.</p>
+<p>Recall that the profile applicability in the first build was 21.74%, and now it is 21.67%.
+Similarly, the profile relevance in the first build was 72.71%, and now it is 72.66%.
+The small change to the code resulted in a small metrics value change, informing you that the profile might be slightly out-of-date.</p>
+
+<blockquote>
+  <p>Note: In this example you renamed of a very hot method. This change is likely to cause a performance regression since profiles cannot be applied to a hot method. A similar change made in the cold code of the application would result in a similar reduction in these metrics,
+but this should not impact performance.
+Note that these metrics are a measure of the relationship between the provided profile and the set of methods in the application, and are not in any way a measurement or prediction of any performance impact a change of the profile, application source code, or dependencies may have.
+These numbers also make little sense or have little utility when observed in one single build.
+Their utility comes from observing the metrics change when re-using profile across builds or providing a different profile for the same build of the application.</p>
+</blockquote>
+    
+      <h3 id="profile-quality-metric-applicability">
+        
+        
+          Profile Quality Metric: <em>Applicability</em> <a href="#profile-quality-metric-applicability" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The applicability metric answers the following question: “How applicable is this profile to the application’s methods?”.
+During the compilation of individual methods in the application, it keeps track of how many locations N in the code needed a profile,
+and how many times S a profile was available.
+The profile applicability metric is the ratio <code>S / N</code>, expressed as a percentage.</p>
+
+<p>This means that adding new code to the application (and not to the profile) should result in a reduction in profile applicability.
+This is because more code means more requests for profiles, and the same number of times that the profile <em>can</em> be applied (S),
+is divided with a larger number of total requests for profiles (N).</p>
+
+<blockquote>
+  <p>Note: It is wrong to expect a profile applicability of 100%.
+A good workload will, in almost all cases, differentiate between the hot and the cold parts of the application,
+and will not execute some of the cold parts of the code.
+For this reason, the profile will not contain any entries for the cold parts of the application (such as, for example, the exception handlers),
+which are anyway rarely executed in the real workload.
+A 100% applicability would mean that all parts of the code in the image were fully profiled, which is almost never the case in practice.</p>
+</blockquote>
+    
+      <h3 id="profile-quality-metric-relevance">
+        
+        
+          Profile Quality Metric: <em>Relevance</em> <a href="#profile-quality-metric-relevance" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The relevance metric aims answers the question: “To what extent do the profile contents match the application methods?”.
+When loading a profile, all its data is checked against the set of application methods, and all the entries that do not match those methods are dropped.
+For example, if you remove a method from a class but use a profile that still has entries for that method, then all those entries will be dropped during profile-loading.
+Profile relevance is the percentage of data that was <em>not</em> dropped during loading.</p>
+
+<p>This means that removing code from the application (and not from the profile) should result in the profile relevance reduction, because the percent of data in the profile which is relevant to the new application version is reduced.
+On the other hand, adding new code (say a new class or dependency) to the application would not affect this metric since the amount of data you need to drop from the profile does not change.</p>
+
+<blockquote>
+  <p>Note: It is wrong to expect that building an optimized binary of exactly the same application as the one used to gather the profile will result in the profile relevance of 100%.
+This is not the case because the methods of the instrumented binary and the optimized binary differ in subtle ways.
+For example, the instrumented binary contains code for gathering the profile data as well as code for serializing that data to a file.
+This code is unnecessary and thus not present in the optimized binary.
+Looking at the Game Of Life example, the relevance around 70% is primarily due to the application being very small (a single Java class of less than 120 lines of code). 
+Thus the differences in the set of methods of the instrumented and the optimized binary are rather exaggerated.
+For larger, real-world applications, this percentage is typically larger, but not 100%.</p>
+</blockquote>
+    
+      <h3 id="further-reading">
+        
+        
+          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/merging-profiles/">Merging Profiles from Multiple Sources</a></li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/faq/">PGO Frequently Asked Questions</a></li>
+</ul>
 
       </div>
 
@@ -783,7 +856,7 @@ The gold standard for this is to run the exact same workloads we expect to run i
           <div class="row">
             <div class="col-sm-12">
               <p class="copyright">
-                Copyright © 2018, 2023, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+                Copyright © 2018, 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
                 registered trademarks. Other names may be trademarks of their respective owners.
               </p>
             </div>

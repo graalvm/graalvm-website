@@ -10,14 +10,14 @@
 
   <title>
     
-      Tracking Profile Quality Over Time
+      Merging Profiles from Multiple Sources
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-05 15:02:44 +0000"/>
+  <meta name="last_modified" content="2024-02-26 12:18:31 +0000"/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/pgo/profile-quality">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/PGO/merging-profiles/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -485,7 +485,15 @@ $(document).ready(function(){
     
       
       <li>
-        <a href="/dev/reference-manual/native-image/pgo/">
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
+          Optimizations And Performance
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
           Pgo
         </a>
       </li>
@@ -497,204 +505,46 @@ $(document).ready(function(){
 
 
         
-        <h1 id="tracking-profile-quality-over-time">
+        <h1 id="merging-profiles-from-multiple-sources">
         
         
-          Tracking Profile Quality Over Time
+          Merging Profiles from Multiple Sources
         
         
       </h1>
 
-<p>The most challenging step in using PGO for Native Image is gathering the profile on a relevant workload.
-Also, applications are rarely static in time - the source code evolves and changes as new features are added, bugs fixed algorithms replaced etc.
-This means that it is sometimes non-trivial to go through the “build-instrumented-image”, “gather-profile”, and “build-optimized-image” steps for every code change in an application.
-This naturally raises the question: How long can I use an existing profile as my applications source code changes over time?
-This document aims to give some guidance in reaching an answer to this question.</p>
+<p>The PGO infrastructure enables you to combine multiple profiles into a single one using the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/#native-image-configure-tool">Native Image Configure Tool</a>.
+Merging profiles implies that the resulting profile will contain the union of all types, methods, and profile entries from the provided profiles.</p>
     
-      <h2 id="approach-1-reuse-the-profile-indefinitely">
+      <h2 id="usage">
         
         
-          Approach 1: Reuse the Profile Indefinitely <a href="#approach-1-reuse-the-profile-indefinitely" class="anchor_heading">#</a>
+          Usage <a href="#usage" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>When building an optimizing image of an application, Native-Image PGO aims to do the best it can with the given profile.
-This means that giving an out of date profile (or even a profile of a completely different application) should not break a build.
-That said, wrong profiles can lead to worse performance than building an image with no profiles.
-This is because incorrect profiles can lead the compiler to spend optimization resources on the wrong parts of the code and deprioritize the important parts.</p>
+<p>To merge two profiles, <em>profile_1.iprof</em> and <em>profile_2.iprof</em>, into a single file named <em>output_profile.iprof</em>, use the following command:</p>
+<pre><code class="language-bash">native-image-configure merge-pgo-profiles --input-file=profile_1.iprof --input-file=profile_2.iprof --output-file=output_profile.iprof
+</code></pre>
 
-<p>All that said, reusing a single profile indefinitely for an evolving application will sooner or later turn counterproductive.</p>
+<p>There is also a way to specify a directory as a source of profiles using the  <code>--input-dir=&lt;path&gt;</code> option.
+Then it only searches for profiles in the given directory, excluding subdirectories.</p>
+<pre><code class="language-bash">native-image-configure merge-pgo-profiles --input-dir=my_profiles/ --output-file=output_profile.iprof
+</code></pre>
     
-      <h2 id="approach-2-collect-profiles-periodically">
+      <h3 id="further-reading">
         
         
-          Approach 2: Collect Profiles Periodically <a href="#approach-2-collect-profiles-periodically" class="anchor_heading">#</a>
+          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
         
         
-      </h2>
+      </h3>
 
-<p>Since our application periodically changes, it seems only logical to periodically collect fresh profiles.
-A concrete example of this would be a daily Linux cron job that builds an instrumented version of the application using the tip of the master branch,
-runs a workload to gather a profile, and uploads the resulting <code>iprof</code> file to an FTP server from which other optimizing builds can download it.
-This ensures that the difference between the application version that is being built and the profiles that are being used is never greater than a fixed time interval (24h in our example).</p>
-
-<p>Periodically gathering the profiles uses compute time, so it should be balanced against the speed at which the application changes.
-If the application is question is relatively stable and the source code changes infrequently, then it is fine to re-profile less often.
-Some things to keep in mind:</p>
 <ul>
-  <li>It is important to align the profiling gathering with the application-release schedule, to avoid building the releases with stale profiles.</li>
-  <li>Ideally, convert the production workload into a synthetic workload, collect the profiles as part of your build, and then create an optimized image with profiles that are always fresh.
-That way, you do not risk having stale or misaligned profiles as long as your workload executes the same parts of the application that will later execute in production.</li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimization</a></li>
+  <li><a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/#native-image-configure-tool">Native Image Configure Tool</a></li>
 </ul>
-    
-      <h2 id="approach-3-track-the-profile-quality-metrics-over-time">
-        
-        
-          Approach 3: Track the Profile-Quality Metrics Over Time <a href="#approach-3-track-the-profile-quality-metrics-over-time" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>To allow users to understand the quality of the profiles they are using for an optimized image,
-we introduce two metrics that Native Image can report when building an optimizing image: <em>profile relevance</em> and <em>profile applicability</em>.
-Both these metrics are meant to reflect the relationship between the provided profiles and the methods and classes that appear in the optimized image.
-If values of these two metrics change between two optimizing builds (both of which use the same profile),
-then something changed in the set of classes and/or methods between those builds (for example, because the source code of the application changed).
-This fact allows us to quantify the change in the application between the time the profiles were collected and the current build.
-Simply put - a change in the values of these metrics between two builds could be a signal that the profiles should be recollected.
-The larger the change - the stronger the signal.</p>
-
-<p>We discuss the details of how we calculate these metrics in the following subsections, but let’s take a look at an example of how they can be used first.
-Let’s consider the example Game Of Life application, which we previously explored in <a href="/dev/reference-manual/native-image/pgo/basic-usage">PGO Basic Usage</a>.
-If we follow the build instructions as laid out in that document, but we add the <code>-H:+PGOPrintProfileQuality</code> flag when building the optimized build,
-we should see an additional INFO line reporting said metrics.</p>
-
-<pre><code class="language-bash">$ $GRAALVM_HOME/bin/native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof
-    ========================================================================================================================
-    GraalVM Native Image: Generating 'gameoflife-pgo' (executable)...
-    ========================================================================================================================
-    For detailed information and explanations on the build output, visit:
-    ...
-    [5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
-    Info: PGO: Profile applicability is 21.74%. Profile relevance is 72.71%.
-    [6/8] Compiling methods...    [***]                                                                      (6.8s @ 0.29GB)
-    ...
-</code></pre>
-
-<p>The absolute values of these metrics do not tell us much, and should not be considered in isolation.
-Remember - these metrics describe the relationship between the profile and the classes and methods of the application.
-This means that if we change our application and reuse the profile we should see a difference in these values during the build.</p>
-
-<p>Let’s consider what happens if we apply a simple “method-rename” refactoring to our application as shown in the following diff.</p>
-
-<pre><code>$ git diff GameOfLife.java
-diff --git a/GameOfLife/GameOfLife.java b/GameOfLife/GameOfLife.java
-index d229305..e8c6932 100644
---- a/GameOfLife/GameOfLife.java
-+++ b/GameOfLife/GameOfLife.java
-@@ -35,13 +35,13 @@ public class GameOfLife {
-         // Loop through every cell
-         for (int l = 0; l &lt; M; l++) {
-             for (int m = 0; m &lt; N; m++) {
--                applyRules(grid, future, l, m, getAliveNeighbours(grid, l, m));
-+                applyGameRules(grid, future, l, m, getAliveNeighbours(grid, l, m));
-             }
-         }
-         return future;
-     }
-
--    private static void applyRules(int[][] grid, int[][] future, int l, int m, int aliveNeighbours) {
-+    private static void applyGameRules(int[][] grid, int[][] future, int l, int m, int aliveNeighbours) {
-         // Implementing the Rules of Life
-
-         if ((grid[l][m] == 1) &amp;&amp; (aliveNeighbours &lt; 2)) {
-</code></pre>
-
-<p>From the profile’s perspective the <code>applyRules</code> method was removed from the set of methods in the application and a new method called <code>applyGameRules</code> was introduced.
-Rerunning the optimized build with the same profile and the modified applications gives us the following output.</p>
-
-<pre><code class="language-bash">$ $GRAALVM_HOME/bin/native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof
-    ========================================================================================================================
-    GraalVM Native Image: Generating 'gameoflife-pgo' (executable)...
-    ========================================================================================================================
-    For detailed information and explanations on the build output, visit:
-    ...
-    [5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
-    Info: PGO: Profile applicability is 21.67%. Profile relevance is 72.66%.
-    [6/8] Compiling methods...    [***]                                                                      (6.8s @ 0.29GB)
-    ...
-</code></pre>
-
-<p>Recall that the profile applicability in our original build was 21.74% and in this new one it is 21.67%.
-Similarly, the profile relevance in our original build was 72.71% and in this new one it is 72.66%.
-The small change we made to the code resulted in a small change in these metrics,
-informing us that the profile might be slightly out-of-date.</p>
-
-<p>NOTE: The change that we made in this example is a rename of a very hot method.
-This change is very likely to cause a performance regression since profiles cannot be applied to a hot method.
-A similar change made in the cold code of the application would result in a similar reduction in these metrics,
-but this would likely not impact performance.
-It is important to keep in mind that these metrics are a measure of the relationship between the provided profile and the set of methods in the application,
-and are not in any way a measurement or prediction of any performance impact a change of the profile, application source code or dependencies may have.
-It is also important to keep in mind that there numbers have very little utility when observed in one single build.
-Their utility comes from observing the change of these metrics when re-using profile across build or providing a different profile for the same build of an application.</p>
-    
-      <h3 id="profile-applicability">
-        
-        
-          Profile Applicability <a href="#profile-applicability" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Profile applicability as a metric aims to answer the following question:
-“To what extent do the methods of the application have a corresponding profile that can be applied to them?”.
-Put differently: “How applicable is this profile to the methods of the application?”.
-During the compilation of individual methods in the application, we keep track of how many locations N in the code needed a profile,
-as well as how many times S a profile was found for those locations.
-The profile applicability metric is the ratio <code>S / N</code>, expressed as a percentage.</p>
-
-<p>This means that adding new code to the application (and not to the profile) should result in a reduction in profile applicability.
-This is because more code means more requests for profiles, and the same number of times S that the profile <em>can</em> be applied
-is divided with a larger number N of total requests for profiles.</p>
-
-<p>Note: it is wrong to expect a profile applicability of 100%.
-A good workload will in almost all cases differentiate between the hot and the cold parts of the application,
-and will not execute some of the cold parts of the code.
-For this reason, a good profile will not have a 100% applicability –
-the profile will not contain any entries for the cold parts of the application (such as, for example, the exception handlers),
-which are anyway never executed in the real workload.
-A 100% applicability would mean that all parts of the code in the image were fully profiled, which is almost never the case in practice.</p>
-    
-      <h3 id="profile-relevance">
-        
-        
-          Profile Relevance <a href="#profile-relevance" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Profile relevance as a metric aims to answer the question: “To what extent do the profile contents match the methods of the application?”.
-In other words, “How relevant is the profile for the methods being compiled?”.
-When loading a profile, all its data is checked against the set of methods of the application, and all the entries that do not match those methods are dropped.
-For example, if we remove a method from a class but use a profile that still has entries for that method, then all those entries will be dropped during profile-loading.
-Profile relevance is the percentage of data that was <em>not</em> dropped (i.e. was relevant) during loading.</p>
-
-<p>This means that removing code from the application (and not from the profile) should result in a reduction in profile relevance,
-as the percent of data in the profile which is relevant to the new application version is reduced.</p>
-
-<p>On the other hand, adding new code (say a new class or dependency) to the application would not affect this metric since the amount of data we need to drop from the profile does not change.</p>
-
-<p>Note: it is wrong to expect that building an optimized image of exactly the same application
-as the one used to gather the profile needs to result in in the profile relevance of 100%.
-This is not the case because the methods of the instrumented image and the optimized image differ in subtle ways.
-For example, the instrumented image contains code for gathering the profile data as well as code for serializing that data to a file.
-This code is unnecessary and thus not present in the optimizing image.
-Looking at our Game-of-Life example, we can see that the relevance is around 70%.
-This is primarily due to our application being very small (a single Java class of less than 120 lines of code)
-thus the differences in the set of methods of the instrumented and the optimized image are rather exaggerated.
-For larger, real-world applications, this percentage is typically larger, but not 100%.</p>
 
       </div>
 
@@ -866,7 +716,7 @@ For larger, real-world applications, this percentage is typically larger, but no
           <div class="row">
             <div class="col-sm-12">
               <p class="copyright">
-                Copyright © 2018, 2023, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+                Copyright © 2018, 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
                 registered trademarks. Other names may be trademarks of their respective owners.
               </p>
             </div>

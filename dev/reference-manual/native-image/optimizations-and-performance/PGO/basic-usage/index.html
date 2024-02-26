@@ -10,14 +10,14 @@
 
   <title>
     
-      Frequently Asked Questions
+      Basic Usage of Profile-Guided Optimization
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-06 15:05:08 +0000"/>
+  <meta name="last_modified" content="2024-02-14 12:08:01 +0000"/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/pgo/faq">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -485,7 +485,15 @@ $(document).ready(function(){
     
       
       <li>
-        <a href="/dev/reference-manual/native-image/pgo/">
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
+          Optimizations And Performance
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
           Pgo
         </a>
       </li>
@@ -497,197 +505,265 @@ $(document).ready(function(){
 
 
         
-        <h1 id="frequently-asked-questions">
+        <h1 id="basic-usage-of-profile-guided-optimization">
         
         
-          Frequently Asked Questions
+          Basic Usage of Profile-Guided Optimization
         
         
       </h1>
 
-<ol>
-  <li>Can we use unit tests for profiling?</li>
-</ol>
+<p>To explain the usage of PGO in the context of GraalVM Native Image, let’s consider the “Game Of Life” example application.
+It is an implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway’s Game of Life simulation</a> on a 4000 by 4000 grid.
+The application takes as input a file specifying the initial state of the world, a file path to output the final state, and an integer declaring how many iterations of the simulation to run.
+Note that this is a not-illustrative-of-the-real-world application, but it should serve well as an example.</p>
 
-<p>Yes, that is possible, but usually not recommended.</p>
+<p>Below is the source code of the application, modified from <a href="https://www.geeksforgeeks.org/program-for-conways-game-of-life/">this resource</a>.</p>
 
-<p>To use the unit tests to generate the profiles,
-you should generate an instrumented native image for your test suite,
-in the same way you generate a native image for any program.
-For example, you could have a <code>main</code> function that starts the test harness.
-After this instrumented image executes, it will dump the file with the profiles,
-same as any instrumented image.</p>
+<pre><code class="language-java">import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
 
-<p>However, be aware that the quality of profile-guided optimizations depends on the quality of the profile
-that you provide as an input to the optimized-image build.
-You should make sure that your tests accurately represent the workload that will run in production.
-In general, it is not easy to guarantee that, because:</p>
+public class GameOfLife {
+
+    private static final int M = 4000;
+    private static final int N = 4000;
+
+    public static void main(String[] args) {
+        new GameOfLife().run(args);
+    }
+
+    private void run(String[] args) {
+        if (args.length &lt; 3) {
+            System.err.println("Too few arguments, need input file, output file and number of generations");
+            System.exit(1);
+        }
+
+        String input = args[0];
+        String output = args[1];
+        int generations = Integer.parseInt(args[2]);
+
+        int[][] grid = loadGrid(input);
+        for (int i = 1; i &lt;= generations; i++) {
+            grid = nextGeneration(grid);
+        }
+        saveGrid(grid, output);
+    }
+
+    static int[][] nextGeneration(int[][] grid) {
+        int[][] future = new int[M][N];
+        for (int l = 0; l &lt; M; l++) {
+            for (int m = 0; m &lt; N; m++) {
+                applyRules(grid, future, l, m, getAliveNeighbours(grid, l, m));
+            }
+        }
+        return future;
+    }
+
+    private static void applyRules(int[][] grid, int[][] future, int l, int m, int aliveNeighbours) {
+        if ((grid[l][m] == 1) &amp;&amp; (aliveNeighbours &lt; 2)) {
+            // Cell is lonely and dies
+            future[l][m] = 0;
+        } else if ((grid[l][m] == 1) &amp;&amp; (aliveNeighbours &gt; 3)) {
+            // Cell dies due to over population
+            future[l][m] = 0;
+        } else if ((grid[l][m] == 0) &amp;&amp; (aliveNeighbours == 3)) {
+            // A new cell is born
+            future[l][m] = 1;
+        } else {
+            // Remains the same
+            future[l][m] = grid[l][m];
+        }
+    }
+
+    private static int getAliveNeighbours(int[][] grid, int l, int m) {
+        int aliveNeighbours = 0;
+        for (int i = -1; i &lt;= 1; i++) {
+            for (int j = -1; j &lt;= 1; j++) {
+                if ((l + i &gt;= 0 &amp;&amp; l + i &lt; M) &amp;&amp; (m + j &gt;= 0 &amp;&amp; m + j &lt; N)) {
+                    aliveNeighbours += grid[l + i][m + j];
+                }
+            }
+        }
+        // The cell needs to be subtracted from its neighbours as it was counted before
+        aliveNeighbours -= grid[l][m];
+        return aliveNeighbours;
+    }
+
+    private static void saveGrid(int[][] grid, String output) {
+        try (FileWriter myWriter = new FileWriter(output)) {
+            for (int i = 0; i &lt; M; i++) {
+                for (int j = 0; j &lt; N; j++) {
+                    if (grid[i][j] == 0)
+                        myWriter.write(".");
+                    else
+                        myWriter.write("*");
+                }
+                myWriter.write(System.lineSeparator());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+    }
+
+    private static int[][] loadGrid(String input) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(input))) {
+            int[][] grid = new int[M][N];
+            for (int i = 0; i &lt; M; i++) {
+                String line = reader.readLine();
+                for (int j = 0; j &lt; N; j++) {
+                    if (line.charAt(j) == '*') {
+                        grid[i][j] = 1;
+                    } else {
+                        grid[i][j] = 0;
+                    }
+                }
+            }
+            return grid;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+</code></pre>
+
+<p>Application performance is measured in terms of elapsed time.
+The assumption is that applying better optimizations to the application results in the application taking less time to complete a workload.
+To see the difference in performance, you can run the application in two different ways: first, without PGO and then with PGO.</p>
+    
+      <h2 id="building-the-application">
+        
+        
+          Building the Application <a href="#building-the-application" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The prerequisite is to install Oracle GraalVM. The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<blockquote>
+  <p>Note: PGO is not available in GraalVM Community Edition.</p>
+</blockquote>
+
+<p>The first step is to compile <em>GameOfLife.java</em> to a class file:</p>
+<pre><code class="language-bash">javac GameOfLife.java
+</code></pre>
+
+<p>Next, build a native image of the application, specifying a unique name with the <code>-o</code> option:</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-default
+</code></pre>
+
+<p>Now you can move on to building a PGO-enabled native image. 
+For that, you first need to build an “instrumented binary” that will produce a profile for the runtime behaviour of the application by adding the <code>--pgo-instrumented</code> option and specifying a different name, as follows:</p>
+<pre><code class="language-bash">native-image  --pgo-instrument -cp . GameOfLife -o gameoflife-instrumented
+</code></pre>
+
+<p>Now run that instrumented binary to gather profiles. 
+By default, just before exiting, it generates a file with the default name <em>default.iprof</em> in the current working directory, but you can specify a different name and path for the profile by passing the <code>-XX:ProfilesDumpFile</code> option when running the instrumented binary.
+You should also provide the standard expected inputs to the application: the initial state of the world (<em>input.txt</em>), a file to which the application will print the final state of the world (<em>output.txt</em>), and the desired number of iterations you want (in this case <code>10</code>).</p>
+<pre><code class="language-bash">./gameoflife-instrumented -XX:ProfilesDumpFile=gameoflife.iprof input.txt output.txt 10
+</code></pre>
+
+<p>Having a runtime profile of the application contained in the <em>gameoflife.iprof file</em>,  you can finally build an optimized native executable by using the <code>--pgo</code> option and providing the gathered profile as shown below.</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof
+</code></pre>
+
+<p>With all this in place, you can move on to the evaluating the runtime performance of the application running in the different modes.</p>
+    
+      <h2 id="evaluating-performance">
+        
+        
+          Evaluating Performance <a href="#evaluating-performance" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To evaluate the performance, run both native executables of the application with the same inputs.
+You can measure the elapsed time of the executable via the <code>time</code> command with a custom output format (<code>--format=&gt;&gt; Elapsed: %es</code>).</p>
+
+<blockquote>
+  <p>Note: The CPU clock is fixed to 2.5GHz during all the measurements to minimize noise and improve reproducibility.</p>
+</blockquote>
+    
+      <h3 id="running-with-a-single-iteration">
+        
+        
+          Running with a Single Iteration <a href="#running-with-a-single-iteration" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Run the application as shown below, so that it iterates only once:</p>
+<pre><code class="language-bash">time  ./gameoflife-default input.txt output.txt 1
+    &gt;&gt; Elapsed: 1.67s
+
+time  ./gameoflife-pgo input.txt output.txt 1
+    &gt;&gt; Elapsed: 0.97s
+</code></pre>
+
+<p>Looking at the elapsed time, you can see that running the PGO-optimized native executable is substantially faster in terms of percentage.
+With that in mind, the half a second of difference does not have a huge impact for a single run of this application,
+but if this was a serverless application that executes frequently, then the cumulative performance gain would start to add up.</p>
+    
+      <h3 id="run-with-100-iterations">
+        
+        
+          Run with 100 Iterations <a href="#run-with-100-iterations" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Now move on to running the application with 100 iterations. 
+Same as before, the executed commands and the time output is shown below:</p>
+<pre><code class="language-bash">time  ./gameoflife-default input.txt output.txt 100
+    &gt;&gt; Elapsed: 24.02s
+
+time  ./gameoflife-pgo input.txt output.txt 100
+    &gt;&gt; Elapsed: 13.25s
+</code></pre>
+
+<p>In both evaluation runs, the PGO-optimized native executable significantly outperforms the default native build.
+The amount of improvement that PGO provides in this case is not representative of the PGO gains for real world applications, since this application is small and does exactly one thing so the profiles provided are based on the exact same workload that is being measured.
+However, it illustrates the general point: Profile-Guided Optimization enables an AOT compiler to perform similar optimizations as a JIT compiler.</p>
+    
+      <h2 id="executable-size">
+        
+        
+          Executable Size <a href="#executable-size" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Another advantage of using PGO with GraalVM Native Image is the size of the native executable. 
+To measure the size of the files, you can use the Linux <code>du</code> command as shown below.</p>
+<pre><code class="language-bash">du -hs gameoflife-default
+    7.9M    gameoflife-default
+
+du -hs gameoflife-pgo
+    6.7M    gameoflife-pgo
+</code></pre>
+
+<p>As you can see, the PGO-optimized native executable is approximately 15% smaller than the default native build.</p>
+
+<p>This is because the profiles provided for the optimizing build allow the compiler to differentiate between which code is important for performance
+(i.e., hot code), and which is not important (i.e., cold code, such as error handling).
+With this differentiation available, the compiler can decide to focus more heavily on optimizing the hot code and less, or not at all, on the cold code.
+This is a similar approach to what a JVM does - identifies the hot parts of the code at run time and compile those parts at run time.
+The main difference is that  Native Image PGO does the profiling and the optimizing ahead-of-time.</p>
+    
+      <h3 id="further-reading">
+        
+        
+          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
 <ul>
-  <li>Unit tests are designed to test all the corner-cases of the components,
-many of which are uncommon in practice (i.e. while they need to be tested and work correctly,
-corner-cases in your code usually do not need to be fast).</li>
-  <li>Different components of your code are not always represented with the same number of unit tests.
-A profile based on a unit-test suite may over-represent the importance of one component,
-and under-represent the importance of others.</li>
-  <li>Moreover, unit-test suites evolve over time as more and more tests get added.
-What might accurately represent your application’s behavior today,
-might not accurately represent it tomorrow.</li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">Inspecting a Profile in a Build Report</a></li>
+  <li><a href="/dev/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Optimize a Native Executable with Profile-Guided Optimization</a></li>
 </ul>
-
-<p>For example, let’s say that you are implementing web server that serves static content.
-Most of the time, the web server will be reading a file from the disk or an in-memory cache,
-compressing that file, and sending the compressed bytes over the network.
-However, a good unit-test suite will test all components of the web server,
-including code for configuration-file parsing, cache invalidation, or remote debugging,
-which may execute infrequently or not at all during a typical execution of the web-server.
-If you collect the profiles across all the unit tests,
-they will over-represent parts of the code that execute rarely in practice,
-and in this way misdirect the compiler optimizations.</p>
-
-<p>In conclusion, while this is possible,
-we do not generally recommend to use your unit tests as profiles,
-because it is not clear how well they represent what the application does.
-What we recommend instead is to either:</p>
-
-<ul>
-  <li>Identify a subset of <em>end-to-end tests</em> that represent important production workloads.
-An end-to-end test simulates what your application does in production, and is more likely
-to correctly portray how and where the time is spent in your code.
-In the previous web-server example, an end-to-end test would start the web-server,
-send thousands of requests to retrieve various URLs, and then shut down the server.</li>
-  <li>Or, create a benchmark workload that represents what your application does in production.
-A good benchmark would incorporate characteristics of a typical workload.
-In the previous web-server example, a realistic benchmark would incorporate
-the distribution of requests that was observed when the web-server was running in production.
-I.e. the benchmark would model how often a file of a particular size was requested in production,
-as well as the compression ratios of the files.</li>
-</ul>
-
-<ol>
-  <li>Are PGO profiles sufficiently cross platform, or should each target be instrumented separately?</li>
-</ol>
-
-<p>Yes, in almost all cases, the PGO profiles are sufficiently cross-platform.
-You can collect the profiles by running the instrumentation image on one platform,
-but then use those profiles to build an optimized image on a different platform.</p>
-
-<p>There are some cases in which Native Image uses different classes and methods
-depending on the platform for which the image was built.
-For example, the <code>PosixProcessPropertiesSupport</code> class contains code that
-manipulates processes on POSIX-based systems,
-while the <code>WindowsProcessPropertiesSupport</code> class contains code
-that manipulates processes on Windows.
-Similarly, certain parts the JDK contain platform-specific code.
-In these cases, the profile will contain entries for one platform,
-but the optimized image build will not find profile entries for its platform-specific code.
-These corner-cases are rare and typically will not result in a performance impact,
-but this is something to be aware of.</p>
-
-<p>In conclusion, the best practice is always to collect the profiles on the same platform
-that is the target for the optimized image.
-However, using the profiles collected on a different platform will typically work well.</p>
-
-<ol>
-  <li>Can the profiling information be reused after a code change, provided it is limited,
-or do you need to collect new profiling information for each build?</li>
-</ol>
-
-<p>Yes, the profiling information can always be reused, and the native image has to be correctly generated.
-It is not necessary to collect new profiling information for each build.</p>
-
-<p>Note, however, that the performance impact on the optimized image depends on the quality of the profiles.
-If the new code of the program significantly diverges
-from the code for which the profiles was collected,
-the compiler optimizations will be misled about which code is important.</p>
-
-<p>Let’s consider some of the possible code changes and how they affect the program:</p>
-
-<ul>
-  <li>If you add additional methods to your codebase, that will reduce the profile applicability.
-An optimized-image build will not be able to associate profile information to these methods,
-so they may be suboptimally compiled.</li>
-  <li>If you remove existing methods from the codebase will reduce the profile’s relevance.
-Some profile entries will not be used.</li>
-  <li>Method renaming will do both – from the perspective of PGO, a renamed method
-is a different method.</li>
-  <li>Modifying the code of a method may prevent the application of the profile
-when that method is compiled during the optimized image build.</li>
-  <li>However, all of the above may have no performance impact
-if the method is <em>cold</em> (i.e. infrequently executed).</li>
-</ul>
-
-<p>In conclusion, it is always possible to use an outdated profile to generate an optimized image.
-Moreover, if the code changes are sufficiently small, or limited to the cold parts of the program,
-then using the old profile will usually not compromise the performance of the optimized image.</p>
-
-<p>For more information on this topic consult the <a href="/dev/reference-manual/native-image/pgo/profile-quality">Tracking Profile Quality Over Time</a> page.</p>
-
-<ol>
-  <li>Can you also run the benchmark with an instrumented image?</li>
-</ol>
-
-<p>Yes, an instrumented native image can be produced for any program, including a benchmark.
-In fact, using a representative benchmark to collect the profiles
-is the recommended way of collecting profiles.</p>
-
-<p>Be aware that the instrumentation overhead will typically make the instrumented image slower
-than the default (non-instrumented) image.
-You might notice that the benchmark runs slower when compiled to an instrumented image.
-While we continually strive to minimize the overhead of instrumentation,
-you will likely notice that the instrumented image is slower,
-and your mileage will vary depending on the code patterns
-in the application that you are running.</p>
-
-<p>Also, be aware that the benchmark should ideally be representative
-of the workload that you expect in production.
-The more the benchmark’s workload corresponds to the production workload,
-the morely likely it is that PGO have a positive performance impact
-on the optimized image.</p>
-
-<p>In conclusion, if the benchmark accurately represents the workload that you will be running in production,
-then it is a good idea to collect the profiles on the instrumented benchmark image,
-and subsequently use these profiles to build an optimized image for your production workload.</p>
-
-<ol>
-  <li>
-    <p>How to find out which code paths were missed during profiling?</p>
-  </li>
-  <li>
-    <p>How does GraalVM generate a workload for profiling a web application?</p>
-  </li>
-</ol>
-
-<p>GraalVM itself does not generate a workload for profiling a web application
-that was compiled with Native Image.
-Instead, you need to use a load-testing tool to generate the workload.</p>
-
-<p>For example, if your web application exposes several HTTP endpoints,
-then you need to use a load-tester such as <code>wrk</code>
-to generate a stream of requests to those HTTP endpoints.
-The setup for this would be as follows:
-you build the instrumented image of your web application,
-start it in one process, and start a load-tester such as <code>wrk</code> in another process.
-The duration of the load-test needs to be long enough to exercise the endpoints
-of your web application that will be most frequently exercised by the production users,
-using request payloads that you expect to encounter in production.
-For simple web applications, duration of 1 minute is typically sufficient
-to produce profiles of good quality (but again, this depends on your particular application).
-After the load-test completes and the web application exits,
-it will dump the profiles to a file.</p>
-
-<ol>
-  <li>Why not collect profile in the production environment for a while?
-For example, collect it only on one instance of the service on Monday from 8:00 till 12:00.</li>
-</ol>
-
-<p>Yes, that is a good way to collect profiles.</p>
-
-<p>As argued earlier, the instrumentation image has a certain overhead,
-which depends on the code patterns in a particular application.
-However, if only one instance uses the instrumentation image during a particular period,
-and all the other instances of your service use a normal or optimized build,
-then this is generally acceptable in practice.</p>
 
       </div>
 
@@ -859,7 +935,7 @@ then this is generally acceptable in practice.</p>
           <div class="row">
             <div class="col-sm-12">
               <p class="copyright">
-                Copyright © 2018, 2023, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+                Copyright © 2018, 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
                 registered trademarks. Other names may be trademarks of their respective owners.
               </p>
             </div>

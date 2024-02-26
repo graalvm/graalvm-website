@@ -10,14 +10,14 @@
 
   <title>
     
-      Merging Profiles from Multiple Sources
+      Profile-Guided Optimization
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-06 09:44:53 +0000"/>
+  <meta name="last_modified" content="2024-02-14 12:08:01 +0000"/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/pgo/merging-profiles">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/PGO/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -436,6 +436,265 @@ $(document).ready(function(){
   
 
   
+    
+
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/">
+            Getting Started with Native Image
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/guides/">
+            Guides
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/basics/">
+            Native Image Basics
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/overview/Build-Overview/">
+            Build Overview
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/metadata/">
+            Reachability Metadata
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
+            Optimizations and Performance
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+          
+          <li class="toc-bullets-sub toc-bullets-highlight">
+          
+            
+            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
+              Profile-Guided Optimization
+            </a>
+          </li>
+
+          
+            <div>
+    <script>
+      var scriptElement = document.currentScript;
+      var div = $(scriptElement.parentElement);
+      $(window).on("load", function() {
+        $("#content-wrapper h2").each(function() {
+          var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+          var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+          a.text($(this).text().replace('#', ''));
+          // a.text($(this).text();
+          li.append(a);
+          div.append(li);
+        });
+      });
+    </script>
+  </div>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">
+              Memory Management
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">
+              Class Initialization
+            </a>
+          </li>
+
+          
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/">
+            Debugging and Diagnostics
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/dynamic-features/">
+            Dynamic Features
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/native-code-interoperability/">
+            Interoperability with Native Code
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/LLVMBackend/">
+            LLVM Backend
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/reference-manual/native-image/workshops/">
+            Workshops and Labs
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="">
+            
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+  
 
   
 
@@ -485,8 +744,8 @@ $(document).ready(function(){
     
       
       <li>
-        <a href="/dev/reference-manual/native-image/pgo/">
-          Pgo
+        <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
+          Optimizations And Performance
         </a>
       </li>
       
@@ -497,35 +756,137 @@ $(document).ready(function(){
 
 
         
-        <h1 id="merging-profiles-from-multiple-sources">
+        <h1 id="profile-guided-optimization">
         
         
-          Merging Profiles from Multiple Sources
+          Profile-Guided Optimization
         
         
       </h1>
-
-<p>The PGO infrastructure enables you to combine multiple profiles into a single one using the Native Image Configure tool.
-Merging profiles implies that the resulting profile will contain the union of all types, methods, and profile entries from the provided profiles.</p>
     
-      <h2 id="usage">
+      <h2 id="what-is-profile-guided-optimization">
         
         
-          Usage <a href="#usage" class="anchor_heading">#</a>
+          What is Profile-Guided Optimization? <a href="#what-is-profile-guided-optimization" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>Here is the command that merges two profiles, <code>profile_1.iprof</code> and <code>profile_2.iprof</code>, into the <code>output_profile.iprof</code>:</p>
+<p>One advantage that a just-in-time (JIT) compiler has over an ahead-of-time (AOT) compiler is its ability to analyze the run-time behavior of an application.
+For example, HotSpot keeps track of how many times each branch of an <code>if</code> statement is executed.
+This information, called a “profile”, is passed to a tier-2 JIT compiler (such as Graal).
+The tier-2 JIT compiler then assumes that the <code>if</code> statement will continue to behave in the same manner, and uses the information from the profile to optimize that statement.</p>
 
-<pre><code class="language-commandline">native-image-configure merge-pgo-profiles --input-file=profile_1.iprof --input-file=profile_2.iprof --output-file=output_profile.iprof
+<p>An AOT compiler typically does not have profiling information, and is usually limited to a static view of the code.
+This means that, barring heuristics, an AOT compiler sees each branch of every <code>if</code> statement as equally likely to occur at run time; each method is as likely to be invoked as any other; and each loop repeats the same number of times.
+This puts an AOT compiler at a disadvantage—without profiling information, it is difficult to generate machine code of the same quality as a JIT compiler.</p>
+
+<p>Profile-Guided Optimization (PGO) is a technique that brings profile information to an AOT compiler to improve the quality of its output in terms of performance and size.</p>
+
+<blockquote>
+  <p>Note: PGO is not available in GraalVM Community Edition.</p>
+</blockquote>
+    
+      <h3 id="what-is-a-profile">
+        
+        
+          What Is a <em>Profile</em>? <a href="#what-is-a-profile" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>A profile is a summarised log of how many times certain events occurred during an application’s run time.
+The events are chosen according to which information can be useful for the compiler to make better decisions.
+Examples include:</p>
+<ul>
+  <li>How many times was this method called?</li>
+  <li>How many times did this <code>if</code> statement take the <code>true</code> branch? How many times did it take the <code>false</code> branch?</li>
+  <li>How many times did this method allocate an object?</li>
+  <li>How many times was a <code>String</code> value passed to a particular <code>instanceof</code> check?</li>
+</ul>
+    
+      <h2 id="how-do-i-obtain-a-profile-of-my-application">
+        
+        
+          How Do I Obtain a Profile of My Application? <a href="#how-do-i-obtain-a-profile-of-my-application" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>When running an application on a JVM with a JIT compiler, the profiling of the application is handled by the runtime environment, with no extra steps needed from a developer.
+However, creating a profile adds execution time and memory usage overheads to the performance of the application that is being profiled.
+This causes warmup issues: the application will reach predictable peak performance only after sufficient time has passed for the application code to be profiled and JIT-compiled.
+For long-running applications, this overhead usually pays for itself, yielding a performance boost later.
+On the other hand, for short-lived applications and applications that need to start with predictable performance as soon as possible, this is counterproductive.</p>
+
+<p>Gathering a profile for an AOT-compiled application is more involved, and requires extra steps by the developer, but introduces no overhead in the final application.
+A profile must be gathered by observing the application while it is running.
+This is commonly achieved by compiling the application in a special mode that inserts <em>instrumentation code</em> into the application binary.
+The instrumentation code increments counters for the events that are of interest to the profile.
+A binary that includes instrumentation code is then called an <em>instrumented binary</em>, and the process of adding these counters is called <em>instrumentation</em>.</p>
+
+<p>Naturally, an instrumented binary of the application is not as performant as a default binary due to the overhead of the instrumentation code, so it is not recommended to run it in production.
+But, running synthetic representative workloads on the instrumented binary provides a representative profile of the application’s behavior.
+When building an optimized application, the AOT compiler has both a static view and a dynamic profile of the application.
+Thus, the optimized application performs better than the default AOT-compiled application.</p>
+    
+      <h2 id="how-does-a-profile-guide-optimization">
+        
+        
+          How Does a Profile “Guide” Optimization? <a href="#how-does-a-profile-guide-optimization" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>During compilation, a compiler has to make decisions about optimizations.
+For example, in the following method, the function-inlining optimization needs to decide which call sites to inline, and which not.</p>
+
+<pre><code class="language-java">private int run(String[] args) {
+    if (args.length &lt; 3) {
+        return handleNotEnoughArguments(args);
+    } else {
+        return doActualWork(args);
+    }
+}
 </code></pre>
 
-<p>There is also a way to specify a directory as a source of profiles with <code>--input-dir=&lt;path&gt;</code>.
-This will only search for profiles in the given directory, excluding subdirectories.</p>
+<p>For illustrative purposes, imagine that the inlining optimization has a limit on how much code can be generated, and can hence only inline one of the calls.
+Looking only at the static view of the code being compiled, both the <code>doActualWork()</code> and <code>handleNotEnoughArguments()</code> invocations look pretty much indistinguishable.
+Without any heuristics, the phase would have to guess which is the better choice to inline.
+However, making the incorrect choice can lead to code that is less efficient.
+Assume that <code>run()</code> is most commonly called with the right number of arguments at run time, then inlining <code>handleNotEnoughArguments</code> would increase the code size of the compilation unit without giving any performance benefit since the call to <code>doActualWork()</code>
+needs to still be made most of the time.</p>
 
-<pre><code class="language-commandline">native-image-configure merge-pgo-profiles --input-dir=my_profiles/ --output-file=output_profile.iprof
-</code></pre>
+<p>Having a run-time profile of the application can give the compiler data to differentiate between the calls.
+For example, if the run-time profile recorded the <code>if</code> condition as being <code>false</code> 100 times and <code>true</code> 3 times, then it should inline <code>doActualWork()</code>. 
+This is the essence of PGO - using information from the profile to give the compiler grounding in data when making certain decisions.
+The actual decisions and the actual events the profile records vary from phase to phase, but the preceding example illustrates the general idea.</p>
+
+<p>Notice that PGO expects a representative workload to be run on the instrumented binary of the application.
+Providing a counter-productive profile (a profile that records the exact opposite of the actual runtime behaviour of the application) will be counter-productive.
+For the above example, this would be running the instrumented binary with a workload that invokes the <code>run()</code> method with too few arguments, while the actual application does not.
+This would lead to the inlining phase choosing to inline <code>handleNotEnoughArguments</code> reducing the performance of the optimized binary.</p>
+
+<p>Hence, the goal is to gather profiles on workload that match the production workloads as much as possible.
+The gold standard for this is to run the exact same workloads you expect to run in production on the instrumented binary.</p>
+
+<p>For a more detailed usage overview, go to <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimizations</a> documentation.</p>
+    
+      <h3 id="further-reading">
+        
+        
+          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimizations</a></li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">Inspecting a Profile in a Build Report</a></li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/merging-profiles/">Merging Profiles from Multiple Sources</a></li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/profile-quality/">Tracking Profile Quality Over Time</a></li>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/faq/">Frequently Asked Questions</a></li>
+</ul>
 
       </div>
 
@@ -697,7 +1058,7 @@ This will only search for profiles in the given directory, excluding subdirector
           <div class="row">
             <div class="col-sm-12">
               <p class="copyright">
-                Copyright © 2018, 2023, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+                Copyright © 2018, 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
                 registered trademarks. Other names may be trademarks of their respective owners.
               </p>
             </div>
