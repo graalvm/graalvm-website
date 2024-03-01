@@ -785,7 +785,7 @@ $("a").each(function() {
     }
 });
 
-//Docs vesion dropdown
+//Docs version dropdown
 var isOpen = false;
 
 function toggleOptions(e) {
@@ -825,9 +825,11 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "Latest (GraalVM for JDK 21)";
+    version = "GraalVM for JDK 21 (Latest)";
+  } else if (version === "jdk22") {
+    version = "GraalVM for JDK 22 (Early Access)";
   } else if (version === "dev") {
-    version = "Dev Build";
+    version = "Dev Build";  
   } else if (version.indexOf("jdk") === 0) {
     version = `GraalVM for JDK ${version.substr(3)}`;
   } else {
