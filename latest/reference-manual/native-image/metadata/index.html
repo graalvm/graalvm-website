@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-06-07 15:40:37 +0000"/>
+  <meta name="last_modified" content="2023-10-30 07:19:41 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/native-image/metadata/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/metadata/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -668,6 +669,8 @@ $(document).ready(function(){
         
       
     
+  
+
   
 
   
@@ -1307,6 +1310,74 @@ The schema also includes further details and explanations how this configuration
   }
 ]
 </code></pre>
+    
+      <h2 id="strict-metadata-mode">
+        
+        
+          Strict Metadata Mode <a href="#strict-metadata-mode" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Native Image’s strict metadata mode helps ensure the correctness and composability of the Native Image metadata, by strengthening the metadata requirements for reflection queries.
+This mode can be activated with the <code>-H:ThrowMissingRegistrationErrors=</code> option and requires the following additional registrations over the default:</p>
+    
+      <h3 id="reflection-1">
+        
+        
+          Reflection <a href="#reflection-1" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li>If a reflectively-accessed element (<code>Class</code>, <code>Field</code>, <code>Method</code>, etc.) is not present on the image class- or module-path, it still needs to be registered to ensure the correct exception (<code>ClassNotFoundException</code> or similar) is thrown.
+If an element is queried at run-time without having been registered, regardless of whether it is present on the class- or module-path, this query will throw a <code>MissingReflectionRegistrationError</code>.
+This change ensures that the error is not ambiguous between a non-existent element and one that was not registered for reflection in the image;</li>
+  <li>This rationale also requires that any query that returns a collection of class members (<code>Class.getMethods()</code> or similar) has to be registered in full (with <code>"queryAllPublicMethods"</code> in this case) to succeed at run-time.
+This additionally ensures that any of the registered elements can be queried individually, and non-existent elements of that type will throw the correct exception without having to be registered.
+However, this means that <code>Class.getMethods()</code> does not return the subset of methods that were registered, but throws a <code>MissingReflectionRegistrationError</code> if <code>"queryAllPublicMethods"</code> is missing.</li>
+</ul>
+    
+      <h3 id="resources">
+        
+        
+          Resources <a href="#resources" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li>If a resource or resource bundle is not present on the image class- or module-path, it still needs to be registered to ensure the correct return value (<code>null</code>).
+If a resource is queried at run-time without having been registered, regardless of whether it is present on the class- or module-path, this query will throw a <code>MissingResourceRegistrationError</code>.
+This change ensures that the program behavior is not ambiguous between a non-existent resource and one that was not registered for run-time access;</li>
+</ul>
+
+<p>The Native Image agent does not support custom implementations of <code>ResourceBundle$Control</code> or <code>Bundles$Strategy</code> and requires manual registrations for the reflection and resource queries that they will perform.</p>
+    
+      <h3 id="transition-tools">
+        
+        
+          Transition tools <a href="#transition-tools" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This mode will be made the default behavior of Native Image in a future release. We encourage you to start transitioning your code as soon as possible.
+The <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image agent</a> outputs JSON files that conform to both the default and strict modes of operation.
+The following options are useful for debugging issues during the transition to the strict mode:</p>
+
+<ul>
+  <li><code>-H:ThrowMissingRegistrationErrors=&lt;package list&gt;</code>: limits <code>MissingReflectionRegistrationError</code> to be thrown from a defined list of packages.
+This is useful when using some library code that has not been ported to the new mode yet;</li>
+  <li><code>-H:MissingRegistrationReportingMode</code>: sets how <code>MissingReflectionRegistrationError</code> is reported:
+    <ul>
+      <li><code>Throw</code> is the default. The error is simply thrown as a Java exception;</li>
+      <li><code>Warn</code> outputs a small stack trace for every error encountered, which results in a report of all the places the tested code is going to throw when the strict mode is enabled;</li>
+      <li><code>Exit</code> exits the program when encountering the error. This is useful to detect blanket <code>catch (Throwable t) {</code> blocks that would otherwise silence the error.</li>
+    </ul>
+  </li>
+</ul>
     
       <h3 id="further-reading">
         

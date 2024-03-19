@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-06-29 16:50:15 +0000"/>
+  <meta name="last_modified" content="2023-11-07 23:25:09 +0000"/>
 
   
-  <link rel="canonical" href="/latest/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -786,6 +787,8 @@ $(document).ready(function(){
 
   
 
+  
+
 </div>
 
         </div>
@@ -1016,8 +1019,8 @@ The <code>store</code> enables warnings when the store location argument is not 
     Compilations                : 2763
       Success                   : 2743
       Temporary Bailouts        : 17
-        org.graalvm.compiler.core.common.CancellationBailoutException: Compilation cancelled.: 16
-        org.graalvm.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: IsolatedObjectConstant[Object]: 1
+        jdk.graal.compiler.core.common.CancellationBailoutException: Compilation cancelled.: 16
+        jdk.graal.compiler.core.common.RetryableBailoutException: Assumption invalidated while compiling code: IsolatedObjectConstant[Object]: 1
       Permanent Bailouts        : 0
       Failed                    : 0
       Interrupted               : 3
@@ -1504,7 +1507,7 @@ Uncommon trap occurred in com.oracle.truffle.runtime.OptimizedCallTarget::profil
 </code></pre>
 
 <p>You might notice the presence of a <code>debugId</code> or <code>debug_id</code> in the output of these options.
-This id might only be set if you also enable dumping, e.g., via <code>--vm.Dgraal.Dump=Truffle:1</code> (see below).
+This id might only be set if you also enable dumping, e.g., via <code>--vm.Djdk.graal.Dump=Truffle:1</code> (see below).
 In that case, the debug id will correspond to the id of a node in the IGV graph.
 First, open the first phase of the relevant compilation.
 That id can be searched via <code>id=NUMBER</code> in IGV’s <code>Search in Nodes</code> search box,
@@ -1540,10 +1543,10 @@ Use <code>--engine.TraceAssumptions</code> to trace those with more details.</li
 
 <p>The <a href="/latest/tools/igv/">Ideal Graph Visualizer (IGV)</a> is a tool to understand Truffle ASTs and the Graal Compiler graphs.</p>
 
-<p>A typical usage is to run with <code>--vm.Dgraal.Dump=Truffle:1 --vm.Dgraal.PrintGraph=Network</code>, which will show you Truffle ASTs, guest-language call graphs, and the Graal graphs as they leave the Truffle phase.
-If the <code>-Dgraal.PrintGraph=Network</code> flag is omitted then the dump files are placed in the <code>graal_dumps</code> directory, which you should then open in IGV.</p>
+<p>A typical usage is to run with <code>--vm.Djdk.graal.Dump=Truffle:1 --vm.Djdk.graal.PrintGraph=Network</code>, which will show you Truffle ASTs, guest-language call graphs, and the Graal graphs as they leave the Truffle phase.
+If the <code>-Djdk.graal.PrintGraph=Network</code> flag is omitted then the dump files are placed in the <code>graal_dumps</code> directory, which you should then open in IGV.</p>
 
-<p>Use <code>--vm.Dgraal.Dump=Truffle:2</code> to dump Graal graphs between each compiler phase.</p>
+<p>Use <code>--vm.Djdk.graal.Dump=Truffle:2</code> to dump Graal graphs between each compiler phase.</p>
     
       <h2 id="c1-visualizer">
         
@@ -1556,7 +1559,7 @@ If the <code>-Dgraal.PrintGraph=Network</code> flag is omitted then the dump fil
 <p>The C1 Visualizer is a tool to understand the Low Level IR (LIR), register allocation, and
 code generation stages of GraalVM. It is available <a href="http://lafo.ssw.uni-linz.ac.at/c1visualizer/">here</a>.</p>
 
-<p>A typical usage is <code>--vm.Dgraal.Dump=:3</code>.
+<p>A typical usage is <code>--vm.Djdk.graal.Dump=:3</code>.
 Files are put into a <code>graal_dumps</code> directory which you should then open in the C1 Visualizer.</p>
     
       <h2 id="disassembler">
@@ -1570,7 +1573,7 @@ Files are put into a <code>graal_dumps</code> directory which you should then op
 <p>THe <code>--vm.XX:+UnlockDiagnosticVMOptions --vm.XX:+PrintAssembly</code> commands combination prints assembly code.
 You will need to install <code>hsdis</code> using <code>mx hsdis</code> in <code>graal/compiler</code>, or manually install it into the current directory from <a href="https://lafo.ssw.uni-linz.ac.at/pub/graal-external-deps/hsdis/intel/">here</a>.</p>
 
-<p>Typical usage is <code>--vm.Dgraal.Dump --vm.Dgraal.PrintBackendCFG=true</code>. Files are
+<p>Typical usage is <code>--vm.Djdk.graal.Dump --vm.Djdk.graal.PrintBackendCFG=true</code>. Files are
 put into a <code>graal_dumps</code> directory which you should then open in the
 C1 Visualizer.</p>
 

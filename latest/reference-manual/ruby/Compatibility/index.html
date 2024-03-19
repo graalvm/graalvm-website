@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-09-14 12:41:23 +0000"/>
+  <meta name="last_modified" content="2024-02-12 15:25:39 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/ruby/Compatibility/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/Compatibility/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -800,6 +801,8 @@ $(document).ready(function(){
 
   
 
+  
+
 </div>
 
         </div>
@@ -889,6 +892,26 @@ In a few limited cases, TruffleRuby is deliberately incompatible with MRI in ord
 </ul>
 
 <p>In the C API, the preprocessor macro <code>TRUFFLERUBY</code> is defined, which can be checked with <code>#ifdef TRUFFLERUBY</code>.</p>
+    
+      <h2 id="ruby-3x-features">
+        
+        
+          Ruby 3.x Features <a href="#ruby-3x-features" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Most features of Ruby 3.2 and earlier are supported in TruffleRuby.
+However some features are not yet implemented.
+See the following issues for details:</p>
+
+<ul>
+  <li><a href="https://github.com/oracle/truffleruby/issues/3039">Ruby 3.2 features</a></li>
+  <li><a href="https://github.com/oracle/truffleruby/issues/2733">Ruby 3.1 features</a></li>
+  <li><a href="https://github.com/oracle/truffleruby/issues/2453">Ruby 3.0 features</a></li>
+  <li><a href="https://github.com/oracle/truffleruby/issues/3332">Pattern Matching</a></li>
+  <li><a href="https://github.com/oracle/truffleruby/issues/3038">Endless methods</a></li>
+</ul>
     
       <h2 id="features-entirely-missing">
         
@@ -1045,6 +1068,16 @@ The JVM enforces a maximum array size of 2<sup>31</sup>-1 (by storing the size i
 That is, Strings must be smaller than 2GB. This is the same restriction as JRuby.
 A possible workaround could be to use natively-allocated strings, but it would be a large effort to support every Ruby String operation on native strings.</p>
     
+      <h3 id="strings-in-utf-16-and-utf-32-encoding">
+        
+        
+          Strings in UTF-16 and UTF-32 encoding <a href="#strings-in-utf-16-and-utf-32-encoding" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>TruffleRuby does not support UTF-16 strings with an odd number of bytes (in native endianness). Similarly, with UTF-32 it needs to be a multiple of 4. This is necessary for optimizations, compression, invariants, etc.</p>
+    
       <h3 id="threads-detect-interrupts-at-different-points">
         
         
@@ -1089,15 +1122,15 @@ For example, if you <code>$stdout.reopen</code>, as some logging frameworks do, 
         
       </h3>
 
-<p>The set of signals that TruffleRuby can handle is different from MRI.
-When using the native configuration, TruffleRuby allows trapping all the same signals that MRI does, as well as a few that MRI does not.
-The only signals that can’t be trapped are <code>KILL</code>, <code>STOP</code>, and <code>VTALRM</code>.
+<p>First, <code>KILL</code> and <code>STOP</code> can never be trapped, per POSIX (<code>man 2 signal</code>).
+Some signals are reserved on CRuby, and they are also reserved on TruffleRuby, because trapping those would cause all sorts of problems: <code>SEGV</code>, <code>BUS</code>, <code>ILL</code>, <code>FPE</code> and <code>VTALRM</code>.</p>
+
+<p>When using the native configuration, TruffleRuby allows trapping all the same signals that MRI does.
 Consequently, any signal handling code that runs on MRI can run on TruffleRuby without modification in the native configuration.</p>
 
-<p>However, when run on the JVM, TruffleRuby is unable to trap <code>USR1</code> or <code>QUIT</code>, as these signals are reserved by the JVM.
-In such a case <code>trap(:USR1) {}</code> will raise an <code>ArgumentError</code>.
-Any code that relies on being able to trap those signals will need to fall back to another available signal.
-Additionally, <code>FPE</code>, <code>ILL</code>, <code>KILL</code>, <code>SEGV</code>, <code>STOP</code>, and <code>VTALRM</code> cannot be trapped, but these signals are also unavailable on MRI.</p>
+<p>However, when run on the JVM, TruffleRuby is unable to trap <code>QUIT</code>, as this signal is reserved by the JVM.
+In such a case <code>trap(:QUIT) {}</code> will raise an <code>ArgumentError</code>.
+Any code that relies on being able to trap this signal will need to fall back to another available signal.</p>
 
 <p>When TruffleRuby is run as part of a polyglot application, any signals that are handled by another language become unavailable for TruffleRuby to trap.</p>
     

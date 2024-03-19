@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-12-15 14:03:55 +0000"/>
+  <meta name="last_modified" content="2023-05-16 10:00:22 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/native-image/guides/debug-native-image-process/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/debug-native-image-process/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -306,7 +306,7 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="debug-native-executables-with-gdb">Debug Native Executables with GDB</h1>
 
-<h3 id="which-gdb-to-use">Which GDB to Use?</h3>
+<h3 id="which-gdb-to-use">Which GDB to use?</h3>
 
 <ul>
   <li>Please use GDB 10.2 or later. The debug info is tested via <code>mx debuginfotest</code> against 10.2.</li>
@@ -314,32 +314,33 @@
   <li>GDB bundled in recent Linux releases works just fine for debugging sessions</li>
 </ul>
 
-<h3 id="building-images-with-debug-information">Building Images with Debug Information</h3>
+<h3 id="building-images-with-debuginfo">Building images with debuginfo</h3>
 
-<p>To build a native executable with debug information, provide the <code>-g</code> command-line option for <code>javac</code> when compiling the application, and then to the <code>native-image</code> builder. This enables source-level debugging, and the debugger (GDB) then correlates machine instructions with specific source lines in Java files.</p>
-
-<p>Adding <code>-g</code> to the <code>native-image</code> arguments causes debuginfo to be generated.
-Next to the image, there will be an <code>&lt;imagename&gt;.debug</code> file that contains debuginfo and a <code>sources</code> folder that contains Java source files, which the debugger uses to show sources for lineinfo. For example:</p>
-<pre><code>hello_image
+<ul>
+  <li>Adding <code>-g</code> to the <code>native-image</code> arguments causes debuginfo to be generated.
+    <ul>
+      <li>Next to the image, there will be an <code>&lt;imagename&gt;.debug</code> file that contains debuginfo and a <code>sources</code> folder that contains Java source files, which the debugger uses to show sources for lineinfo. For example:
+        <pre><code class="language-text">hello_image
 hello_image.debug
 sources
 </code></pre>
-<p>GDB automatically loads the <code>&lt;imagename&gt;.debug</code> file for a given native executable <code>&lt;imagename&gt;</code>. (There is a link between the image and its <code>*.debug</code>-file)</p>
-
-<blockquote>
-  <p>For a better debugging experience, we recommend combining <code>-g</code> with <code>-O0</code>.
+      </li>
+      <li>GDB automatically loads the <code>&lt;imagename&gt;.debug</code> file for a given native executable <code>&lt;imagename&gt;</code>. (There is a link between the image and its <code>*.debug</code>-file)</li>
+    </ul>
+  </li>
+  <li>For a better debugging experience, we recommend combining <code>-g</code> with <code>-O0</code>.
 The latter option disables inlining and other optimizations of the Graal compiler, which otherwise would be observable in the debugger (for example, the debugger may jump back and forth between lines instead of allowing you to step from one line to the next one).
-At the same time, <code>-O0</code> also enables additional metadata to be collected in the compiler, which then helps the debugger to resolve, for example, local variables.</p>
-</blockquote>
+At the same time, <code>-O0</code> also enables additional metadata to be collected in the compiler, which then helps the debugger to resolve, for example, local variables.</li>
+</ul>
 
-<h3 id="using-gdb-with-new-debug-information">Using GDB with New Debug Information</h3>
+<h3 id="using-gdb-with-the-new-debuginfo">Using GDB with the new debuginfo</h3>
 
 <h4 id="image-build-information">Image build information</h4>
 <p>The <code>*.debug</code>-file contains additional information about the image build, which can be accessed as follows:</p>
-<pre><code>readelf -p .debug.svm.imagebuild.classpath hello_image.debug
+<pre><code class="language-text">readelf -p .debug.svm.imagebuild.classpath hello_image.debug
 </code></pre>
-<p>It gives a list of all classpath entries that were used to build the image:</p>
-<pre><code>String dump of section '.debug.svm.imagebuild.classpath':
+<p>gives a list of all classpath entries that were used to build the image.</p>
+<pre><code class="language-text">String dump of section '.debug.svm.imagebuild.classpath':
   [     0]  /home/user/.mx/cache/HAMCREST_e237ae735aac4fa5a7253ec693191f42ef7ddce384c11d29fbf605981c0be077d086757409acad53cb5b9e53d86a07cc428d459ff0f5b00d32a8cbbca390be49/hamcrest.jar
   [    b0]  /home/user/.mx/cache/JUNIT_5974670c3d178a12da5929ba5dd9b4f5ff461bdc1b92618c2c36d53e88650df7adbf3c1684017bb082b477cb8f40f15dcf7526f06f06183f93118ba9ebeaccce/junit.jar
   [   15a]  /home/user/mx/mxbuild/jdk20/dists/jdk9/junit-tool.jar
@@ -355,10 +356,10 @@ At the same time, <code>-O0</code> also enables additional metadata to be collec
 
 <h4 id="where-is-the-main-method">Where is the main method?</h4>
 <p>Use</p>
-<pre><code>info functions ::main
+<pre><code class="language-text">info functions ::main
 </code></pre>
 <p>to find all methods named <code>main</code> and then use <code>b &lt;main method name&gt;</code>, for example:</p>
-<pre><code>(gdb) info functions ::main
+<pre><code class="language-text">(gdb) info functions ::main
 All functions matching regular expression "::main":
 
 File hello/Hello.java:
@@ -373,7 +374,7 @@ Breakpoint 1 at 0x83c030: file hello/Hello.java, line 76.
 
 <h4 id="setting-breakpoints">Setting breakpoints</h4>
 <p>First, find the type of the method you want to set a breakpoint in, for example:</p>
-<pre><code>(gdb) info types ArrayList
+<pre><code class="language-text">(gdb) info types ArrayList
 All types matching regular expression "ArrayList":
 
 ...
@@ -384,11 +385,11 @@ File java/util/ArrayList.java:
 	java.util.ArrayList$ListItr;
 ...
 </code></pre>
-<p>Now use the following GDB autocompletion:</p>
-<pre><code>(gdb) b 'java.util.ArrayList::
+<p>Now use the following GDB autocompletion</p>
+<pre><code class="language-text">(gdb) b 'java.util.ArrayList::
 </code></pre>
 <p>Pressing tab twice now shows all <code>ArrayList</code> methods to choose from:</p>
-<pre><code>java.util.ArrayList::ArrayList(int)                                                java.util.ArrayList::iterator()
+<pre><code class="language-text">java.util.ArrayList::ArrayList(int)                                                java.util.ArrayList::iterator()
 java.util.ArrayList::ArrayList(java.util.Collection*)                              java.util.ArrayList::lastIndexOf(java.lang.Object*)
 java.util.ArrayList::add(int, java.lang.Object*)                                   java.util.ArrayList::lastIndexOfRange(java.lang.Object*, int, int)
 java.util.ArrayList::add(java.lang.Object*)                                        java.util.ArrayList::listIterator()
@@ -397,14 +398,14 @@ java.util.ArrayList::addAll(int, java.util.Collection*)                         
 java.util.ArrayList::addAll(java.util.Collection*)                                 java.util.ArrayList::outOfBoundsMsg(int)
 ...
 </code></pre>
-<p>If to complete with</p>
-<pre><code>(gdb) b 'java.util.ArrayList::add`
+<p>If we complete with</p>
+<pre><code class="language-text">(gdb) b 'java.util.ArrayList::add`
 </code></pre>
 <p>breakpoints in all variants of <code>add</code> are installed.</p>
 
 <h4 id="arrays">Arrays</h4>
 <p>Arrays have a <strong><code>data</code>-field</strong> that can be accessed via an index to get the individual array elements, for example:</p>
-<pre><code>Thread 1 "hello_image" hit Breakpoint 1, hello.Hello::main(java.lang.String[]*) (args=0x7ff33f800898) at hello/Hello.java:76
+<pre><code class="language-text">Thread 1 "hello_image" hit Breakpoint 1, hello.Hello::main(java.lang.String[]*) (args=0x7ff33f800898) at hello/Hello.java:76
 76	        Greeter greeter = Greeter.greeter(args);
 (gdb) p args
 $1 = (java.lang.String[] *) 0x7ff33f800898
@@ -424,21 +425,19 @@ $3 = 0x7ff33f8008a0
 type = class _z_.java.lang.String : public java.lang.String {
 } *[0]
 </code></pre>
-<p>Here <code>args.data</code> can be accessed via an index.</p>
-
-<p>In this case, the first of the four array elements is a pointer to a String:</p>
-<pre><code>(gdb) p args.data[0]
+<p>Here <code>args.data</code> can be accessed via an index.
+In this case, the first of the four array elements is a pointer to a String:</p>
+<pre><code class="language-text">(gdb) p args.data[0]
 $4 = (_z_.java.lang.String *) 0x27011a
 </code></pre>
 
 <h4 id="strings">Strings</h4>
-<p>To see the actual contents of a Java String object, look at its <strong><code>value</code>-field</strong>, for example:</p>
-<pre><code>(gdb) p args.data[0]
+<p>To see the actual contents of a Java String object, we have to look at its <strong><code>value</code>-field</strong>, for example:</p>
+<pre><code class="language-text">(gdb) p args.data[0]
 $4 = (_z_.java.lang.String *) 0x27011a
 </code></pre>
-
 <p><code>args.data[0]</code> points to a String object. Let’s deref:</p>
-<pre><code>(gdb) p *args.data[0]
+<pre><code class="language-text">(gdb) p *args.data[0]
 $5 = {
   &lt;java.lang.String&gt; = {
     &lt;java.lang.Object&gt; = {
@@ -455,57 +454,51 @@ $5 = {
     static COMPACT_STRINGS = true
   }, &lt;No data fields&gt;}
 </code></pre>
-
 <p>The <code>value</code> field holds the String data.
 Let’s check the type of <code>value</code>:</p>
-<pre><code>(gdb) p args.data[0].value
+<pre><code class="language-text">(gdb) p args.data[0].value
 $3 = (_z_.byte[] *) 0x250119
 </code></pre>
-<p><code>value</code> is of type <code>byte[]</code>.</p>
-
-<p>As you already learned before, the elements of an array can be accessed via its <code>data</code>-field.</p>
-<pre><code>(gdb) p args.data[0].value.data
+<p><code>value</code> is of type <code>byte[]</code>.
+As we already learned before, the elements of an array can be accessed via its <code>data</code>-field.</p>
+<pre><code class="language-text">(gdb) p args.data[0].value.data
 $10 = 0x7ff33f8008c8 "this\376\376\376\376\200G\273\001\030\001'"
 </code></pre>
-
 <p>GDB is smart enough to interpret the byte-pointer as a C string out of the box.
 But in essence, it is an array.
 The following gives us the <code>t</code> from <code>this</code>.</p>
-<pre><code>(gdb) p args.data[0].value.data[0]
+<pre><code class="language-text">(gdb) p args.data[0].value.data[0]
 $13 = 116 't'
 </code></pre>
-
 <p>The reason for the garbage after the last char is that Java String values are not 0-terminated (unlike C strings).
-To know where the garbage starts you can inspect the <code>len</code>-field.</p>
-<pre><code>(gdb) p args.data[0].value.len
+To know where the garbage starts we can inspect the <code>len</code>-field.</p>
+<pre><code class="language-text">(gdb) p args.data[0].value.len
 $14 = 4
 </code></pre>
 
 <h4 id="downcasting">Downcasting</h4>
 <p>Suppose your source uses a variable of static type <code>Greeter</code> and you want to inspect its data.</p>
-<pre><code>75	    public static void main(String[] args) {
+<pre><code class="language-text">75	    public static void main(String[] args) {
 76	        Greeter greeter = Greeter.greeter(args);
-77	        greeter.greet(); // Here you might have a NamedGreeter
+77	        greeter.greet(); // Here we might have a NamedGreeter
 </code></pre>
 <p>As you can see, currently GDB only knows about the static type of greeter in line 77:</p>
-<pre><code>Thread 1 "hello_image" hit Breakpoint 2, hello.Hello::main(java.lang.String[]*) (args=&lt;optimized out&gt;) at hello/Hello.java:77
+<pre><code class="language-text">Thread 1 "hello_image" hit Breakpoint 2, hello.Hello::main(java.lang.String[]*) (args=&lt;optimized out&gt;) at hello/Hello.java:77
 77	        greeter.greet();
 (gdb) p greeter
 $17 = (hello.Hello$Greeter *) 0x7ff7f9101208
 </code></pre>
-
-<p>Also, you are not able to see fields that only exist for the <code>NamedGreeter</code> subclass.</p>
-<pre><code>(gdb) p *greeter
+<p>Also, we are not able to see fields that only exist for the <code>NamedGreeter</code> subclass.</p>
+<pre><code class="language-text">(gdb) p *greeter
 $18 = {
   &lt;java.lang.Object&gt; = {
     &lt;_objhdr&gt; = {
       hub = 0x1d1cae0
     }, &lt;No data fields&gt;}, &lt;No data fields&gt;}
 </code></pre>
-
-<p>But you do have the <code>hub</code>-field, which points to the class-object of an object.
-Therefore, it allows you to determine the runtime-type of the Greeter object at address <code>0x7ff7f9101208</code>:</p>
-<pre><code>(gdb) p greeter.hub
+<p>But we do have the <code>hub</code>-field, which points to the class-object of an object.
+Therefore, it allows us to determine the runtime-type of the Greeter object at address <code>0x7ff7f9101208</code>:</p>
+<pre><code class="language-text">(gdb) p greeter.hub
 $19 = (_z_.java.lang.Class *) 0x1d1cae0
 (gdb) p *greeter.hub
 $20 = {
@@ -529,13 +522,11 @@ $21 = (_z_.java.lang.String *) 0xb94a2
 (gdb) p greeter.hub.name.value.data
 $22 = 0x7ff7f80705b8 "hello.Hello$NamedGreeter\351\001~*"
 </code></pre>
-
-<p>So you learned that the actual type of that object is <code>hello.Hello$NamedGreeter</code>. 
-Now cast to that type:</p>
-<pre><code>(gdb) set $rt_greeter = ('hello.Hello$NamedGreeter' *) greeter
+<p>So we learned that the actual type of that object is <code>hello.Hello$NamedGreeter</code>. We can now cast to that type:</p>
+<pre><code class="language-text">(gdb) set $rt_greeter = ('hello.Hello$NamedGreeter' *) greeter
 </code></pre>
-<p>Now you can inspect the downcasted convenience variable <code>rt_greeter</code>:</p>
-<pre><code>(gdb) p $rt_greeter
+<p>Now we can inspect the downcasted convenience variable <code>rt_greeter</code>:</p>
+<pre><code class="language-text">(gdb) p $rt_greeter
 $23 = (hello.Hello$NamedGreeter *) 0x7ff7f9101208
 (gdb) p *$rt_greeter
 $24 = {
@@ -548,31 +539,29 @@ $24 = {
   name = 0x270119
 }
 </code></pre>
-<p>Now you can see the <code>name</code>-field that only exists in the <code>NamedGreeter</code> subtype.</p>
-<pre><code>(gdb) p $rt_greeter.name
+<p>Now we can see the <code>name</code>-field that only exists in the <code>NamedGreeter</code> subtype.</p>
+<pre><code class="language-text">(gdb) p $rt_greeter.name
 $25 = (_z_.java.lang.String *) 0x270119
 </code></pre>
-<p>So the <code>name</code>-field is of type String. You already know how to see the contents of a String:</p>
-<pre><code>(gdb) p $rt_greeter.name.value.data
+<p>So the <code>name</code>-field is of type String. We already know how to see the contents of a String:</p>
+<pre><code class="language-text">(gdb) p $rt_greeter.name.value.data
 $26 = 0x7ff7f91008c0 "FooBar\376\376\200G\273\001\027\001'"
 </code></pre>
 <h5 id="️-if-the-static-type-that-you-want-to-downcast-from-is-a-compressed-reference-then-the-type-used-in-the-downcast-also-needs-to-be-that-of-a-compressed-reference">⚠️ If the static type that you want to downcast from is a compressed reference then the type used in the downcast also needs to be that of a compressed reference.</h5>
-<p>For example, if you have:</p>
-<pre><code>(gdb) p elementData.data[0]
+<p>For example if you have:</p>
+<pre><code class="language-text">(gdb) p elementData.data[0]
 
 $38 = (_z_.java.lang.Object *) 0x290fcc
 </code></pre>
-<p>In the internal array of an <code>ArrayList</code>, the first entry points to a <code>java.lang.Object</code> with a <code>_z_.</code> prefix, which denotes that this is a <strong>compressed ref</strong>.</p>
-
-<p>To check what the runtime-type of that object is, use:</p>
-<pre><code>(gdb) p elementData.data[0].hub.name.value.data
+<p>in the internal array of an <code>ArrayList</code>, the first entry points to a <code>java.lang.Object</code> with a <code>_z_.</code> prefix, which denotes that this is a <strong>compressed ref</strong>.
+To check what the runtime-type of that object is, we use:</p>
+<pre><code class="language-text">(gdb) p elementData.data[0].hub.name.value.data
 
 $40 = 0x7ff7f8665600 "java.lang.String=\256\271`"
 </code></pre>
-<p>Now you know that the compressed ref actually points to a <code>java.lang.String</code>.</p>
-
-<p><strong>Then, when you cast, do not forget to use the <code>_z_.</code> prefix.</strong></p>
-<pre><code>(gdb) p ('_z_.java.lang.String' *) elementData.data[0]
+<p>Now we know that the compressed ref actually points to a <code>java.lang.String</code>.
+<strong>When we now cast, we must not forget to use the <code>_z_.</code> prefix.</strong></p>
+<pre><code class="language-text">(gdb) p ('_z_.java.lang.String' *) elementData.data[0]
 
 $41 = (_z_.java.lang.String *) 0x290fcc
 (gdb) p *$41
@@ -587,14 +576,14 @@ $43 = {
     value = 0x290fce,
     ...
 </code></pre>
-<p>To see the contents of that String, again use:</p>
-<pre><code>(gdb) p $41.value.data
+<p>To see the contents of that String, we again use:</p>
+<pre><code class="language-text">(gdb) p $41.value.data
 
 $44 = 0x7ff7f9207e78 "#subsys_name\thierarchy\tnum_cgroups\tenabled"
 </code></pre>
 
 <h4 id="using-the-this-variable-in-instance-methods">Using the <code>this</code> variable in instance methods</h4>
-<pre><code>(gdb) bt
+<pre><code class="language-text">(gdb) bt
 #0  hello.Hello$NamedGreeter::greet() (this=0x7ff7f9101208) at hello/Hello.java:71
 #1  0x000000000083c060 in hello.Hello::main(java.lang.String[]*) (args=&lt;optimized out&gt;) at hello/Hello.java:77
 #2  0x0000000000413355 in com.oracle.svm.core.JavaMainWrapper::runCore0() () at com/oracle/svm/core/JavaMainWrapper.java:178
@@ -618,26 +607,25 @@ $2 = {
 (gdb) p this.name
 $3 = (_z_.java.lang.String *) 0x270119
 </code></pre>
-
 <p>Just like in Java or C++ code, in instance-methods, prefixing with <code>this.</code> is not needed.</p>
-<pre><code>(gdb) p name
+<pre><code class="language-text">(gdb) p name
 $7 = (_z_.java.lang.String *) 0x270119
 (gdb) p name.value.data
 $8 = 0x7ff7f91008c0 "FooBar\376\376\200G\273\001\027\001'"
 </code></pre>
 
 <h4 id="accessing-static-fields">Accessing static fields</h4>
-<p>While static fields are shown whenever an instance of an object is printed, you just want to see the value of a specific static field.</p>
-<pre><code>(gdb) p 'java.math.BigDecimal::BIG_TEN_POWERS_TABLE'
+<p>While static fields are shown whenever we print an instance of an object sometimes, we just want to see the value of a specific static field.</p>
+<pre><code class="language-text">(gdb) p 'java.math.BigDecimal::BIG_TEN_POWERS_TABLE'
 $23 = (_z_.java.math.BigInteger[] *) 0x132b95
 </code></pre>
 <p>To get a list of all static fields, use:</p>
-<pre><code>(gdb) info variables ::
+<pre><code class="language-text">(gdb) info variables ::
 </code></pre>
 
 <h4 id="inspecting-class-objects">Inspecting <code>.class</code> Objects</h4>
 <p>For every Java type in the image, there exists an easy way to access its class object (aka the hub).</p>
-<pre><code>(gdb) info types PrintStream
+<pre><code class="language-text">(gdb) info types PrintStream
 All types matching regular expression "PrintStream":
 
 ...
@@ -646,8 +634,8 @@ File java/io/PrintStream.java:
 	java.io.PrintStream$1;
 ...
 </code></pre>
-<p>To access the hub of <code>java.io.PrintStream</code>, you can use the <code>.class</code> suffix:</p>
-<pre><code>(gdb) p 'java.io.PrintStream.class'
+<p>To access the hub of <code>java.io.PrintStream</code>, we can use the <code>.class</code> suffix:</p>
+<pre><code class="language-text">(gdb) p 'java.io.PrintStream.class'
 $4 = {
   &lt;java.lang.Object&gt; = {
     &lt;_objhdr&gt; = {
@@ -668,18 +656,18 @@ $4 = {
   ...
 }
 </code></pre>
-<p>This allows you, for example, to check which module <code>java.io.PrintStream</code> belongs to:</p>
-<pre><code>(gdb) p 'java.io.PrintStream.class'.module.name.value.data
+<p>This allows us, for example, to check which module <code>java.io.PrintStream</code> belongs to:</p>
+<pre><code class="language-text">(gdb) p 'java.io.PrintStream.class'.module.name.value.data
 $12 = 0x7ff7f866b000 "java.base"
 </code></pre>
 
 <h4 id="inlined-methods">Inlined methods</h4>
 <p>Setting a breakpoint in <code>PrintStream.writeln</code></p>
-<pre><code>(gdb) b java.io.PrintStream::writeln
+<pre><code class="language-text">(gdb) b java.io.PrintStream::writeln
 Breakpoint 2 at 0x4080cb: java.io.PrintStream::writeln. (35 locations)
 </code></pre>
-<p>Now you navigate to:</p>
-<pre><code>(gdb) bt
+<p>Now we navigate to</p>
+<pre><code class="language-text">(gdb) bt
 #0  java.io.BufferedWriter::min(int, int) (this=&lt;optimized out&gt;, a=8192, b=14) at java/io/BufferedWriter.java:216
 #1  java.io.BufferedWriter::implWrite(java.lang.String*, int, int) (this=0x7ff7f884e828, s=0x7ff7f9101230, off=&lt;optimized out&gt;, len=&lt;optimized out&gt;) at java/io/BufferedWriter.java:329
 #2  0x000000000084c50d in java.io.BufferedWriter::write(java.lang.String*, int, int) (this=&lt;optimized out&gt;, s=&lt;optimized out&gt;, off=&lt;optimized out&gt;, len=&lt;optimized out&gt;) at java/io/BufferedWriter.java:313
@@ -696,8 +684,8 @@ Breakpoint 2 at 0x4080cb: java.io.PrintStream::writeln. (35 locations)
 #13 com.oracle.svm.core.code.IsolateEnterStub::JavaMainWrapper_run_e6899342f5939c89e6e2f78e2c71f5f4926b786d(int, org.graalvm.nativeimage.c.type.CCharPointerPointer*) (__0=&lt;optimized out&gt;, __1=&lt;optimized out&gt;)
     at com/oracle/svm/core/code/IsolateEnterStub.java:1
 </code></pre>
-<p>If you query extra info about the top frame, you see that <code>min</code> got inlined into <code>implWrite</code>:</p>
-<pre><code>(gdb) info frame
+<p>If we query extra info about the top frame, we see</p>
+<pre><code class="language-text">(gdb) info frame
 Stack level 0, frame at 0x7fffffffdb20:
  rip = 0x84af8a in java.io.BufferedWriter::min(int, int) (java/io/BufferedWriter.java:216); saved rip = 0x84c50d
  inlined into frame 1
@@ -705,29 +693,28 @@ Stack level 0, frame at 0x7fffffffdb20:
  Arglist at unknown address.
  Locals at unknown address, Previous frame's sp in rsp
 </code></pre>
-
-<p>Now stepping into the use-site of <code>min</code>, you see that value <code>14</code> was returned by <code>min</code> (as expected):</p>
-<pre><code>(gdb) bt
+<p>that <code>min</code> got inlined into <code>implWrite</code>.
+Now stepping into the use-site of <code>min</code>, we see</p>
+<pre><code class="language-text">(gdb) bt
 #0  java.lang.String::getChars(int, int, char[]*, int) (this=0x7ff7f9101230, srcBegin=0, srcEnd=14, dst=0x7ff7f858ac58, dstBegin=0) at java/lang/String.java:1688
 #1  java.io.BufferedWriter::implWrite(java.lang.String*, int, int) (this=0x7ff7f884e828, s=0x7ff7f9101230, off=&lt;optimized out&gt;, len=&lt;optimized out&gt;) at java/io/BufferedWriter.java:330
 ...
 </code></pre>
+<p>that value <code>14</code> was returned by <code>min</code> (as expected).</p>
 
 <h4 id="calling-svm_dbg_-helper-functions-during-debugging">Calling <code>svm_dbg_</code>-helper functions during debugging</h4>
 
 <p>When the image gets built with <code>-H:+IncludeDebugHelperMethods</code>, additional <code>@CEntryPoint</code>-functions are defined that can be called from GDB during debugging, for example:</p>
-<pre><code>(gdb) p greeter 
+<pre><code class="language-text">(gdb) p greeter 
 $3 = (hello.Hello$Greeter *) 0x7ffff6881900
 </code></pre>
-<p>Here again, you have a local named <code>greeter</code> with the static-type <code>hello.Hello$Greeter</code>.
-To see its runtime-type, you can use the methods already described above.\</p>
-
-<p>Alternatively, you can make use of the <code>svm_dbg_</code>-helper functions.
-For example, from within the running debug session, you can call:</p>
-<pre><code class="language-java">void svm_dbg_print_hub(graal_isolatethread_t* thread, size_t hubPtr)
+<p>Here again, we have a local named <code>greeter</code> with the static-type <code>hello.Hello$Greeter</code>.
+To see its runtime-type, we can use the methods already described above.
+Alternatively, we can make use of the <code>svm_dbg_</code>-helper functions.
+For example, we can call</p>
+<pre><code class="language-text">void svm_dbg_print_hub(graal_isolatethread_t* thread, size_t hubPtr)
 </code></pre>
-
-<p>You have to pass a value for <code>graal_isolatethread_t</code> and the absolute address of the hub you want to get printed.
+<p>from within the running debug session. We have to pass a value for <code>graal_isolatethread_t</code> and the absolute address of the hub we want to get printed.
 In most situations, the value for <code>graal_isolatethread_t</code> is just the value of the current <code>IsolateThread</code> that can be found in a platform-specific register:</p>
 
 <table>
@@ -749,29 +736,29 @@ In most situations, the value for <code>graal_isolatethread_t</code> is just the
   </tbody>
 </table>
 
-<p>Finally, before you can call <code>svm_dbg_print_hub</code>, make sure you have the <strong>absolute address</strong> of the hub you want to print. Using</p>
-<pre><code>(gdb) p greeter.hub
+<p>Finally, before we can call <code>svm_dbg_print_hub</code> we also have to make sure we have the <strong>absolute address</strong> of the hub we want to print. Using</p>
+<pre><code class="language-text">(gdb) p greeter.hub
 $4 = (_z_.java.lang.Class *) 0x837820 &lt;java.io.ObjectOutputStream::ObjectOutputStream(java.io.OutputStream*)+1120&gt;
 </code></pre>
 <p>reveals that in the current situation, the <code>hub</code>-field in <code>greeter</code> holds a compressed reference to the hub (the <code>hub-type</code> is prefixed with <code>_z_.</code>). 
-Thus, you first need to get the absolute address of the hub field by using another <code>svm_dbg_</code>-helper method.</p>
-<pre><code>(gdb) call svm_dbg_obj_uncompress($r15, greeter.hub)
+Thus, we first need to get the absolute address of the hub field by using another <code>svm_dbg_</code>-helper method.</p>
+<pre><code class="language-text">(gdb) call svm_dbg_obj_uncompress($r15, greeter.hub)
 $5 = 140737339160608
 (gdb) p/x $5
 $6 = 0x7ffff71b7820
 </code></pre>
-<p>With the help of calling <code>svm_dbg_obj_uncompress</code>, you now know that the hub is located at address <code>0x7ffff71b7820</code> and you can finally call <code>svm_dbg_print_hub</code>:</p>
-<pre><code>(gdb) call (void) svm_dbg_print_hub($r15, 0x7ffff71b7820)
+<p>With the help of calling <code>svm_dbg_obj_uncompress</code>, we now know that the hub is located at address <code>0x7ffff71b7820</code> and we can finally call <code>svm_dbg_print_hub</code>:</p>
+<pre><code class="language-text">(gdb) call (void) svm_dbg_print_hub($r15, 0x7ffff71b7820)
 hello.Hello$NamedGreeter
 </code></pre>
 <p>Both calls to <code>svm_dbg_</code>-helper can be combined into a single command line:</p>
-<pre><code>(gdb) call (void) svm_dbg_print_hub($r15, svm_dbg_obj_uncompress($r15, greeter.hub))
+<pre><code class="language-text">(gdb) call (void) svm_dbg_print_hub($r15, svm_dbg_obj_uncompress($r15, greeter.hub))
 hello.Hello$NamedGreeter
 </code></pre>
 
-<p>The following <code>svm_dbg_</code>-helper methods are currently defined:</p>
+<h5 id="the-following-svm_dbg_-helper-methods-are-currently-defined">The following <code>svm_dbg_</code>-helper methods are currently defined:</h5>
 
-<pre><code>int svm_dbg_ptr_isInImageHeap(graal_isolatethread_t* thread, size_t ptr);
+<pre><code class="language-text">int svm_dbg_ptr_isInImageHeap(graal_isolatethread_t* thread, size_t ptr);
 int svm_dbg_ptr_isObject(graal_isolatethread_t* thread, size_t ptr);
 int svm_dbg_hub_getLayoutEncoding(graal_isolatethread_t* thread, size_t hubPtr);
 int svm_dbg_hub_getArrayElementSize(graal_isolatethread_t* thread, size_t hubPtr);
@@ -799,12 +786,6 @@ void svm_dbg_print_string(graal_isolatethread_t* thread, size_t strPtr);
 void svm_dbg_print_fatalErrorDiagnostics(graal_isolatethread_t* thread, size_t sp, void * ip);
 void svm_dbg_print_locationInfo(graal_isolatethread_t* thread, size_t mem);
 </code></pre>
-
-<h3 id="related-documentation">Related Documentation</h3>
-
-<ul>
-  <li><a href="/latest/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">Debug Info Feature</a></li>
-</ul>
 
       </div>
   </div>

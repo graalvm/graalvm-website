@@ -825,9 +825,9 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "GraalVM for JDK 21 (Latest)";
-  } else if (version === "jdk22") {
-    version = "GraalVM for JDK 22 (Early Access)";
+    version = "GraalVM for JDK 22 (Latest)";
+  } else if (version === "jdk23") {
+    version = "GraalVM for JDK 23 (Early Access)";
   } else if (version === "dev") {
     version = "Dev Build";  
   } else if (version.indexOf("jdk") === 0) {

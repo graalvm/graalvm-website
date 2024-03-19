@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-22 09:41:16 +0000"/>
+  <meta name="last_modified" content="2024-02-22 09:19:25 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/java/compiler/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/compiler/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -613,6 +614,8 @@ $(document).ready(function(){
 
   
 
+  
+
 </div>
 
         </div>
@@ -688,10 +691,11 @@ GraalVM includes a version of the HotSpot JVM that supports JVMCI.</p>
       </h2>
 
 <p>The Graal compiler provides optimized performance for programs running on the JVM through unique approaches to code analysis and optimization.
-It includes multiple optimization algorithms (called “Phases”), like aggressive inlining, polymorphic inlining, and others.
-Find some of the platform-independent compiler optimizations in GraalVM Community Edition <a href="https://github.com/oracle/graal/blob/release/graal-vm/23.1/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/core/phases/CEOptimization.java">here</a>.</p>
+It includes multiple optimization algorithms (called “Phases”), like aggressive inlining, polymorphic inlining, and others. 
+Find some of the platform-independent compiler optimizations in GraalVM Community Edition [here]
+(https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java){:target=”_blank”}.</p>
 
-<p>The Graal compiler can bring performance advantages for highly-abstracted programs. For example, it includes a <a href="https://github.com/oracle/graal/blob/release/graal-vm/23.1/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/core/phases/CEOptimization.java#L160">partial-escape-analysis optimization</a> that can remove costly allocations of certain objects. 
+<p>The Graal compiler can bring performance advantages for highly-abstracted programs. For example, it includes a <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java#L176" target="_blank">partial-escape-analysis optimization</a> that can remove costly allocations of certain objects. 
 This optimization determines when a new object is accessible outside a compilation unit and only allocates it on paths that “escape” the compilation unit (e.g. the object is passed as a parameter, stored in a field, or returned from a method). This can greatly improve performance of an application by reducing the number of heap allocations. 
 Code using more modern Java features like Streams or Lambdas will see greater speedups as this type of code involves a significant number of such non- or partially-escaping objects. Code that is bound by things like I/O or memory allocations that cannot be removed by the compiler will see less improvement. 
 For more information on performance tuning, refer to <a href="/latest/reference-manual/java/options/">Compiler Configuration on JVM</a>.</p>
@@ -763,18 +767,18 @@ This mode is selected with the <code>-XX:-UseJVMCINativeLibrary</code> command l
 
 <p>If an uncaught exception is thrown by the compiler, the compilation is simply discarded and execution continues.
 The Graal compiler can instead produce diagnostic data (such as immediate representation graphs) that can be submitted along with a bug report.
-This is enabled with <code>-Dgraal.CompilationFailureAction=Diagnose</code>.
-The default location of the diagnostics output is in <code>graal_dumps/</code> under the current working directory of the process but can be changed with the <code>-Dgraal.DumpPath</code> option.
+This is enabled with <code>-Djdk.graal.CompilationFailureAction=Diagnose</code>.
+The default location of the diagnostics output is in <code>graal_dumps/</code> under the current working directory of the process but can be changed with the <code>-Djdk.graal.DumpPath</code> option.
 During the VM shutdown, the location of the archive containing the diagnostic data is printed to the console.</p>
 
-<p>Furthermore, diagnostic data can be produced for any compilation performed by the Graal compiler with the <code>-Dgraal.Dump</code> option.
+<p>Furthermore, diagnostic data can be produced for any compilation performed by the Graal compiler with the <code>-Djdk.graal.Dump</code> option.
 This will produce diagnostic data for every method compiled by the compiler.
-To refine the set of methods for which diagnostic data is produced, use the <code>-Dgraal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
-For example, <code>-Dgraal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic data only for methods in the <code>java.lang.String</code> class as well as methods named <code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
+To refine the set of methods for which diagnostic data is produced, use the <code>-Djdk.graal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
+For example, <code>-Djdk.graal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic data only for methods in the <code>java.lang.String</code> class as well as methods named <code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
 
 <p>Instead of being written to a file, diagnostic data can also be sent over the network to the <a href="https://www.graalvm.org/latest/tools/igv/">Ideal Graph Visualizer</a>.
-This requires the <code>-Dgraal.PrintGraph=Network</code> option, upon which the compiler will try to send diagnostic data to <em>127.0.0.1:4445</em>.
-This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</code> and <code>-Dgraal.PrintGraphPort</code> options.</p>
+This requires the <code>-Djdk.graal.PrintGraph=Network</code> option, upon which the compiler will try to send diagnostic data to <em>127.0.0.1:4445</em>.
+This network endpoint can be configured with the <code>-Djdk.graal.PrintGraphHost</code> and <code>-Djdk.graal.PrintGraphPort</code> options.</p>
     
       <h3 id="related-documentation">
         

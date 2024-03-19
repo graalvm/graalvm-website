@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-12-15 12:39:56 +0000"/>
+  <meta name="last_modified" content="2023-11-20 14:33:53 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -380,6 +381,8 @@ $(document).ready(function(){
 </section>
 
 <ul class="toc-bullets">
+
+  
 
   
 
@@ -768,40 +771,12 @@ $(document).ready(function(){
         
         
       </h1>
-    
-      <h3 id="table-of-contents">
-        
-        
-          Table of Contents <a href="#table-of-contents" class="anchor_heading">#</a>
-        
-        
-      </h3>
 
-<ul>
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#source-file-caching">Source File Caching</a></li>
-  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
-  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
-  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
-  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
-  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
-  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
-  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
-</ul>
-    
-      <h2 id="introduction">
-        
-        
-          Introduction <a href="#introduction" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>To build a native executable with debug information, provide the <code>-g</code> command-line option for <code>javac</code> when compiling the application, and then to the <code>native-image</code> builder:</p>
-<pre><code class="language-shell">javac -g Hello.java
-native-image -g Hello
+<p>To add debug information to a generated native image, provide the <code>-g</code> option to the <code>native-image</code> builder:</p>
+<pre><code class="language-shell">native-image -g Hello
 </code></pre>
-<p>This enables source-level debugging, and the debugger (GDB) then correlates machine instructions with specific source lines in Java files.
+
+<p>The <code>-g</code> flag instructs <code>native-image</code> to generate debug information.
 The resulting image will contain debug records in a format the GNU Debugger (GDB) understands.
 Additionally, you can pass <code>-O0</code> to the builder which specifies that no compiler optimizations should be performed.
 Disabling all optimizations is not required, but in general it makes the debugging experience better.</p>
@@ -810,7 +785,10 @@ Disabling all optimizations is not required, but in general it makes the debuggi
 
 <p>By default, debug info will only include details of some of the values of parameters and local variables.
 This means that the debugger will report many parameters and local variables as being undefined. If you pass <code>-O0</code> to the builder then full debug information will be included.
-If you want more parameter and local variable information to be included when employing higher levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command line flag to the <code>native-image</code> command:</p>
+If you
+want more parameter and local variable information to be included when employing higher
+levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command
+line flag to the <code>native-image</code> command</p>
 
 <pre><code class="language-shell">native-image -g -H:+SourceLevelDebug Hello
 </code></pre>
@@ -840,6 +818,25 @@ resulting image file.</p>
   <p>Note: Debug info support for <code>perf</code> and <code>valgrind</code> on Linux is an experimental feature.</p>
 </blockquote>
     
+      <h3 id="table-of-contents">
+        
+        
+          Table of Contents <a href="#table-of-contents" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="#source-file-caching">Source File Caching</a></li>
+  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
+  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
+  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
+  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
+  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
+  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
+  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
+</ul>
+    
       <h2 id="source-file-caching">
         
         
@@ -868,7 +865,6 @@ javac -cp apps/greeter/classes \
     --source-path apps/hello/src \
     -d apps/hello/classes org/my/hello/Hello.java
 native-image -g \
-    -H:-SpawnIsolates \
     -H:DebugInfoSourceSearchPath=apps/hello/src \
     -H:DebugInfoSourceSearchPath=apps/greeter/src \
     -cp apps/hello/classes:apps/greeter/classes org.my.hello.Hello
@@ -892,7 +888,6 @@ As an example, the following variant of the previous command specifies an absolu
 
 <pre><code class="language-shell">SOURCE_CACHE_ROOT=/tmp/$$/sources
 native-image -g \
-    -H:-SpawnIsolates \
     -H:DebugInfoSourceCacheRoot=$SOURCE_CACHE_ROOT \
     -H:DebugInfoSourceSearchPath=apps/hello/target/hello-sources.jar,apps/greeter/target/greeter-sources.jar \
     -cp apps/target/hello.jar:apps/target/greeter.jar \
@@ -949,10 +944,10 @@ In the corresponding C++ model the Java name is used to label the underlying C++
 This class layout type declares the expected fields like <code>hash</code> of type <code>int</code> and <code>value</code> of type <code>byte[]</code> and methods like <code>String(byte[])</code>, <code>charAt(int)</code>, etc. However, the copy constructor which appears in Java as <code>String(String)</code> appears in <code>gdb</code> with the signature <code>String(java.lang.String *)</code>.</p>
 
 <p>The C++ layout class inherits fields and methods from class (layout) type <code>java.lang.Object</code> using C++ public inheritance.
-The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes two fields. The first field is called
-<code>hub</code> and its type is <code>java.lang.Class *</code> i.e. it is a pointer to the object’s
-class. The second field is called <code>idHash</code> and has type <code>int</code>. It stores an
-identity hashcode for the object.</p>
+The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes up to two fields (depending on the VM configuration).
+The first field is called <code>hub</code> and its type is <code>java.lang.Class *</code> i.e. it is a pointer to the object’s class.
+The second field (optional) is called <code>idHash</code> and has type <code>int</code>.
+It stores an identity hashcode for the object.</p>
 
 <p>The <code>ptype</code> command can be used to print details of a specific type.
 Note that the Java type name must be specified in quotes because to escape the embedded <code>.</code> characters.</p>
@@ -1420,7 +1415,7 @@ If the sources cache is not located in the directory in which you run GDB, you c
 
 <p>The argument to the set directories command should identify the location of the sources cache as an absolute path or a relative path from the working directory of the <code>gdb</code> session.</p>
 
-<p>Note that the current implementation does not yet find some sources for the GraalVM JIT compiler in the <em>org.graalvm.compiler*</em> package subspace.</p>
+<p>Note that the current implementation does not yet find some sources for the GraalVM JIT compiler in the <em>jdk.graal.compiler*</em> package subspace.</p>
 
 <p>You can supplement the files cached in <code>sources</code> by unzipping application source JAR files or copying application source trees into the cache.
 You will need to ensure that any new subdirectory you add to <code>sources</code> corresponds to the top level package for the classes whose sources are being included.</p>
@@ -1505,21 +1500,21 @@ at a specific address in memory.</p>
         
       </h2>
 
-<p>Enabling the use of <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">isolates</a>, by passing command line option <code>-H:-SpawnIsolates</code> to the <code>native-image</code> builder, affects the way ordinary object pointers (oops) are encoded.
+<p>The use of <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">isolates</a> in native image affects the way ordinary object pointers (oops) are encoded.
 In turn, that means the debug info generator has to provide <code>gdb</code> with information about how to translate an encoded oop to the address in memory, where the object data is stored.
 This sometimes requires care when asking <code>gdb</code> to process encoded oops vs decoded raw addresses.</p>
 
-<p>When isolates are disabled, oops are essentially raw addresses pointing directly at the object contents.
+<p>If isolates were disabled, oops would essentially be raw addresses pointing directly at the object contents.
 This is generally the same whether the oop is embedded in a static/instance field or is referenced from a local or parameter variable located in a register or saved to the stack.
 It is not quite that simple because the bottom 3 bits of some oops may be used to hold “tags” that record certain transient properties of an object.
 However, the debug info provided to <code>gdb</code> means that it will remove these tag bits before dereferencing the oop as an address.</p>
 
-<p>By contrast, when isolates are enabled, oops references stored in static or instance fields are actually relative addresses, offsets from a dedicated heap base register (r14 on x86_64, r29 on AArch64), rather than direct addresses (in a few special cases the offset may also have some low tag bits set).
+<p>With the use of isolates, oops references stored in static or instance fields are actually relative addresses, offsets from a dedicated heap base register (r14 on x86_64, r29 on AArch64), rather than direct addresses (in a few special cases the offset may also have some low tag bits set).
 When an “indirect” oop of this kind gets loaded during execution, it is almost always immediately converted to a “raw” address by adding the offset to the heap base register value.
 So, oops which occur as the value of local or parameter vars are actually raw addresses.</p>
 
 <blockquote>
-  <p>Note that on some operating systems enabling isolates causes problems with printing of objects when using a <code>gdb</code> release version 10 or earlier. It is currently recommended to disable use of isolates, by passing command line option <code>-H:-SpawnIsolates</code>, when generating debug info if your operating system includes one of these earlier releases. Alternatively, you may be able to upgrade your debugger to a later version.</p>
+  <p>Note that on some operating systems enabling isolates causes problems with printing of objects when using a <code>gdb</code> release version 10 or earlier. It is strongly recommended to upgrade your debugger to a later version.</p>
 </blockquote>
 
 <p>The DWARF info encoded into the image, when isolates are enabled, tells <code>gdb</code> to rebase indirect oops whenever it tries to dereference them to access underlying object data.

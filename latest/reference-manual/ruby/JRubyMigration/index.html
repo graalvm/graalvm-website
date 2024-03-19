@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-09-14 12:41:23 +0000"/>
+  <meta name="last_modified" content="2023-11-27 17:40:48 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/ruby/JRubyMigration/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/ruby/JRubyMigration/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -776,6 +777,8 @@ $(document).ready(function(){
         
       
     
+  
+
   
 
   
@@ -1246,27 +1249,30 @@ This is not compatible with existing JRuby-Java interoperability, so you will ne
 # With the 'require' above, you now can refer to things that are part of the
 # standard Java platform via their full paths.
 frame = javax.swing.JFrame.new("Window") # Creating a Java JFrame
-label = javax.swing.JLabel.new("Hello")
+label = javax.swing.JLabel.new("Hello World")
 
 # You can transparently call Java methods on Java objects, just as if they were defined in Ruby.
 frame.add(label)  # Invoking the Java method 'add'.
-frame.setDefaultCloseOperation(javax.swing.JFrame::EXIT_ON_CLOSE)
+frame.setDefaultCloseOperation(javax.swing.WindowConstants::EXIT_ON_CLOSE)
 frame.pack
 frame.setVisible(true)
+sleep
 </code></pre>
 
 <p>In TruffleRuby we would write that this way instead:</p>
 
 <pre><code class="language-ruby">Java.import 'javax.swing.JFrame'
 Java.import 'javax.swing.JLabel'
+Java.import 'javax.swing.WindowConstants'
 
 frame = JFrame.new("Window")
-label = JLabel.new("Hello")
+label = JLabel.new("Hello World")
 
 frame.add(label)
-frame.setDefaultCloseOperation(JFrame[:EXIT_ON_CLOSE])
+frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
 frame.pack
 frame.setVisible(true)
+sleep
 </code></pre>
 
 <p>Instead of using Ruby metaprogramming to simulate a Java package name, we explicitly import classes.
@@ -1322,6 +1328,31 @@ This is not available in the Native Standalone.</p>
 <p>JRuby will rewrite method names such as <code>my_method</code> to the Java convention of <code>myMethod</code>, and convert <code>getFoo</code> to <code>foo</code>, and <code>setFoo</code> to <code>foo=</code>.
 TruffleRuby does not perform these conversions.</p>
     
+      <h3 id="calling-overloaded-method">
+        
+        
+          Calling Overloaded Method <a href="#calling-overloaded-method" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>When multiple overloads are possible, it needs to be selected explicitly.
+For instance <code>java.util.concurrent.ExecutorService</code> has both <code>submit(Runnable)</code> and <code>submit(Callable&lt;T&gt; task)</code>.
+Calling submit without specifying which one shows the possible overloads:</p>
+<pre><code>$ ruby -e 'Java.type("java.util.concurrent.Executors").newFixedThreadPool(1).submit {}'
+-e:1:in `main': Multiple applicable overloads found for method name submit (candidates: [
+  Method[public java.util.concurrent.Future java.util.concurrent.AbstractExecutorService.submit(java.util.concurrent.Callable)],
+  Method[public java.util.concurrent.Future java.util.concurrent.AbstractExecutorService.submit(java.lang.Runnable)]],
+  arguments: [RubyProc@4893b344 (RubyProc)]) (TypeError)
+</code></pre>
+
+<p>You can select a specific overload using:</p>
+<pre><code class="language-ruby">executor = Java.type("java.util.concurrent.Executors").newFixedThreadPool(1)
+executor['submit(java.lang.Runnable)'].call(-&gt; { 1 })
+# or
+executor.send("submit(java.lang.Runnable)") { 1 }
+</code></pre>
+    
       <h3 id="referring-to-constants">
         
         
@@ -1331,8 +1362,7 @@ TruffleRuby does not perform these conversions.</p>
       </h3>
 
 <p>In JRuby, Java constants are modelled as Ruby constants, <code>MyClass::FOO</code>.
-In TruffleRuby you use the read notation to read them as a property,
-<code>MyClass[:FOO]</code>.</p>
+In TruffleRuby you use the read notation to read them as a property, <code>MyClass.FOO</code> or <code>MyClass[:FOO]</code>.</p>
     
       <h3 id="using-classes-from-jar-files">
         

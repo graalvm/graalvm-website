@@ -1,4 +1,4 @@
-let currentMajorJavaVersion = "21";
+let currentMajorJavaVersion = "22";
 let currentPlatform = "empty-choice";
 let currentDownloadLink = null;
 
@@ -62,7 +62,6 @@ async function getCPUArchitecture() {
   return "Unknown Architecture";
 }
 
-
 const platforms = {
   "empty-choice": "Choose a platform",
   "macos-aarch64": "macOS M1/AArch64",
@@ -75,6 +74,7 @@ const platforms = {
 const fullJavaVersions = {
   "17": "17.0.10",
   "21": "21.0.2",
+  "22": "22",
 }
 
 function updateGHASnippet(majorJavaVersion) {
@@ -95,7 +95,7 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
-  $("#dl-snippet-sdkman").text(`sdk install java ${fullJavaVersion}-graal`);
+  $("#dl-snippet-sdkman").text(`sdk install java ${fullJavaVersion}-graal` +  `    # coming soon`);
 }
 
 function updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension) {

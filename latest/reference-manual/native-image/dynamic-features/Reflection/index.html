@@ -14,10 +14,10 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-07-20 09:58:03 +0000"/>
+  <meta name="last_modified" content="2023-12-06 10:13:18 +0000"/>
 
   
-  <link rel="canonical" href="/latest/reference-manual/native-image/dynamic-features/Reflection/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/dynamic-features/Reflection/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -364,8 +364,9 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 21 (Latest)', 'latest');">GraalVM for JDK 21 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Early Access)', 'jdk22');">GraalVM for JDK 22 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 20', 'jdk20');">GraalVM for JDK 20</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('GraalVM 22.3', '22.3');">GraalVM 22.3</li>
@@ -380,6 +381,8 @@ $(document).ready(function(){
 </section>
 
 <ul class="toc-bullets">
+
+  
 
   
 
@@ -802,14 +805,20 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Java reflection support (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods, fields and their properties at run time.</p>
-
-<p>Native Image has partial support for reflection and needs to know ahead-of-time the reflectively accessed program elements.
-Examining and accessing program elements through <code>java.lang.reflect.*</code> or loading classes with <code>Class.forName(String)</code> at run time requires preparing additional metadata for those program elements.
+<p>Java reflection support (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods, fields and their properties at run time.
 (Note: loading classes with <code>Class.forName(String)</code> are included here since it is closely related to reflection.)</p>
 
+<p>Native Image fully supports reflection in ahead-of-time compiled images.
+It may require additional configuration when reflection is used in ways that are unpredictable for the static analysis (e.g., depending on user input).
+Examining and accessing program elements through <code>java.lang.reflect.*</code> or loading classes with <code>Class.forName(String)</code> at run time can require preparing additional metadata for those program elements in the image.
+This metadata must be stored in the image already when it is created ahead of time.
+To reduce both the overall file size of images and the overhead of maintaining configuration, it is nonetheless recommended to avoid the use of reflection when possible.</p>
+
 <p>Native Image tries to resolve the target elements through a static analysis that detects calls to the Reflection API.
-Where the analysis fails, the program elements reflectively accessed at run time must be specified using a manual configuration. See <a href="/latest/reference-manual/native-image/metadata/">Reachability Metadata</a> and <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collect Metadata with the Tracing Agent</a> for more information.</p>
+Where the analysis fails, the program elements reflectively accessed at run time must be specified using a manual configuration.
+See <a href="/latest/reference-manual/native-image/metadata/">Reachability Metadata</a> for more details on this configuration.
+Note that you can <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collect Metadata with the Tracing Agent</a>.
+Using this manual or agent-provided configuration the image builder can include the required metadata in the created image, allowing reflective accesses during image runtime.</p>
     
       <h3 id="table-of-contents">
         
@@ -945,6 +954,19 @@ Code may also write non-static final fields like <code>String.value</code> in th
 
 <p>More than one configuration can be used by specifying multiple paths for <code>ReflectionConfigurationFiles</code> and separating them with <code>,</code>.
 Also, <code>-H:ReflectionConfigurationResources</code> can be specified to load one or several configuration files from the build’s class path, such as from a JAR file.</p>
+    
+      <h3 id="elements-and-queries-registered-by-default">
+        
+        
+          Elements and queries registered by default <a href="#elements-and-queries-registered-by-default" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Querying the methods and constructor of <code>java.lang.Object</code> does not require configuration. The Java access rules still apply.
+Likewise, when using the <a href="#strict-metadata-mode">strict metadata mode</a>, it is possible to query the public or declared fields, methods and constructors of <code>java.lang.Object</code>, primitive classes and array classes without requiring a configuration entry.
+These queries return empty arrays in most cases, except for <code>java.lang.Object</code> methods and constructors and array public methods (all inherited from <code>java.lang.Object</code>). The image size impact of this inclusion is therefore minimal.
+On the other hand, it is necessary to register these methods and constructors if they need to be reflectively invoked at run-time, via <code>Method.invoke()</code> or <code>Constructor.newInstance()</code>.</p>
     
       <h2 id="conditional-configuration">
         
