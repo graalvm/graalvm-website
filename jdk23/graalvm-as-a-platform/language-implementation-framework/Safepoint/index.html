@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2021-06-23 17:14:28 +0000"/>
+  <meta name="last_modified" content="2022-04-20 15:29:01 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/Safepoint/">
@@ -970,6 +970,50 @@ Currently the action will be performed on the next safepoint location when the n
 Note that precise timing can depend on CPU and interruptions by the GC.
 Since GC times are included in the safepoint interval times, it is expected that the maximum is close to the maximum GC interruption time.
 Future versions of this tool will be able to exclude GC interruption times from this statistic.</p>
+    
+      <h3 id="find-missing-safepoint-polls">
+        
+        
+          Find missing safepoint polls <a href="#find-missing-safepoint-polls" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The option <code>TraceMissingSafepointPollInterval</code> helps to find missing safepoint polls, use it like:</p>
+
+<pre><code>$ bin/js --experimental-options --engine.TraceMissingSafepointPollInterval=20 -e 'print(6*7)'
+...
+42
+[engine] No TruffleSafepoint.poll() for 36ms on main (stacktrace 1ms after the last poll)
+	at java.base/java.lang.StringLatin1.replace(StringLatin1.java:312)
+	at java.base/java.lang.String.replace(String.java:2933)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:801)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassInModuleOrNull(BuiltinClassLoader.java:741)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:665)
+	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
+	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
+	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotValueDispatch.createInteropValue(PolyglotValueDispatch.java:1694)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance$1.apply(PolyglotLanguageInstance.java:149)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance$1.apply(PolyglotLanguageInstance.java:147)
+	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance.lookupValueCacheImpl(PolyglotLanguageInstance.java:147)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance.lookupValueCache(PolyglotLanguageInstance.java:137)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageContext.asValue(PolyglotLanguageContext.java:948)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotContextImpl.eval(PolyglotContextImpl.java:1686)
+	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotContextDispatch.eval(PolyglotContextDispatch.java:60)
+	at org.graalvm.polyglot/org.graalvm.polyglot.Context.eval(Context.java:402)
+	at org.graalvm.js.launcher/com.oracle.truffle.js.shell.JSLauncher.executeScripts(JSLauncher.java:365)
+	at org.graalvm.js.launcher/com.oracle.truffle.js.shell.JSLauncher.launch(JSLauncher.java:93)
+	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.launch(AbstractLanguageLauncher.java:296)
+	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.launch(AbstractLanguageLauncher.java:121)
+	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.runLauncher(AbstractLanguageLauncher.java:168)
+...
+</code></pre>
+
+<p>It prints host stacktraces when there was not a safepoint poll in the last N milliseconds, N being the argument to <code>TraceMissingSafepointPollInterval</code>.</p>
+
+<p>On HotSpot there can be long delays between guest safepoints due to classloading, so it makes sense to run this with a native image or focus on non-classloading stacktraces.</p>
     
       <h3 id="trace-thread-local-actions">
         
