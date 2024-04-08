@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-12-15 14:03:55 +0000"/>
+  <meta name="last_modified" content="2024-03-05 13:10:34 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/debug-native-image-process/">
@@ -319,12 +319,12 @@
 <p>To build a native executable with debug information, provide the <code>-g</code> command-line option for <code>javac</code> when compiling the application, and then to the <code>native-image</code> builder. This enables source-level debugging, and the debugger (GDB) then correlates machine instructions with specific source lines in Java files.</p>
 
 <p>Adding <code>-g</code> to the <code>native-image</code> arguments causes debuginfo to be generated.
-Next to the image, there will be an <code>&lt;imagename&gt;.debug</code> file that contains debuginfo and a <code>sources</code> folder that contains Java source files, which the debugger uses to show sources for lineinfo. For example:</p>
+Next to the image, there will be an <em>&lt;imagename&gt;.debug</em> file that contains debuginfo and a <em>sources</em> directory that contains Java source files, which the debugger uses to show sources for lineinfo. For example:</p>
 <pre><code>hello_image
 hello_image.debug
 sources
 </code></pre>
-<p>GDB automatically loads the <code>&lt;imagename&gt;.debug</code> file for a given native executable <code>&lt;imagename&gt;</code>. (There is a link between the image and its <code>*.debug</code>-file)</p>
+<p>GDB automatically loads the <em>&lt;imagename&gt;.debug</em> file for a given native executable <code>&lt;imagename&gt;</code>. (There is a link between the image and its <em>*.debug</em>  file)</p>
 
 <blockquote>
   <p>For a better debugging experience, we recommend combining <code>-g</code> with <code>-O0</code>.
@@ -335,7 +335,7 @@ At the same time, <code>-O0</code> also enables additional metadata to be collec
 <h3 id="using-gdb-with-new-debug-information">Using GDB with New Debug Information</h3>
 
 <h4 id="image-build-information">Image build information</h4>
-<p>The <code>*.debug</code>-file contains additional information about the image build, which can be accessed as follows:</p>
+<p>The <em>*.debug</em> file contains additional information about the image build, which can be accessed as follows:</p>
 <pre><code>readelf -p .debug.svm.imagebuild.classpath hello_image.debug
 </code></pre>
 <p>It gives a list of all classpath entries that were used to build the image:</p>
@@ -403,7 +403,7 @@ java.util.ArrayList::addAll(java.util.Collection*)                              
 <p>breakpoints in all variants of <code>add</code> are installed.</p>
 
 <h4 id="arrays">Arrays</h4>
-<p>Arrays have a <strong><code>data</code>-field</strong> that can be accessed via an index to get the individual array elements, for example:</p>
+<p>Arrays have a <strong><code>data</code> field</strong> that can be accessed via an index to get the individual array elements, for example:</p>
 <pre><code>Thread 1 "hello_image" hit Breakpoint 1, hello.Hello::main(java.lang.String[]*) (args=0x7ff33f800898) at hello/Hello.java:76
 76	        Greeter greeter = Greeter.greeter(args);
 (gdb) p args
@@ -432,7 +432,7 @@ $4 = (_z_.java.lang.String *) 0x27011a
 </code></pre>
 
 <h4 id="strings">Strings</h4>
-<p>To see the actual contents of a Java String object, look at its <strong><code>value</code>-field</strong>, for example:</p>
+<p>To see the actual contents of a Java String object, look at its <strong><code>value</code> field</strong>, for example:</p>
 <pre><code>(gdb) p args.data[0]
 $4 = (_z_.java.lang.String *) 0x27011a
 </code></pre>
@@ -463,7 +463,7 @@ $3 = (_z_.byte[] *) 0x250119
 </code></pre>
 <p><code>value</code> is of type <code>byte[]</code>.</p>
 
-<p>As you already learned before, the elements of an array can be accessed via its <code>data</code>-field.</p>
+<p>As you already learned before, the elements of an array can be accessed via its <code>data</code> field.</p>
 <pre><code>(gdb) p args.data[0].value.data
 $10 = 0x7ff33f8008c8 "this\376\376\376\376\200G\273\001\030\001'"
 </code></pre>
@@ -476,7 +476,7 @@ $13 = 116 't'
 </code></pre>
 
 <p>The reason for the garbage after the last char is that Java String values are not 0-terminated (unlike C strings).
-To know where the garbage starts you can inspect the <code>len</code>-field.</p>
+To know where the garbage starts you can inspect the <code>len</code> field.</p>
 <pre><code>(gdb) p args.data[0].value.len
 $14 = 4
 </code></pre>
@@ -503,7 +503,7 @@ $18 = {
     }, &lt;No data fields&gt;}, &lt;No data fields&gt;}
 </code></pre>
 
-<p>But you do have the <code>hub</code>-field, which points to the class-object of an object.
+<p>But you do have the <code>hub</code> field, which points to the class-object of an object.
 Therefore, it allows you to determine the runtime-type of the Greeter object at address <code>0x7ff7f9101208</code>:</p>
 <pre><code>(gdb) p greeter.hub
 $19 = (_z_.java.lang.Class *) 0x1d1cae0
@@ -548,11 +548,11 @@ $24 = {
   name = 0x270119
 }
 </code></pre>
-<p>Now you can see the <code>name</code>-field that only exists in the <code>NamedGreeter</code> subtype.</p>
+<p>Now you can see the <code>name</code> field that only exists in the <code>NamedGreeter</code> subtype.</p>
 <pre><code>(gdb) p $rt_greeter.name
 $25 = (_z_.java.lang.String *) 0x270119
 </code></pre>
-<p>So the <code>name</code>-field is of type String. You already know how to see the contents of a String:</p>
+<p>So the <code>name</code> field is of type String. You already know how to see the contents of a String:</p>
 <pre><code>(gdb) p $rt_greeter.name.value.data
 $26 = 0x7ff7f91008c0 "FooBar\376\376\200G\273\001\027\001'"
 </code></pre>
@@ -713,16 +713,16 @@ Stack level 0, frame at 0x7fffffffdb20:
 ...
 </code></pre>
 
-<h4 id="calling-svm_dbg_-helper-functions-during-debugging">Calling <code>svm_dbg_</code>-helper functions during debugging</h4>
+<h4 id="calling-svm_dbg_-helper-functions-during-debugging">Calling <code>svm_dbg_</code> helper functions during debugging</h4>
 
-<p>When the image gets built with <code>-H:+IncludeDebugHelperMethods</code>, additional <code>@CEntryPoint</code>-functions are defined that can be called from GDB during debugging, for example:</p>
+<p>When the image gets built with <code>-H:+IncludeDebugHelperMethods</code>, additional <code>@CEntryPoint</code> functions are defined that can be called from GDB during debugging, for example:</p>
 <pre><code>(gdb) p greeter 
 $3 = (hello.Hello$Greeter *) 0x7ffff6881900
 </code></pre>
 <p>Here again, you have a local named <code>greeter</code> with the static-type <code>hello.Hello$Greeter</code>.
 To see its runtime-type, you can use the methods already described above.\</p>
 
-<p>Alternatively, you can make use of the <code>svm_dbg_</code>-helper functions.
+<p>Alternatively, you can make use of the <code>svm_dbg_</code> helper functions.
 For example, from within the running debug session, you can call:</p>
 <pre><code class="language-java">void svm_dbg_print_hub(graal_isolatethread_t* thread, size_t hubPtr)
 </code></pre>
@@ -753,8 +753,8 @@ In most situations, the value for <code>graal_isolatethread_t</code> is just the
 <pre><code>(gdb) p greeter.hub
 $4 = (_z_.java.lang.Class *) 0x837820 &lt;java.io.ObjectOutputStream::ObjectOutputStream(java.io.OutputStream*)+1120&gt;
 </code></pre>
-<p>reveals that in the current situation, the <code>hub</code>-field in <code>greeter</code> holds a compressed reference to the hub (the <code>hub-type</code> is prefixed with <code>_z_.</code>). 
-Thus, you first need to get the absolute address of the hub field by using another <code>svm_dbg_</code>-helper method.</p>
+<p>reveals that in the current situation, the <code>hub</code> field in <code>greeter</code> holds a compressed reference to the hub (the <code>hub-type</code> is prefixed with <code>_z_.</code>). 
+Thus, you first need to get the absolute address of the hub field by using another <code>svm_dbg_</code> helper method.</p>
 <pre><code>(gdb) call svm_dbg_obj_uncompress($r15, greeter.hub)
 $5 = 140737339160608
 (gdb) p/x $5
@@ -764,12 +764,12 @@ $6 = 0x7ffff71b7820
 <pre><code>(gdb) call (void) svm_dbg_print_hub($r15, 0x7ffff71b7820)
 hello.Hello$NamedGreeter
 </code></pre>
-<p>Both calls to <code>svm_dbg_</code>-helper can be combined into a single command line:</p>
+<p>Both calls to <code>svm_dbg_</code> helper can be combined into a single command line:</p>
 <pre><code>(gdb) call (void) svm_dbg_print_hub($r15, svm_dbg_obj_uncompress($r15, greeter.hub))
 hello.Hello$NamedGreeter
 </code></pre>
 
-<p>The following <code>svm_dbg_</code>-helper methods are currently defined:</p>
+<p>The following <code>svm_dbg_</code> helper methods are currently defined:</p>
 
 <pre><code>int svm_dbg_ptr_isInImageHeap(graal_isolatethread_t* thread, size_t ptr);
 int svm_dbg_ptr_isObject(graal_isolatethread_t* thread, size_t ptr);

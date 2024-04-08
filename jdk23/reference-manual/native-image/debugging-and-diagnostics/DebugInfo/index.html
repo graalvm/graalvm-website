@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-12-15 12:39:56 +0000"/>
+  <meta name="last_modified" content="2024-03-05 13:10:34 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">
@@ -849,7 +849,7 @@ and local variable information by passing flag <code>-H:+SourceLevelDebug</code>
 slightly differently and for some applications this can slow down execution.</p>
 
 <p>The basic <code>perf report</code> command, which displays a histogram showing percentage execution time in each Java method, only requires passing flags <code>-g</code> and <code>-H:+SourceLevelDebug</code> to the <code>native-image</code> command.
-However, more sophisticated uses of <code>perf</code> (i.e. <code>perf annotate</code>) and use of
+However, more sophisticated uses of <code>perf</code> (for example, <code>perf annotate</code>) and use of
 <code>valgrind</code> requires debug info to be supplemented with linkage symbols identifying compiled Java methods.
 Java method symbols are omitted from the generated native image by default but they can be retained achieved by passing one extra flag to the <code>native-image</code> command</p>
 
@@ -902,7 +902,7 @@ native-image -g \
 
 <p>The <code>DebugInfoSourceSearchPath</code> option can be repeated as many times as required to notify all the target source locations.
 The value passed to this option can be either an absolute or relative path.
-It can identify either a directory, a source JAR, or a source ZIP file.
+It can identify either a directory, a source JAR file, or a source ZIP file.
 It is also possible to specify several source roots at once using a comma separator:</p>
 
 <pre><code class="language-shell">native-image -g \
@@ -975,7 +975,7 @@ This class layout type declares the expected fields like <code>hash</code> of ty
 
 <p>The C++ layout class inherits fields and methods from class (layout) type <code>java.lang.Object</code> using C++ public inheritance.
 The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes up to two fields (depending on the VM configuration).
-The first field is called <code>hub</code> and its type is <code>java.lang.Class *</code> i.e. it is a pointer to the object’s class.
+The first field is called <code>hub</code> and its type is <code>java.lang.Class *</code> that is, it is a pointer to the object’s class.
 The second field (optional) is called <code>idHash</code> and has type <code>int</code>.
 It stores an identity hashcode for the object.</p>
 
@@ -1129,13 +1129,13 @@ is an object reference and, if so,  what the object’s class is.
 Given a valid object reference it is always possible to print the
 contents of the <code>String</code> referenced from the <code>hub</code>’s name field.</p>
 
-<p>Note that as a consequence, this allows every object observed by the debugger
-to be downcast to its dynamic type. i.e. even if the debugger only sees the static
-type of e.g. java.nio.file.Path we can easily downcast to the dynamic type, which
+<p>Note that as a consequence, this enables every object observed by the debugger
+to be downcast to its dynamic type. That is, even if the debugger only sees the static
+type of (for example) java.nio.file.Path, we can easily downcast to the dynamic type, which
 might be a subtype such as <code>jdk.nio.zipfs.ZipPath</code>, thus making it possible to inspect
 fields that we would not be able to observe from the static type alone.
 First the value is cast to an object reference.
-Then a path expression is used to dereference through the the <code>hub</code> field and the <code>hub</code>’s name field to the <code>byte[]</code> value array located in the name <code>String</code>.</p>
+Then a path expression is used to dereference through the <code>hub</code> field and the <code>hub</code>’s name field to the <code>byte[]</code> value array located in the name <code>String</code>.</p>
 
 <pre><code>(gdb) print/x ((_objhdr *)$rdi)
 $7 = (_objhdr *) 0x7ffff7c01130
@@ -1201,7 +1201,7 @@ end
 0x8779c8:	"[Ljava.lang.String;"
 </code></pre>
 
-<p>The native image heap contains a unique hub object (i.e. instance of
+<p>The native image heap contains a unique hub object (an instance of
 <code>java.lang.Class</code>) for every Java type that is included in the
 image. It is possible to refer to these class constants using the
 standard Java class literal syntax:</p>
@@ -1239,7 +1239,7 @@ $9 = 0xc87b78 "long"
 (gdb) 
 </code></pre>
 
-<p>Interface layouts are modelled as C++ union types.
+<p>Interface layouts are modeled as C++ union types.
 The members of the union include the C++ layout types for all Java classes which implement the interface.</p>
 
 <pre><code>(gdb) ptype 'java.lang.CharSequence'
@@ -1408,18 +1408,18 @@ Retrieved files are cached under subdirectory <em>sources</em>, using the module
 Debug info records for this class and its methods will identify this source file using the relative directory path <em>java.base/java/util</em> and file name <em>HashMap.java</em>. On Windows things will be the same modulo use of <code>\</code> rather than <code>/</code> as the file separator.</p>
 
 <p>Sources for GraalVM classes are retrieved from ZIP files or source directories derived from entries in the classpath.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>com.oracle.svm.core.VM</code> has its source file cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
+Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (for example, class <code>com.oracle.svm.core.VM</code> has its source file cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
 
 <p>The lookup scheme for cached GraalVM sources varies depending upon what is found in each classpath entry.
 Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding file <em>/path/to/foo.src.zip</em> is considered as a candidate ZIP file system from which source files may be extracted.
 When the entry specifies a directory like <em>/path/to/bar</em>, then directories <em>/path/to/bar/src</em> and <em>/path/to/bar/src_gen</em> are considered as candidates.
-Candidates are skipped when the ZIP file or source directory does not exist, or it does not contain at least one subdirectory hierarchy that matches one of the the expected GraalVM package hierarchies.</p>
+Candidates are skipped when the ZIP file or source directory does not exist, or it does not contain at least one subdirectory hierarchy that matches one of the expected GraalVM package hierarchies.</p>
 
 <p>Sources for application classes are retrieved from source JAR files or source directories derived from entries in the classpath.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>org.my.foo.Foo</code> has its source file cached as <code>sources/org/my/foo/Foo.java</code>).</p>
+Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (for example, class <code>org.my.foo.Foo</code> has its source file cached as <code>sources/org/my/foo/Foo.java</code>).</p>
 
 <p>The lookup scheme for cached application sources varies depending upon what is found in each classpath entry.
-Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding JAR <em>/path/to/foo-sources.jar</em> is considered as a candidate ZIP file system from which source files may be extracted.
+Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding JAR file <em>/path/to/foo-sources.jar</em> is considered as a candidate ZIP file system from which source files may be extracted.
 When the entry specifies a dir like <em>/path/to/bar/classes</em> or <em>/path/to/bar/target/classes</em> then one of the directories
 <em>/path/to/bar/src/main/java</em>, <em>/path/to/bar/src/java</em> or <em>/path/to/bar/src</em> is selected as a candidate (in that order of preference).
 Finally, the current directory in which the native executable is being run is also considered as a candidate.</p>
@@ -1616,7 +1616,7 @@ $4 = {
 </code></pre>
 
 <p>Since the indirect types inherit from the corresponding raw type it is possible to use an expression that identifies an indirect type pointer in almost all cases where an expression identifying a raw type pointer would work.
-The only case case where care might be needed is when casting a displayed numeric field value or displayed register value.</p>
+The only case where care might be needed is when casting a displayed numeric field value or displayed register value.</p>
 
 <p>For example, if the indirect <code>hub</code> oop printed above is passed to <code>hubname_raw</code>, the cast to type Object internal to that command fails to force the required indirect oops translation.
 The resulting memory access fails:</p>
@@ -1733,15 +1733,15 @@ Each instruction is prefaced with it’s address in the program’s code
 section.
 The disassembly interleaves the source lines from which the code is
 derived, 521-524 for the top level code and 207-209 for the code
-inlined from from <code>Objects.requireNonNull()</code>.
-Also, the start of the method is labelled with the name defined in the
+inlined from <code>Objects.requireNonNull()</code>.
+Also, the start of the method is labeled with the name defined in the
 DWARF debug info, <code>java.lang.String::String()</code>.
 However, the branch instruction <code>jbe</code> at address <code>0x519d6f</code> uses a
 very large offset from <code>graal_vm_locator_symbol</code>.
 The printed offset does identify the correct address relative to the
 location of the symbol.
 However, this fails to make clear that the target address actually
-lies within the compiled code range for method <code>String::String()</code> i.e. that thsi is a method-local branch.</p>
+lies within the compiled code range for method <code>String::String()</code>, in other words that this is a method-local branch.</p>
 
 <p>Readability of the tool output is significantly improved if
 option <code>-H-DeleteLocalSymbols</code> is passed to the <code>native-image</code>
@@ -1808,7 +1808,7 @@ the first comment with 521 rather than 516.</p>
 for all methods and C functions in the image.
 It is possible to annotate a specific method by passing it’s name as
 an argument to the perf annotate command.
-Note, however, that <code>perf</code> requries the mangled symbol name as
+Note, however, that <code>perf</code> requires the mangled symbol name as
 argument rather than the DWARF name.
 So, in order to annotate method <code>java.lang.String::String()</code> it is
 necessary to run command <code>perf annotate
@@ -1818,7 +1818,7 @@ String_constructor_f60263d569497f1facccd5467ef60532e990f75d</code>.</p>
 retained in order to provide high quality output.
 When <code>callgrind</code> is used in combination with a viewer like
 <code>kcachegrind</code> it is possible to identify a great deal of valuable
-information about native image execution aand relate it back to
+information about native image execution and relate it back to
 specific source code lines.</p>
     
       <h3 id="call-graph-recording-with-perf-record">
@@ -1829,7 +1829,7 @@ specific source code lines.</p>
         
       </h3>
 
-<p>Normally when perf does stack frame recording (i.e. when <code>--call-graph</code> is used), it uses frame pointers to recognize the individual stack frames.
+<p>Normally when perf does stack frame recording (when <code>--call-graph</code> is used), it uses frame pointers to recognize the individual stack frames.
 This assumes that the executable that gets profiled actually preserves frame pointers whenever a function gets called.
 For native images, this can be achieved by using <code>-H:+PreserveFramePointer</code> as an image build argument.</p>
 
