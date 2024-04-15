@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-03-01 13:05:24 +0000"/>
+  <meta name="last_modified" content="2024-04-15 14:11:35 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/jdk22/reference-manual/python/Interoperability/">
@@ -488,8 +488,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/Python-Runtime/">
-              Python Runtime
+            <a href="">
+              
             </a>
           </li>
 
@@ -499,8 +499,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/Performance/">
-              Python Performance
+            <a href="">
+              
             </a>
           </li>
 
@@ -510,8 +510,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/Modern-Python-on-JVM/">
-              Jython Compatibility
+            <a href="">
+              
             </a>
           </li>
 
@@ -521,8 +521,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/native-applications/">
-              Native Java-Python Applications
+            <a href="">
+              
             </a>
           </li>
 
@@ -532,8 +532,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/standalone-applications/">
-              Python Standalone Applications
+            <a href="">
+              
             </a>
           </li>
 
@@ -572,8 +572,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/jdk22/reference-manual/python/Embedding-Permissions/">
-              Embedding Permissions
+            <a href="">
+              
             </a>
           </li>
 
@@ -975,70 +975,68 @@ and these try to “do the right thing” based on the interop type (or raise an
 <p>Types not listed in the table below have no special interpretation in Python.</p>
 
 <table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Interop Type</th>
+      <th style="text-align: left">Python Interpretation</th>
+    </tr>
+  </thead>
   <tbody>
     <tr>
-      <td>Interop Type</td>
-      <td>Python Interpretation</td>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left"><code>null</code> is like <code>None</code>. Important to know: interop <code>null</code> values are all identical to <code>None</code>. JavaScript defines two “null-like” values; <code>undefined</code> and <code>null</code>, which are <em>not</em> identical, but when passed to Python, they are treated so.</td>
     </tr>
     <tr>
-      <td><code>null</code></td>
-      <td><code>null</code> is like <code>None</code>. Important to know: interop <code>null</code> values are all identical to <code>None</code>. JavaScript defines two “null-like” values; <code>undefined</code> and <code>null</code>, which are <em>not</em> identical, but when passed to Python, they are treated so.</td>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left"><code>boolean</code> behaves like Python booleans, including the fact that in Python, all booleans are also integers (1 and 0 for true and false, respectively).</td>
     </tr>
     <tr>
-      <td><code>boolean</code></td>
-      <td><code>boolean</code> behaves like Python booleans, including the fact that in Python, all booleans are also integers (1 and 0 for true and false, respectively).</td>
+      <td style="text-align: left"><code>number</code></td>
+      <td style="text-align: left"><code>number</code> Behaves like Python numbers. Python only has one integer and one floating point type, but ranges are imported in some places such as typed arrays.</td>
     </tr>
     <tr>
-      <td><code>number</code></td>
-      <td><code>number</code> Behaves like Python numbers. Python only has one integer and one floating point type, but ranges are imported in some places such as typed arrays.</td>
+      <td style="text-align: left"><code>string</code></td>
+      <td style="text-align: left">Behaves in the same way as a Python string.</td>
     </tr>
     <tr>
-      <td><code>string</code></td>
-      <td>Behaves in the same way as a Python string.</td>
+      <td style="text-align: left"><code>buffer</code></td>
+      <td style="text-align: left">Buffers are also a concept in Python’s native API (albeit slightly different). Interop buffers are treated in the same was as Python buffers in some places (such as <code>memoryview</code>) to avoid copies of data.</td>
     </tr>
     <tr>
-      <td><code>buffer</code></td>
-      <td>Buffers are also a concept in Python’s native API (albeit slightly different). Interop buffers are treated in the same was as Python buffers in some places (such as <code>memoryview</code>) to avoid copies of data.</td>
+      <td style="text-align: left"><code>array</code></td>
+      <td style="text-align: left">An <code>array</code> can be used with subscript access in the same way as Python lists, with integers and slices as indices.</td>
     </tr>
     <tr>
-      <td><code>array</code></td>
-      <td>An <code>array</code> can be used with subscript access in the same way as Python lists, with integers and slices as indices.</td>
+      <td style="text-align: left"><code>hash</code></td>
+      <td style="text-align: left">A <code>hash</code> can be used with subscript access in the same way as Python dictionaries, with any “hashable” object as a key. “Hashable” follows Python semantics: generally every interop type with an identity is deemed “hashable”. Note that if an interop object is of type <code>Array</code> <strong>and</strong> <code>Hash</code>, the behavior of subscript access is undefined.</td>
     </tr>
     <tr>
-      <td><code>hash</code></td>
-      <td>A <code>hash</code> can be used with subscript access in the same way as Python dictionaries, with any “hashable” object as a key. “Hashable” follows Python semantics: generally every interop type with an identity is deemed “hashable”. Note that if an interop object is of type <code>Array</code> <strong>and</strong> <code>Hash</code>, the behavior of subscript access is undefined.</td>
+      <td style="text-align: left"><code>members</code></td>
+      <td style="text-align: left">An object of type <code>members</code> can be read using conventional Python <code>.</code> notation or <code>getattr</code> and related functions.</td>
     </tr>
     <tr>
-      <td><code>members</code></td>
-      <td>An object of type <code>members</code> can be read using conventional Python <code>.</code> notation or <code>getattr</code> and related functions.</td>
+      <td style="text-align: left"><code>iterable</code></td>
+      <td style="text-align: left">An <code>iterable</code> is treated in the same way as any Python object with an <code>__iter__</code> method. That is, it can be used in a loop and other places that accept Python iterables.</td>
     </tr>
     <tr>
-      <td><code>iterable</code></td>
-      <td>An <code>iterable</code> is treated in the same way as any Python object with an <code>__iter__</code> method. That is, it can be used in a loop and other places that accept Python iterables.</td>
+      <td style="text-align: left"><code>iterator</code></td>
+      <td style="text-align: left">An <code>iterator</code> is treated in the same way as any Python object with a <code>__next__</code> method.</td>
     </tr>
     <tr>
-      <td><code>iterator</code></td>
-      <td>An <code>iterator</code> is treated in the same way as any Python object with a <code>__next__</code> method.</td>
+      <td style="text-align: left"><code>exception</code></td>
+      <td style="text-align: left">An <code>exception</code> can be caught in a generic <code>except</code> clause.</td>
     </tr>
     <tr>
-      <td><code>exception</code></td>
-      <td>An <code>exception</code> can be caught in a generic <code>except</code> clause.</td>
+      <td style="text-align: left"><code>MetaObject</code></td>
+      <td style="text-align: left">Meta objects can be used in subtype and <code>isinstance</code> checks.</td>
     </tr>
     <tr>
-      <td><code>MetaObject</code></td>
-      <td>Meta objects can be used in subtype and <code>isinstance</code> checks.</td>
+      <td style="text-align: left"><code>executable</code></td>
+      <td style="text-align: left">An <code>executable</code> object can be executed as a function, but never with keyword arguments.</td>
     </tr>
     <tr>
-      <td><code>executable</code></td>
-      <td>An <code>executable</code> object can be executed as a function, but never with keyword arguments.</td>
-    </tr>
-    <tr>
-      <td><code>instantiable</code></td>
-      <td>An <code>instantiable</code> object can be called just like a Python type, but never with keyword arguments.</td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td> </td>
+      <td style="text-align: left"><code>instantiable</code></td>
+      <td style="text-align: left">An <code>instantiable</code> object can be called just like a Python type, but never with keyword arguments.</td>
     </tr>
   </tbody>
 </table>
@@ -1051,20 +1049,68 @@ and these try to “do the right thing” based on the interop type (or raise an
         
       </h3>
 
-<p>| Interop Type   | Python Interpretation                                                                                                                                 |
-| <code>null</code>         | Only <code>None</code>.                                                                                                                                          |
-| <code>boolean</code>      | Only subtypes of Python <code>bool</code>. Note that in contrast to Python semantics, Python <code>bool</code> is <em>never</em> also an interop number.                           |
-| <code>number</code>       | Only subtypes of <code>int</code> and <code>float</code>.                                                                                                                   |
-| <code>string</code>       | Only subtypes of <code>str</code>.                                                                                                                               |
-| <code>array</code>        | Any object with <code>__getitem__</code> and <code>__len__</code> methods, but not if it also has <code>keys</code>, <code>values</code>, and <code>items</code> methods (in the same way that <code>dict</code> does.) |
-| <code>hash</code>         | Only subtypes of <code>dict</code>.                                                                                                                              |
-| <code>members</code>      | Any Python object. Note that the rules for readable/writable are a bit ad-hoc, since checking that is not part of the Python MOP.                     |
-| <code>iterable</code>     | Any Python object that has <code>__iter__</code> or a <code>__getitem__</code> methods.                                                                                     |
-| <code>iterator</code>     | Any Python object with a <code>__next__</code> method.                                                                                                           |
-| <code>exception</code>    | Any Python <code>BaseException</code> subtype.                                                                                                                   |
-| <code>MetaObject</code>   | Any Python <code>type</code>.                                                                                                                                    |
-| <code>executable</code>   | Any Python object  with a <code>__call__</code> method.                                                                                                          |
-| <code>instantiable</code> | Any Python <code>type</code>.                                                                                                                                    |</p>
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Interop Type</th>
+      <th style="text-align: left">Python Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left">Only <code>None</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left">Only subtypes of Python <code>bool</code>. Note that in contrast to Python semantics, Python <code>bool</code> is <em>never</em> also an interop number.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>number</code></td>
+      <td style="text-align: left">Only subtypes of <code>int</code> and <code>float</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>string</code></td>
+      <td style="text-align: left">Only subtypes of <code>str</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>array</code></td>
+      <td style="text-align: left">Any object with <code>__getitem__</code> and <code>__len__</code> methods, but not if it also has <code>keys</code>, <code>values</code>, and <code>items</code> methods (in the same way that <code>dict</code> does.)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>hash</code></td>
+      <td style="text-align: left">Only subtypes of <code>dict</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>members</code></td>
+      <td style="text-align: left">Any Python object. Note that the rules for readable/writable are a bit ad-hoc, since checking that is not part of the Python MOP.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterable</code></td>
+      <td style="text-align: left">Any Python object that has <code>__iter__</code> or a <code>__getitem__</code> methods.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterator</code></td>
+      <td style="text-align: left">Any Python object with a <code>__next__</code> method.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>exception</code></td>
+      <td style="text-align: left">Any Python <code>BaseException</code> subtype.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>MetaObject</code></td>
+      <td style="text-align: left">Any Python <code>type</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>executable</code></td>
+      <td style="text-align: left">Any Python object  with a <code>__call__</code> method.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>instantiable</code></td>
+      <td style="text-align: left">Any Python <code>type</code>.</td>
+    </tr>
+  </tbody>
+</table>
     
       <h2 id="the-interoperability-extension-api">
         
