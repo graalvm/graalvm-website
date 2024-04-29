@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-04-18 10:55:50 +0000"/>
+  <meta name="last_modified" content="2024-04-29 08:30:04 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/python/">
@@ -702,7 +702,8 @@ $(document).ready(function(){
       </h1>
 
 <p>You can use GraalPy with GraalVM JDK, Oracle JDK, or OpenJDK.
-You can easily add GraalPy to your Java application using Maven or Gradle build tools as shown below.</p>
+You can easily add GraalPy to your Java application using Maven or Gradle build tools as shown below.
+Other build systems (for example, Ant, Make, CMake) can also be used with a bit more manual work.</p>
     
       <h2 id="maven">
         
@@ -737,6 +738,39 @@ You can easily add GraalPy to your Java application using Maven or Gradle build 
 The Java code and the <em>pom.xml</em> file are heavily documented and the generated code describes available features.
 (If you do not wish to use Maven, the archetype Java code also provides guidance to create a custom embedding.)</p>
     
+      <h3 id="creating-cross-platform-jars-with-native-python-packages">
+        
+        
+          Creating Cross-platform JARs with Native Python Packages <a href="#creating-cross-platform-jars-with-native-python-packages" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The generated project uses the GraalPy Maven plugin, which makes it easy to add Python dependencies.
+However, Python packages may have native components that are specific to the build system.
+In order to distribute the resulting application for other systems, follow these steps:</p>
+
+<ol>
+  <li>
+    <p>Build the project on each deployment platform.
+Rename JAR files so they each have a platform-specific name and move them to a temporary directory on the same machine.</p>
+  </li>
+  <li>
+    <p>Unzip each of the JAR files (substituting the correct names for the JAR files).
+A special file, <em>vfs/fileslist.txt</em> needs to be concatenated from each JAR file.
+Finally, create a new <em>combined.jar</em> from the combination of all files and with the concatenated <em>fileslist.txt</em>.</p>
+
+    <pre><code class="language-bash"> unzip linux.jar -d combined
+ mv combined/vfs/fileslist.txt fileslist-linux.txt
+ unzip windows.jar -d combined
+ mv combined/vfs/fileslist.txt fileslist-windows.txt
+ cat fileslist-linux.txt fileslist-windows.txt &gt; combined/vfs/fileslist.txt
+ cd combined
+ zip -r ../combined.jar *
+</code></pre>
+  </li>
+</ol>
+    
       <h2 id="gradle">
         
         
@@ -746,7 +780,7 @@ The Java code and the <em>pom.xml</em> file are heavily documented and the gener
       </h2>
 
 <ol>
-  <li>Create a Java application with Gradle using the provided command and follow the prompts (select a build script language, select a test framework, etc.):
+  <li>Create a Java application with Gradle using the command below and follow the prompts (select a build script language, select a test framework, and so on):
     <pre><code class="language-bash"> gradle init --type java-application \
              --project-name interop  \
              --package interop \
@@ -816,6 +850,61 @@ The Java code and the <em>pom.xml</em> file are heavily documented and the gener
 <blockquote>
   <p>Note: The performance of the GraalPy runtime depends on the JDK in which you embed it. For more information, see <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#runtime-optimization-support">Runtime Optimization Support</a>.</p>
 </blockquote>
+    
+      <h2 id="ant-cmake-makefile-or-other-build-systems-without-direct-support-for-maven-dependencies">
+        
+        
+          Ant, CMake, Makefile or Other Build Systems Without Direct Support for Maven Dependencies <a href="#ant-cmake-makefile-or-other-build-systems-without-direct-support-for-maven-dependencies" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Some (often older) projects may be using Ant, Makefiles, CMake, or other build systems that do not directly support Maven dependencies.
+Projects such as <a href="https://ant.apache.org/ivy/history/master/tutorial/start.html">Apache Ivy™</a> enable such build systems to resolve Maven dependencies, but developers may have reasons not to use them.
+GraalPy comes with a tool to obtain the required JAR files from Maven.</p>
+
+<ol>
+  <li>
+    <p>Assuming there is some directory where third-party dependencies are stored for the project and that the build system is set up to put any JAR files there on the classpath, the project directory tree might look similar to this:</p>
+
+    <pre><code> ├───lib
+ │   └─── ... *.jar dependencies are here
+ └───src
+     └─── ... *.java files and resources are here
+</code></pre>
+  </li>
+  <li>
+    <p><a href="/latest/reference-manual/python/Python-Runtime/#installing-graalpy">Install GraalPy</a> for your system and ensure you have <code>graalpy</code> on your <code>PATH</code>.
+Open a command-line interface and enter your project directory.
+Then, as appropriate for your system, run one of the following commands:</p>
+
+    <p>In a POSIX shell:</p>
+    <pre><code class="language-bash"> export GRAALPY_HOME=$(graalpy -c 'print(__graalpython__.home)')
+ "${GRAALPY_HOME}/libexec/graalpy-polyglot-get" -a python -o lib -v "24.0.0"
+</code></pre>
+
+    <p>In PowerShell:</p>
+    <pre><code> $GRAALPY_HOME = graalpy -c "print(__graalpython__.home)"
+ &amp; "$GRAALPY_HOME/libexec/graalpy-polyglot-get" -a python -o lib -v "24.0.0"
+</code></pre>
+
+    <p>These commands download all GraalPy dependencies into the <em>lib</em> directory.</p>
+  </li>
+  <li>
+    <p>Provided that your build system is set up to pick up the JAR files from <em>lib</em>, the GraalPy embedding code below should work if put in an appropriate place in the project to run as the main class.</p>
+
+    <pre><code class="language-java"> import org.graalvm.polyglot.*;
+
+ public class Hello {
+     public static void main(String[] args) {
+         try (var context = Context.newBuilder().option("engine.WarnInterpreterOnly", "false").build()) {
+             System.out.println(context.eval("python", "'Hello Python!'").asString());
+         }
+     }
+ }
+</code></pre>
+  </li>
+</ol>
     
       <h4 id="related-documentation">
         
