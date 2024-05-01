@@ -14,7 +14,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-03-05 13:10:34 +0000"/>
+  <meta name="last_modified" content="2024-04-26 15:11:41 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/compiler/">
@@ -465,7 +465,7 @@ $(document).ready(function(){
         
           
           <a href="/jdk23/reference-manual/java/">
-            Java and JVM
+            GraalVM as a Java Virtual Machine
           </a>
         </li>
 
@@ -508,7 +508,7 @@ $(document).ready(function(){
           
             
             <a href="/jdk23/reference-manual/java/options/">
-              Graal Compiler Configuration
+              Graal JIT Compiler Configuration
             </a>
           </li>
 
@@ -519,7 +519,7 @@ $(document).ready(function(){
           
             
             <a href="/jdk23/reference-manual/compiler/operations/">
-              Graal Compiler Operations Manual
+              Graal JIT Compiler Operations Manual
             </a>
           </li>
 
@@ -679,15 +679,9 @@ $(document).ready(function(){
         
       </h1>
 
-<ul>
-  <li><a href="#compiler-advantages">Compiler Advantages</a></li>
-  <li><a href="#graph-compilation">Graph Compilation</a></li>
-  <li><a href="#diagnostic-data">Diagnostic Data</a></li>
-</ul>
-
-<p>The Graal compiler is a dynamic just-in-time (JIT) compiler, written in Java, that transforms bytecode into machine code.
-The Graal compiler is integrated with the <a href="https://docs.oracle.com/en/java/javase/21/vm/java-virtual-machine-technology-overview.html">Java HotSpot Virtual Machine</a> and <a href="/reference-manual/java/">GraalVM</a>.
-(The open source code of the Graal compiler is available on <a href="https://github.com/oracle/graal/tree/master/compiler">GitHub</a>.)</p>
+<p>The Graal compiler is a dynamic compiler, written in Java, that transforms bytecode into machine code.
+The Graal just-in-time (JIT) compiler is integrated with the <a href="https://docs.oracle.com/en/java/javase/22/vm/java-virtual-machine-technology-overview.html">Java HotSpot Virtual Machine</a> and <a href="/jdk23/reference-manual/java/">GraalVM</a>.
+(The open source code of the Graal JIT compiler is available on <a href="https://github.com/oracle/graal/tree/master/compiler">GitHub</a>.)</p>
     
       <h2 id="compiler-advantages">
         
@@ -697,7 +691,7 @@ The Graal compiler is integrated with the <a href="https://docs.oracle.com/en/ja
         
       </h2>
 
-<p>The Graal compiler provides optimized performance for applications running on a Java Virtual Machine (JVM) through unique approaches to code analysis and optimization.
+<p>The Graal JIT compiler provides optimized performance for applications running on a Java Virtual Machine (JVM) through unique approaches to code analysis and optimization.
 It includes multiple optimization algorithms (called “Phases”), such as aggressive inlining, polymorphic inlining, and others.</p>
 
 <!--
@@ -705,12 +699,12 @@ It includes multiple optimization algorithms (called “Phases”), such as aggr
 -->
 <p><a name="partial-escape-analysis"></a>
 The Graal compiler can bring performance advantages for highly-abstracted programs. 
-For example, it includes a <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java#L176" target="_blank">partial-escape-analysis optimization</a> that can remove costly allocations of certain objects. 
-This optimization determines when a new object is accessible outside a compilation unit and only allocates it on paths that “escape” the compilation unit (for example, if the object is passed as a parameter, stored in a field, or returned from a method). 
-This can greatly improve the performance of an application by reducing the number of heap allocations. 
+For example, it includes a <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java#L176" target="_blank">partial-escape-analysis optimization</a> that can remove the costly allocations of certain objects. 
+The optimization determines when a new object is accessible outside a compilation unit and only allocates it on paths that “escape” the compilation unit (for example, if the object is passed as a parameter, stored in a field, or returned from a method). 
+This approach can greatly improve the performance of an application by reducing the number of heap allocations. 
 Code that uses more modern Java features such as Streams or Lambdas will see greater improvements in performance as this type of code involves a significant number of such non- or partially-escaping objects.
-Code that is bound by characteristics such as I/O or memory allocations that cannot be removed by the compiler will see less improvement. 
-For more information on performance tuning, refer to <a href="/jdk23/reference-manual/java/options/">Compiler Configuration</a>.</p>
+Code bound by characteristics such as I/O or memory allocations that cannot be removed by the compiler will see less improvement. 
+For more information on performance tuning, refer to <a href="/jdk23/reference-manual/java/options/">Graal JIT Compiler Configuration</a>.</p>
     
       <h2 id="graph-compilation">
         
@@ -720,8 +714,7 @@ For more information on performance tuning, refer to <a href="/jdk23/reference-m
         
       </h2>
 
-<p>To run guest programming languages, namely JavaScript, Ruby, R, Python, and WebAssembly, in the same runtime as the host JVM-based language, the compiler should work with a language-independent intermediate representation (IR) between the source language and the machine code to be generated.
-A <em>graph</em> was selected for this role.</p>
+<p>To run guest programming languages (namely JavaScript, Python, and Ruby) in the same runtime as the host JVM-based language, the compiler works with a language-independent intermediate graph representation between the source language and the machine code to be generated. (For more information on language interoperability, see <a href="/jdk23/reference-manual/java/#interoperability">Interoperability</a>.)</p>
 
 <p>The graph can represent similar statements of different languages in the same way, such as “if” statements or loops, which makes it possible to mix languages in the same application.
 The Graal compiler can then perform language-independent optimization and generate machine code on this graph.</p>
@@ -741,8 +734,9 @@ The default location of the diagnostics output is in the <em>graal_dumps/</em> d
 During the JVM shutdown, the location of the archive containing the diagnostic data is printed to the console.</p>
 
 <p>Furthermore, diagnostic data can be produced for any compilation performed by the Graal compiler with the <code>-Djdk.graal.Dump</code> option.
-This will produce diagnostic data for every method compiled by the compiler.
-To refine the set of methods for which diagnostic data is produced, use the <code>-Djdk.graal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
+This will produce diagnostic data for every method compiled by the compiler.</p>
+
+<p>To refine the set of methods for which diagnostic data is produced, use the <code>-Djdk.graal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
 For example, <code>-Djdk.graal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic data only for methods in the <code>java.lang.String</code> class as well as methods named <code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
     
       <h3 id="related-documentation">
@@ -754,8 +748,8 @@ For example, <code>-Djdk.graal.MethodFilter=java.lang.String.*,HashMap.get</code
       </h3>
 
 <ul>
-  <li><a href="/jdk23/reference-manual/compiler/operations/">Graal Compiler Operations Manual</a></li>
-  <li><a href="/jdk23/reference-manual/java/options/">Compiler Configuration</a></li>
+  <li><a href="/jdk23/reference-manual/compiler/operations/">Graal JIT Compiler Operations Manual</a></li>
+  <li><a href="/jdk23/reference-manual/java/options/">Graal JIT Compiler Configuration</a></li>
 </ul>
 
       </div>

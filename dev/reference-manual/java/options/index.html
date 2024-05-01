@@ -10,11 +10,11 @@
 
   <title>
     
-      Graal Compiler Configuration
+      Graal JIT Compiler Configuration
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-03-05 13:10:34 +0000"/>
+  <meta name="last_modified" content="2024-04-29 11:48:04 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/options/">
@@ -465,7 +465,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/java/">
-            Java and JVM
+            GraalVM as a Java Virtual Machine
           </a>
         </li>
 
@@ -490,7 +490,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/java/options/">
-              Graal Compiler Configuration
+              Graal JIT Compiler Configuration
             </a>
           </li>
 
@@ -519,7 +519,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/compiler/operations/">
-              Graal Compiler Operations Manual
+              Graal JIT Compiler Operations Manual
             </a>
           </li>
 
@@ -658,15 +658,15 @@ $(document).ready(function(){
 
 
         
-        <h1 id="graal-compiler-configuration">
+        <h1 id="graal-jit-compiler-configuration">
         
         
-          Graal Compiler Configuration
+          Graal JIT Compiler Configuration
         
         
       </h1>
 
-<p>The options to configure the Graal compiler are in three categories: general, performance tuning, and diagnostic.</p>
+<p>The options to configure the Graal JIT compiler are in three categories: general, performance tuning, and diagnostic.</p>
 
 <blockquote>
   <p>The Graal JIT compiler is mostly configured by system properties whose names begin with the <code>jdk.graal</code> prefix, set via <code>-Djdk.graal...</code> on the command line.
@@ -685,22 +685,22 @@ The list of available properties can be printed using the <code>-XX:+JVMCIPrintP
 
 <ul>
   <li><code>-XX:-UseJVMCICompiler</code>: Disables use of the Graal compiler as the top-tier JIT compiler.
-This is useful when you want to compare the performance of the Graal compiler against a native JIT compiler.</li>
+This is useful when you want to compare the performance of the Graal JIT compiler against a native JIT compiler.</li>
   <li>
-    <p><code>-Djdk.graal.CompilerConfiguration=&lt;name&gt;</code>: Selects the Graal compiler configuration to use.
+    <p><code>-Djdk.graal.CompilerConfiguration=&lt;name&gt;</code>: Selects the Graal JIT compiler configuration to use.
 If omitted, the compiler configuration with the highest auto-selection priority is selected.
 To see the available configurations, supply the value <code>help</code> to this option.</p>
 
     <p>The names of the compiler configurations and their semantics are:</p>
     <ul>
-      <li><code>enterprise</code>: Produces highly optimized code with a possible trade-off to compilation time. <a href="https://www.oracle.com/java/graalvm/" class="enterprise">[Oracle GraalVM]</a></li>
+      <li><code>enterprise</code>: Produces highly optimized code with a possible trade-off to compilation time (only available in Oracle GraalVM).</li>
       <li><code>community</code>: Produces reasonably optimized code with a faster compilation time.</li>
       <li><code>economy</code>: Compiles as fast as possible with less optimal throughput of the generated code.</li>
     </ul>
   </li>
   <li>
-    <p><code>-Djdk.graal.ShowConfiguration=&lt;level&gt;</code>: Prints information about the Graal compiler configuration selected.
-  This option only produces output when the compiler is initialized. By default, the Graal compiler is
+    <p><code>-Djdk.graal.ShowConfiguration=&lt;level&gt;</code>: Prints information about the Graal JIT compiler configuration selected.
+  This option only produces output when the compiler is initialized. By default, the Graal JIT compiler is
   initialized on the first top-tier compilation. For this reason, the way to use this option
   is as follows: <code>java -XX:+EagerJVMCI -Djdk.graal.ShowConfiguration=info -version</code>.</p>
 
@@ -734,18 +734,11 @@ To see the available configurations, supply the value <code>help</code> to this 
       </h3>
 
 <ul>
-  <li><code>-Djdk.graal.UsePriorityInlining={ true | false }</code>: To disable use of the advanced inlining
-algorithm that favours throughput over compilation speed. (Default: <code>true</code>.) <a href="https://www.oracle.com/uk/java/graalvm/" class="enterprise">[Oracle GraalVM]</a></li>
-  <li><code>-Djdk.graal.Vectorization={ true | false }</code>: To disable the auto vectorization optimization. (Default: <code>true</code>.)
-<a href="https://www.oracle.com/uk/java/graalvm/" class="enterprise">[Oracle GraalVM]</a></li>
-  <li><code>-Djdk.graal.OptDuplication={ true | false }</code>: To disable the <a href="http://ssw.jku.at/General/Staff/Leopoldseder/DBDS_CGO18_Preprint.pdf">path duplication optimization</a>. (Default: <code>true</code>.) <a href="https://www.oracle.com/uk/java/graalvm/" class="enterprise">[Oracle GraalVM]</a></li>
+  <li><code>-Djdk.graal.UsePriorityInlining={ true | false }</code>: To disable use of the advanced inlining algorithm that favours throughput over compilation speed (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
+  <li><code>-Djdk.graal.Vectorization={ true | false }</code>: To disable the auto vectorization optimization (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
+  <li><code>-Djdk.graal.OptDuplication={ true | false }</code>: To disable the <a href="http://ssw.jku.at/General/Staff/Leopoldseder/DBDS_CGO18_Preprint.pdf">path duplication optimization</a> (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
   <li><code>-Djdk.graal.TuneInlinerExploration=&lt;value&gt;</code>: To tune for better peak performance or faster warmup.
-It automatically adjusts values governing the effort spent during inlining. The value of the option is
-a float clamped between <code>-1</code> and <code>1</code> inclusive. Anything below
-<code>0</code> reduces inlining effort and anything above <code>0</code> increases
-inlining effort. In general, peak performance is improved with more inlining effort
-while less inlining effort improves warmup (albeit to a lower peak). Note that this
-option is only a heuristic and the optimal value can differ from application to application. <a href="https://www.oracle.com/downloads/graalvm-downloads.html" class="enterprise">[Oracle GraalVM]</a></li>
+It automatically adjusts values governing the effort spent during inlining. The value of the option is a float clamped between <code>-1</code> and <code>1</code> inclusive. Anything below <code>0</code> reduces inlining effort and anything above <code>0</code> increases inlining effort. In general, peak performance is improved with more inlining effort while less inlining effort improves warmup (albeit to a lower peak). Note that this option is only a heuristic and the optimal value can differ from application to application (only available in Oracle GraalVM).</li>
   <li>
     <p><code>-Djdk.graal.TraceInlining={ true | false }</code>: To enable tracing of inlining decisions. This can be used for advanced tuning where it may be possible to change the source code of the application. (Default: <code>false</code>.) 
   The output format is shown below:</p>
@@ -787,7 +780,7 @@ at java.lang.Character.toUpperCaseEx(Character.java:7138) [bci: 26]:
 
     <p>Accepted actions:</p>
     <ul>
-      <li><code>Silent</code>: Print nothing to the console.</li>
+      <li><code>Silent</code>: Print nothing to the console. (Default.)</li>
       <li><code>Print</code>: Print a stack trace to the console.</li>
       <li><code>Diagnose</code>: Retry the compilation with extra diagnostics enabled. On JVM exit, the collected
  diagnostics are saved to a ZIP file that can be submitted along with a bug report. A message
@@ -798,14 +791,14 @@ at java.lang.Character.toUpperCaseEx(Character.java:7138) [bci: 26]:
       <li><code>ExitVM</code>: Same as <code>Diagnose</code> except that the JVM process exits after retrying.</li>
     </ul>
 
-    <p>For all values except for <code>ExitVM</code>, the JVM continues executing.</p>
+    <p>For all values except for <code>ExitVM</code>, the JVM continues.</p>
   </li>
   <li><code>-Djdk.graal.CompilationBailoutAsFailure={ true | false }</code>: The compiler may not complete compilation of a method due
  to some property or code shape in the method (for example, exotic uses of the <code>jsr</code> and <code>ret</code> bytecodes). In this
- case the compilation <em>bails out</em>. If you want to be informed of such bailouts, this option makes GraalVM
+ case the compilation <em>bails out</em>. If you want to be informed of such bailouts, this option makes the Graal JIT compiler
  treat bailouts as failures and thus be subject to the action specified by the
  <code>-Djdk.graal.CompilationFailureAction</code> option. (Default: <code>false</code>.)</li>
-  <li><code>-Djdk.graal.PrintCompilation=false</code>: Prints an informational line to the console for each completed compilation. (Default: <code>false</code>.)
+  <li><code>-Djdk.graal.PrintCompilation={ true | false }</code>: Prints an informational line to the console for each completed compilation. (Default: <code>false</code>.)
 For example:
     <pre><code>HotSpotCompilation-11  Ljava/lang/Object;                            wait          ()V       |  591ms    12B    92B  4371kB
 HotSpotCompilation-175 Ljava/lang/String;                            lastIndexOf   (II)I     |  590ms   126B   309B  4076kB
@@ -823,7 +816,7 @@ HotSpotCompilation-136 Lsun/nio/cs/UTF_8$Encoder;                    encode     
         
       </h2>
 
-<p>The Graal compiler properties above are usable with some other GraalVM launchers such as <code>node</code> and <code>js</code>. 
+<p>The Graal JIT compiler properties above are usable with some other GraalVM launchers such as <code>node</code> and <code>js</code>. 
 The prefix for specifying the properties is slightly different.
 For example:</p>
 <pre><code class="language-shell">java -XX:+EagerJVMCI -Djdk.graal.ShowConfiguration=info -version
@@ -847,7 +840,7 @@ For example:</p>
 
 <ul>
   <li><a href="/dev/reference-manual/java/compiler/">Graal Compiler</a></li>
-  <li><a href="/dev/reference-manual/compiler/operations/">Graal Compiler Operations Manual</a></li>
+  <li><a href="/dev/reference-manual/compiler/operations/">Graal JIT Compiler Operations Manual</a></li>
 </ul>
 
       </div>
