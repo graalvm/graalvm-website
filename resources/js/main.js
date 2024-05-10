@@ -15,7 +15,6 @@ function copySnippet(elem) {
 
 function copyTextToClipboard(text) {
   var textArea = document.createElement("textarea");
-
   textArea.style.position = 'fixed';
   textArea.style.top = 0;
   textArea.style.left = 0;
@@ -126,13 +125,6 @@ function createTerminal(serverUrl, containerId, terminalId, uid) {
         });
         shell.disable();
         shell.enable();
-
-        // window.addEventListener("keydown", function(e) {
-        //   if (e.keyCode == 32 && e.target == document.body) {
-        //     // $(terminalId).keydown()[0].focus();
-        //     // e.preventDefault();
-        //   }
-        // });
       }
     });
 
@@ -186,91 +178,6 @@ $(document).ready(function () {
       });
     }());
 
-// Events carousel
-  (function () {
-    $('.news-carousel').slick({
-      dots: false,
-      accessibility: true,
-      slidesToShow: 2,
-      // infinite: false,
-      arrows: true,
-      slidesToScroll: 1,
-      // autoplay: true,
-      // autoplaySpeed: 3000,
-      responsive: [
-        {
-          breakpoint: 1500,
-          settings: {
-            slidesToShow: 2
-          }
-        },
-        {
-          breakpoint: 768,
-          settings: {
-            slidesToShow: 1,
-            adaptiveHeight: true,
-          }
-        },
-        {
-          breakpoint: 580,
-          settings: {
-            slidesToShow: 1
-          }
-        }
-      ]
-    });
-  }());
-
-  //Languages carousel
-  (function () {
-    $('.languages-carousel').slick({
-      dots: false,
-      accessibility: true,
-      slidesToShow: 6,
-      arrows: true,
-      slidesToScroll: 1,
-      // autoplay: true,
-      // autoplaySpeed: 3000,
-      responsive: [
-        {
-          breakpoint: 1500,
-          settings: {
-            slidesToShow: 6
-          }
-        },
-        {
-          breakpoint: 768,
-          settings: {
-            slidesToShow: 4,
-            adaptiveHeight: true,
-          }
-        },
-        {
-          breakpoint: 580,
-          settings: {
-            slidesToShow: 3
-          }
-        }
-      ]
-    });
-  }());
-
-// function setActive(lang) {
-//   $(lang).toggleClass('active');
-// }
-
-// $(".card #lang").click(function(){
-//   var element = $(this).parent(".card");
-//   element.removeClass("logo text-center").addClass("logo text-center active");
-// });
-
-// $('#lang').on('click', function(e){
-//     $(this).parent()
-//     .toggleClass('logo text-center')
-//     .toggleClass('logo text-center active');
-//
-// });
-
 //Header loading
 (document, 'script', 'twitter-wjs');
 (function () {
@@ -294,29 +201,6 @@ $(document).ready(function () {
       }
     });
   }());
-
-  // Sticky content menu
-  (function () {
-    var headerHeight = $('.header').innerHeight();
-    var sectionHeadingHeight = $('.section-heading').innerHeight();
-    var offsetTop = parseInt(headerHeight) + parseInt(sectionHeadingHeight);
-
-    var contentMenuHorixontal = $(".toc-bullets--horizontal");
-    var showed = false;
-
-    $(window).scroll(function () {
-      var scrollTop = $(document).scrollTop();
-
-      if (scrollTop > offsetTop && !showed) {
-        contentMenuHorixontal.addClass('toc-bullets--horizontal-stiky');
-        showed = true;
-      } else if (scrollTop <= sectionHeadingHeight && showed) {
-        contentMenuHorixontal.removeClass('toc-bullets--horizontal-stiky');
-        showed = false;
-      }
-    });
-  }());
-
 
   // Mobile menu
   if ($('.js-show-menu').length) {
@@ -353,8 +237,6 @@ $(document).ready(function () {
     allIds.attr('tabindex', "0");
 
     allIds.click(function () {
-      // $(this).toggleClass("title-faq--opened");
-      // $(this).nextUntil("h3").slideToggle();
       showHiddenContent($(this));
     });
 
@@ -370,75 +252,7 @@ $(document).ready(function () {
       element.nextUntil("h3").slideToggle();
     }
   }
-
-  // (function() {
-  //   var video = $("#js-video");
-  //   video.width(450);
-  //   video.height(450);
-  //   var largeScreenRes = 1600;
-  //
-  //   $(window).on('resize', function() {
-  //     var windowWidth = $(window).innerWidth();
-  //     if (windowWidth >= largeScreenRes) {
-  //       video.width(650);
-  //       video.height(650);
-  //       console.log(windowWidth);
-  //     } else {
-  //       video.width(450);
-  //       video.height(450);
-  //     }
-  //   });
-  // })();
-
-
-  (function () {
-    var videoId = $('#js-video');
-    //play video on hover
-    $("body").on('mouseover', '.home-banner__video', function () {
-      videoId.get(0).play();
-    });
-
-    //pause video on mouse leave
-    $("body").on('mouseleave', '.home-banner__video', function () {
-      videoId.get(0).pause();
-    });
-  })()
 });
-
-
-// if (window.location.href.toString().split(window.location.host)[1] === '/docs/faq/') {
-//   var content = document.getElementById('content-wrapper');
-//   var allID = content.querySelectorAll('*[id]:not([id="graalvm---run-any-language-anywhere"])');
-//   var header = content.querySelector('[id]');
-//
-//   var nextUntil = function (elem, selector) {
-//     var siblings = [];
-//     elem = elem.nextElementSibling;
-//     while (elem) {
-//       if (elem.matches(selector)) break;
-//       siblings.push(elem);
-//       elem = elem.nextElementSibling;
-//     }
-//
-//     return siblings;
-//
-//   };
-//
-//   function wrap(el, wrapper) {
-//     el.parentNode.insertBefore(wrapper, el);
-//     wrapper.appendChild(el);
-//   }
-//
-//   allID.forEach(function(item, value) {
-//     item.classList.add('title-faq');
-//     item.nextElementSibling.style.display = 'none';
-//
-//     item.addEventListener('click', function () {
-//       this.classList.toggle('title-faq--opened');
-//       this.nextElementSibling.classList.toggle('visible');
-//     })
-//   });
-// }
 
 // Sticky sidebar
 var sidebar = document.querySelector('.sidebar-wrap');
@@ -567,7 +381,6 @@ if (safVideo && defVideo) {
 }
 
 // Search Feature
-
 // III. Display the results
 (function() {
   function displaySearchResults(results, store) {
@@ -845,7 +658,6 @@ $(document).ready(function() {
 });
 
 // Copy to clipboard
-
 const copyButtonLabel = "Copy";
 
 // Only add a button if browser supports Clipboard API
@@ -876,7 +688,6 @@ async function copyCode(event) {
 }
 
 // Filters on Native Image User Guides page
-
 $(".filter-item").click(function() {
   $(this).addClass("active-filter").siblings().removeClass("active-filter");
 });
@@ -912,7 +723,6 @@ $(document).ready(function () {
 });
 
 //Close button for survey banner
-
 document.querySelector(".banner-survey__close").addEventListener("click", function() {
   this.closest(".banner-survey").style.display = "none";
 });
