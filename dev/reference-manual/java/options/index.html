@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-04-29 11:48:04 +0000"/>
+  <meta name="last_modified" content="2024-05-09 11:26:48 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/options/">
@@ -533,16 +533,21 @@ To see the available configurations, supply the value <code>help</code> to this 
     </ul>
   </li>
   <li>
-    <p><code>-Djdk.graal.MitigateSpeculativeExecutionAttacks=&lt;strategy&gt;</code>: Selects a strategy to mitigate speculative
-  execution attacks (for example, Spectre).</p>
+    <p><code>-Djdk.graal.SpectrePHTBarriers=&lt;strategy&gt;</code>: Selects a strategy to mitigate speculative bounds check bypass (also known as Spectre-PHT or Spectre V1).</p>
 
     <p>Accepted arguments are:</p>
     <ul>
-      <li><code>None</code>: Uses no mitigations in JIT-compiled code.</li>
-      <li><code>AllTargets</code>: Protects all branches against speculative attacks. (This has a large performance impact.)</li>
-      <li><code>GuardTargets</code>: Protects only those branches that preserve Java memory safety. (This has reduced performance impact.)</li>
-      <li><code>NonDeoptGuardTargets</code>: Same as <code>GuardTargets</code> except that branches which deoptimize are not protected because they can not be executed repeatedly.</li>
+      <li><code>None</code>: Uses no mitigations in JIT-compiled code. (Default.)</li>
+      <li><code>AllTargets</code>: Uses speculative execution barrier instructions to stop speculative execution on all branch targets.
+  This option is equivalent to setting <code>SpeculativeExecutionBarriers</code> to <code>true</code>.
+  (This has a large performance impact.)</li>
+      <li><code>GuardTargets</code>: Instruments branch targets relevant to Java memory safety with barrier instructions.
+  Protects only those branches that preserve Java memory safety.
+  (This option has a lower performance impact than <code>AllTargets</code>.)</li>
+      <li><code>NonDeoptGuardTargets</code>: Same as <code>GuardTargets</code>, except that branches which are deoptimized, are not protected because they cannot be executed repeatedly and are, thus, less likely to be successfully exploited in an attack.</li>
     </ul>
+
+    <p>Note that all modes except <code>None</code> also instrument branch target blocks containing <code>UNSAFE</code> memory accesses with barrier instructions.</p>
   </li>
 </ul>
     
@@ -555,36 +560,10 @@ To see the available configurations, supply the value <code>help</code> to this 
       </h3>
 
 <ul>
-  <li><code>-Djdk.graal.UsePriorityInlining={ true | false }</code>: To disable use of the advanced inlining algorithm that favours throughput over compilation speed (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
   <li><code>-Djdk.graal.Vectorization={ true | false }</code>: To disable the auto vectorization optimization (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
   <li><code>-Djdk.graal.OptDuplication={ true | false }</code>: To disable the <a href="http://ssw.jku.at/General/Staff/Leopoldseder/DBDS_CGO18_Preprint.pdf">path duplication optimization</a> (only available in Oracle GraalVM). (Default: <code>true</code>.)</li>
   <li><code>-Djdk.graal.TuneInlinerExploration=&lt;value&gt;</code>: To tune for better peak performance or faster warmup.
 It automatically adjusts values governing the effort spent during inlining. The value of the option is a float clamped between <code>-1</code> and <code>1</code> inclusive. Anything below <code>0</code> reduces inlining effort and anything above <code>0</code> increases inlining effort. In general, peak performance is improved with more inlining effort while less inlining effort improves warmup (albeit to a lower peak). Note that this option is only a heuristic and the optimal value can differ from application to application (only available in Oracle GraalVM).</li>
-  <li>
-    <p><code>-Djdk.graal.TraceInlining={ true | false }</code>: To enable tracing of inlining decisions. This can be used for advanced tuning where it may be possible to change the source code of the application. (Default: <code>false</code>.) 
-  The output format is shown below:</p>
-
-    <pre><code>  compilation of 'Signature of the compilation root method':
-at 'Sig of the root method' ['Bytecode index']: &lt;'Phase'&gt; 'Child method signature': 'Decision made about this callsite'
-  at 'Signature of the child method' ['Bytecode index']:
-     |--&lt;'Phase 1'&gt; 'Grandchild method signature': 'First decision made about this callsite'
-     \--&lt;'Phase 2'&gt; 'Grandchild method signature': 'Second decision made about this callsite'
-  at 'Signature of the child method' ['Bytecode index']: &lt;'Phase'&gt; 'Another grandchild method signature': 'The only decision made about this callsite.'
-</code></pre>
-
-    <p>For example:</p>
-    <pre><code>  compilation of java.lang.Character.toUpperCaseEx(int):
-at java.lang.Character.toUpperCaseEx(Character.java:7138) [bci: 22]:
-   ├──&lt;GraphBuilderPhase&gt; java.lang.CharacterData.of(int): no, bytecode parser did not replace invoke
-   └──&lt;PriorityInliningPhase&gt; java.lang.CharacterData.of(int): yes, worth inlining according to the cost-benefit analysis.
-at java.lang.Character.toUpperCaseEx(Character.java:7138) [bci: 26]:
-   ├──&lt;GraphBuilderPhase&gt; java.lang.CharacterDataLatin1.toUpperCaseEx(int): no, bytecode parser did not replace invoke
-   └──&lt;PriorityInliningPhase&gt; java.lang.CharacterDataLatin1.toUpperCaseEx(int): yes, worth inlining according to the cost-benefit analysis.
-  at java.lang.CharacterDataLatin1.toUpperCaseEx(CharacterDataLatin1.java:223) [bci: 4]:
-     ├──&lt;GraphBuilderPhase&gt; java.lang.CharacterDataLatin1.getProperties(int): no, bytecode parser did not replace invoke
-     └──&lt;PriorityInliningPhase&gt; java.lang.CharacterDataLatin1.getProperties(int): yes, worth inlining according to the cost-benefit analysis.
-</code></pre>
-  </li>
 </ul>
     
       <h3 id="diagnostic-options">
@@ -614,18 +593,12 @@ at java.lang.Character.toUpperCaseEx(Character.java:7138) [bci: 26]:
 
     <p>For all values except for <code>ExitVM</code>, the JVM continues.</p>
   </li>
-  <li><code>-Djdk.graal.CompilationBailoutAsFailure={ true | false }</code>: The compiler may not complete compilation of a method due
+  <li>
+    <p><code>-Djdk.graal.CompilationBailoutAsFailure={ true | false }</code>: The compiler may not complete compilation of a method due
  to some property or code shape in the method (for example, exotic uses of the <code>jsr</code> and <code>ret</code> bytecodes). In this
  case the compilation <em>bails out</em>. If you want to be informed of such bailouts, this option makes the Graal JIT compiler
  treat bailouts as failures and thus be subject to the action specified by the
- <code>-Djdk.graal.CompilationFailureAction</code> option. (Default: <code>false</code>.)</li>
-  <li><code>-Djdk.graal.PrintCompilation={ true | false }</code>: Prints an informational line to the console for each completed compilation. (Default: <code>false</code>.)
-For example:
-    <pre><code>HotSpotCompilation-11  Ljava/lang/Object;                            wait          ()V       |  591ms    12B    92B  4371kB
-HotSpotCompilation-175 Ljava/lang/String;                            lastIndexOf   (II)I     |  590ms   126B   309B  4076kB
-HotSpotCompilation-184 Ljava/util/concurrent/ConcurrentHashMap;      setTabAt      ([Ljava/util/concurrent/ConcurrentHashMap$Node;ILjava/util/concurrent/ConcurrentHashMap$Node;)V  |  591ms    38B    67B  3411kB
-HotSpotCompilation-136 Lsun/nio/cs/UTF_8$Encoder;                    encode        ([CII[B)I |  591ms   740B   418B  4921
-</code></pre>
+ <code>-Djdk.graal.CompilationFailureAction</code> option. (Default: <code>false</code>.)</p>
   </li>
 </ul>
     
