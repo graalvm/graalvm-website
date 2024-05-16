@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-21 14:02:35 +0000"/>
+  <meta name="last_modified" content="2024-05-07 15:18:54 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/use-reachability-metadata-repository-gradle/">
@@ -168,18 +168,16 @@ Alternatively, you can go right to the <a href="https://github.com/graalvm/nativ
   <p>Note: A Java version between 17 and 20 is required to execute Gradle (see the <a href="https://docs.gradle.org/current/userguide/compatibility.html">Gradle Compatibility Matrix</a>). However, if you want to run your application with Java 21 (or higher), there is a workaround: set <code>JAVA_HOME</code> to a Java version between 17 and 20, and <code>GRAALVM_HOME</code> to GraalVM for JDK 21. See the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#_installing_graalvm_native_image_tool">Native Image Gradle Plugin documentation</a> for more details.</p>
 </blockquote>
 
-<ol>
-  <li>
-    <p>Make sure you have installed GraalVM.
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
+
+<ol>
   <li>
     <p>Create a new Java project with <strong>Gradle</strong> in your favorite IDE, called “H2Example”, in the <code>org.graalvm.example</code> package.</p>
   </li>
-  <li>
-    <p>Rename the default <em>app</em> directory to <em>H2Example</em>, then rename the default filename <em>App.java</em> to <em>H2Example.java</em> and replace its contents with the following:</p>
-
+  <li>Rename the default <em>app/</em> directory to <em>H2Example/</em>, then rename the default filename <em>App.java</em> to <em>H2Example.java</em> and replace its contents with the following:
     <pre><code class="language-java"> package org.graalvm.example;
 
  import java.sql.Connection;
@@ -262,11 +260,9 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
   </li>
   <li>
-    <p>Delete the <em>H2Example/src/test/java</em> directory (if it exists).</p>
+    <p>Delete the <em>H2Example/src/test/java/</em> directory (if it exists).</p>
   </li>
-  <li>
-    <p>Open the Gradle configuration file <em>build.gradle</em>, and replace its contents with the following:</p>
-
+  <li>Open the Gradle configuration file <em>build.gradle</em>, and replace its contents with the following:
     <pre><code> plugins {
      id 'application'
      // 1. Native Image Gradle plugin
@@ -304,15 +300,13 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <p><strong>1</strong> Enable the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Native Image Gradle plugin</a>.
  The plugin discovers which JAR files it needs to pass to <code>native-image</code> and what the executable main class should be.</p>
 
-    <p><strong>2</strong> Specify explicitly the application main class.</p>
+    <p><strong>2</strong> Specify the application main class explicitly.</p>
 
     <p><strong>3</strong> Add a dependency on the <a href="https://www.h2database.com/html/main.html">H2 Database</a>, an open source SQL database for Java. The application interacts with this database through the JDBC driver.</p>
 
     <p><strong>4</strong> You can pass parameters to the <code>native-image</code> tool in the <code>graalvmNative</code> plugin configuration. In individual <code>buildArgs</code> you can pass parameters exactly the same way as you do from a command line. The <code>-Ob</code> option to enable quick build mode (recommended during development only) is used as an example. <code>imageName.set()</code> is used to specify the name for the resulting binary. Learn about other configuration options from the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration">plugin’s documentation</a>.</p>
   </li>
-  <li>
-    <p>The plugin is not yet available on the Gradle Plugin Portal, so declare an additional plugin repository. Open the <em>settings.gradle</em> file and replace the default content with this:</p>
-
+  <li>The plugin is not yet available on the Gradle Plugin Portal, so declare an additional plugin repository. Open the <em>settings.gradle</em> file and replace the default content with this:
     <pre><code> pluginManagement {
      repositories {
          mavenCentral()
@@ -325,8 +319,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
     <p>Note that the <code>pluginManagement {}</code> block must appear before any other statements in the file.</p>
   </li>
-  <li>
-    <p>(Optional) Build the application. From the root directory of the repository, run the following command:</p>
+  <li>(Optional) Build the application. From the root directory of the repository, run the following command:
     <pre><code class="language-shell">./gradlew run
 </code></pre>
     <p>This generates an “executable” JAR file, one that contains all of the application’s dependencies and also a correctly configured <em>MANIFEST</em> file.</p>
@@ -341,9 +334,7 @@ One of these is the <a href="https://www.h2database.com/html/main.html">H2 Datab
 The support needs to be enabled explicitly.</p>
 
 <ol>
-  <li>
-    <p>Open the <em>build.gradle</em> file, and enable the GraalVM Reachability Metadata Repository in the <code>graalvmNative</code> plugin configuration:</p>
-
+  <li>Open the <em>build.gradle</em> file, and enable the GraalVM Reachability Metadata Repository in the <code>graalvmNative</code> plugin configuration:
     <pre><code> metadataRepository {
      enabled = true
  }
@@ -366,8 +357,7 @@ The support needs to be enabled explicitly.</p>
 </code></pre>
     <p>The plugin automatically downloads the metadata from the repository.</p>
   </li>
-  <li>
-    <p>Now build a native executable using the metadata:</p>
+  <li>Now build a native executable using the metadata:
     <pre><code class="language-shell"> ./gradlew nativeRun
 </code></pre>
     <p>This generates a native executable for the platform in the <em>build/native/nativeCompile/</em> directory, called <code>h2example</code>.

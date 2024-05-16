@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-08-14 15:42:37 +0000"/>
+  <meta name="last_modified" content="2024-05-07 15:18:54 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/create-heap-dump/">
@@ -145,33 +145,34 @@
 <p>You can create a heap dump of a running executable to monitor its execution.
 Just like any other Java heap dump, it can be opened with the <a href="/dev/tools/visualvm/">VisualVM</a> tool.</p>
 
-<p>To enable heap dump support, native executables must be built with the <code>--enable-monitoring=heapdump</code> option. Heap dumps can then be created in different ways:</p>
+<p>To enable heap dump support, a native executable must be built with the <code>--enable-monitoring=heapdump</code> option. 
+A heap dump can then be created in the following ways:</p>
 
 <ol>
-  <li>Create heap dumps with VisualVM.</li>
+  <li>Create a heap dump with VisualVM.</li>
   <li>The command-line option <code>-XX:+HeapDumpOnOutOfMemoryError</code> can be used to create a heap dump when the native executable runs out of Java heap memory.</li>
   <li>Dump the initial heap of a native executable using the <code>-XX:+DumpHeapAndExit</code> command-line option.</li>
-  <li>Create heap dumps sending a <code>SIGUSR1</code> signal at run time.</li>
-  <li>Create heap dumps programmatically using the <a href="https://github.com/oracle/graal/blob/master/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/VMInspectionOptions.java"><code>org.graalvm.nativeimage.VMRuntime#dumpHeap</code></a> API.</li>
+  <li>Create a heap dump by sending a <code>SIGUSR1</code> signal to the application at runtime.</li>
+  <li>Create a heap dump programmatically using the <a href="https://github.com/oracle/graal/blob/master/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/VMInspectionOptions.java"><code>org.graalvm.nativeimage.VMRuntime#dumpHeap</code></a> API.</li>
 </ol>
 
 <p>All approaches are described below.</p>
 
 <blockquote>
-  <p>Note: By default, heap dumps are created in the current working directory. The <code>-XX:HeapDumpPath</code> option can be used to specify an alternative filename or directory. For example:<br />
+  <p>Note: By default, a heap dump is created in the current working directory. The <code>-XX:HeapDumpPath</code> option can be used to specify an alternative filename or directory. For example:<br />
 <code>./helloworld -XX:HeapDumpPath=$HOME/helloworld.hprof</code></p>
 </blockquote>
 
 <blockquote>
-  <p>Also note: Creating heap dumps is not available on the Microsoft Windows platform.</p>
+  <p>Also note: It is not possible to create a heap dump on the Microsoft Windows platform.</p>
 </blockquote>
 
-<h2 id="create-heap-dumps-with-visualvm">Create Heap Dumps with VisualVM</h2>
+<h2 id="create-a-heap-dump-with-visualvm">Create a Heap Dump with VisualVM</h2>
 
-<p>A convenient way to create heap dumps is to use <a href="/dev/tools/visualvm/">VisualVM</a>.
+<p>A convenient way to create a heap dump is to use <a href="/dev/tools/visualvm/">VisualVM</a>.
 For this, you need to add <code>jvmstat</code> to the <code>--enable-monitoring</code> option (for example, <code>--enable-monitoring=heapdump,jvmstat</code>).
 This will allow VisualVM to pick up and list running Native Image processes.
-You can then request heap dumps in the same way you can request them when your application runs on the JVM (for example, right-click on the process, then select “Heap Dump”).</p>
+You can then request a heap dump in the same way you can request one when your application runs on the JVM (for example, right-click on the process, then select <strong>Heap Dump</strong>).</p>
 
 <h2 id="create-a-heap-dump-on-outofmemoryerror">Create a Heap Dump on <code>OutOfMemoryError</code></h2>
 
@@ -196,23 +197,25 @@ For a HelloWorld example, use the option as follows:</p>
 Heap dump created at '/path/to/helloworld.hprof'.
 </code></pre>
 
-<h2 id="create-heap-dumps-with-sigusr1-linuxmacos-only">Create Heap Dumps with SIGUSR1 (Linux/macOS only)</h2>
+<h2 id="create-a-heap-dump-with-sigusr1-linuxmacos-only">Create a Heap Dump with SIGUSR1 (Linux/macOS only)</h2>
 
 <blockquote>
   <p>Note: This requires the <code>Signal</code> API, which is enabled by default except when building shared libraries.</p>
 </blockquote>
 
 <p>The following example is a simple multi-threaded Java application that runs for 60 seconds. 
-This provides you with enough time to send it a <code>SIGUSR1</code> signal. The application will handle the signal and create a heap dump in the application’s working directory. The heap dump will contain the <code>Collection</code> of <code>Person</code>s referenced by the static variable <code>CROWD</code>.</p>
+This provides you with enough time to send it a <code>SIGUSR1</code> signal. 
+The application will handle the signal and create a heap dump in the application’s working directory. 
+The heap dump will contain the <code>Collection</code> of <code>Person</code>s referenced by the static variable <code>CROWD</code>.</p>
 
 <p>Follow these steps to build a native executable that will produce a heap dump when it receives a <code>SIGUSR1</code> signal.</p>
 
-<ol>
-  <li>
-    <p>Make sure you have installed a GraalVM JDK.
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
+
+<ol>
   <li>Save the following code in a file named <em>SVMHeapDump.java</em>:
     <pre><code class="language-java">import java.nio.charset.Charset;
 import java.text.DateFormat;
@@ -295,17 +298,17 @@ class Person {
   <li>
     <p>Build a native executable:</p>
 
-    <p>Compile SVMHeapDump.java as follows:</p>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac SVMHeapDump.java
+    <p>Compile <em>SVMHeapDump.java</em> as follows:</p>
+    <pre><code class="language-shell"> javac SVMHeapDump.java
 </code></pre>
     <p>Build a native executable using the <code>--enable-monitoring=heapdump</code> command-line option.
  (This causes the resulting native executable to produce a heap dump when it receives a <code>SIGUSR1</code> signal.)</p>
 
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image SVMHeapDump --enable-monitoring=heapdump
+    <pre><code class="language-shell"> native-image SVMHeapDump --enable-monitoring=heapdump
 </code></pre>
 
-    <p>(The <code>native-image</code> builder creates a native executable from the <code>SVMHeapDump.class</code>.
- When the command completes, the native executable <code>svmheapdump</code> is created in the current directory.)</p>
+    <p>(The <code>native-image</code> builder creates a native executable from the file <em>SVMHeapDump.class</em>.
+ When the command completes, the native executable <em>svmheapdump</em> is created in the current directory.)</p>
   </li>
   <li>
     <p>Run the application, send it a signal, and check the heap dump:</p>
@@ -320,7 +323,9 @@ class Person {
  17 May 2022, 16:38:13: Thread started, it will run for 60 seconds
 </code></pre>
 
-    <p>Make a note of the PID and open a second terminal. Use the PID to send a signal to the application. For example, if the PID is <code>57509</code>:</p>
+    <p>Make a note of the PID and open a second terminal. 
+ Use the PID to send a signal to the application. 
+ For example, if the PID is <code>57509</code>:</p>
     <pre><code class="language-shell"> kill -SIGUSR1 57509
 </code></pre>
 
@@ -407,25 +412,25 @@ The condition to create a heap dump is provided as an option on the command line
      }
 </code></pre>
 
-    <p>As in the earlier example, the application creates a <code>Collection</code> of <code>Person</code>s referenced by the static variable <code>CROWD</code>. It then checks the command line to see if heap dump has to be created, and then in method <code>createHeapDump()</code> creates the heap dump.</p>
+    <p>As in the earlier example, the application creates a <code>Collection</code> of <code>Person</code>s referenced by the static variable <code>CROWD</code>. 
+ It then checks the command line to see if heap dump has to be created, and then in method <code>createHeapDump()</code> creates the heap dump.</p>
   </li>
   <li>
-    <p>Build a native executable</p>
+    <p>Build a native executable.</p>
 
     <p>Compile <em>SVMHeapDumpAPI.java</em> and build a native executable:</p>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac SVMHeapDumpAPI.java
+    <pre><code class="language-shell"> javac SVMHeapDumpAPI.java
 </code></pre>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image SVMHeapDumpAPI
+    <pre><code class="language-shell"> native-image SVMHeapDumpAPI
 </code></pre>
-    <p>When the command completes, the <code>svmheapdumpapi</code> native executable is created in the current directory.</p>
+    <p>When the command completes, the <em>svmheapdumpapi</em> native executable is created in the current directory.</p>
   </li>
   <li>
     <p>Run the application and check the heap dump</p>
 
     <p>Now you can run your native executable and create a heap dump from it with output similar to the following:</p>
     <pre><code class="language-shell"> ./svmheapdumpapi --heapdump
-</code></pre>
-    <pre><code> Sep 15, 2020, 4:06:36 PM: Hello GraalVM native image developer.
+ Sep 15, 2020, 4:06:36 PM: Hello GraalVM native image developer.
  Your command line options are: --heapdump
    Heap dump created /var/folders/hw/s9d78jts67gdc8cfyq5fjcdm0000gp/T/SVMHeapDump-6437252222863577987.hprof, size: 8051959
 </code></pre>

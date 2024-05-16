@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2023-08-14 15:42:37 +0000"/>
+  <meta name="last_modified" content="2024-05-07 15:18:54 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/add-logging-to-native-executable/">
@@ -148,7 +148,7 @@
 
 <p>The default logging configuration in a native executable is based on the <code>logging.properties</code> file found in the JDK.
 This file configures a <code>java.util.logging.ConsoleHandler</code> which will only show messages at the <code>INFO</code> level and above.
-Custom logging configuration can be loaded either at executable build time or at runtime as described below.</p>
+Custom logging configuration can be loaded either at build time or at runtime as described below.</p>
 
 <p>If you require additional logging handlers, you must register the corresponding classes for reflection.
 For example, if you use <code>java.util.logging.FileHandler</code> then provide the following reflection configuration:</p>
@@ -161,17 +161,17 @@ For example, if you use <code>java.util.logging.FileHandler</code> then provide 
 </code></pre>
 <p>For more details, see <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">Reflection Support</a>.</p>
 
-<h2 id="initializing-a-logger-at-build-time">Initializing a Logger at Build Time</h2>
+<h2 id="initialize-a-logger-at-build-time">Initialize a Logger at Build Time</h2>
 
-<p>The logger can be initialized at executable build time with a custom <em>logging.properties</em> configuration file, as illustrated in following example.</p>
+<p>The logger can be initialized at build time with a custom <em>logging.properties</em> configuration file, as illustrated in following example.</p>
 
-<ol>
-  <li>
-    <p>Make sure you have installed a GraalVM JDK.
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
-  <li>Save the following Java code into a file named <em>LoggerBuildTimeInit.java</em>, then compile it using <code>javac</code>:
+
+<ol>
+  <li>Save the following Java code into a file named <em>LoggerBuildTimeInit.java</em>, and compile it:
     <pre><code class="language-java"> import java.io.IOException;
  import java.util.logging.Level;
  import java.util.logging.LogManager;
@@ -193,11 +193,13 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
      }
  } 
 </code></pre>
+    <pre><code class="language-bash"> javac LoggerBuildTimeInit.java
+</code></pre>
   </li>
   <li>
     <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>LoggerBuildTimeInit.java</em>.</p>
   </li>
-  <li>Build and run the native executable:
+  <li>Build and run a native executable:
     <pre><code class="language-shell"> native-image LoggerBuildTimeInit --initialize-at-build-time=LoggerBuildTimeInit
 </code></pre>
     <pre><code class="language-shell"> ./loggerbuildtimeinit
@@ -206,7 +208,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <pre><code class="language-shell"> WARNING: Danger, Will Robinson! [Wed May 18 17:20:39 BST 2022]
 </code></pre>
 
-    <p>This demonstrates that the <em>logging.properties</em> file is processed at when the executable is built.
+    <p>This demonstrates that the <em>logging.properties</em> file is processed when the executable is built.
  The file does not need to be included in the native executable and reduces the size of the resulting executable file.</p>
 
     <p><code>LoggerHolder.LOGGER</code> is also initialized at build time and is readily available at runtime, therefore improving the startup time. 
@@ -214,13 +216,13 @@ Unless your application needs to process a custom <em>logging.properties</em> co
   </li>
 </ol>
 
-<h2 id="initializing-a-logger-at-run-time">Initializing a Logger at Run Time</h2>
+<h2 id="initialize-a-logger-at-runtime">Initialize a Logger at Runtime</h2>
 
 <p>The logger can also be initialized at run time, as shown in the following example.</p>
 
 <ol>
   <li>
-    <p>Save the following Java code into a file named <em>LoggerRunTimeInit.java</em>, then compile it using <code>javac</code>:</p>
+    <p>Save the following Java code into a file named <em>LoggerRunTimeInit.java</em>, and compile it:</p>
 
     <pre><code class="language-java"> import java.io.IOException;
  import java.util.logging.Level;
@@ -234,6 +236,8 @@ Unless your application needs to process a custom <em>logging.properties</em> co
          logger.log(Level.WARNING, "Danger, Will Robinson!");
      }
  }
+</code></pre>
+    <pre><code class="language-bash"> javac LoggerRunTimeInit.java
 </code></pre>
   </li>
   <li>

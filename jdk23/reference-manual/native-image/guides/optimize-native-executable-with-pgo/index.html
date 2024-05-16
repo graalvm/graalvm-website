@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-14 12:08:01 +0000"/>
+  <meta name="last_modified" content="2024-05-07 15:18:54 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">
@@ -181,14 +181,13 @@ You can also collect multiple profile files by specifying different filenames, a
 
 <p>Follow these steps to build an optimized native executable using PGO.</p>
 
-<blockquote>
-  <p>Note: Make sure you have installed a GraalVM JDK. The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>. For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-</blockquote>
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
-  <li>
-    <p>Save <a href="https://github.com/graalvm/graalvm-demos/blob/master/streams/Streams.java">the following code</a> to the file named <em>Streams.java</em>:</p>
-
+  <li>Save <a href="https://github.com/graalvm/graalvm-demos/blob/master/streams/Streams.java">the following code</a> to the file named <em>Streams.java</em>:
     <pre><code class="language-java">import java.util.Arrays;
 import java.util.Random;
 
@@ -282,41 +281,34 @@ class Person {
 </code></pre>
   </li>
   <li>Compile the application:
-    <pre><code class="language-shell">$JAVA_HOME/bin/javac Streams.java
+    <pre><code class="language-shell">javac Streams.java
 </code></pre>
     <p>(Optional) Run the demo application, providing some arguments to observe performance.</p>
-    <pre><code class="language-shell">$JAVA_HOME/bin/java Streams 100000 200
+    <pre><code class="language-shell">java Streams 100000 200
 </code></pre>
   </li>
   <li>Build a native executable from the class file, and run it to compare the performance:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image Streams
+    <pre><code class="language-shell"> native-image Streams
 </code></pre>
-    <p>An executable file, <code>streams</code>, is created in the current working directory. 
+    <p>An executable file, <em>streams</em>, is created in the current working directory. 
  Now run it with the same arguments to see the performance:</p>
-
     <pre><code class="language-shell"> ./streams 100000 200
 </code></pre>
     <p>This version of the program is expected to run slower than on GraalVM’s or any regular JDK.</p>
   </li>
-  <li>
-    <p>Build an instrumented native executable by passing the <code>--pgo-instrument</code> option to <code>native-image</code>:</p>
-
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --pgo-instrument Streams
+  <li>Build an instrumented native executable by passing the <code>--pgo-instrument</code> option to <code>native-image</code>:
+    <pre><code class="language-shell"> native-image --pgo-instrument Streams
 </code></pre>
   </li>
-  <li>
-    <p>Run it to collect the code-execution-frequency profiles:</p>
-
+  <li>Run it to collect the code-execution-frequency profiles:
     <pre><code class="language-shell"> ./streams 100000 20
 </code></pre>
 
     <p>Notice that you can profile with a much smaller data size.
  Profiles collected from this run are stored by default in the <em>default.iprof</em> file.</p>
   </li>
-  <li>
-    <p>Finally, build an optimized native executable. The profile file has the default name and location, so it will be picked up automatically:</p>
-
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --pgo Streams
+  <li>Finally, build an optimized native executable. The profile file has the default name and location, so it will be picked up automatically:
+    <pre><code class="language-shell"> native-image --pgo Streams
 </code></pre>
   </li>
   <li>Run this optimized native executable timing the execution to see the system resources and CPU usage:
