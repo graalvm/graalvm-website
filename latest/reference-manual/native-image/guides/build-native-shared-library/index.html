@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-02-06 15:15:16 +0000"/>
+  <meta name="last_modified" content="2024-05-07 15:18:54 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/build-native-shared-library/">
@@ -143,7 +143,6 @@
       <h1 id="build-a-native-shared-library">Build a Native Shared Library</h1>
 
 <p>To build a native shared library, pass the command-line argument <code>--shared</code> to the <code>native-image</code> tool, as follows:</p>
-
 <pre><code class="language-shell">native-image &lt;class name&gt; --shared
 </code></pre>
 
@@ -154,7 +153,6 @@
 <p>The resulting native shared library will have the <code>main()</code> method of the given Java class as its entrypoint method.</p>
 
 <p>If your library does not include a <code>main()</code> method, use the <code>-o</code> command-line option to specify the library name, as follows:</p>
-
 <pre><code class="language-shell">native-image --shared -o &lt;libraryname&gt; &lt;class name&gt;
 native-image --shared -jar &lt;jarfile&gt; -o &lt;libraryname&gt;
 </code></pre>
@@ -185,7 +183,6 @@ By default, only a method named <code>main()</code>, originating from a <code>
 </ul>
 
 <p>Below is an example of the entrypoint method:</p>
-
 <pre><code class="language-java">@CEntryPoint(name = "function_name")
 static int add(IsolateThread thread, int a, int b) {
     return a + b;
@@ -203,14 +200,14 @@ This is the C header declaration for the example above:</p>
 <h3 id="run-a-demo">Run a Demo</h3>
 
 <p>In the following example, you create a small Java class library (containing one class), use <code>native-image</code> to create a shared library from the class library, and then create a small C application that uses that shared library.
-The C application takes a string as its argument, passes it to the shared library, and prints environment variables that contain the argument.</p>
+The C application takes a String as its argument, passes it to the shared library, and prints environment variables that contain the argument.</p>
+
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
-  <li>
-    <p>Make sure you have installed GraalVM.
-The easiest way to install it is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
-For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads page</a>.</p>
-  </li>
   <li>
     <p>Save the following Java code to a file named <em>LibEnvMap.java</em>:</p>
 
@@ -242,9 +239,9 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <p>Notice how the method <code>filterEnv()</code> is identified as an entrypoint using the <code>@CEntryPoint</code> annotation and the method is given a name as a argument to the annotation.</p>
   </li>
   <li>Compile the Java code and build a native shared library, as follows:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac LibEnvMap.java
+    <pre><code class="language-shell"> javac LibEnvMap.java
 </code></pre>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image -o libenvmap --shared 
+    <pre><code class="language-shell"> native-image -o libenvmap --shared 
 </code></pre>
 
     <p>It produces the following artifacts:</p>
@@ -260,9 +257,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 
     <p>If you work with C or C++, use these header files directly. For other languages, such as Java, use the function declarations in the headers to set up your foreign call bindings.</p>
   </li>
-  <li>
-    <p>Create a C application, <em>main.c</em>, in the same directory containing the following code:</p>
-
+  <li>Create a C application, <em>main.c</em>, in the same directory containing the following code:
     <pre><code class="language-c"> #include &lt;stdio.h&gt;
  #include &lt;stdlib.h&gt;
 
@@ -293,7 +288,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
   <li>Compile <em>main.c</em> using the <code>clang</code> compiler available on your system:
     <pre><code class="language-shell"> clang -I ./ -L ./ -l envmap -Wl,-rpath ./ -o main main.c 
 </code></pre>
-    <p>It creates an executable file <code>main</code>.</p>
+    <p>It creates an executable file <em>main</em>.</p>
   </li>
   <li>Run the C application by passing a string as an argument. For example:
     <pre><code class="language-shell"> ./main USER
