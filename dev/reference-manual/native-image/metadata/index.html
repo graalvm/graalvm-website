@@ -13,7 +13,7 @@
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
-  <meta name="last_modified" content="2024-03-05 13:10:34 +0000"/>
+  <meta name="last_modified" content="2024-04-15 11:56:30 +0000"/>
 
   
   <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/metadata/">
@@ -982,21 +982,25 @@ class Example {
         
       </h3>
 
-<p>Dynamic proxy metadata should be specified in a <em>proxy-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/proxy-config-schema-v1.0.0.json">proxy-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the proxy-config.json:</p>
+<p>Dynamic proxy metadata should be specified as part of a <em>reflect-config.json</em> file by adding <code>"proxy"</code>-type entries, conforming to the JSON schema defined in <a href="/docs/reference-manual/native-image/assets/config-type-schema-v1.0.0.json">config-type-schema-v1.1.0.json</a>.
+It enables you to register members of a proxy class for reflection the same way as it would be done for a named class.
+The order in which interfaces are given matters and the interfaces will be passed in the same order to generate the proxy class.
+The schema also includes further details and explanations how this configuration works. 
+Here is an example of dynamic proxy metadata in reflect-config.json:</p>
 <pre><code class="language-json">[
   {
     "condition": {
       "typeReachable": "&lt;condition-class&gt;"
     },
-    "interfaces": [
-      "IA",
-      "IB"
-    ]
+    "type": { "proxy": [
+        "IA",
+        "IB"
+      ]}
   }
 ]
 </code></pre>
+<p>Contents of <em>proxy-config.json</em> files will still be parsed and honored by Native Image, but this file is now deprecated
+and the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image agent</a> outputs proxy metadata to reflect-config.json.</p>
     
       <h2 id="serialization">
         
@@ -1059,6 +1063,14 @@ The schema also includes further details and explanations how this configuration
       },
       "type": "&lt;fully-qualified-class-name&gt;",
       "customTargetConstructorClass": "&lt;custom-target-constructor-class&gt;"
+    },
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "type": {
+        "proxy": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
+      }
     }
   ],
   "lambdaCapturingTypes": [
@@ -1068,15 +1080,7 @@ The schema also includes further details and explanations how this configuration
       },
       "name": "&lt;fully-qualified-class-name&gt;"
     }
-  ],
- "proxies": [
-   {
-     "condition": {
-       "typeReachable": "&lt;condition-class&gt;"
-     },
-     "interfaces": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
-   }
- ]
+  ]
 }
 </code></pre>
     
