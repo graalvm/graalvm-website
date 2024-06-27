@@ -880,27 +880,25 @@ and automatically register such resources.</li>
       </h3>
 
 <p>Resource metadata should be specified in a <em>resource-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/resource-config-schema-v1.0.0.json">resource-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the resource-config.json:</p>
+<a href="/docs/reference-manual/native-image/assets/resource-config-schema-v1.1.0.json">resource-config-schema-v1.1.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of a <em>resource-config.json</em> file:</p>
 <pre><code class="language-json">{
-  "resources": {
-    "includes": [
-      {
-        "condition": {
-          "typeReachable": "&lt;condition-class&gt;"
-        },
-        "pattern": ".*\\.txt"
-      }
-    ],
-    "excludes": [
-      {
-        "condition": {
-          "typeReachable": "&lt;condition-class&gt;"
-        },
-        "pattern": ".*\\.txt"
-      }
-    ]
-  },
+  "globs": [
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "pattern": "META-INF/**/*.txt"
+    }
+  ],
+  "resources": [
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "pattern": ".*\\.txt"
+    }
+  ],
   "bundles": [
     {
       "condition": {
@@ -922,6 +920,16 @@ The schema also includes further details and explanations how this configuration
   ]
 }
 </code></pre>
+
+<p>Resources can be specified via globs or Java regular expressions (see <a href="#resource-metadata-in-json">Resource Metadata in JSON</a>).
+We recommend using globs because they:</p>
+<ul>
+  <li>Have custom handling in <code>native-image</code> that can speed up a resource registration process</li>
+  <li>Are less expressive and therefore less error-prone than regular expressions</li>
+  <li>Provide better support for resource-related checks at runtime</li>
+</ul>
+
+<p>Learn more about globs and some syntax rules to be observed in the <a href="/jdk23/reference-manual/native-image/dynamic-features/Resources/">Accessing Resources in Native Image documentation</a>.</p>
     
       <h2 id="dynamic-proxy">
         
@@ -931,11 +939,11 @@ The schema also includes further details and explanations how this configuration
         
       </h2>
 
-<p>The JDK supports generating proxy classes for a given interface list.
-Native Image does not support generating new classes at runtime and requires metadata to properly run code that uses these proxies.</p>
+<p>The JDK can generate proxy classes for a specified list of interfaces.
+Native Image does not generate new classes at runtime and therefore requires metadata to properly run code that uses these proxies.</p>
 
 <blockquote>
-  <p>Note: The order of interfaces in the interface list used to create a proxy matters. Creating a proxy with two identical interface lists in which the interfaces are not in the same order, creates two distinct proxy classes.</p>
+  <p>Note: The order of interfaces in the interface list used to create a proxy is important. Creating a proxy with two identical interface lists in which the interfaces are not in the same order, creates two distinct proxy classes.</p>
 </blockquote>
     
       <h3 id="code-example">
