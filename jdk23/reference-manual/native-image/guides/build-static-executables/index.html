@@ -149,8 +149,8 @@
 A static native executable is easy to distribute and deploy on a slim or distroless container (a scratch container).
 You can create a static native executable by statically linking it against <a href="https://musl.libc.org/">musl-libc</a>, a lightweight, fast and simple <code>libc</code> implementation.</p>
 
-<p><strong>A mostly-static native executable</strong> is a binary that links everything (<code>zlib</code>, JDK shared libraries) except the standard C library, <code>libc</code>. This is an alternative option to statically linking everything. Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>.
-This approach is ideal for deployment on a distroless container image.</p>
+<p><strong>A mostly-static native executable</strong> is a binary that links everything (<code>zlib</code>, JDK-shared static libraries) except the standard C library, <code>libc</code>. This is an alternative option to statically linking everything. Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>.
+This approach is useful for deployment on a distroless container image.</p>
 
 <blockquote>
   <p>Note: This currently only works when linked against <code>libc</code>.</p>
@@ -160,41 +160,51 @@ This approach is ideal for deployment on a distroless container image.</p>
 
 <h2 id="prerequisites-and-preparation">Prerequisites and Preparation</h2>
 
-<p>The following prerequisites should be met:</p>
-
 <ul>
-  <li>Linux AMD64 operating system</li>
-  <li>GraalVM distribution for Java 17 of higher</li>
+  <li>Linux x64 operating system</li>
+  <li>GraalVM distribution for Java 17 or higher</li>
   <li>A 64-bit <code>musl</code> toolchain, <code>make</code>, and <code>configure</code></li>
   <li>The latest <code>zlib</code> library</li>
 </ul>
 
-<ol>
-  <li>
-    <p>Install a GraalVM JDK.
-The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+<p>The easiest way to install GraalVM is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
-  <li>
-    <p>Next, you should install the <code>musl</code> toolchain, compile and install <code>zlib</code> into the toolchain. 
-Download the <code>musl</code> toolchain from <a href="https://musl.cc/">musl.cc</a>. 
-(We recommend <a href="https://more.musl.cc/10/x86_64-linux-musl/x86_64-linux-musl-native.tgz">this one</a>). 
-Extract the toolchain to a directory of your choice. This directory will be referred as <code>$TOOLCHAIN_DIR</code>.</p>
-  </li>
-  <li>
-    <p>Download the latest <code>zlib</code> library sources from <a href="https://zlib.net/">zlib.net</a> and extract them. (This documentation uses <code>zlib-1.2.11</code>.)</p>
-  </li>
-  <li>Create a new environment variable, named <code>CC</code>:
-    <pre><code class="language-bash"> CC=$TOOLCHAIN_DIR/bin/gcc
+
+<p>To be able to create static native applications with Native Image, a <code>musl</code> toolchain with the <code>zlib</code> library are required on the system.
+For the best compatibility, use <a href="https://musl.libc.org/releases/musl-1.2.4.tar.gz">musl-1.2.4</a> or later.
+We recommend building <code>musl</code> from <a href="https://musl.libc.org/">source</a> as shown below:</p>
+
+<pre><code class="language-bash"># Specify an installation directory for musl:
+export MUSL_HOME=$PWD/musl-toolchain
+
+# Download musl and zlib sources:
+curl -O https://musl.libc.org/releases/musl-1.2.4.tar.gz
+curl -O https://zlib.net/fossils/zlib-1.2.13.tar.gz
+
+# Build musl from source
+tar -xzvf musl-1.2.4.tar.gz
+pushd musl-1.2.4
+./configure --prefix=$MUSL_HOME --static
+# The next operation may require privileged access to system resources, so use sudo
+sudo make &amp;&amp; make install
+popd
+
+# Install a symlink for use by native-image
+ln -s $MUSL_HOME/bin/musl-gcc $MUSL_HOME/bin/x86_64-linux-musl-gcc
+
+# Extend the system path and confirm that musl is available by printing its version
+export PATH="$MUSL_HOME/bin:$PATH"
+x86_64-linux-musl-gcc --version
+
+# Build zlib with musl from source and install into the MUSL_HOME directory
+tar -xzvf zlib-1.2.13.tar.gz
+pushd zlib-1.2.13
+CC=musl-gcc ./configure --prefix=$MUSL_HOME --static
+make &amp;&amp; make install
+popd
 </code></pre>
-  </li>
-  <li>Change into the <code>zlib</code> directory, and then run the following commands to compile and install <code>zlib</code> into the toolchain:
-    <pre><code class="language-bash"> ./configure --prefix=$TOOLCHAIN_DIR --static
- make
- make install
-</code></pre>
-  </li>
-</ol>
+
+<p>With the requirements set up, create the demo.</p>
 
 <h2 id="build-a-static-native-executable">Build a Static Native Executable</h2>
 
@@ -218,16 +228,7 @@ Extract the toolchain to a directory of your choice. This directory will be refe
 </code></pre>
     <p>This application iterates over your environment variables and prints out the ones that contain the <code>String</code> of characters passed as a command line argument.</p>
   </li>
-  <li>Ensure the directory named <code>$TOOLCHAIN_DIR/bin</code> is present on your <code>PATH</code>.
-To verify this, run the following command:
-    <pre><code class="language-bash">x86_64-linux-musl-gcc
-</code></pre>
-    <p>You should see output similar to the following:</p>
-    <pre><code>x86_64-linux-musl-gcc: fatal error: no input files
-compilation terminated.
-</code></pre>
-  </li>
-  <li>Compile the file:
+  <li>Compile the application:
     <pre><code class="language-shell"> javac EnvMap.java
 </code></pre>
   </li>
@@ -235,7 +236,7 @@ compilation terminated.
     <pre><code class="language-shell"> native-image --static --libc=musl EnvMap
 </code></pre>
     <p>This produces a native executable with statically linked system libraries.
- You can pass other arguments before a class or JAR file.</p>
+ You can pass other arguments before a class or JAR file. Run it with <code>./envmap</code>.</p>
   </li>
 </ol>
 
@@ -252,9 +253,10 @@ Statically linking all your libraries except <code>libc</code> ensures your appl
 <pre><code class="language-shell">native-image --static-nolibc EnvMap
 </code></pre>
 
-<p>This produces a native executable that statically links all involved libraries (including JDK shared libraries) except for <code>libc</code>. 
-This includes <code>zlib</code>. Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>. 
-One way to check what dynamic libraries your application depends on is to run <code>ldd</code> with the native executable, for example, <code>ldd helloworld</code>.</p>
+<p>This produces a native executable that statically links all involved libraries (including JDK-shared static libraries) except for <code>libc</code>. 
+This includes <code>zlib</code>. 
+Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>. 
+One way to check what dynamic libraries your application depends on is to run <code>ldd</code> with the native executable, for example, <code>ldd envmap</code>.</p>
 
 <h3 id="frequently-asked-questions">Frequently Asked Questions</h3>
 
