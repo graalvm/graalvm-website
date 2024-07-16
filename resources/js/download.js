@@ -72,9 +72,9 @@ const platforms = {
 };
 
 const fullJavaVersions = {
-  "17": "17.0.11",
-  "21": "21.0.3",
-  "22": "22.0.1",
+  "17": "17.0.12",
+  "21": "21.0.4",
+  "22": "22.0.2",
 }
 
 function updateGHASnippet(majorJavaVersion) {
