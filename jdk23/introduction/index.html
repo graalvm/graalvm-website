@@ -9,13 +9,13 @@
 
   <title>
     
-      Debug Native Executables with a Python Helper Script
+      Introduction
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/debug-native-image-process-with-python-helper-script/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/introduction/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -40,7 +40,7 @@
 
 
   <body class="preload">
-    <div  class="wrapper wrapper--nofooter" >
+    <div class="wrapper wrapper--nofooter">
       <header  class="header header--content" 
   role="banner">
 
@@ -133,231 +133,358 @@
   </div>
   
 </header>
-      <main  class="content"   aria-label="Content">
-        <div class="container-fluid container-fluid--custom-sm light-back">
-  <div class="row">
-    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
-      <br>
-      <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
-      <h1 id="debug-native-executables-with-a-python-helper-script">Debug Native Executables with a Python Helper Script</h1>
+      <main class="content" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <article>
+  <div class="row d-flex flex-wrap">
+    <div class="col-sm-3 docsimpro col-bg">
+      <div class="sidebar-wrap">
+        <div class="sidebar">
+          <div class="menuabout">
+            <img id="sidebarClose" src="/resources/img/docs-sidebar/arrow-sidebar(close).svg"
+              alt="Expand or collapse sidebar" class="btn-color no-display">
+            <img id="sidebarOpen" src="/resources/img/docs-sidebar/arrow-sidebar.svg" alt="Expand or collapse sidebar">
+          </div>
+          
+<div class="toc-floating">
 
-<p>Additionally to the <a href="/dev/reference-manual/native-image/guides/debug-native-image-process/">GDB debugging</a>, you can debug a <code>native-image</code> process using a Python helper script, <em>gdb-debughelpers.py</em>.
-The <a href="https://sourceware.org/gdb/current/onlinedocs/gdb/Python.html">GDB Python API</a> is used to provide a reasonably good experience for debugging native executables or shared libraries.
-It requires GDB with Python support.
-The debugging extension is tested against GDB 13.2 and supports the new debuginfo generation introduced in GraalVM for JDK 17 and later.</p>
 
-<blockquote>
-  <p>Note: The <em>gdb-debughelpers.py</em> file does not work with versions older than version 13.2 of <code>gdb</code> or versions older than GraalVM for JDK 17.</p>
-</blockquote>
+<script>
+var sidebar = document.currentScript.parentElement;
 
-<p>The Python script <em>gdb-debughelpers.py</em> can be found in the <em>&lt;GRAALVM_HOME&gt;/lib/svm/debug</em> directory.
-If debuginfo generation is enabled (see <a href="/dev/reference-manual/native-image/guides/debug-native-image-process/#build-a-native-executable-with-debug-information">Build a Native Executable with Debug Information</a>), the script is copied to the build directory.
-The <code>native-image</code> tool adds the debugging section <code>.debug_gdb_scripts</code> to the debug info file, which causes GDB to automatically load <em>gdb-debughelpers.py</em> from the current working directory.</p>
 
-<p>For <a href="https://sourceware.org/gdb/current/onlinedocs/gdb/Auto_002dloading-safe-path.html">security reasons</a>
-the first time GDB encounters a native executable or shared library that requests a specific Python file to be loaded it will print a warning:</p>
+$(document).ready(function(){
+  var header = $('.header').height();
+  var invisibleBlock;
 
-<blockquote>
-  <pre><code>warning: File "&lt;CWD&gt;/gdb-debughelpers.py" auto-loading has been declined by your `auto-load safe-path' set to "$debugdir:$datadir/auto-load".
+  $("#content-wrapper h1, #content-wrapper h2").each(function() {
+    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
+  });
 
-To enable execution of this file add
-        add-auto-load-safe-path &lt;CWD&gt;/gdb-debughelpers.py
-line to your configuration file "&lt;HOME&gt;/.gdbinit".
-To completely disable this security protection add
-        add-auto-load-safe-path /
-line to your configuration file "&lt;HOME&gt;/.gdbinit".
-For more information about this security protection see the
-"Auto-loading safe path" section in the GDB manual.  E.g., run from the shell:
-        info "(gdb)Auto-loading safe path"
-</code></pre>
-</blockquote>
+  $(window).scroll(function() {
+    var lastitem = null;
+    $("#content-wrapper h1, #content-wrapper h2").each(function() {
+      var heading = $(this);
+      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
+      var listitem = $(sidebar).find("li").filter(function() {
+        return $(this).find("a").attr("href") == "#" + heading.attr("id");
+      });
+      listitem.removeClass("toc-bullets-focused");
+      if (position <= 0) {
+        lastitem = listitem;
+      }
+    });
+    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
+  });
+});
 
-<p>To solve this, either add the current working directory to <em>~/.gdbinit</em> as follows:</p>
+</script>
 
-<pre><code>echo "add-auto-load-safe-path &lt;CWD&gt;/gdb-debughelpers.py" &gt;&gt; ~/.gdbinit
-</code></pre>
+<!-- Docs version dropdown -->
+<section class="versions">
+  <div class="dropdown">
+    <div class="d-flex align-items-center version-dropdown">
+      <input name="select_value" type="hidden" id="selectedValue">
+      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
+        <span class="value-text" id="valueText">Version</span>
+      </div>
+      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
+        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
+        <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
+        <li class="select-option" onclick="window.open('https://github.com/oracle/graal/tree/master/docs', '_blank').focus()">Dev Build</li>
+      </ul>
+    </div>
+  </div>
+</section>
 
-<p>or pass the path as a command line argument to <code>gdb</code>:</p>
+<ul class="toc-bullets">
 
-<pre><code>gdb -iex "set auto-load safe-path &lt;CWD&gt;/gdb-debughelpers.py" &lt;binary-name&gt;
-</code></pre>
+  
 
-<p>Both enable GDB to auto-load <em>gdb-debughelpers.py</em> from the current working directory.</p>
+  
+    
 
-<p>Auto-loading is the recommended way to provide the script to GDB.
-However, it is possible to manually load the script from GDB explicitly with:</p>
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/getting-started/">
+            Getting Started
+          </a>
+        </li>
 
-<pre><code>(gdb) source gdb-debughelpers.py
-</code></pre>
+        
+        
 
-<h2 id="pretty-printing-support">Pretty Printing Support</h2>
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/reference-manual/native-image/">
+            Getting Started with Native Image
+          </a>
+        </li>
 
-<p>Loading <em>gdb-debughelpers.py</em> registers a new pretty printer to GDB, which adds an extra level of convenience for debugging native executables or shared libraries.
-This pretty printer handles the printing of Java Objects, Arrays, Strings, and Enums for debugging native executables or shared libraries.
-If the Java application uses <code>@CStruct</code> and <code>@CPointer</code> annotations to access C data structures, the pretty printer will also try to print them as if they were Java data structures.
-If the C data structures cannot be printed by the pretty printer, printing is performed by GDB.</p>
+        
+        
 
-<p>The pretty printer also prints of the primitive value of a boxed primitive (instead of a Java Object).</p>
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/reference-manual/">
+            Reference Manuals
+          </a>
+        </li>
 
-<p>Whenever printing is done via the <code>p</code> alias of the <code>print</code> command the pretty printer intercepts that call to perform type casts to the respective runtime types of Java Objects.
-This also applies for auto-completion when using the <code>p</code> alias.
-This means that if the static type is different to the runtime type, the <code>print</code> command uses the static type, which leaves the user to discover the runtime type and typecast it.
-Additionally, the <code>p</code> alias understands Java field and array access and function calls for Java Objects.</p>
+        
+        
 
-<h4 id="limitations">Limitations</h4>
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/graalvm-as-a-platform/">
+            GraalVM as a Platform
+          </a>
+        </li>
 
-<p>The <code>print</code> command still uses its default implementation, as there is no way to overwrite it, while still keeping the capability of the default <code>print</code> command.
-Overriding would cause printing non-Java Objects to not work properly.
-Therefore, only the <code>p</code> alias for the <code>print</code> command is overwritten by the pretty printer, such that the user can still make use of the default GDB <code>print</code> command.</p>
+        
+        
 
-<h3 id="options-to-control-the-pretty-printer-behavior">Options to Control the Pretty Printer Behavior</h3>
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/security-guide/">
+            Security Guide
+          </a>
+        </li>
 
-<p>In addition to the enhanced <code>p</code> alias, <em>gdb-debughelpers.py</em> introduces some GDB parameters to customize the behavior of the pretty printer.
-Parameters in GDB can be controlled with <code>set &lt;param&gt; &lt;value&gt;</code> and <code>show &lt;param&gt;</code> commands, and thus integrate with GDB’s customization options.</p>
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk23/tools/">
+            Tools for GraalVM Languages
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-9 docsmod">
+      <div id="content-wrapper" class="docs-content-old docs-content--with-sidebar">
+        <div class="docsnote">
+          <div class="docsnote__body">
+            <div class="docsnote__column">
+              <div class="docsnote-mid__card">
+                <div class="rightside">
+                  <img src='/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote-mid__subtitle">This documentation is for the unreleased GraalVM version.<a href="https://github.com/graalvm/oracle-graalvm-ea-builds/releases" target="_blank">Download Early Access Builds from GitHub</a>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        
+  <ul class="breadcrumb">
+    <li><a href='/'>Home</a></li>
+    
+    
+      
+      <li>
+        <a href="/jdk23/">
+          Jdk23
+        </a>
+      </li>
+      
+    
+      
+    
+  </ul>
+
+
+        
+        <h1 id="introduction-to-graalvm">
+        
+        
+          Introduction to GraalVM
+        
+        
+      </h1>
+
+<p>GraalVM is an advanced JDK with ahead-of-time Native Image compilation.</p>
+
+<p>GraalVM accelerates application performance while consuming fewer resources—improving application efficiency and reducing IT costs.
+It achieves this by compiling your Java application ahead of time into a native binary.
+The binary is smaller, starts up to 100x faster, provides peak performance with no warmup, and uses less memory and CPU than an application running on a Java Virtual Machine (JVM).
+With profile-guided optimization and the G1 (Garbage-First) garbage collector, you can get lower latency and on-par or better peak performance and throughput compared to an application running on a JVM.</p>
+    
+      <h2 id="key-benefits">
+        
+        
+          Key Benefits <a href="#key-benefits" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>GraalVM’s key benefits are:</p>
 
 <ul>
-  <li>
-    <h4 id="svm-print-onoff">svm-print on/off</h4>
-  </li>
+  <li><strong>Low Resource Usage</strong>: A Java application compiled ahead-of-time by GraalVM requires less memory and CPU to run. No memory and CPU cycles are spent on just-in-time compilation. As a result, your application needs fewer resources to run and is cheaper to operate at scale.</li>
+  <li><strong>Fast Startup</strong>: With GraalVM, you can start your Java application faster by initializing parts of it at build time instead of runtime, and instantly achieve predictable peak performance with no warmup.</li>
+  <li><strong>Compact Packaging</strong>: A Java application compiled ahead-of-time by GraalVM is small and can be easily packaged into a lightweight container image for fast and efficient deployment.</li>
+  <li><strong>Improved Security</strong>: GraalVM reduces the attack surface of your Java application by excluding the following: unreachable code (unused classes, methods, and fields), the just-in-time compilation infrastructure, and build-time initialized code. GraalVM’s closed world assumption prevents your application from loading unknown code by disabling dynamic features such as reflection, serialization, and so on at runtime, and requires an explicit include list of such classes, methods, and fields at build time. GraalVM can embed a software bill of materials (SBOM) in your binary, making it easier for you to use common security scanners to check your Java application for published Common Vulnerabilities and Exposures (CVEs).</li>
+  <li><strong>Easily Build Cloud Native Microservices</strong>: Popular microservices frameworks such as Micronaut, Spring Boot, Helidon, and Quarkus, and cloud platforms such as Oracle Cloud Infrastructure (OCI), Amazon Web Services (AWS), Google Cloud Platform (GCP), and Microsoft Azure all support GraalVM. This makes it easy for you to build cloud native Java microservices, compiled as binaries, packaged in small containers, and run on the most popular cloud platforms.</li>
+  <li><strong>Extend your Java Application with Python and Other Languages</strong>: With GraalVM you can embed languages such as Python, JavaScript, and others to extend your Java application.</li>
+  <li><strong>Use Existing Development and Monitoring Tools</strong>: Your existing Java application development and monitoring tools work with GraalVM application binaries. GraalVM provides build plugins for Maven and Gradle, and GitHub Actions for CI/CD. GraalVM supports Java Flight Recorder (JFR), Java Management Extensions (JMX), heap dumps, VisualVM, and other monitoring tools. GraalVM works with existing Java editors/IDEs, and unit test frameworks such as JUnit.</li>
 </ul>
+    
+      <h2 id="licensing-and-support">
+        
+        
+          Licensing and Support <a href="#licensing-and-support" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<p>Use this command to enable/disable the pretty printer.
-This also resets the <code>print</code> command alias <code>p</code> to its default behavior.
-Alternatively pretty printing can be suppressed with the
-<a href="https://sourceware.org/gdb/current/onlinedocs/gdb/Output-Formats.html"><code>raw</code> printing option of GDB’s <code>print</code> command</a>:</p>
+<p>Oracle GraalVM is licensed under <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC) including License for Early Adopter Versions</a>.
+Subject to the conditions in the license, including the License for Early Adopter Versions, the GFTC is intended to permit use by any user including commercial and production use. Redistribution is permitted as long as it is not for a fee.
+Oracle GraalVM is also free to use on Oracle Cloud Infrastructure.
+For more information about Oracle GraalVM licensing, see the <a href="https://www.oracle.com/java/technologies/javase/jdk-faqs.html#GraalVM-licensing">Oracle Java SE Licensing FAQ</a>.</p>
 
-<pre><code>(gdb) show svm-print
-The current value of 'svm-print' is "on".
-
-(gdb) print str
-$1 = "string"
-
-(gdb) print/r str
-$2 = (java.lang.String *) 0x7ffff689d2d0
-
-(gdb) set svm-print off
-1 printer disabled
-1 of 2 printers enabled
-
-(gdb) print str
-$3 = (java.lang.String *) 0x7ffff689d2d0
-</code></pre>
-
-<ul>
-  <li>
-    <h4 id="svm-print-string-limit-int">svm-print-string-limit &lt;int&gt;</h4>
-  </li>
-</ul>
-
-<p>Customizes the maximum length for pretty printing a Java String.
-The default value is <code>200</code>.
-Set to <code>-1</code> or <code>unlimited</code> for unlimited printing of a Java String.
-This does not change the limit for a C String, which can be controlled with GDB’s <code>set print characters</code> command.</p>
+<p>GraalVM Community Edition is open-source project built from the sources available on <a href="https://github.com/oracle/graal">GitHub</a> and distributed under <a href="https://github.com/oracle/graal/blob/master/LICENSE">version 2 of the GNU General Public License with the “Classpath” Exception</a>, which are the same terms as for Java.
+Check the <a href="https://github.com/oracle/graal#license">licenses</a> of individual GraalVM components which are generally derivative of the license of a particular language and may differ.</p>
+    
+      <h3 id="what-to-read-next">
+        
+        
+          What to Read Next <a href="#what-to-read-next" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
 <ul>
-  <li>
-    <h4 id="svm-print-element-limit-int">svm-print-element-limit &lt;int&gt;</h4>
-  </li>
-</ul>
-
-<p>Customizes the maximum number of elements for pretty printing a Java Array, ArrayList, and HashMap.
-The default value is <code>10</code>.
-Set to <code>-1</code> or <code>unlimited</code> to print an unlimited number of elements.
-This does not change the limit for a C array, which can be controlled with GDB’s <code>set print elements</code> command.
-However, GDB’s parameter <code>print elements</code> is the upper bound for <code>svm-print-element-limit</code>.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-print-field-limit-int">svm-print-field-limit &lt;int&gt;</h4>
-  </li>
-</ul>
-
-<p>Customizes the maximum number of elements for pretty printing fields of a Java Object.
-The default value is <code>50</code>.
-Set to <code>-1</code> or <code>unlimited</code> to print an unlimited number of fields.
-GDB’s parameter <code>print elements</code> is the upper bound for <code>svm-print-field-limit</code>.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-print-depth-limit-int">svm-print-depth-limit &lt;int&gt;</h4>
-  </li>
-</ul>
-
-<p>Customizes the maximum depth of recursive pretty printing.
-The default value is <code>1</code>.
-The children of direct children are printed (a sane default to make contents of boxed values visible).
-Set to <code>-1</code> or <code>unlimited</code> to print unlimited depth.
-GDB’s parameter <code>print max-depth</code> is the upper bound for <code>svm-print-depth-limit</code>.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-use-hlrep-onoff">svm-use-hlrep on/off</h4>
-  </li>
-</ul>
-
-<p>Enables/disables pretty printing for higher level representations.
-It provides a more data-oriented view on some Java data structures with a known internal structure such as Lists or Maps.
-Currently supports ArrayList and HashMap.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-infer-generics-int">svm-infer-generics &lt;int&gt;</h4>
-  </li>
-</ul>
-
-<p>Customizes the number of elements taken into account to infer the generic type of higher level representations.
-The default value is <code>10</code>.
-Set to <code>0</code> to not infer generic types and <code>-1</code> or <code>unlimited</code> to infer the generic type of all elements.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-print-address-absoluteonoff">svm-print-address absolute/on/off</h4>
-  </li>
-</ul>
-
-<p>Enables/disables printing of addresses in addition to regular pretty printing.
-When <code>absolute</code> mode is used even compressed references are shown as absolute addresses.
-Printing addresses is disabled by default.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-print-static-fields-onoff">svm-print-static-fields on/off</h4>
-  </li>
-</ul>
-
-<p>Enables/disables printing of static fields for a Java Object.
-Printing static fields is disabled by default.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-complete-static-variables-onoff">svm-complete-static-variables on/off</h4>
-  </li>
-</ul>
-
-<p>Enables/disables auto-completion of static field members for the enhanced <code>p</code> alias.
-Auto-completion of static fields is enabled by default.</p>
-
-<ul>
-  <li>
-    <h4 id="svm-selfref-check-onoff">svm-selfref-check on/off</h4>
-  </li>
-</ul>
-
-<p>Enables/disables self-reference checks for data structures.
-The pretty printer detects a self-referential data structure and prevents further expansion to avoid endless recursion.
-Self-reference checks are enabled by default.
-For testing, this feature can be temporary disabled (usually you wouldn’t want to do this).</p>
-
-<h3 id="related-documentation">Related Documentation</h3>
-
-<ul>
-  <li><a href="/dev/reference-manual/native-image/debugging-and-diagnostics/DebugInfo/">Debug Info Feature</a></li>
-  <li><a href="/dev/reference-manual/native-image/guides/debug-native-image-process/">Debug Native Executables with GDB</a></li>
+  <li>Start with the <a href="/jdk23/getting-started/">installation guide</a>.</li>
+  <li>GraalVM is based on the Java HotSpot Virtual Machine. Read more about <a href="/jdk23/reference-manual/java/">GraalVM as a Java Virtual Machine</a> and its optimizing just-in-time compiler, <a href="/jdk23/reference-manual/java/compiler/">Graal Compiler</a>.</li>
+  <li>Whether you are new to GraalVM Native Image, or have little experience using it, continue to <a href="/jdk23/reference-manual/native-image/">Getting Started with Native Image</a>. 
+We suggest you to take look at <a href="/jdk23/guides/">User Guides</a>.</li>
+  <li>Developers interested in embedding other languages into Java, proceed directly to the <a href="/jdk23/reference-manual/embed-languages/">Embedding Languages documentation</a>.</li>
+  <li>Developers interested in building interpreters for programming languages which then run on GraalVM, continue to the <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework documentation</a>.</li>
+  <li>To learn more about security considerations in GraalVM, check the <a href="/jdk23/security-guide/">Security Guide</a>.</li>
+  <li>If you cannot find the answer you need in the available documentation or have a troubleshooting query, ask for help in a <a href="/slack-invitation/">Slack channel</a> or <a href="https://github.com/oracle/graal/issues">submit a GitHub issue</a>.</li>
 </ul>
 
       </div>
+      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </div>
   </div>
+</article>
 </div>
+
       </main>
       <!-- Connect with us -->
 <section class="content-section socials">
@@ -536,6 +663,8 @@ For testing, this feature can be temporary disabled (usually you wouldn’t want
     <div class="overlay"></div>
     <script src='/resources/lib/slick-slider/slick.min.js'></script>
     <script src='/resources/js/main.js'></script>
+    <script src='/resources/js/download.js'></script>
+    <script src='/resources/js/sidebar.js'></script>
     <script src='/resources/js/favicon.js'></script>
   </body>
 </html>
