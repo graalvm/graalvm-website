@@ -359,54 +359,64 @@
       <div class="jsexample__subtitle">
         <h4>Java &lt;&gt; JavaScript Interoperability</h4>
       </div>
-      <pre><code class="language-yml hljs language-yaml example-indent">
-<span class="hljs-attr">import</span><span class="hljs-attr">org.graalvm.polyglot.*;</span>
-
-<span class="hljs-attr">public class</span><span class="hljs-attr">Example1Context {</span>
-        <span class="hljs-attr">public static</span><span class="hljs-attr">void main</span><span class="hljs-attr">(String[] args)</span><span class="hljs-attr"> {</span>
-          <span class="hljs-attr">System.out.println("[Java] Hello, Java!");</span>
-            <span class="hljs-attr">try (Context context = Context.newBuilder("js").option("js.ecmascript-version", "2020").build()) {</span>
-              <span class="hljs-attr">Value jsFunction = context.eval("js", "" + </span>
-                <span class="hljs-attr">"(function myJavaScriptFunction(parameter) {         \n" +</span>
-                <span class="hljs-attr">"    console.log('[JS] Hello, ' + parameter + '!');  \n" +</span>
-                <span class="hljs-attr">"    return parameter.toUpperCase();                 \n" +</span>
-                <span class="hljs-attr">"})                                                  \n");</span>
-
-              <span class="hljs-attr">Value result = jsFunction.execute("JavaScript");</span>
-              <span class="hljs-attr">if (result.isString()) {</span>
-                <span class="hljs-attr">System.out.println("[Java] result: " + result.asString());</span>
-              <span class="hljs-attr">} else {</span>
-                <span class="hljs-attr">System.out.println("[Java] unexpected result type returned from JavaScript");</span>
-              <span class="hljs-attr">}</span>
-            <span class="hljs-attr">}</span>
-          <span class="hljs-attr">}</span>
-        <span class="hljs-attr">}</span></code></pre>
+<pre><code class="language-java">
+  import org.graalvm.polyglot.*;
+  
+  public class Example1Context {
+      public static void main(String[] args) {
+          System.out.println("[Java] Hello, Java!");
+          try (Context context = Context.newBuilder("js").option("js.ecmascript-version", "2020").build()) {
+              Value jsFunction = context.eval("js", "" +
+                  "(function myJavaScriptFunction(parameter) {         \n" +
+                  "    console.log('[JS] Hello, ' + parameter + '!');  \n" +
+                  "    return parameter.toUpperCase();                 \n" +
+                  "})                                                  \n");
+  
+              Value result = jsFunction.execute("JavaScript");
+              if (result.isString()) {
+                  System.out.println("[Java] result: " + result.asString());
+              } else {
+                  System.out.println("[Java] unexpected result type returned from JavaScript");
+              }
+          }
+      }
+  }
+  </code></pre>
+            
 
       <div class="jsexample__subtitle">
         <h4>Using Ruby in Node.js App on GraalVM</h4>
       </div>
-      <pre><code class="language-yml hljs language-yaml">
-<span class="hljs-attr">import</span><span class="hljs-attr">// make sure to install the libraries first: `npm install http ansispan colors`</span> 
-<span class="hljs-attr">public class</span><span class="hljs-attr">const http = require("http");</span>
-<span class="hljs-attr">public class</span><span class="hljs-attr">const span = require("ansispan");</span>
-<span class="hljs-attr">require("colors");</span>
-<span class="hljs-attr">http.createServer(function (request, response) {</span>
-  <span class="hljs-attr">response.writeHead(200, {"Content-Type": "text/html"});</span>
-  <span class="hljs-attr">response.write(span("Hello Graal.js!< br/>".green));</span>
-  <span class="hljs-attr">/start with `node --jvm --polyglot Example2Interop.js` to enable interop with Ruby:</span>
-  <span class="hljs-attr">try {</span>
-    <span class="hljs-attr">response.write("Ruby: " + Polyglot.eval("ruby", "[41,42,43]")[1] + "<br/>");</span>
-  <span class="hljs-attr">} catch (ex) {</span>
-    <span class="hljs-attr">// Polyglot.eval("ruby", ...) failed</span>
-    <span class="hljs-attr">response.write("Ruby language not found<br/>");</span>
-  <span class="hljs-attr">{</span>
-  <span class="hljs-attr">response.end("Request completed");</span>
-<span class="hljs-attr">}).listen(8000, function() { console.log("Graal.js server at http://127.0.0.1:8000/".red); });</span>
-<span class="hljs-attr">/*</span>
-<span class="hljs-attr">to execute:</span>
-  <span class="hljs-attr">$ npm install http ansispan colors</span>
-  <span class="hljs-attr">$ node --jvm --polyglot Example2_Interop.js</span>
-<span class="hljs-attr">*/</span></code></pre>
+<pre><code class="language-js">
+  // Make sure to install the libraries first: `npm install http ansispan colors`
+  const http = require("http");
+  const span = require("ansispan");
+  require("colors");
+
+  http.createServer(function (request, response) {
+    response.writeHead(200, {"Content-Type": "text/html"});
+    response.write(span("Hello Graal.js!".green));
+
+  // Start with `node --jvm --polyglot Example2Interop.js` to enable interop with Ruby:
+  try {
+    response.write("Ruby: " + Polyglot.eval("ruby", "[41,42,43]")[1] + "");
+  } catch (ex) {
+  // Polyglot.eval("ruby", ...) failed
+    response.write("Ruby language not found");
+  }
+
+    response.end("Request completed");
+  }).listen(8000, function() { 
+    console.log("Graal.js server at http://127.0.0.1:8000/".red); 
+  });
+
+  /*
+  To execute:
+  $ npm install http ansispan colors
+  $ node --jvm --polyglot Example2_Interop.js
+  */
+</code></pre>
+
     </div>
   </div>
   </div>
