@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -554,7 +554,87 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Native Image provides advanced mechanisms to further optimize the generated binary:</p>
+<p>Native Image provides different mechanisms that enable users to optimize a generated binary in terms of performance, file size, build time, debuggability, and other metrics.</p>
+    
+      <h3 id="optimization-levels">
+        
+        
+          Optimization Levels <a href="#optimization-levels" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Similar to <code>gcc</code> and <code>clang</code>, users can control the optimization level using the <code>-O</code> option.
+By default, <code>-O2</code> is used which aims for a good tradeoff between performance, file size, and build time.
+The following table provides an overview of the different optimization levels and explains when they are useful:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">Level</th>
+      <th style="text-align: center">Optimizations</th>
+      <th>Use Cases</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center"><code>-Ob</code></td>
+      <td style="text-align: center">Reduced</td>
+      <td>Quick build mode: Speeds up builds during development by avoiding time-consuming optimizations. This can also reduce file size sometimes.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-Os</code></td>
+      <td style="text-align: center">Reduced</td>
+      <td>Optimize for size: <code>-Os</code> enables all <code>-O2</code> optimizations except those that can increase code or image size significantly. Typically creates the smallest possible images at the cost of reduced performance.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O0</code></td>
+      <td style="text-align: center">None</td>
+      <td>Typically used together with <code>-g</code> to improve the debugging experience.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O1</code></td>
+      <td style="text-align: center">Basic</td>
+      <td>Trades performance for reduced file size and build time. Oracle GraalVM’s <code>-O1</code> is somewhat comparable to <code>-O2</code> in GraalVM Community Edition.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O2</code></td>
+      <td style="text-align: center">Advanced</td>
+      <td><strong>Default:</strong> Aims for good performance at a reasonable file size.</td>
+    </tr>
+    <tr>
+      <td style="text-align: center"><code>-O3</code></td>
+      <td style="text-align: center">All</td>
+      <td>Aims for the best performance at the cost of longer build times. Used automatically by Oracle GraalVM for <a href="/latest/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">PGO builds</a> (<code>--pgo</code> option). <code>-O3</code> and <code>-O2</code> are identical in GraalVM Community Edition.</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="optimizing-for-specific-machines">
+        
+        
+          Optimizing for Specific Machines <a href="#optimizing-for-specific-machines" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Native Image provides a <code>-march</code> option that works similarly to the ones in <code>gcc</code> and <code>clang</code>: it enables users to control the set of instructions that the Graal compiler can use when compiling code to native.
+By default, Native Image uses <a href="https://en.wikipedia.org/wiki/X86-64#Microarchitecture_levels" target="_blank"><code>x86-64-v3</code> on x64</a> and <a href="https://en.wikipedia.org/wiki/ARM_architecture_family#Cores" target="_blank"><code>armv8-a</code> on AArch64</a>.
+Use <code>-march=list</code> to list all available machine types.
+If the generated binary is built on the same or similar machine type that it is also deployed on, use <code>-march=native</code>.
+This option instructs the compiler to use all instructions that it finds available on the machine the binary is generated on.
+If the generated binary, on the other hand, is distributed to users with many different, and potentially very old machines, use <code>-march=compatibility</code>.
+This reduces the set of instructions used by the compiler to a minimum and thus improves the compatibility of the generated binary.</p>
+    
+      <h3 id="additional-features">
+        
+        
+          Additional Features <a href="#additional-features" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Native Image provides additional features to further optimize a generated binary:</p>
 
 <ul>
   <li>Profile-Guided Optimization (PGO) can provide additional performance gain and higher throughput for most native images. See <a href="/latest/reference-manual/native-image/optimizations-and-performance/PGO/">Profile-Guided Optimization</a>.</li>

@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -643,7 +643,7 @@ Providing the builder with reachability metadata also ensures seamless compatibi
 The JSON file consists of entries that tell Native Image the elements to include.
 For example, Java reflection metadata is specified in <code>reflect-config.json</code>, and a sample entry looks like:</p>
 <pre><code class="language-json">{
-  "name": "Foo"
+  "type": "Foo"
 }
 </code></pre>
 
@@ -741,14 +741,14 @@ Integer.class.getMethod("parseInt", params2);
       </h3>
 
 <p>Reflection metadata should be specified in a <em>reflect-config.json</em> file and conform to the JSON schema defined in 
-<a href="/docs/reference-manual/native-image/assets/reflect-config-schema-v1.0.0.json">reflect-config-schema-v1.0.0.json</a>.
+<a href="/docs/reference-manual/native-image/assets/reflect-config-schema-v1.1.0.json">reflect-config-schema-v1.1.0.json</a>.
 The schema also includes further details and explanations how this configuration works. Here is the example of the reflect-config.json:</p>
 <pre><code class="language-json">[
     {
         "condition": {
             "typeReachable": "&lt;condition-class&gt;"
         },
-        "name": "&lt;class&gt;",
+        "type": "&lt;class&gt;",
         "methods": [
             {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-one-type&gt;"]}
         ],
@@ -796,7 +796,7 @@ For example, the given <code>C</code> code:</p>
 <p>looks up the <code>java.lang.String</code> class, which can then be used, for example, to invoke different <code>String</code> methods.
 The generated metadata entry for the above call would look like:</p>
 <pre><code class="language-json">{
-  "name": "java.lang.String"
+  "type": "java.lang.String"
 }
 </code></pre>
     
@@ -818,7 +818,7 @@ The generated metadata entry for the above call would look like:</p>
       </h3>
 
 <p>JNI metadata should be specified in a <em>jni-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/jni-config-schema-v1.0.0.json">jni-config-schema-v1.0.0.json</a>.
+<a href="/docs/reference-manual/native-image/assets/jni-config-schema-v1.1.0.json">jni-config-schema-v1.1.0.json</a>.
 The schema also includes further details and explanations how this configuration works. The example of jni-config.json is the same
 as the example of reflect-config.json described above.</p>
     
@@ -871,27 +871,25 @@ and automatically register such resources.</li>
       </h3>
 
 <p>Resource metadata should be specified in a <em>resource-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/resource-config-schema-v1.0.0.json">resource-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the resource-config.json:</p>
+<a href="/docs/reference-manual/native-image/assets/resource-config-schema-v1.1.0.json">resource-config-schema-v1.1.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of a <em>resource-config.json</em> file:</p>
 <pre><code class="language-json">{
-  "resources": {
-    "includes": [
-      {
-        "condition": {
-          "typeReachable": "&lt;condition-class&gt;"
-        },
-        "pattern": ".*\\.txt"
-      }
-    ],
-    "excludes": [
-      {
-        "condition": {
-          "typeReachable": "&lt;condition-class&gt;"
-        },
-        "pattern": ".*\\.txt"
-      }
-    ]
-  },
+  "globs": [
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "pattern": "META-INF/**/*.txt"
+    }
+  ],
+  "resources": [
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "pattern": ".*\\.txt"
+    }
+  ],
   "bundles": [
     {
       "condition": {
@@ -913,6 +911,16 @@ The schema also includes further details and explanations how this configuration
   ]
 }
 </code></pre>
+
+<p>Resources can be specified via globs or Java regular expressions (see <a href="#resource-metadata-in-json">Resource Metadata in JSON</a>).
+We recommend using globs because they:</p>
+<ul>
+  <li>Have custom handling in <code>native-image</code> that can speed up a resource registration process</li>
+  <li>Are less expressive and therefore less error-prone than regular expressions</li>
+  <li>Provide better support for resource-related checks at runtime</li>
+</ul>
+
+<p>Learn more about globs and some syntax rules to be observed in the <a href="/latest/reference-manual/native-image/dynamic-features/Resources/">Accessing Resources in Native Image documentation</a>.</p>
     
       <h2 id="dynamic-proxy">
         
@@ -922,11 +930,11 @@ The schema also includes further details and explanations how this configuration
         
       </h2>
 
-<p>The JDK supports generating proxy classes for a given interface list.
-Native Image does not support generating new classes at runtime and requires metadata to properly run code that uses these proxies.</p>
+<p>The JDK can generate proxy classes for a specified list of interfaces.
+Native Image does not generate new classes at runtime and therefore requires metadata to properly run code that uses these proxies.</p>
 
 <blockquote>
-  <p>Note: The order of interfaces in the interface list used to create a proxy matters. Creating a proxy with two identical interface lists in which the interfaces are not in the same order, creates two distinct proxy classes.</p>
+  <p>Note: The order of interfaces in the interface list used to create a proxy is important. Creating a proxy with two identical interface lists in which the interfaces are not in the same order, creates two distinct proxy classes.</p>
 </blockquote>
     
       <h3 id="code-example">
@@ -980,21 +988,25 @@ class Example {
         
       </h3>
 
-<p>Dynamic proxy metadata should be specified in a <em>proxy-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/proxy-config-schema-v1.0.0.json">proxy-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the proxy-config.json:</p>
+<p>Dynamic proxy metadata should be specified as part of a <em>reflect-config.json</em> file by adding <code>"proxy"</code>-type entries, conforming to the JSON schema defined in <a href="/docs/reference-manual/native-image/assets/config-type-schema-v1.0.0.json">config-type-schema-v1.1.0.json</a>.
+It enables you to register members of a proxy class for reflection the same way as it would be done for a named class.
+The order in which interfaces are given matters and the interfaces will be passed in the same order to generate the proxy class.
+The schema also includes further details and explanations how this configuration works. 
+Here is an example of dynamic proxy metadata in reflect-config.json:</p>
 <pre><code class="language-json">[
   {
     "condition": {
       "typeReachable": "&lt;condition-class&gt;"
     },
-    "interfaces": [
-      "IA",
-      "IB"
-    ]
+    "type": { "proxy": [
+        "IA",
+        "IB"
+      ]}
   }
 ]
 </code></pre>
+<p>Contents of <em>proxy-config.json</em> files will still be parsed and honored by Native Image, but this file is now deprecated
+and the <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image agent</a> outputs proxy metadata to reflect-config.json.</p>
     
       <h2 id="serialization">
         
@@ -1004,7 +1016,7 @@ The schema also includes further details and explanations how this configuration
         
       </h2>
 <p>Java can serialize any class that implements the <code>Serializable</code> interface.
-Native Image supports serialization with proper serializaiton metadata registration. This is necessary as serialization usually
+Native Image supports serialization with proper serialization metadata registration. This is necessary as serialization usually
 requires reflectively accessing the class of the object that is being serialized.</p>
     
       <h3 id="serialization-metadata-registration-in-code">
@@ -1047,7 +1059,7 @@ For example, the following pattern will register the class <code>pkg.Serializabl
       </h3>
 
 <p>Serialization metadata should be specified in a <em>serialization-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/serialization-config-schema-v1.0.0.json">serialization-config-schema-v1.0.0.json</a>.
+<a href="/docs/reference-manual/native-image/assets/serialization-config-schema-v1.1.0.json">serialization-config-schema-v1.1.0.json</a>.
 The schema also includes further details and explanations how this configuration works. Here is the example of the serialization-config.json:</p>
 <pre><code class="language-json">{
   "types": [
@@ -1055,8 +1067,16 @@ The schema also includes further details and explanations how this configuration
       "condition": {
         "typeReachable": "&lt;condition-class&gt;"
       },
-      "name": "&lt;fully-qualified-class-name&gt;",
+      "type": "&lt;fully-qualified-class-name&gt;",
       "customTargetConstructorClass": "&lt;custom-target-constructor-class&gt;"
+    },
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "type": {
+        "proxy": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
+      }
     }
   ],
   "lambdaCapturingTypes": [
@@ -1066,15 +1086,7 @@ The schema also includes further details and explanations how this configuration
       },
       "name": "&lt;fully-qualified-class-name&gt;"
     }
-  ],
- "proxies": [
-   {
-     "condition": {
-       "typeReachable": "&lt;condition-class&gt;"
-     },
-     "interfaces": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
-   }
- ]
+  ]
 }
 </code></pre>
     
@@ -1090,7 +1102,7 @@ The schema also includes further details and explanations how this configuration
 
 <p>However, Java has support for loading new classes at runtime.
 To emulate class loading, the <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">agent</a> can trace dynamically loaded classes and save their bytecode for later use by the <code>native-image</code> builder.
-At runtime, if there is an attempt to load a class with the same name and bytecodes as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
+At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
 
 <blockquote>
   <p>Note: Predefined classes metadata is not meant to be manually written.</p>
@@ -1150,10 +1162,10 @@ This mode can be activated with the <code>-H:ThrowMissingRegistrationErrors=</co
       </h3>
 
 <ul>
-  <li>If a reflectively-accessed element (<code>Class</code>, <code>Field</code>, <code>Method</code>, etc.) is not present on the image class- or module-path, it still needs to be registered to ensure the correct exception (<code>ClassNotFoundException</code> or similar) is thrown.
-If an element is queried at run-time without having been registered, regardless of whether it is present on the class- or module-path, this query will throw a <code>MissingReflectionRegistrationError</code>.
+  <li>If a reflectively-accessed element (<code>Class</code>, <code>Field</code>, <code>Method</code>, etc.) is not present on the image class or module path, it still needs to be registered to ensure the correct exception (<code>ClassNotFoundException</code> or similar) is thrown.
+If an element is queried at runtime without having been registered, regardless of whether it is present on the class path or module path, this query will throw a <code>MissingReflectionRegistrationError</code>.
 This change ensures that the error is not ambiguous between a non-existent element and one that was not registered for reflection in the image;</li>
-  <li>This rationale also requires that any query that returns a collection of class members (<code>Class.getMethods()</code> or similar) has to be registered in full (with <code>"queryAllPublicMethods"</code> in this case) to succeed at run-time.
+  <li>This rationale also requires that any query that returns a collection of class members (<code>Class.getMethods()</code> or similar) has to be registered in full (with <code>"queryAllPublicMethods"</code> in this case) to succeed at runtime.
 This additionally ensures that any of the registered elements can be queried individually, and non-existent elements of that type will throw the correct exception without having to be registered.
 However, this means that <code>Class.getMethods()</code> does not return the subset of methods that were registered, but throws a <code>MissingReflectionRegistrationError</code> if <code>"queryAllPublicMethods"</code> is missing.</li>
 </ul>
@@ -1167,9 +1179,9 @@ However, this means that <code>Class.getMethods()</code> does not return the sub
       </h3>
 
 <ul>
-  <li>If a resource or resource bundle is not present on the image class- or module-path, it still needs to be registered to ensure the correct return value (<code>null</code>).
-If a resource is queried at run-time without having been registered, regardless of whether it is present on the class- or module-path, this query will throw a <code>MissingResourceRegistrationError</code>.
-This change ensures that the program behavior is not ambiguous between a non-existent resource and one that was not registered for run-time access;</li>
+  <li>If a resource or resource bundle is not present on the image class path or module path, it still needs to be registered to ensure the correct return value (<code>null</code>).
+If a resource is queried at runtime without having been registered, regardless of whether it is present on the class path or module path, this query will throw a <code>MissingResourceRegistrationError</code>.
+This change ensures that the program behavior is not ambiguous between a non-existent resource and one that was not registered for runtime access;</li>
 </ul>
 
 <p>The Native Image agent does not support custom implementations of <code>ResourceBundle$Control</code> or <code>Bundles$Strategy</code> and requires manual registrations for the reflection and resource queries that they will perform.</p>
@@ -1184,18 +1196,15 @@ This change ensures that the program behavior is not ambiguous between a non-exi
 
 <p>This mode will be made the default behavior of Native Image in a future release. We encourage you to start transitioning your code as soon as possible.
 The <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image agent</a> outputs JSON files that conform to both the default and strict modes of operation.
-The following options are useful for debugging issues during the transition to the strict mode:</p>
+Native Image also provides some useful options for debugging issues during the transition to the strict mode:</p>
 
 <ul>
-  <li><code>-H:ThrowMissingRegistrationErrors=&lt;package list&gt;</code>: limits <code>MissingReflectionRegistrationError</code> to be thrown from a defined list of packages.
-This is useful when using some library code that has not been ported to the new mode yet;</li>
-  <li><code>-H:MissingRegistrationReportingMode</code>: sets how <code>MissingReflectionRegistrationError</code> is reported:
-    <ul>
-      <li><code>Throw</code> is the default. The error is simply thrown as a Java exception;</li>
-      <li><code>Warn</code> outputs a small stack trace for every error encountered, which results in a report of all the places the tested code is going to throw when the strict mode is enabled;</li>
-      <li><code>Exit</code> exits the program when encountering the error. This is useful to detect blanket <code>catch (Throwable t) {</code> blocks that would otherwise silence the error.</li>
-    </ul>
-  </li>
+  <li>To make sure that the reflection for your image is configured correctly you can add <code>-H:ThrowMissingRegistrationErrors=</code> to the native-image build arguments.
+If the resulting image fails in libraries that are not under your control, you can add a package prefix to the option to limit the errors to operations called from classes within the specified packages: <code>-H:ThrowMissingRegistrationErrors=&lt;package-prefix&gt;</code>.</li>
+  <li>The default behavior under <code>-H:ThrowMissingRegistrationErrors=</code> is to throw an error, which will potentially end the program execution.
+To get an overview of all places in your code where missing registrations occur, including a small stack trace, without committing to the strict behavior you can add <code>-XX:MissingRegistrationReportingMode=Warn</code> to the program invocation.
+To detect places where the application accidentally swallows a missing registration error (such as with blanket <code>catch (Throwable t)</code> blocks), you can add <code>-XX:MissingRegistrationReportingMode=Exit</code> to the program invocation.
+The application will then unconditionally print the error message and stack trace and exit immediately without throwing.</li>
 </ul>
     
       <h3 id="further-reading">

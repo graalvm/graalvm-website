@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -343,6 +343,17 @@ $(document).ready(function(){
     });
   </script>
 </div>
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/latest/reference-manual/native-image/overview/build-report/">
+              Build Report
+            </a>
+          </li>
+
           
         
           
@@ -598,7 +609,7 @@ $(document).ready(function(){
 <p>Here you will find information about the build output of GraalVM Native Image.
 Below is the example output when building a native executable of the <code>HelloWorld</code> class:</p>
 
-<pre><code class="language-shell">================================================================================
+<pre><code>================================================================================
 GraalVM Native Image: Generating 'helloworld' (executable)...
 ================================================================================
 [1/8] Initializing...                                            (2.8s @ 0.15GB)
@@ -648,7 +659,7 @@ Recommendations:
 --------------------------------------------------------------------------------
     0.8s (4.6% of total time) in 35 GCs | Peak RSS: 1.93GB | CPU load: 9.61
 --------------------------------------------------------------------------------
-Produced artifacts:
+Build artifacts:
  /home/janedoe/helloworld/helloworld (executable)
  /home/janedoe/helloworld/helloworld.debug (debug_info)
  /home/janedoe/helloworld/sources (debug_info)
@@ -703,7 +714,8 @@ Please report version and vendor when you <a href="https://github.com/oracle/gra
 <p>The selected optimization level and targeted machine type used by the Graal compiler.
 The optimization level can be controlled with the <code>-O</code> option and defaults to <code>2</code>, which enables aggressive optimizations.
 Use <code>-Ob</code> to enable quick build mode, which speeds up the <a href="#stage-compiling">compilation stage</a>.
-This is useful during development, or when peak throughput is less important and you would like to optimize for size.
+This is useful during development to reduce image build time. 
+Use <code>-Os</code> to optimize for size.
 The targeted machine type can be selected with the <code>-march</code> option and defaults to <code>x86-64-v3</code> on AMD64 and <code>armv8-a</code> on AArch64.
 See <a href="#recommendation-cpu">here</a> for recommendations on how to use this option.</p>
 
@@ -734,7 +746,7 @@ See <a href="#recommendation-cpu">here</a> for recommendations on how to use thi
 <p>The garbage collector used within the generated executable:</p>
 <ul>
   <li>The <em>Serial GC</em> is the default GC and optimized for low memory footprint and small Java heap sizes.</li>
-  <li>The <em>G1 GC</em> (not available in GraalVM Community Edition) is a multi-threaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency while achieving high throughput.</li>
+  <li>The <em>G1 GC</em> (not available in GraalVM Community Edition) is a multithreaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency while achieving high throughput.</li>
   <li>The <em>Epsilon GC</em> does not perform any garbage collection and is designed for very short-running applications that only allocate a small amount of memory.</li>
 </ul>
 
@@ -750,7 +762,7 @@ See <a href="#recommendation-cpu">here</a> for recommendations on how to use thi
 <p>By default, the heap size is limited to a certain percentage of your system memory, allowing the garbage collector to freely allocate memory according to its policy.
 Use the <code>-Xmx</code> option when invoking your native executable (for example <code>./myapp -Xmx64m</code> for 64MB) to limit the maximum heap size for a lower and more predictable memory footprint.
 This can also improve latency in some cases.
-Use the <code>-R:MaxHeapSize</code> option when building with Native Image to pre-configure the maximum heap size.</p>
+Use the <code>-R:MaxHeapSize</code> option when building with Native Image to preconfigure the maximum heap size.</p>
     
       <h4 id="user-specific-features">
         
@@ -782,7 +794,7 @@ If you rely on experimental features and would like an option to be considered s
         
       </h4>
 <p>Additional build options picked up via the <code>NATIVE_IMAGE_OPTIONS</code> environment variable.
-Similar to <code>JAVA_TOOL_OPTIONS</code>, the value of the environment variable is prepended to the options supplied to <code>native-image</code>.
+Similar to <code>JAVA_TOOL_OPTIONS</code>, the value of the environment variable is prefixed to the options supplied to <code>native-image</code>.
 Argument files are not allowed to be passed via <code>NATIVE_IMAGE_OPTIONS</code>.
 The <code>NATIVE_IMAGE_OPTIONS</code> environment variable is designed to be used by users, build environments, or tools to inject additional build options.</p>
     
@@ -850,11 +862,11 @@ Large numbers can cause significant reflection overheads, slow down the build pr
       <h4 id="foreign-functions-stubs">
         
         
-          <a name="glossary-foreign-downcall-registrations"></a>Foreign functions stubs
+          <a name="glossary-foreign-downcall-and-upcall-registrations"></a>Foreign functions stubs
         
         
       </h4>
-<p>The number of downcalls registered for <a href="/latest/reference-manual/native-image/native-code-interoperability/foreign-interface/">foreign</a> function access.</p>
+<p>The number of downcalls and upcalls registered for <a href="/latest/reference-manual/native-image/native-code-interoperability/foreign-interface/">foreign</a> function access.</p>
     
       <h4 id="runtime-compiled-methods">
         
@@ -906,14 +918,14 @@ The progress indicator visualizes the number of inlining iterations.</p>
 <p>In this stage, the Graal compiler compiles all reachable methods to machine code.
 The progress indicator is printed periodically at an increasing interval.</p>
     
-      <h3 id="layouting-methods">
+      <h3 id="laying-out-methods">
         
         
-          <a name="stage-layouting"></a>Layouting Methods <a href="#layouting-methods" class="anchor_heading">#</a>
+          <a name="stage-layouting"></a>Laying Out Methods <a href="#laying-out-methods" class="anchor_heading">#</a>
         
         
       </h3>
-<p>In this stage, compiled methods are layouted.
+<p>In this stage, compiled methods are laid out.
 The progress indicator is printed periodically at an increasing interval.</p>
     
       <h3 id="creating-image">
@@ -945,7 +957,7 @@ Therefore, reducing the number of <a href="#glossary-reachability">reachable met
       </h5>
 <p>To help users understand where the machine code of the code area comes from, the build output shows a breakdown of the top origins.
 An origin is a group of Java sources and can be a JAR file, a package name, or a class name, depending on the information available.
-The <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/module-summary.html"><code>java.base</code> module</a>, for example, contains base classes from the JDK.
+The <a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.base/module-summary.html"><code>java.base</code> module</a>, for example, contains base classes from the JDK.
 The <code>svm.jar</code> file, the <code>org.graalvm.nativeimage.base</code> module, and similar origins contain internal sources for the Native Image runtime.
 To reduce the size of the code area and with that, the total size of the native executable, re-evaluate the dependencies of your application based on the code area breakdown.
 Some libraries and frameworks are better prepared for Native Image than others, and newer versions of a library or framework may improve (or worsen) their code footprint.</p>
@@ -977,7 +989,10 @@ Therefore, this can also include <code>byte[]</code> objects from application co
         
       </h5>
 <p>The total size of all <code>byte[]</code> objects used for storing resources (for example, files accessed via <code>Class.getResource()</code>) within the native binary.
-The number of resources is shown in the <a href="#glossary-image-heap">Heap</a> section.</p>
+The number of resources is shown in the <a href="#glossary-image-heap">Heap</a> section.
+A list of all resources including additional information such as their module, name, origin, and size are included in the <a href="/latest/reference-manual/native-image/overview/Options/#build-output-and-build-report">build reports</a>.
+This information can also be requested in the JSON format using the <code>-H:+GenerateEmbeddedResourcesFile</code> option.
+Such a JSON file validates against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/embedded-resources-schema-v1.0.0.json"><code>embedded-resources-schema-v1.0.0.json</code></a>.</p>
     
       <h5 id="code-metadata-stored-in-byte">
         
@@ -1060,16 +1075,20 @@ This data typically contains internal information for Native Image and should no
 <p>This shows whether Java deserialization is included in the native executable or not.
 If not included, the attack surface of the executable is reduced as the executable cannot be exploited with attacks based on Java deserialization.</p>
     
-      <h4 id="embedded-sbom">
+      <h4 id="software-bill-of-material-sbom">
         
         
-          <a name="glossary-embedded-sbom"></a>Embedded SBOM
+          <a name="glossary-sbom"></a><a name="glossary-embedded-sbom"></a>Software Bill of Material (SBOM)
         
         
       </h4>
-<p>Number of components and the size of the embedded Software Bill of Materials (SBOM).
-Use <code>--enable-sbom</code> to include an SBOM in the native executable.
-For more information, see <a href="/latest/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Inspection Tool</a></p>
+<p>This section indicates whether a SBOM was assembled and in what ways it was stored. 
+The storage formats include: <code>embed</code>, which embeds the SBOM in the binary; <code>classpath</code>, which saves the SBOM to the classpath; and <code>export</code>, which includes the SBOM as a JSON build artifact. 
+Use <code>--enable-sbom</code> to activate this feature which defaults to the <code>embed</code> option. 
+When embedded, the SBOM size is displayed. 
+The number of components is always displayed.</p>
+
+<p>For more information, see <a href="/latest/security-guide/native-image/">Software Bill of Materials</a>.</p>
     
       <h4 id="backwards-edge-control-flow-integrity-cfi">
         
@@ -1079,7 +1098,7 @@ For more information, see <a href="/latest/reference-manual/native-image/debuggi
         
       </h4>
 <p>Control-Flow Integrity (CFI) can be enforced with the experimental <code>-H:CFI=HW</code> option.
-This feature is currently only available for Linux AArch64 and leverages pointer authentication codes (PAC) to ensure integrity of a function’s return address.</p>
+This feature is currently only available for code compiled by Graal for Linux AArch64 and leverages pointer authentication codes (PAC) to ensure integrity of a function’s return address.</p>
     
       <h4 id="software-control-flow-integrity-cfi">
         
@@ -1088,8 +1107,8 @@ This feature is currently only available for Linux AArch64 and leverages pointer
         
         
       </h4>
-<p>Control-Flow Integrity (CFI) can be enforced in software with the experimental <code>-H:CFI=SW_NONATIVE</code> or <code>-H:CFI=SW</code> option.
-This feature is currently only available for Linux AMD64 and validates targets of indirect branches and method returns.</p>
+<p>Control-Flow Integrity (CFI) can be enforced in software with the experimental <code>-H:CFI=SW_NONATIVE</code> option.
+This feature is currently only available for code compiled by Graal for Linux AMD64 and validates targets of indirect branches and method returns.</p>
     
       <h2 id="recommendations">
         
@@ -1124,8 +1143,8 @@ Also, before migrating to the new flag make sure to update all framework depende
         
       </h4>
 
-<p>The Native Image analysis has included classes from the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.desktop/java/awt/package-summary.html"><code>java.awt</code> package</a> but could not find any reachability metadata for it.
-Use the <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">tracing agent</a> to collect such metadata for your application.
+<p>The Native Image analysis has included classes from the <a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.desktop/java/awt/package-summary.html"><code>java.awt</code> package</a> but could not find any reachability metadata for it.
+Use the <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Tracing Agent</a> to collect such metadata for your application.
 Otherwise, your application is unlikely to work properly.
 If your application is not a desktop application (for example using Swing or AWT directly), you may want to re-evaluate whether the dependency on AWT is actually needed.</p>
     
@@ -1211,7 +1230,7 @@ Note, however, that the overall peak throughput of the executable may be lower d
       <h4 id="garbage-collections">
         
         
-          <a name="glossary-garbage-collection"></a>Garbage Collections
+          <a name="glossary-garbage-collections"></a>Garbage Collections
         
         
       </h4>
@@ -1229,7 +1248,7 @@ Increase the amount of available memory to reduce the time to build the native b
 <p>Peak <a href="https://en.wikipedia.org/wiki/Resident_set_size">resident set size</a> as reported by the operating system.
 This value indicates the maximum amount of memory consumed by the build process.
 You may want to compare this value to the memory limit reported in the <a href="#glossary-build-resources">build resources section</a>.
-If there is enough headroom and the <a href="#glossary-garbage-collection">GC statistics</a> do not show any problems, the amount of total memory of the system can be reduced to a value closer to the peak RSS to lower operational costs.</p>
+If there is enough headroom and the <a href="#glossary-garbage-collections">GC statistics</a> do not show any problems, the amount of total memory of the system can be reduced to a value closer to the peak RSS to lower operational costs.</p>
     
       <h4 id="cpu-load">
         
@@ -1241,6 +1260,23 @@ If there is enough headroom and the <a href="#glossary-garbage-collection">GC st
 <p>The CPU time used by the process divided by the total process time.
 Increase the number of CPU cores to reduce the time to build the native binary.</p>
     
+      <h2 id="build-artifacts">
+        
+        
+          <a name="glossary-build-artifacts"></a>Build Artifacts <a href="#build-artifacts" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The list of all build artifacts.
+This includes the generated native binary, but it can also contain other artifacts such as additional libraries, C header files, or debug info.
+Some of these artifacts must remain in the same location with the native binary as they are needed at run time.
+For applications using AWT, for example, the build process will also output libraries from the JDK and shims to provide compatible AWT support.
+These libraries need to be copied and distributed together with the native binary.
+Use the <code>-H:+GenerateBuildArtifactsFile</code> option to instruct the builder to produce a machine-readable version of the build artifact list in JSON format.
+Such a JSON file validates against the JSON schema defined in <a href="/docs/reference-manual/native-image/assets/build-artifacts-schema-v0.9.0.json"><code>build-artifacts-schema-v0.9.0.json</code></a>.
+This schema also contains descriptions for each possible artifact type and explains whether they are needed at run time or not.</p>
+    
       <h2 id="machine-readable-build-output">
         
         
@@ -1251,7 +1287,7 @@ Increase the number of CPU cores to reduce the time to build the native binary.<
 
 <p>The build output produced by the <code>native-image</code> builder is designed for humans, can evolve with new releases, and should thus not be parsed in any way by tools.
 Instead, use the <code>-H:BuildOutputJSONFile=&lt;file.json&gt;</code> option to instruct the builder to produce machine-readable build output in JSON format that can be used, for example, for building monitoring tools.
-The JSON files validate against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.2.json"><code>build-output-schema-v0.9.2.json</code></a>.
+Such a JSON file validates against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.3.json"><code>build-output-schema-v0.9.3.json</code></a>.
 Note that a JSON file is produced if and only if a build succeeds.</p>
 
 <p>The following example illustrates how this could be used in a CI/CD build pipeline to check that the number of reachable methods does not exceed a certain threshold:</p>

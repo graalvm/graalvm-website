@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -229,7 +229,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/latest/docs/getting-started/">
+          <a href="/latest/getting-started/">
             Getting Started
           </a>
         </li>
@@ -311,8 +311,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/latest/security-guide/polyglot-sandbox/">
-              Polyglot Sandboxing
+            <a href="/latest/security-guide/sandboxing/">
+              Sandboxing
             </a>
           </li>
 
@@ -339,23 +339,6 @@ $(document).ready(function(){
           </li>
 
           
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/latest/tools/">
-            Tools for GraalVM Languages
-          </a>
-        </li>
-
-        
-        
-
-        
         
       
     
@@ -436,7 +419,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This security guide provides developers and embedders with information on the security model and features of GraalVM for developers and embedders who seek to build a secure application on top of it.
+<p>This security guide provides information on the security model and features of GraalVM for developers and embedders who seek to build a secure application on top of it.
 It assumes that readers are familiar with the GraalVM architecture.
 This guide does not replace but rather supplements the Java security documentation such as the <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">Secure Coding Guidelines for Java SE</a> with aspects unique to GraalVM.</p>
     
@@ -458,32 +441,32 @@ They may further open network sockets to allow debug clients to connect.</p>
 
 <p>Experimental features in GraalVM are not for production use and may have security limitations not covered in the Security Guide.</p>
 
-<p>GraalVM enables execution of untrusted code in an appropriately configured polyglot execution context (see <a href="/latest/security-guide/polyglot-sandbox/">Polyglot Sandboxing</a>).</p>
+<p>GraalVM enables execution of untrusted code in an appropriately configured polyglot execution context (see <a href="/latest/security-guide/sandboxing/">Sandboxing</a>).</p>
 
 <p>We appreciate reports of bugs that break the security model via the process
 outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">Reporting Vulnerabilities guide</a>.</p>
     
-      <h2 id="polyglot-languages">
+      <h2 id="graal-languages">
         
         
-          Polyglot Languages <a href="#polyglot-languages" class="anchor_heading">#</a>
+          Graal Languages <a href="#graal-languages" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>For every Polyglot language shipped with GraalVM, a launcher, e.g., interactive shell, is provided.
+<p>Every language runtime, generally available with a GraalVM release, provides a launcher, for example, an interactive shell.
 These launchers behave in the same way and come with the same security guarantees as their “original” counterparts.</p>
     
-      <h3 id="polyglot-sandboxing">
+      <h3 id="sandboxing">
         
         
-          Polyglot Sandboxing <a href="#polyglot-sandboxing" class="anchor_heading">#</a>
+          Sandboxing <a href="#sandboxing" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>Polyglot sandboxing can establish a security boundary between privileged host code and unprivileged guest code.
-For further information please refer to the <a href="/latest/security-guide/polyglot-sandbox/">Polyglot Sandboxing guide</a>.</p>
+<p>Sandboxing can establish a security boundary between privileged host code and unprivileged guest code, facilitated through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a>.
+For further information please refer to the <a href="/latest/security-guide/sandboxing/">Sandboxing documentation</a>.</p>
     
       <h3 id="scriptengine-compatibility">
         
@@ -512,14 +495,14 @@ Typically, these languages are not memory-safe unless using managed execution an
 <p>In managed mode, all access to unmanaged code including the operating system is mediated by the language runtime. In particular this means that:</p>
 
 <ul>
-  <li>In regards to temporal and spatial memory safety, memory is allocated from the Java heap. This means that memory allocations are managed objects and all accesses are performed in a memory-safe manner (no arbitrary pointer arithmetics and no unchecked out-of-bounds accesses).</li>
+  <li>In regards to temporal and spatial memory safety, memory is allocated from the Java heap. This means that memory allocations are managed objects and all accesses are performed in a memory-safe manner (no arbitrary pointer arithmetic and no unchecked out-of-bounds accesses).</li>
   <li>Regarding type safety, it is not possible to reinterpret a data pointer into a function pointer and execute arbitrary instructions (since these are distinct pointer types for LLVM runtime).</li>
   <li>System calls are intercepted and routed to the corresponding Truffle APIs. For example, file IO is mapped to the Truffle <code>FileSystem</code> API.
-The set of currently supported system calls is very limited – only syscalls that can safely be mapped to the Truffle API level are available. Since LLVM Runtime in managed mode always runs bitcode compiled for Linux/x86, it only needs to implement system calls for this platform.</li>
+The set of currently supported system calls is very limited—only syscalls that can safely be mapped to the Truffle API level are available. Since LLVM Runtime in managed mode always runs bitcode compiled for Linux/x86, it only needs to implement system calls for this platform.</li>
   <li>All dependent libraries are executed in managed mode as well, removing all references to natively executed system libraries. This includes libraries that are provided by the LLVM Runtime, such as muslibc.</li>
 </ul>
 
-<p>Managed mode can be selected when creating a context <code>(Context.create())</code> or when calling the <code>bin/lli</code> binary by specifying the <code>--llvm.managed</code> option. A “managed” context will adhere to any restrictions (e.g., <code>allowIO</code>) passed during context creation and does not need the <code>allowNativeAccess</code> privilege.</p>
+<p>Managed mode can be selected when creating a context <code>(Context.create())</code> or when calling the <code>bin/lli</code> binary by specifying the <code>--llvm.managed</code> option. A “managed” context will adhere to any restrictions (for example, <code>allowIO</code>) passed during context creation and does not need the <code>allowNativeAccess</code> privilege.</p>
     
       <h2 id="native-image">
         
@@ -551,7 +534,7 @@ GraalVM does not support untrusted code execution in Java.</p>
         
       </h2>
 
-<p>Polyglot sandboxing is not available in GraalVM Community Edition.
+<p>Sandboxing is not available in GraalVM Community Edition.
 Managed execution of native code is not available with GraalVM Community Edition.</p>
 
 <p>When downgrading to GraalVM Community Edition, native code execution is only possible with the <code>allowNativeAccess</code> privilege.
@@ -566,7 +549,7 @@ This also applies to languages implemented with Truffle that allow for native co
       </h3>
 
 <ul>
-  <li><a href="/latest/security-guide/polyglot-sandbox/">Polyglot Sandboxing</a></li>
+  <li><a href="/latest/security-guide/sandboxing/">Sandboxing</a></li>
   <li><a href="/latest/security-guide/native-image/">Security Considerations in Native Image</a></li>
 </ul>
 

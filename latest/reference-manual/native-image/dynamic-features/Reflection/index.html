@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -626,7 +626,7 @@ $(document).ready(function(){
 (Note: loading classes with <code>Class.forName(String)</code> are included here since it is closely related to reflection.)</p>
 
 <p>Native Image fully supports reflection in ahead-of-time compiled images.
-It may require additional configuration when reflection is used in ways that are unpredictable for the static analysis (e.g., depending on user input).
+It may require additional configuration when reflection is used in ways that are unpredictable for the static analysis (for example, depending on user input).
 Examining and accessing program elements through <code>java.lang.reflect.*</code> or loading classes with <code>Class.forName(String)</code> at run time can require preparing additional metadata for those program elements in the image.
 This metadata must be stored in the image already when it is created ahead of time.
 To reduce both the overall file size of images and the overhead of maintaining configuration, it is nonetheless recommended to avoid the use of reflection when possible.</p>
@@ -664,17 +664,17 @@ Using this manual or agent-provided configuration the image builder can include 
 
 <p>If the arguments to these calls can be reduced to a constant, Native Image tries to resolve the target elements.
 If the target elements can be resolved, the calls are removed and instead the target elements are embedded in the code.
-If the target elements cannot be resolved, e.g., a class is not on the classpath or it does not declare a field/method/constructor, then the calls are replaced with a snippet that throws the appropriate exception at run time.
+If the target elements cannot be resolved, for example, a class is not on the class path or it does not declare a field/method/constructor, then the calls are replaced with a snippet that throws the appropriate exception at run time.
 The benefits are twofold.
 First, at run time there are no calls to the Reflection API.
 Second, GraalVM can employ constant folding and optimize the code further.</p>
 
 <p>The calls are intercepted and processed only when it can be unequivocally determined that the parameters can be reduced to a constant.
-For example, the call <code>Class.forName(String)</code> will be replaced with a <code>Class</code> literal only if the <code>String</code> argument can be constant folded, assuming that the class is actually on the classpath.
+For example, the call <code>Class.forName(String)</code> will be replaced with a <code>Class</code> literal only if the <code>String</code> argument can be constant folded, assuming that the class is actually on the class path.
 Additionally, a call to <code>Class.getMethod(String, Class[])</code> will be processed only if the contents of the <code>Class[]</code> argument can be determined with certainty.
 This last restriction is due to the fact that Java does not have immutable arrays.
 Therefore, all the changes to the array between the time it is allocated and the time it is passed as an argument need to be tracked.
-The analysis follows a simple rule: if all the writes to the array happen in linear sections of code, i.e., no control flow splits, then the array is effectively constant for the purpose of analyzing the call.</p>
+The analysis follows a simple rule: if all the writes to the array happen in linear sections of code (in other words, no control flow splits), then the array is effectively constant for the purpose of analyzing the call.</p>
 
 <p>That is why the analysis does not accept <code>Class[]</code> arguments coming from static fields, since the contents of those can change at any time, even if the fields are final.
 Although this may seem too restrictive, it covers the most commonly used patterns of the Reflection API calls.</p>
@@ -760,7 +760,7 @@ For these situations a manual configuration as described below can be provided.<
 <p>The configuration distinguishes between methods and constructors that can be invoked during execution via <code>Method.invoke(Object, Object...)</code> or <code>Constructor.newInstance(Object...)</code> and those that can not.
 Including a function in the configuration without invocation capabilities helps the static analysis correctly assess its reachability status and results in smaller binary sizes.
 The function metadata is then accessible at runtime like it would for any other registered reflection method or constructor, but trying to call the function will result in a runtime error.
-The configuration fields prefixed by <code>query</code> or <code>queried</code> only include the metadata, while the other ones (e.g., <code>methods</code>) enable runtime invocation.</p>
+The configuration fields prefixed by <code>query</code> or <code>queried</code> only include the metadata, while the other ones (for example, <code>methods</code>) enable runtime invocation.</p>
 
 <p>The native image builder generates reflection metadata for all classes, methods, and fields referenced in that file.
 The <code>queryAllPublicConstructors</code>, <code>queryAllDeclaredConstructors</code>, <code>queryAllPublicMethods</code>, <code>queryAllDeclaredMethods</code>, <code>allPublicConstructors</code>, <code>allDeclaredConstructors</code>, <code>allPublicMethods</code>, <code>allDeclaredMethods</code>, <code>allPublicFields</code>, <code>allDeclaredFields</code>, <code>allPublicClasses</code>, and <code>allDeclaredClasses</code> attributes can be used to automatically include an entire set of members of a class.</p>
@@ -783,7 +783,7 @@ Also, <code>-H:ReflectionConfigurationResources</code> can be specified to load 
 <p>Querying the methods and constructor of <code>java.lang.Object</code> does not require configuration. The Java access rules still apply.
 Likewise, when using the <a href="#strict-metadata-mode">strict metadata mode</a>, it is possible to query the public or declared fields, methods and constructors of <code>java.lang.Object</code>, primitive classes and array classes without requiring a configuration entry.
 These queries return empty arrays in most cases, except for <code>java.lang.Object</code> methods and constructors and array public methods (all inherited from <code>java.lang.Object</code>). The image size impact of this inclusion is therefore minimal.
-On the other hand, it is necessary to register these methods and constructors if they need to be reflectively invoked at run-time, via <code>Method.invoke()</code> or <code>Constructor.newInstance()</code>.</p>
+On the other hand, it is necessary to register these methods and constructors if they need to be reflectively invoked at runtime, via <code>Method.invoke()</code> or <code>Constructor.newInstance()</code>.</p>
     
       <h2 id="conditional-configuration">
         

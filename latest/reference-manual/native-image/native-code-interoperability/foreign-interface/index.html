@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -607,7 +607,8 @@ Shared arenas are currently not supported.</p>
 These two kinds of calls are referred to as “downcalls” and “upcalls” respectively, and are collectively referred to as “foreign calls”.</p>
 
 <blockquote>
-  <p>Note: Currently, only downcalls are supported, and only on the x64 architecture.</p>
+  <p>Note: Currently, foreign calls are supported on the x64 architecture.
+Specifically, downcalls are supported on x64 Linux, Windows and MacOS, while upcalls are supported only on x64 Linux.</p>
 </blockquote>
     
       <h3 id="looking-up-native-functions">
@@ -638,8 +639,10 @@ Therefore, the <code>native-image</code> tool must be provided with descriptors 
 class ForeignRegistrationFeature implements Feature { 
   public void duringSetup(DuringSetupAccess access) {
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid());
-    RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid(), Linker.Option.isTrivial());
-    RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT));
+    RuntimeForeignAccess.registerForUpcall(FunctionDescriptor.ofVoid());
+    RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid(), Linker.Option.critical(false));
+    RuntimeForeignAccess.registerForUpcall(FunctionDescriptor.of(JAVA_INT, JAVA_INT));
+    RuntimeForeignAccess.registerForUpcall(FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT));
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.of(ADDRESS, JAVA_INT, JAVA_INT), Linker.Option.firstVariadicArg(1));
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid(JAVA_INT), Linker.Option.captureCallState("errno"));
   }
@@ -647,16 +650,6 @@ class ForeignRegistrationFeature implements Feature {
 </code></pre>
 <p>To activate the custom feature, pass the <code>--features=com.example.ForeignRegistrationFeature</code> option (the fully-qualified name of the feature class) to <code>native-image</code>.
 It is recommended to do so <a href="/latest/reference-manual/native-image/overview/BuildConfiguration/#embed-a-configuration-file">with a <em>native-image.properties</em> file</a>.</p>
-    
-      <h3 id="upcalls">
-        
-        
-          Upcalls <a href="#upcalls" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Upcalls are not yet supported.</p>
     
       <h3 id="related-documentation">
         

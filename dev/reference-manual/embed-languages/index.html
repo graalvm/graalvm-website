@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 22 (Latest)', 'latest');">GraalVM for JDK 22 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Early Access)', 'jdk23');">GraalVM for JDK 23 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -285,7 +285,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/languages/">
-              Graal Languages
+              Languages References
             </a>
           </li>
 
@@ -329,6 +329,17 @@ $(document).ready(function(){
 
           
         
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/tools/">
+              Tools for GraalVM Languages
+            </a>
+          </li>
+
+          
+        
       
     
       
@@ -355,23 +366,6 @@ $(document).ready(function(){
           
           <a href="/dev/security-guide/">
             Security Guide
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/dev/reference-manual/tools/">
-            Tools for Graal Languages
           </a>
         </li>
 
@@ -2865,7 +2859,7 @@ We recommend, therefore, keeping a strong reference to the <code>Source</code> o
         
       </h2>
 
-<p>On Oracle GraalVM, a Polyglot engine can be configured to run in a dedicated Native Image isolate.
+<p>On Oracle GraalVM, a polyglot engine can be configured to run in a dedicated Native Image isolate.
 A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler.
 Polyglot isolates are useful for <a href="/dev/security-guide/sandboxing/">sandboxing</a>.
 Running languages in an isolate works with HotSpot and Native Image host virtual machines.</p>
@@ -2876,22 +2870,50 @@ For example, a dependency on isolated JavaScript can be configured by adding a M
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
     &lt;type&gt;jar&lt;/type&gt;
 &lt;/dependency&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
-    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
     &lt;type&gt;pom&lt;/type&gt;
 &lt;/dependency&gt;
 </code></pre>
 
-<p>The downloaded dependency is platform-independent, which contains a native-image for each platform.
-We plan to support downloading polyglot isolate native images for individual platforms in a future release.</p>
+<p>Starting from the Polyglot API version 24.1.0, the polyglot engine supports polyglot isolates for individual platforms.
+To download a polyglot isolate for a specific platform, append the operating system and
+CPU architecture classifiers to the polyglot isolate Maven <code>artifactId</code>. For example,
+to configure a dependency on isolated Python for Linux amd64, add the following Maven dependencies:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;python-isolate-linux-amd64&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>Supported platform classifiers are:</p>
+<ul>
+  <li><code>linux-amd64</code></li>
+  <li><code>linux-aarch64</code></li>
+  <li><code>darwin-amd64</code></li>
+  <li><code>darwin-aarch64</code></li>
+  <li><code>windows-amd64</code></li>
+</ul>
+
+<p>For a complete Maven POM file that adds the polyglot isolate Native Image dependency for the current platform,
+refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demonstration</a> on GitHub.</p>
 
 <p>To enable isolate usage with the Polyglot API, the <code>--engine.SpawnIsolate=true</code> option must be passed to <code>Engine</code> or <code>Context</code> when constructed.
-The option <code>engine.SpawnIsolate</code> may not be available if used on any other JDK than Oracle GraalVM.</p>
+The option <code>engine.SpawnIsolate</code> may not be available if used on any JDK other than Oracle GraalVM.</p>
 
 <pre><code class="language-java">import org.graalvm.polyglot.*;
 
@@ -2923,6 +2945,10 @@ public class PolyglotIsolate {
     <tr>
       <td>JavaScript (<code>js-isolate</code>)</td>
       <td>23.1</td>
+    </tr>
+    <tr>
+      <td>Python (<code>python-isolate</code>)</td>
+      <td>24.1</td>
     </tr>
   </tbody>
 </table>
@@ -3177,7 +3203,7 @@ Alternatively, the factory can be registered via <code>javax.script.ScriptEngine
 <p>The best practice is to close the <code>ScriptEngine</code> when no longer used rather than relying on finalizers.
 To close it, use <code>((AutoCloseable) scriptEngine).close();</code> since <code>ScriptEngine</code> does not have a <code>close()</code> method.</p>
 
-<p>Note that <a href="https://www.graalvm.org/reference-manual/js/">GraalJS</a> provides <a href="https://www.graalvm.org/reference-manual/js/ScriptEngine/">a ScriptEngine implementation</a> for users migrating from the Nashorn JavaScript engine that was deprecated in JDK 11, so this method here is not needed.</p>
+<p>Note that <a href="../js/">Graal.js</a> provides <a href="https://github.com/oracle/graal/blob/master/js/ScriptEngine/">a ScriptEngine implementation</a> for users migrating from the Nashorn JavaScript engine that was deprecated in JDK 11, so this method here is not needed.</p>
 
 <details>
 <summary>Expand to see the <code>ScriptEngineFactory</code> implementation for Truffle languages in a single file.</summary>
