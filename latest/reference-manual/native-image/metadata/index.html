@@ -567,7 +567,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 <p>Metadata can be provided to the <code>native-image</code> builder in the following ways:</p>
 <ul>
   <li>By <a href="#computing-metadata-in-code">computing metadata in code</a> <a href="/latest/reference-manual/native-image/basics/#image-build-time-vs-image-run-time">when the native binary is built</a> and storing required elements into the <a href="/latest/reference-manual/native-image/basics/#native-image-heap">initial heap of the native binary</a>.</li>
-  <li>By <a href="#specifying-metadata-with-json">providing the <em>reachability-metadata.json</em> file(s)</a> stored in the <code>META-INF/native-image/&lt;group-id&gt;/&lt;artifact-id&gt;/</code> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
+  <li>By <a href="#specifying-metadata-with-json">providing the <em>reachability-metadata.json</em> file(s)</a> stored in the <em>META-INF/native-image/&lt;groupId&gt;\/&lt;artifactId&gt;\/</em> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
   <li>For more advanced use cases, where classpath scanning or build-time initialization is needed, by using the <a href="#public-api">public API</a>.</li>
 </ul>
 
@@ -578,8 +578,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 
   <p>To get an overview of all places in your code where missing registrations occur, without committing to the exact behavior, you can pass <code>-XX:MissingRegistrationReportingMode=Warn</code> when starting the application.</p>
 
-  <p>To detect places where the application accidentally ignores a missing registration error (with <code>catch (Throwable t)</code> blocks), pass <code>-XX:MissingRegistrationReportingMode=Exit</code> when starting the application.
-The application will then unconditionally print the error message with the stack trace and exit immediately. This behavior is ideal for running application tests tu guarantee all metadata is included.</p>
+  <p>To detect places where the application accidentally ignores a missing registration error (with <code>catch (Throwable t)</code> blocks), pass <code>-XX:MissingRegistrationReportingMode=Exit</code> when starting the application. The application will then unconditionally print the error message with the stack trace and exit immediately. This behavior is ideal for running application tests to guarantee all metadata is included.</p>
 
   <p>The user-friendly implementation for reflection will become the default in future releases of GraalVM so the timely adoption is important to avoid project breakage.</p>
 </blockquote>
@@ -639,18 +638,18 @@ The application will then unconditionally print the error message with the stack
 
     <p>When passing constant arrays, the following approaches to declare and populate an array are equivalent from the point of view of the <code>native-image</code> builder:</p>
 
-    <pre><code class="language-java">     Class&lt;?&gt;[] params0 = new Class&lt;?&gt;[]{String.class, int.class};
-     Integer.class.getMethod("parseInt", params0);
+    <pre><code class="language-java">  Class&lt;?&gt;[] params0 = new Class&lt;?&gt;[]{String.class, int.class};
+  Integer.class.getMethod("parseInt", params0);
 </code></pre>
 
-    <pre><code class="language-java">   Class&lt;?&gt;[] params1 = new Class&lt;?&gt;[2];
-   params1[0] = Class.forName("java.lang.String");
-   params1[1] = int.class;
-   Integer.class.getMethod("parseInt", params1);
+    <pre><code class="language-java">  Class&lt;?&gt;[] params1 = new Class&lt;?&gt;[2];
+  params1[0] = Class.forName("java.lang.String");
+  params1[1] = int.class;
+  Integer.class.getMethod("parseInt", params1);
 </code></pre>
 
-    <pre><code class="language-java">    Class&lt;?&gt;[] params2 = {String.class, int.class};
-    Integer.class.getMethod("parseInt", params2);
+    <pre><code class="language-java">  Class&lt;?&gt;[] params2 = {String.class, int.class};
+  Integer.class.getMethod("parseInt", params2);
 </code></pre>
 
     <p>Note that Native Image currently aggressively computes constants, and therefore it is not possible to specify exactly what is a constant at build time.</p>
@@ -694,10 +693,11 @@ This is necessary in cases when:</p>
         
       </h2>
 
-<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at _META-INF/native-image/<group.Id>/<artifactId>/_. 
-The JSON schema for the reachability metadata is defined in [reachability-metadata-schema-v1.0.0.json](/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.0.0.json). 
-A sample _reachability-metadata.json_ file can be found [in the sample section](#sample-reachability-metadata). 
-_reachability-metadata.json_ contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of *metadata entries*:</artifactId></group.Id></p>
+<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;groupId&gt;\/&lt;artifactId&gt;\/</em>.
+The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.0.0.json">reachability-metadata-schema-v1.0.0.json</a>.</p>
+
+<p>A sample <em>reachability-metadata.json</em> file can be found <a href="#sample-reachability-metadata">in the sample section</a>.
+The <em>reachability-metadata.json</em> configuration contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of <em>metadata entries</em>:</p>
 <pre><code class="language-json">{
   "reflection":[],
   "resources":[],
