@@ -2726,7 +2726,7 @@ The language home options remain functional for compatibility reasons but may be
       </h3>
 
 <p>Accessing host Java code from the guest application requires Java reflection in order to work.
-When reflection is used within a native executable, the <a href="/latest/reference-manual/native-image/dynamic-features/Reflection/">reflection configuration file</a> is required.</p>
+When reflection is used within a native executable, the <a href="/latest/reference-manual/native-image/metadata/#reflection">reflection configuration file</a> is required.</p>
 
 <p>For this example we use JavaScript to show host access with native executables.
 Copy the following code in a new file named <code>AccessJavaFromJS.java</code>.</p>
@@ -2761,14 +2761,16 @@ public class AccessJavaFromJS {
 }
 </code></pre>
 
-<p>Copy the following code into <code>reflect.json</code>:</p>
+<p>Copy the following code into <code>reachability-metadata.json</code>:</p>
+<pre><code class="language-json">{
+  "reflection": [
+     { "type": "AccessJavaFromJS$MyClass", "allPublicFields": true },
+     { "type": "java.util.concurrent.Callable", "allPublicMethods": true }
+  ]
+}
+</code></pre>
 
-<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="o">[</span>
-  <span class="o">{</span> <span class="s">"name"</span><span class="o">:</span> <span class="s">"AccessJavaFromJS$MyClass"</span><span class="o">,</span> <span class="s">"allPublicFields"</span><span class="o">:</span> <span class="kc">true</span> <span class="o">},</span>
-  <span class="o">{</span> <span class="s">"name"</span><span class="o">:</span> <span class="s">"java.util.concurrent.Callable"</span><span class="o">,</span> <span class="s">"allPublicMethods"</span><span class="o">:</span> <span class="kc">true</span> <span class="o">}</span>
-<span class="o">]</span></code></pre></figure>
-
-<p>Now, you can create a native executable that supports host access and add the additional <code>-H:ReflectionConfigurationFiles=reflect.json</code> build-time option.</p>
+<p>Now, you can add <code>reachability-metadata.json</code> to <code>META-INF/native-image/&lt;group-id&gt;/</code> of your project.</p>
     
       <h2 id="code-caching-across-multiple-contexts">
         

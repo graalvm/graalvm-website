@@ -145,7 +145,7 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="configure-native-image-with-the-tracing-agent">Configure Native Image with the Tracing Agent</h1>
 
-<p>To build a native executable for a Java application that uses Java reflection, dynamic proxy objects, JNI, or class path resources, you should either provide the <code>native-image</code> tool with JSON-formatted configuration files or precompute metadata in the code.</p>
+<p>To build a native executable for a Java application that uses Java reflection, dynamic proxy objects, JNI, or class path resources, you should either provide the <code>native-image</code> tool with a JSON-formatted metadata file or precompute metadata in the code.</p>
 
 <p>You can create configuration file(s) by hand, but a more convenient approach is to generate the configuration using the Tracing Agent (from now on, the agent). 
 This guide demonstrates how to configure <code>native-image</code> with the agent. 
@@ -242,19 +242,21 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
   <li>Run the application with the agent enabled, as follows:
     <pre><code class="language-shell"> java -agentlib:native-image-agent=config-output-dir=META-INF/native-image ReflectionExample StringReverser reverse "hello"
 </code></pre>
-    <p>This command creates a file named <em>reflect-config.json</em> containing the name of the class <code>StringReverser</code> and its <code>reverse()</code> method.</p>
-    <pre><code class="language-json"> [
+    <p>This command creates a file named <em>rechability-metadata.json</em> containing the name of the class <code>StringReverser</code> and its <code>reverse()</code> method.</p>
+    <pre><code class="language-json"> {
+   "reflection": [
      {
-     "name":"StringReverser",
+     "type":"StringReverser",
      "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
      }
- ]
+   ]
+ }
 </code></pre>
   </li>
   <li>Build a native executable:
     <pre><code class="language-shell"> native-image ReflectionExample
 </code></pre>
-    <p>The <code>native-image</code> tool automatically uses configuration files in the <em>META-INF/native-image/</em> directory.
+    <p>The <code>native-image</code> tool automatically uses the metadata file in the <em>META-INF/native-image/</em> directory.
  However, we recommend that the <em>META-INF/native-image/</em> directory is on the class path, either via a JAR file or using the <code>-cp</code> option. (This avoids confusion for IDE users where a directory structure is defined by the IDE itself.)</p>
   </li>
   <li>Test your executable.
@@ -275,21 +277,23 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  In this case, the <code>native-image</code> tool has not been configured to include references to class <code>StringCapitalizer</code>.</p>
   </li>
   <li>Update the configuration to include class <code>StringCapitalizer</code>.
- You can manually edit the <em>reflect-config.json</em> file or re-run the Tracing Agent to update the existing configuration file using the <code>config-merge-dir</code> option, as follows:
+ You can manually edit the <em>reachability-metadata.json</em> file or re-run the Tracing Agent to update the existing configuration file using the <code>config-merge-dir</code> option, as follows:
     <pre><code class="language-shell"> java -agentlib:native-image-agent=config-merge-dir=META-INF/native-image ReflectionExample StringCapitalizer capitalize "hello"
 </code></pre>
 
-    <p>This command updates the <em>reflect-config.json</em> file to include the name of the class <code>StringCapitalizer</code> and its <code>capitalize()</code> method.</p>
-    <pre><code class="language-json"> [
+    <p>This command updates the <em>reachability-metadata.json</em> file to include the name of the class <code>StringCapitalizer</code> and its <code>capitalize()</code> method.</p>
+    <pre><code class="language-json"> {
+   "reflection": [
      {
-     "name":"StringCapitalizer",
+     "type":"StringCapitalizer",
      "methods":[{"name":"capitalize","parameterTypes":["java.lang.String"] }]
      },
      {
-     "name":"StringReverser",
+     "type":"StringReverser",
      "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
      }
- ]
+   ]
+}
 </code></pre>
   </li>
   <li>Rebuild the native executable and run it.

@@ -224,10 +224,16 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
     <p>This creates <em>SimpleJmx.class</em>, <em>SimpleJmx$Simple.class</em>, and <em>SimpleJmx$SimpleMBean.class</em> files.</p>
   </li>
-  <li>Add dynamic proxy configuration. JMX uses dynamic proxies, a <a href="/latest/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans. To be able to interact with the custom <code>SimpleMBean</code> at runtime, you need to provide Native Image with additional <a href="/latest/reference-manual/native-image/dynamic-features/DynamicProxy/">dynamic proxy configuration</a> for the MBean interface. For this, create a JSON file named <em>proxy-config.json</em> with the following contents:
-    <pre><code class="language-json"> [
-   { "interfaces": [ "SimpleJmx$SimpleMBean"] }
- ]
+  <li>Add dynamic proxy configuration. JMX uses dynamic proxies, a <a href="/latest/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans. To be able to interact with the custom <code>SimpleMBean</code> at runtime, you need to provide Native Image with additional <a href="/latest/reference-manual/native-image/metadata/#reflection">dynamic-proxy metadata</a> for the MBean interface. For this, create or modify a JSON file named <em>reachability-metadata.json</em> with the following contents:
+    <pre><code class="language-json"> {
+   "reflection": [
+     {
+       "type": {
+         "proxy": ["SimpleJmx$SimpleMBean"]
+       }
+     }
+   ]
+ }
 </code></pre>
   </li>
   <li>Build a native executable with VM monitoring enabled and pass the JSON configuration file to <code>native-image</code>:
@@ -282,7 +288,7 @@ Users can enable the JMX agent in a native executable to monitor a client applic
 <ul>
   <li><a href="https://docs.oracle.com/javadb/10.10.1.2/adminguide/radminjmxenabledisable.html">Enabling and disabling JMX</a></li>
   <li><a href="/latest/reference-manual/native-image/guides/create-heap-dump/">Create Heap Dumps with VisualVM</a></li>
-  <li><a href="/latest/reference-manual/native-image/dynamic-features/DynamicProxy/">Dynamic Proxy</a></li>
+  <li><a href="/latest/reference-manual/native-image/metadata/#reflection">Dynamic Proxy</a></li>
 </ul>
 
       </div>
