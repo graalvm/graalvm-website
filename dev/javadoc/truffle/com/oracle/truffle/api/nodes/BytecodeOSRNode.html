@@ -25,7 +25,7 @@ loadScripts(document, 'script');</script>
 <!-- ========= START OF TOP NAVBAR ======= -->
 <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
 <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>7be98475502181cb8b52f7a467b2ea8fec7245fd</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>d159abe9f18d5af516baa6e756849bbac555055f</div>
 <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
 <li><a href="../../../../../index.html">Overview</a></li>
 <li><a href="package-summary.html">Package</a></li>
@@ -106,6 +106,8 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
  proxy accesses to it.</li>
  <li>The node should call <a href="#pollOSRBackEdge(com.oracle.truffle.api.nodes.BytecodeOSRNode)"><code>pollOSRBackEdge(com.oracle.truffle.api.nodes.BytecodeOSRNode)</code></a> and
  <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode, int, java.lang.Object, java.lang.Runnable, com.oracle.truffle.api.frame.VirtualFrame)</code></a> as described by their documentation.</li>
+ <li>The node should implement either <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)"><code>executeOSR(VirtualFrame, int, Object)</code></a> or
+ <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>executeOSR(VirtualFrame, long, Object)</code></a> (see note below).
  </ol>
 
  <p>
@@ -118,7 +120,14 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
  <p>
  A node may also wish to override <a href="#prepareOSR(int)"><code>prepareOSR(int)</code></a> to perform initialization.
  This method will be called before compilation, and can be useful to avoid deoptimizing inside
- compiled code.</div>
+ compiled code.
+
+ <p>
+ Starting in 24.2, Bytecode OSR supports <code>long</code> values for <code>target</code> dispatch
+ locations. An interpreter can use <code>long</code> targets by invoking
+ <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a> (instead of
+ <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, int, Object, Runnable, VirtualFrame)</code></a>). Refer to the
+ documentation for the <code>long</code> overload for more details.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>21.3</dd>
@@ -154,12 +163,28 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Copies the contents of the <code>parentFrame</code> into the <code>osrFrame</code> used to execute OSR.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)" class="member-name-link">executeOSR</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)" class="member-name-link">copyIntoOSRFrame</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;targetMetadata)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Overload of <a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, int, Object)</code></a> with a
+ <code>long</code> target.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)" class="member-name-link">executeOSR</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
  int&nbsp;target,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Entrypoint to invoke this node through OSR.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)" class="member-name-link">executeOSR</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Overload of <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)"><code>executeOSR(VirtualFrame, int, Object)</code></a> with a <code>long</code> target.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getOSRMetadata()" class="member-name-link">getOSRMetadata</a>()</code></div>
@@ -177,26 +202,40 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <div class="block">Initialization hook which will be invoked before OSR compilation.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#restoreParentFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">restoreParentFrame</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
- <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#prepareOSR(long)" class="member-name-link">prepareOSR</a><wbr>(long&nbsp;target)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Overload of <a href="#prepareOSR(int)"><code>prepareOSR(int)</code></a> with a <code>long</code> target.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#restoreParentFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">restoreParentFrame</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Restores the contents of the <code>osrFrame</code> back into the <code>parentFrame</code> after OSR.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#restoreParentFrameFromArguments(java.lang.Object%5B%5D)" class="member-name-link">restoreParentFrameFromArguments</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]&nbsp;arguments)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#restoreParentFrameFromArguments(java.lang.Object%5B%5D)" class="member-name-link">restoreParentFrameFromArguments</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]&nbsp;arguments)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Return the parent frame that was stored in an arguments array by a previous call to
  <a href="#storeParentFrameInArguments(com.oracle.truffle.api.frame.VirtualFrame)"><code>storeParentFrameInArguments(com.oracle.truffle.api.frame.VirtualFrame)</code></a>.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#setOSRMetadata(java.lang.Object)" class="member-name-link">setOSRMetadata</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;osrMetadata)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#setOSRMetadata(java.lang.Object)" class="member-name-link">setOSRMetadata</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;osrMetadata)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3">
 <div class="block">Sets the OSR metadata for this instance.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#storeParentFrameInArguments(com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">storeParentFrameInArguments</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>[]</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#storeParentFrameInArguments(com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">storeParentFrameInArguments</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
 <div class="block">Produce the arguments that will be used to perform the call to the new OSR root.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#transferOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)" class="member-name-link">transferOSRFrame</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;targetMetadata)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
+<div class="block">Helper method that can be called by implementations of
+ <a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, long, Object)</code></a>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1"><code>static <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab1"><code><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">tryOSR</a><wbr>(<a href="BytecodeOSRNode.html" title="interface in com.oracle.truffle.api.nodes">BytecodeOSRNode</a>&nbsp;osrNode,
@@ -206,6 +245,16 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
  <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1">
 <div class="block">Tries to perform OSR.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1"><code>static <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1"><code><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">tryOSR</a><wbr>(<a href="BytecodeOSRNode.html" title="interface in com.oracle.truffle.api.nodes">BytecodeOSRNode</a>&nbsp;osrNode,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;beforeTransfer,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1">
+<div class="block">Overload of <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, int, Object, Runnable, VirtualFrame)</code></a> with a
+ <code>long</code> target.</div>
 </div>
 </div>
 </div>
@@ -224,11 +273,12 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <li>
 <section class="detail" id="executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)">
 <h3>executeOSR</h3>
-<div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span>&nbsp;<span class="element-name">executeOSR</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span>&nbsp;<span class="element-name">executeOSR</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
  int&nbsp;target,
  <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState)</span></div>
-<div class="block">Entrypoint to invoke this node through OSR. This method should execute from the
- <code>target</code> location.
+<div class="block">Entrypoint to invoke this node through OSR. Implementers must override this method (or its
+ <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>long overload</code></a>). The implementation should
+ execute bytecode starting from the given <code>target</code> location (e.g., bytecode index).
 
  <p>
  The <code>osrFrame</code> may be the parent frame, but for performance reasons could also be a new
@@ -260,11 +310,38 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <dd><code>osrFrame</code> - the frame to use for OSR.</dd>
 <dd><code>target</code> - the target location to execute from (e.g., bytecode index).</dd>
 <dd><code>interpreterState</code> - other interpreter state used to resume execution. See
-            <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode, int, java.lang.Object, java.lang.Runnable, com.oracle.truffle.api.frame.VirtualFrame)</code></a> for more details.</dd>
+            <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, int, Object, Runnable, VirtualFrame)</code></a> for more
+            details.</dd>
 <dt>Returns:</dt>
 <dd>the result of execution.</dd>
 <dt>Since:</dt>
 <dd>21.3</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>executeOSR(VirtualFrame, long, Object)</code></a></li>
+</ul>
+</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)">
+<h3>executeOSR</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span>&nbsp;<span class="element-name">executeOSR</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState)</span></div>
+<div class="block">Overload of <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)"><code>executeOSR(VirtualFrame, int, Object)</code></a> with a <code>long</code> target. An
+ interpreter that uses <code>long</code> targets must override this method.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>24.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </li>
@@ -349,6 +426,55 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
             frame transfer behavior.</dd>
 <dt>Since:</dt>
 <dd>22.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, long, Object)</code></a></li>
+</ul>
+</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)">
+<h3>copyIntoOSRFrame</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">copyIntoOSRFrame</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;targetMetadata)</span></div>
+<div class="block">Overload of <a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,int,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, int, Object)</code></a> with a
+ <code>long</code> target. An interpreter that uses <code>long</code> targets must override this method.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>24.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a></li>
+</ul>
+</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="transferOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)">
+<h3>transferOSRFrame</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">transferOSRFrame</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;osrFrame,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;targetMetadata)</span></div>
+<div class="block">Helper method that can be called by implementations of
+ <a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, long, Object)</code></a>. Should not be
+ overridden.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>24.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </li>
@@ -405,6 +531,30 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <dd><code>target</code> - the target location OSR will execute from (e.g., bytecode index).</dd>
 <dt>Since:</dt>
 <dd>21.3</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list">
+<li><a href="#prepareOSR(long)"><code>prepareOSR(long)</code></a></li>
+</ul>
+</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="prepareOSR(long)">
+<h3>prepareOSR</h3>
+<div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">prepareOSR</span><wbr><span class="parameters">(long&nbsp;target)</span></div>
+<div class="block">Overload of <a href="#prepareOSR(int)"><code>prepareOSR(int)</code></a> with a <code>long</code> target. An interpreter that uses
+ <code>long</code> targets must override this method.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>24.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </li>
@@ -502,6 +652,45 @@ extends <a href="NodeInterface.html" title="interface in com.oracle.truffle.api.
 <dd>the result if OSR was performed, or <code>null</code> otherwise.</dd>
 <dt>Since:</dt>
 <dd>21.3</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, long, Object, Runnable, VirtualFrame)</code></a></li>
+</ul>
+</dd>
+</dl>
+</section>
+</li>
+<li>
+<section class="detail" id="tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,long,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)">
+<h3>tryOSR</h3>
+<div class="member-signature"><span class="modifiers">static</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span>&nbsp;<span class="element-name">tryOSR</span><wbr><span class="parameters">(<a href="BytecodeOSRNode.html" title="interface in com.oracle.truffle.api.nodes">BytecodeOSRNode</a>&nbsp;osrNode,
+ long&nbsp;target,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;interpreterState,
+ <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Runnable.html" title="class or interface in java.lang" class="external-link">Runnable</a>&nbsp;beforeTransfer,
+ <a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;parentFrame)</span></div>
+<div class="block">Overload of <a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, int, Object, Runnable, VirtualFrame)</code></a> with a
+ <code>long</code> target. An interpreter that uses <code>long</code> targets should call this method.
+ <p>
+ If an interpreter uses a <code>long</code> representation, it <strong>must</strong> override the
+ hooks that define <code>long</code> overloads, namely
+ <a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>executeOSR(VirtualFrame, long, Object)</code></a>,
+ <a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, long, Object)</code></a>, and
+ <a href="#prepareOSR(long)"><code>prepareOSR(long)</code></a>. Overriding is necessary because the default <code>long</code> overloads
+ call their <code>int</code> overloads for backwards compatibility, and these calls will fail for
+ <code>long</code>-sized targets.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>24.2</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#tryOSR(com.oracle.truffle.api.nodes.BytecodeOSRNode,int,java.lang.Object,java.lang.Runnable,com.oracle.truffle.api.frame.VirtualFrame)"><code>tryOSR(BytecodeOSRNode, int, Object, Runnable, VirtualFrame)</code></a></li>
+<li><a href="#executeOSR(com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>executeOSR(VirtualFrame, long, Object)</code></a></li>
+<li><a href="#copyIntoOSRFrame(com.oracle.truffle.api.frame.VirtualFrame,com.oracle.truffle.api.frame.VirtualFrame,long,java.lang.Object)"><code>copyIntoOSRFrame(VirtualFrame, VirtualFrame, long, Object)</code></a></li>
+<li><a href="#prepareOSR(long)"><code>prepareOSR(long)</code></a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </li>
