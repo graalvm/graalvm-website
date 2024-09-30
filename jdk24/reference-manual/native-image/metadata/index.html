@@ -613,8 +613,8 @@ Providing the builder with correct and exhaustive reachability metadata guarante
   <li><a href="#resources">Resources</a></li>
   <li><a href="#resource-bundles">Resource Bundles</a></li>
   <li><a href="#serialization">Serialization</a></li>
-  <li><a href="#predefined-classes">Predefined Classes</a></li>
   <li><a href="#sample-reachability-metadata">Sample Reachability Metadata</a></li>
+  <li><a href="#defining-classes-at-run-time">Defining Classes at Run Time</a></li>
 </ul>
     
       <h2 id="computing-metadata-in-code">
@@ -888,8 +888,8 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
 <pre><code class="language-json">{
   "type": "TypeWhoseMethodsAreInvoked",
   "methods": [
-    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"]},
-    {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"]}
+    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]},
+    {"name": "&lt;methodName2&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]}
   ]
 }
 </code></pre>
@@ -1039,8 +1039,8 @@ To build a native binary for a Java application that uses JNI to access Java val
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
   "methods": [
-    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"]},
-    {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"]}
+    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]},
+    {"name": "&lt;methodName2&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]}
   ]
 }
 </code></pre>
@@ -1370,48 +1370,15 @@ For example, to allow serialization of <code>org.apache.spark.SparkContext$$anon
 }
 </code></pre>
     
-      <h2 id="defining-classes-at-run-time">
-        
-        
-          Defining Classes at Run Time <a href="#defining-classes-at-run-time" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Java has support for loading new classes from bytecode at run time, which is not possible in Native Image as all classes must be known at build time (the “closed-world assumption”).</p>
-
-<p>To emulate class loading, the <a href="/jdk24/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image Agent</a> can trace dynamically loaded classes and save their bytecode for later use by the <code>native-image</code> builder.
-At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
-
-<blockquote>
-  <p>Note: Predefined classes metadata is not meant to be manually written.</p>
-</blockquote>
-
-<p>Predefined classes metadata should be specified in a <em>predefined-classes-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the predefined-classes-config.json:</p>
-<pre><code class="language-json">[
-  {
-    "type": "agent-extracted",
-    "classes": [
-      {
-        "hash": "&lt;class-bytecodes-hash&gt;",
-        "nameInfo": "&lt;class-name"
-      }
-    ]
-  }
-]
-</code></pre>
-    
       <h2 id="sample-reachability-metadata">
         
         
-          Sample ReachabilIty Metadata <a href="#sample-reachability-metadata" class="anchor_heading">#</a>
+          Sample Reachability Metadata <a href="#sample-reachability-metadata" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>See below is a sample reachabilIty metadata configuration that you can use in <em>reachabilty-metadata.json</em>:</p>
+<p>See below is a sample reachability metadata configuration that you can use in <em>reachabilty-metadata.json</em>:</p>
 
 <pre><code class="language-json">{
   "reflection": [
@@ -1425,7 +1392,7 @@ The schema also includes further details and explanations how this configuration
       "methods": [
         {
           "name": "method1",
-          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"] 
+          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"] 
         }
       ],
       "allDeclaredConstructors": true,
@@ -1448,7 +1415,7 @@ The schema also includes further details and explanations how this configuration
       "methods": [
         {
           "name": "method1",
-          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;, &lt;param-typeN&gt;"]
+          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
         }
       ],
       "allDeclaredConstructors": true,
@@ -1480,13 +1447,52 @@ The schema also includes further details and explanations how this configuration
 }
 </code></pre>
     
-      <h3 id="further-reading">
+      <h2 id="defining-classes-at-run-time">
+        
+        
+          Defining Classes at Run Time <a href="#defining-classes-at-run-time" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Java has support for loading new classes from bytecode at run time, which is not possible in Native Image as all classes must be known at build time (the “closed-world assumption”).
+To overcome this issue there are the following options:</p>
+<ol>
+  <li>Modify or reconfigure your application (or a third-party library) so that it does not generate classes at runtime or load them via non-built-in class loaders.</li>
+  <li>If the classes must be generated, try to generate them at build time in a static initializer of a dedicated class.
+The generated java.lang.Class objects should be stored in static fields and the dedicated class initialized by passing <code>--initialize-at-build-time=&lt;class_name&gt;</code> as the build argument.</li>
+  <li>If none of the above is applicable, use the <a href="/jdk24/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image Agent</a> to run the application and collect predefined classes with
+<code>java -agentlib:native-image-agent=config-output-dir=&lt;config-dir&gt;,experimental-class-define-support &lt;application-arguments&gt;</code>.
+At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</li>
+</ol>
+
+<p>Predefined classes metadata is specified in a <em>predefined-classes-config.json</em> file and conform to the JSON schema defined in
+<a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.
+The schema also includes further details and explanations how this configuration works. Here is the example of the predefined-classes-config.json:</p>
+<pre><code class="language-json">[
+  {
+    "type": "agent-extracted",
+    "classes": [
+      {
+        "hash": "&lt;class-bytecodes-hash&gt;",
+        "nameInfo": "&lt;class-name"
+      }
+    ]
+  }
+]
+</code></pre>
+<blockquote>
+  <p>Note: Predefined classes metadata is not meant to be manually written.
+Note: Predefined classes are the best-effort approach for legacy projects, and they are not guaranteed to work.</p>
+</blockquote>
+    
+      <h2 id="further-reading">
         
         
           Further Reading <a href="#further-reading" class="anchor_heading">#</a>
         
         
-      </h3>
+      </h2>
 
 <ul>
   <li><a href="/jdk24/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Metadata Collection with the Tracing Agent</a></li>
