@@ -288,3 +288,15 @@ async function copyCode(event) {
 $('pre code').each(function (i, block) {
   hljs.highlightBlock(block);
 });
+
+// Redirect to latest documentation version
+function selected(val, version) {
+   // Get the current URL path and split it
+   var pathArray = window.location.pathname.split('/');
+   // Remove the current version (for example, "jdk22") from the path
+   pathArray[1] = version;
+   // Join the path back together and redirect to the new URL
+   var newPath = pathArray.join('/');
+   
+   location = newPath;
+}
