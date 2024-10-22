@@ -105,7 +105,7 @@ wget https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-
 curl https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}
 
 # Download from archive
-curl https://download.oracle.com/java/${majorJavaVersion}/archive/jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`);
+curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`);
 }
 
 function updateDownloadButton(majorJavaVersion) {
