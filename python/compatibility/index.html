@@ -210,14 +210,27 @@
         return `${part} (${Math.round(part / total * 100 * 100) / 100}%)`
     }
     const updateStatistics = function (count, countCompatible, countUntested, countIncompatible, countNotSupported) {
-        let currentShare = countCompatible / count * 360;
-        $('#pycomp-chart-compatible').css('transform', `rotate(${currentShare}deg)`);
-        currentShare += countUntested / count * 360;
-        $('#pycomp-chart-untested').css('transform', `rotate(${currentShare}deg)`);
-        currentShare += countIncompatible / count * 360;
-        $('#pycomp-chart-incompatible').css('transform', `rotate(${currentShare}deg)`);
-        currentShare += countNotSupported / count * 360;
-        $('#pycomp-chart-not-supported').css('transform', `rotate(${currentShare}deg)`);
+        var offset = 0;
+        var svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160">
+          <g transform="rotate(-90)" transform-origin="80 80">`;
+        const drawOne = function(name, size, color) {
+          svg += `<circle r="64" cx="80" cy="80"
+            fill="none" pathLength="${count}"
+            stroke="${color}" stroke-width="32"
+            stroke-dasharray="0 ${offset} ${size} ${count - offset - size}">
+              <title>${name}: ${toStatisticsText(size, count)}</title>
+            </circle>
+          `;
+          offset += size;
+        }
+        drawOne('Compatible', countCompatible, '#13A97C');
+        drawOne('Untested', countUntested, '#76D1FF');
+        drawOne('Incompatible', countIncompatible, '#C84D4D');
+        drawOne('Unsupported', countNotSupported, '#D7D7D7');
+        svg += `</g></svg>`;
+        var chart = document.getElementById('pie-chart');
+        chart.innerHTML = svg;
+
         $('#pycomp-stats-compatible').text(toStatisticsText(countCompatible, count));
         $('#pycomp-stats-untested').text(toStatisticsText(countUntested, count));
         $('#pycomp-stats-incompatible').text(toStatisticsText(countIncompatible, count));
@@ -237,7 +250,7 @@
             $('#dataTable tbody').empty();
             for (let package in database.db) {
                 const versions = database.db[package]
-                for (let version in versions) {
+                versions_loop: for (let version in versions) {
                     if (version.startsWith('~')) {
                         continue;
                     }
@@ -256,8 +269,8 @@
                             countNotSupported++;
                             break;
                         default:
-                            console.log(`Unknown test_status: ${info.test_status}`);
-                            break;
+                            console.log(`Unknown test_status: ${info.test_status} for package ${info.name}`);
+                            continue versions_loop;
                     }
                     const styling = count++ < rowsPerPage ? '' : ' style="display: none;"';
                     $('#dataTable tbody').append(`
@@ -380,7 +393,7 @@
         <div class="pycomp">
             <div class="container">
                 <h5 class="pycomp-text">To ensure GraalPy is compatible with common Python packages, the GraalPy team conducts
-                    compatibility testing to verify the presence and correct functioning of 
+                    compatibility testing to verify the presence and correct functioning of
                   	the top 500 packages on PyPI plus some more that are of special interest to us, including
                   	libraries and frameworks such as NumPy, Pandas, and Django.</h5>
                 <h5 class="pycomp-text">Compatibility testing ensures that
@@ -400,12 +413,7 @@
                     <div class="container">
                         <div class="pycomp__chart">
                             <div class="pycomp__chart-row">
-                                <div class="chart">
-                                    <div class="slice slice-1" id="pycomp-chart-compatible"></div>
-                                    <div class="slice slice-2" id="pycomp-chart-untested"></div>
-                                    <div class="slice slice-3" id="pycomp-chart-incompatible"></div>
-                                    <div class="slice slice-4" id="pycomp-chart-not-supported"></div>
-                                    <div class="center"></div>
+                                <div class="chart" id="pie-chart">
                                 </div>
                                 <div class="legend">
                                     <div>
