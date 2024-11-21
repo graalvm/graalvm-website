@@ -9,13 +9,13 @@
 
   <title>
     
-      Tracking Profile Quality
+      Optimize Memory Footprint of a Native Executable
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/PGO/profile-quality/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/optimize-memory-footprint/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -40,7 +40,7 @@
 
 
   <body class="preload">
-    <div class="wrapper wrapper--nofooter">
+    <div  class="wrapper wrapper--nofooter" >
       <header  class="header header--content" 
   role="banner">
 
@@ -137,496 +137,311 @@
   </div>
   
 </header>
-      <main class="content" aria-label="Content">
-        <div class="wrapper wrapper-content">
-  <article>
-  <div class="row d-flex flex-wrap">
-    <div class="col-sm-3 docsimpro col-bg">
-      <div class="sidebar-wrap">
-        <div class="sidebar">
-          <div class="menuabout">
-            <img id="sidebarClose" src='/resources/img/docs-sidebar/arrow-sidebar(close).svg'
-              alt="Expand or collapse sidebar" class="btn-color no-display">
-            <img id="sidebarOpen" src='/resources/img/docs-sidebar/arrow-sidebar.svg' alt="Expand or collapse sidebar">
-          </div>
-          
-<div class="toc-floating">
+      <main  class="content"   aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm light-back">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
+      <br>
+      <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
+      <h1 id="optimize-memory-footprint-of-a-native-executable">Optimize Memory Footprint of a Native Executable</h1>
 
+<p>Choosing an appropriate garbage collector and tailoring the garbage collection configuration can reduce GC times and memory footprint.
+When running a native image, Java heap settings are determined based on the system configuration and GC.
+You can override the default configuration to further improve your use case on the relevant metrics.</p>
 
-<script>
-var sidebar = document.currentScript.parentElement;
+<p>This guide demonstrates how to optimize an application in the area of memory consumption and trade off between GC pause times, memory footprint, and performance.</p>
 
+<h3 id="prerequisite">Prerequisite</h3>
 
-$(document).ready(function(){
-  var header = $('.header').height();
-  var invisibleBlock;
+<p>Make sure you have installed Oracle GraalVM for JDK 23 or later.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal" target="_blank">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/" target="_blank">Downloads</a> section.</p>
 
-  $("#content-wrapper h1, #content-wrapper h2").each(function() {
-    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
-  });
+<h2 id="1-prepare-the-application">1. Prepare the Application</h2>
 
-  $(window).scroll(function() {
-    var lastitem = null;
-    $("#content-wrapper h1, #content-wrapper h2").each(function() {
-      var heading = $(this);
-      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
-      var listitem = $(sidebar).find("li").filter(function() {
-        return $(this).find("a").attr("href") == "#" + heading.attr("id");
-      });
-      listitem.removeClass("toc-bullets-focused");
-      if (position <= 0) {
-        lastitem = listitem;
-      }
-    });
-    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
-  });
-});
+<p>A Java application that does some heavy text processing, like log analysis, where large strings are frequently concatenated, split, or manipulated, is a good approach to stress test the garbage collector.</p>
 
-</script>
+<p>The application you will use generates a significant number of temporary strings putting pressure on the GC.</p>
 
-<!-- Docs version dropdown -->
-<section class="versions">
-  <div class="dropdown">
-    <div class="d-flex align-items-center version-dropdown">
-      <input name="select_value" type="hidden" id="selectedValue">
-      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
-        <span class="value-text" id="valueText">Version</span>
-      </div>
-      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
-        <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
-        <li class="select-option" onclick="window.open('https://github.com/oracle/graal/tree/master/docs', '_blank').focus()">Dev Build</li>
-      </ul>
-    </div>
-  </div>
-</section>
+<ol>
+  <li>Save the following Java code in a file named <em>StringManipulation.java</em>:
+    <pre><code class="language-java"> import java.util.ArrayDeque;
 
-<ul class="toc-bullets">
+ public class StringManipulation {
 
-  
+     public static void main(String[] args) {
+         System.out.println("Starting string manipulation GC stress test...");
 
-  
+         // Parse arguments
+         int iterations = 1000000;
+         int numKeptAliveObjects = 100000;
+         if (args.length &gt; 0) {
+             iterations = Integer.parseInt(args[0]);
+         }
+         if (args.length &gt; 1) {
+             numKeptAliveObjects = Integer.parseInt(args[1]);
+         }
 
-  
+         ArrayDeque&lt;String[]&gt; aliveData = new ArrayDeque&lt;String[]&gt;(numKeptAliveObjects + 1);
+         for (int i = 0; i &lt; iterations; i++) {
+             // Simulate log entry generation and log entry splitting. The last n entries are kept in memory.
+             String base = "log-entry";
+             StringBuilder builder = new StringBuilder(base);
 
-  
+             for (int j = 0; j &lt; 100; j++) {
+                 builder.append("-").append(System.nanoTime());
+             }
 
-  
+             String logEntry = builder.toString();
+             String[] parts = logEntry.split("-");
 
-  
+             aliveData.addLast(parts);
+             if (aliveData.size() &gt; numKeptAliveObjects) {
+                 aliveData.removeFirst();
+             }
 
-  
+             // Periodically log progress
+             if (i % 100000 == 0) {
+                 System.out.println("Processed " + i + " log entries");
+             }
+         }
 
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-    
-
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
-            Profile-Guided Optimization
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">
-              Basic Usage of Profile-Guided Optimization
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">
-              Inspecting a Profile in a Build Report
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/LCOV/">
-              Making Sense of PGO Reports Using LCOV
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/merging-profiles/">
-              Merging Profiles from Multiple Sources
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub toc-bullets-highlight">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/profile-quality/">
-              Tracking Profile Quality
-            </a>
-          </li>
-
-          
-            <div>
-  <script>
-    var scriptElement = document.currentScript;
-    var div = $(scriptElement.parentElement);
-    $(window).on("load", function() {
-      $("#content-wrapper h2").each(function() {
-        var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-        a.text($(this).text().replace('#', ''));
-        li.append(a);
-        div.append(li);
-      });
-    });
-  </script>
-</div>
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/iprof-file-format/">
-              The iprof File Format
-            </a>
-          </li>
-
-          
-        
-          
-          <li class="toc-bullets-sub">
-          
-            
-            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/faq/">
-              PGO Frequently Asked Questions
-            </a>
-          </li>
-
-          
-        
-      
-    
-  
-
-  
-
-  
-
-  
-
-  
-
-</div>
-        </div>
-      </div>
-    </div>
-    <div class="col-sm-9 docsmod">
-      <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-        
-  <ul class="breadcrumb">
-    <li><a href='/'>Home</a></li>
-    
-    
-      
-      <li>
-        <a href="/dev/">
-          Dev
-        </a>
-      </li>
-      
-    
-      
-      <li>
-        <a href="/dev/reference-manual/">
-          Reference Manual
-        </a>
-      </li>
-      
-    
-      
-      <li>
-        <a href="/dev/reference-manual/native-image/">
-          Native Image
-        </a>
-      </li>
-      
-    
-      
-      <li>
-        <a href="/dev/reference-manual/native-image/optimizations-and-performance/">
-          Optimizations And Performance
-        </a>
-      </li>
-      
-    
-      
-      <li>
-        <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
-          Pgo
-        </a>
-      </li>
-      
-    
-      
-    
-  </ul>
-
-
-        
-        <h1 id="tracking-profile-quality">
-        
-        
-          Tracking Profile Quality
-        
-        
-      </h1>
-
-<p>The most challenging step when using PGO for Native Image is gathering a profile for a relevant workload.
-Because your source code evolves, your application is rarely static in time.
-It is sometimes very time consuming to go through the steps of “build-instrumented-image”, “gather-profile”, and “build-optimized-image” for every change to your source code.
-This document gives some answers to the question “How long can I continue to use an existing profile as my application’s source code changes over time?”</p>
-    
-      <h2 id="approach-1-reuse-the-profile-indefinitely">
-        
-        
-          Approach 1: Reuse the Profile Indefinitely <a href="#approach-1-reuse-the-profile-indefinitely" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>When you build an optimized application, Native Image aims to do the best it can with the given profile.
-This means that providing an out-of-date profile for your application (or even a profile for a completely different application) should not stop Native Image from producing a native executable.</p>
-
-<blockquote>
-  <p>Note: An incorrect profile can result in worse performance than no profile. This is because an incorrect profile can lead the compiler to spend optimization resources on the wrong elements of the application and deprioritize the important elements.</p>
-</blockquote>
-
-<p>All that said, reusing a single profile indefinitely for an evolving application will sooner or later turn counterproductive.</p>
-    
-      <h2 id="approach-2-collect-profiles-periodically">
-        
-        
-          Approach 2: Collect Profiles Periodically <a href="#approach-2-collect-profiles-periodically" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Since your application can periodically change, it is logical to periodically collect a fresh profile.
-One way to achieve this would be a daily Linux cron job that builds an instrumented version of the application using the tip of the master branch, runs a workload to gather a profile, and uploads the resulting <em>iprof</em> file to an FTP server from which other optimizing builds can download it.
-This ensures that the difference between the application version that is being built and the profile that is being used is never greater than a fixed time interval (24h in this example).</p>
-
-<p>However, gathering a profile periodically extends compute time, so it should be balanced against the frequency at which the application changes.
-If your application is relatively stable and the source code changes infrequently, then it is fine to re-profile less often.
-Some things to keep in mind:</p>
-<ul>
-  <li>Align your profiling schedule with the application-release schedule, to avoid building an application with a stale profile.</li>
-  <li>Ideally, convert the production workload into a reproducible workload, collect the profiles as part of your build, and then create an optimized native executable with profiles that are always fresh.</li>
-</ul>
-
-<p>That way, you do not risk having stale or misaligned profiles as long as your workload executes the same parts of the application that will later execute in production.</p>
-    
-      <h2 id="approach-3-track-the-profile-quality-metrics-over-time">
-        
-        
-          Approach 3: Track the Profile-Quality Metrics Over Time <a href="#approach-3-track-the-profile-quality-metrics-over-time" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>To better understand the quality of a profile, Native Image provides two metrics that you can request when building an optimized executable: <em>profile relevance</em> and <em>profile applicability</em>.
-These metrics reflect the relationship between a profile and the methods and classes that appear in an optimized executable.</p>
-
-<p>A change in the values of these two metrics between builds (that use the same profile) indicates that the set of classes and/or methods in those builds has also changed (between the time the profile was collected and the current build).</p>
-    
-      <h3 id="how-to-obtain-profile-quality-metrics">
-        
-        
-          How to Obtain Profile-Quality Metrics <a href="#how-to-obtain-profile-quality-metrics" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>To calculate and print the profile-quality metrics, pass the <code>-H:+PGOPrintProfileQuality</code> option when building an optimized native executable. (This option is experimental.)</p>
-
-<p>Let’s consider the Game Of Life example application which was introduced in <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimization</a>:</p>
-<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof -H:+PGOPrintProfileQuality
+         System.out.println("String manipulation GC stress test completed: " + aliveData.hashCode());
+     }
+ }
+</code></pre>
+    <p>At run time, you specify on the command line how long this application should run (the 1st argument, number of iterations) and how much memory it should keep alive (the 2nd argument).</p>
+  </li>
+  <li>Compile and run the application on HotSpot, timing the results:
+    <pre><code class="language-bash"> javac StringManipulation.java
+</code></pre>
+    <pre><code class="language-bash"> /usr/bin/time java StringManipulation 500000 50000
 </code></pre>
 
-<p>In the build output, at phase 5, you should see an additional line about profile applicability and profile relevance:</p>
-<pre><code class="language-bash">GraalVM Native Image: Generating 'gameoflife-pgo' (executable)
-...
-[5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
-Info: PGO: Profile applicability is 21.74%. Profile relevance is 72.71%.
-...
+    <p>On a machine with 48GB of memory, 8 CPUs, and the default G1 GC on HotSpot, the results should be similar, displaying the user and elapsed time, system CPU usage, and the maximum memory usage required to execute this request:</p>
+    <pre><code> Starting string manipulation GC stress test...
+ Processed 0 log entries
+ Processed 100000 log entries
+ Processed 200000 log entries
+ Processed 300000 log entries
+ Processed 400000 log entries
+ String manipulation GC stress test completed: 1791741888
+ 6.61user 0.57system 0:03.35elapsed 214%CPU (0avgtext+0avgdata 4046128maxresident)k
+ 0inputs+64outputs (8major+39776minor)pagefaults 0swaps
+</code></pre>
+    <p>The results show a wall-clock time of 3.35 seconds, a total CPU time of 6.61 seconds + 0.57 seconds (indicating actual CPU usage), and a maximum memory usage of 3.85GB (resident set size, RSS).</p>
+  </li>
+</ol>
+
+<h2 id="2-build-a-native-image-with-default-gc">2. Build a Native Image with Default GC</h2>
+
+<p>Now compile this application ahead of time with the default garbage collector in Native Image which is <a href="/jdk24/reference-manual/native-image/optimizations-and-performance/MemoryManagement/#serial-garbage-collector">Serial GC</a>.
+Serial GC is a non-parallel, stop and copy GC optimized for low memory footprint and small Java heap sizes.</p>
+
+<ol>
+  <li>Build with <code>native-image</code>:
+    <pre><code class="language-bash"> native-image -o testgc-serial StringManipulation
+</code></pre>
+    <p>The <code>-o</code> option defines the name of the output file to be generated.</p>
+
+    <p>The build output prints the GC information at the <a href="/jdk24/reference-manual/native-image/overview/BuildOutput/#build-stages">Initialization stage</a> which is:</p>
+    <pre><code> [1/8] Initializing...
+ ...
+ Garbage collector: Serial GC (max heap size: 80% of RAM)
+ ...
+</code></pre>
+  </li>
+  <li>Run the native executable with the same arguments, timing the results:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-serial 500000 50000
+</code></pre>
+    <p>The resources usage is now different:</p>
+    <pre><code> Starting string manipulation GC stress test...
+ ...
+ 8.82user 1.24system 0:10.10elapsed 99%CPU (0avgtext+0avgdata 611272maxresident)k
+ 0inputs+0outputs (0major+854664minor)pagefaults 0swaps
 </code></pre>
 
-<p>The absolute values of these metrics do not tell you much, and should not be considered in isolation.
-As mentioned earlier, these metrics describe the relationship between the profile and application’s code.
-If you change the application and reuse the profile, you should see a change in the values of the metrics.</p>
+    <p>When using the default GC, this benchmark shows higher elapsed time but a lower maximum resident set size compared to the HotSpot run above.</p>
+  </li>
+  <li>Get more insights for this GC by passing <code>-XX:+PrintGC</code> at run time to print the logs:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-serial 500000 50000 -XX:+PrintGC
+</code></pre>
+    <p>Notice that pause times are high with Serial GC, which can be a problem for applications where latency is important. For example:</p>
+    <pre><code> [9.301s] GC(55) Pause Full GC (Collect on allocation) 400.19M-&gt;214.69M 318.384ms
+</code></pre>
+    <p>Here, the GC paused the application for 318.384ms.</p>
+  </li>
+</ol>
 
-<p>For example, apply a simple “method-rename” refactoring to the <code>applyRules ()</code> application method.
-From the profile’s perspective, the <code>applyRules ()</code> method was removed from the set of methods in the application and a new method called <code>applyGameRules</code> was introduced.
-Rerunning the optimized build with the same profile and the modified application returns the following output:</p>
+<h2 id="3-build-a-native-image-with-g1-gc">3. Build a Native Image with G1 GC</h2>
 
-<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof -H:+PGOPrintProfileQuality
-========================================================================================================================
-GraalVM Native Image: Generating 'gameoflife-pgo' (executable)...
-...
-[5/8] Inlining methods...     [***]                                                                      (0.4s @ 0.28GB)
-Info: PGO: Profile applicability is 21.67%. Profile relevance is 72.66%.                                                                  (6.8s @ 0.29GB)
-...
+<p>The next step is to change the garbage collector. 
+Native Image supports the <a href="/jdk24/reference-manual/native-image/optimizations-and-performance/MemoryManagement/#g1-garbage-collector">G1 garbage collector</a> by passing <code>--gc=G1</code> to the <code>native-image</code> builder. 
+G1 GC is a generational, incremental, parallel, mostly concurrent, stop-the-world GC, recommended for improving latency and throughput of the application.</p>
+
+<blockquote>
+  <p>G1 GC is available with Oracle GraalVM and supported on Linux only.</p>
+</blockquote>
+
+<blockquote>
+  <p>We recommend using G1 GC in combination with <a href="/jdk24/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Profile-Guided Optimization (PGO)</a> for the best application performance. However, PGO is not applied in this guide to keep the instructions straightforward.</p>
+</blockquote>
+
+<ol>
+  <li>Build the second native executable with G1 GC, specifing a different name for the output file, so the executables will not overwrite each other:
+    <pre><code class="language-bash"> native-image --gc=G1 -o testgc-g1 StringManipulation
 </code></pre>
 
-<p>Recall that the profile applicability in the first build was 21.74%, and now it is 21.67%.
-Similarly, the profile relevance in the first build was 72.71%, and now it is 72.66%.
-The small change to the code resulted in a small metrics value change, informing you that the profile might be slightly out-of-date.</p>
+    <p>The build output now prints a different GC information:</p>
+    <pre><code> [1/8] Initializing...
+ ...
+ Garbage collector: G1 GC (max heap size: 25.0% of RAM)
+</code></pre>
+  </li>
+  <li>Run this native executable with the same arguments, passing also <code>-XX:+PrintGC</code> to get more insights into pause times, and compare the results:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-g1 500000 50000 -XX:+PrintGC
+</code></pre>
+    <pre><code> ...
+ Processed 300000 log entries
+ [2.705s][info][gc] GC(16) Pause Young (Normal) (G1 Evacuation Pause) 2301M-&gt;1690M(4840M) 25.144ms
+ Processed 400000 log entries
+ [3.322s][info][gc] GC(17) Pause Young (Normal) (G1 Evacuation Pause) 2715M-&gt;1870M(4840M) 20.364ms
+ String manipulation GC stress test completed: 305943342
+ 5.77user 0.47system 0:03.85elapsed 161%CPU (0avgtext+0avgdata 3707920maxresident)k
+ 0inputs+0outputs (0major+12980minor)pagefaults 0swaps
+</code></pre>
+
+    <p>G1 GC is significantly faster than Serial GC, so the wall-clock time drops from 10.1s to 3.85s.
+ Pause times are much better!
+ However, memory usage with G1 GC is higher than with Serial GC.</p>
+
+    <p>When compared with the HotSpot execution above (which also uses the G1 GC), performance is on the same level, while memory usage is lower (3.68GB versus 3.85GB) because objects are more compact in Native Image than on HotSpot.
+ The total CPU time is lower as well.</p>
+  </li>
+</ol>
+
+<h2 id="4-build-a-native-image-with-epsilon-gc">4. Build a Native Image with Epsilon GC</h2>
+
+<p>There is one more garbage collector supported by Native Image: <a href="/jdk24/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Epsilon GC</a>.
+Epsilon GC is a no-op garbage collector that does not do any garbage collection and therefore never frees any allocated memory.
+The primary use case for this GC are very short running applications that only allocate a small amount of memory.</p>
+
+<p>Epsilon GC should only be used in very specific cases.
+We recommend always comparing Epsilon GC against the default GC (Serial GC) to determine if Epsilon GC really provides an actual benefit for your application.</p>
+
+<ol>
+  <li>To enable the Epsilon GC, pass <code>--gc=epsilon</code> at image build time:
+    <pre><code class="language-bash"> native-image --gc=epsilon -o testgc-epsilon StringManipulation
+</code></pre>
+
+    <p>The build output reports about Epsilon GC being used:</p>
+    <pre><code> [1/8] Initializing...
+ ...
+ Garbage collector: Epsilon GC (max heap size: 80% of RAM)
+</code></pre>
+  </li>
+  <li>Run this native image but increase the number of iterations:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-epsilon 3200000 50000
+</code></pre>
+    <pre><code> Starting string manipulation GC stress test...
+ ...
+ Processed 3100000 log entries
+ Exception in thread "main" 
+ Exception: java.lang.OutOfMemoryError thrown from the UncaughtExceptionHandler in thread "main"
+ PlatformThreads.ensureCurrentAssigned() failed during shutdown: java.lang.OutOfMemoryError: Could not allocate an aligned heap chunk because the heap address space is exhausted. Consider re-building the image with compressed references disabled ('-H:-UseCompressedReferences').
+ Command exited with non-zero status 1
+ 21.07user 13.11system 0:34.25elapsed 99%CPU (0avgtext+0avgdata 33556824maxresident)k
+ 0inputs+0outputs (0major+8387698minor)pagefaults 0swaps
+</code></pre>
+    <p>The <code>OutOfMemoryError</code> exception happens because Epsilon GC does not do any garbage collection, and the heap is full at some point.
+ You need to reduce how long this application should run.</p>
+
+    <p>The usage results are not comparable to the ones in the previous steps because more work was performed (more iterations).</p>
+  </li>
+</ol>
+
+<h2 id="5-build-a-native-image-setting-the-maximum-heap-size">5. Build a Native Image Setting the Maximum Heap Size</h2>
+
+<p>By default, a native image will set its maximum Java heap size to 80% of the physical memory when using Serial or Epsilon GC, and to 25% when using G1 GC.
+For example, on a machine with 16GB of RAM, the maximum heap size will be set to 12.8GB with Serial or Epsilon GC.
+However, if you run on Oracle GraalVM with compressed references support enabled, the maximum Java heap cannot be larger than 32GB.
+This information can be found in the output for each build.</p>
+
+<p>To override the default behavior, you can explicitly set the maximum heap size.
+There are two ways to do that.</p>
+
+<h3 id="51-set-the-maximum-heap-size-at-run-time">5.1. Set the Maximum Heap Size at Run Time</h3>
+
+<p>The first and recommended way is to build a native image with the default heap settings, and then override the maximum heap size in bytes at run time using <code>-Xmx</code>.
+Test this option with both Serial G1 and G1 GC native images.</p>
+
+<ol>
+  <li>Serial GC:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-serial -Xmx512m 500000 50000
+</code></pre>
+    <pre><code> Starting string manipulation GC stress test...
+ ...
+ 9.53user 1.40system 0:10.99elapsed 99%CPU (0avgtext+0avgdata 590404maxresident)k
+ 0inputs+0outputs (0major+953535minor)pagefaults 0swaps
+</code></pre>
+  </li>
+  <li>G1 GC:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-g1 -Xmx512m 500000 50000
+</code></pre>
+    <pre><code> Starting string manipulation GC stress test...
+ ...
+ 14.99user 0.41system 0:05.13elapsed 300%CPU (0avgtext+0avgdata 554004maxresident)k
+ 0inputs+0outputs (0major+5622minor)pagefaults 0swaps
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="52-define-the-maximum-heap-size-at-build-time">5.2. Define the Maximum Heap Size at Build Time</h3>
+
+<p>The second way is to build a native image and set a new default value for the maximum heap size using the <code>-R:MaxHeapSize</code> option.
+This default will then be used at run time, unless it is explicitly overridden at run time by passing the <code>-X...</code> or <code>-XX:...</code> options.</p>
+
+<ol>
+  <li>Create a new native executable:
+    <pre><code class="language-bash"> native-image --gc=G1 -R:MaxHeapSize=512m -o testgc-maxheapset-g1 StringManipulation
+</code></pre>
+    <p>Notice the updated GC information:</p>
+    <pre><code> [1/8] Initializing...
+ ...
+ Garbage collector: G1 GC (max heap size: 512.00MB)
+</code></pre>
+  </li>
+  <li>Run it with the same load:
+    <pre><code class="language-bash"> /usr/bin/time ./testgc-maxheapset-g1 500000 50000
+</code></pre>
+    <p>On this test machine, the results should match the previous numbers at step 5.1:</p>
+    <pre><code> Starting string manipulation GC stress test...
+ ...
+ 14.87user 0.44system 0:05.33elapsed 287%CPU (0avgtext+0avgdata 552292maxresident)k
+ 0inputs+0outputs (0major+5694minor)pagefaults 0swaps
+</code></pre>
+  </li>
+</ol>
 
 <blockquote>
-  <p>Note: In this example you renamed of a very hot method. This change is likely to cause a performance regression since profiles cannot be applied to a hot method. A similar change made in the cold code of the application would result in a similar reduction in these metrics,
-but this should not impact performance.
-Note that these metrics are a measure of the relationship between the provided profile and the set of methods in the application, and are not in any way a measurement or prediction of any performance impact a change of the profile, application source code, or dependencies may have.
-These numbers also make little sense or have little utility when observed in one single build.
-Their utility comes from observing the metrics change when re-using profile across builds or providing a different profile for the same build of the application.</p>
+  <p>Besides <code>-Xmx</code>, there are plenty of other GC-specific options that experts can use for performance tuning, for example, <code>-XX:MaxGCPauseMillis</code> to set target maximum pause times. Find a full list of performance tuning options in the <a href="/jdk24/reference-manual/native-image/optimizations-and-performance/MemoryManagement/#performance-tuning">reference documentation</a>.</p>
 </blockquote>
-    
-      <h3 id="profile-quality-metric-applicability">
-        
-        
-          Profile Quality Metric: <em>Applicability</em> <a href="#profile-quality-metric-applicability" class="anchor_heading">#</a>
-        
-        
-      </h3>
 
-<p>The applicability metric answers the following question: “How applicable is this profile to the application’s methods?”.
-During the compilation of individual methods in the application, it keeps track of how many locations N in the code needed a profile,
-and how many times S a profile was available.
-The profile applicability metric is the ratio <code>S / N</code>, expressed as a percentage.</p>
+<h3 id="summary">Summary</h3>
 
-<p>This means that adding new code to the application (and not to the profile) should result in a reduction in profile applicability.
-This is because more code means more requests for profiles, and the same number of times that the profile <em>can</em> be applied (S),
-is divided with a larger number of total requests for profiles (N).</p>
+<p>Selecting the right garbage collector and configuring a suitable garbage collection configuration can significantly reduce GC pauses and improve overall application responsiveness.
+You can achieve more predictable memory usage, helping your native application run more efficiently under varying workloads.
+This guide provides insights into choosing the best GC strategy depending on your application goals: low latency, minimal memory overhead, or optimal performance.</p>
 
-<blockquote>
-  <p>Note: It is wrong to expect a profile applicability of 100%.
-A good workload will, in almost all cases, differentiate between the hot and the cold parts of the application,
-and will not execute some of the cold parts of the code.
-For this reason, the profile will not contain any entries for the cold parts of the application (such as, for example, the exception handlers),
-which are anyway rarely executed in the real workload.
-A 100% applicability would mean that all parts of the code in the image were fully profiled, which is almost never the case in practice.</p>
-</blockquote>
-    
-      <h3 id="profile-quality-metric-relevance">
-        
-        
-          Profile Quality Metric: <em>Relevance</em> <a href="#profile-quality-metric-relevance" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The relevance metric aims answers the question: “To what extent do the profile contents match the application methods?”.
-When loading a profile, all its data is checked against the set of application methods, and all the entries that do not match those methods are dropped.
-For example, if you remove a method from a class but use a profile that still has entries for that method, then all those entries will be dropped during profile-loading.
-Profile relevance is the percentage of data that was <em>not</em> dropped during loading.</p>
-
-<p>This means that removing code from the application (and not from the profile) should result in the profile relevance reduction, because the percent of data in the profile which is relevant to the new application version is reduced.
-On the other hand, adding new code (say a new class or dependency) to the application would not affect this metric since the amount of data you need to drop from the profile does not change.</p>
-
-<blockquote>
-  <p>Note: It is wrong to expect that building an optimized binary of exactly the same application as the one used to gather the profile will result in the profile relevance of 100%.
-This is not the case because the methods of the instrumented binary and the optimized binary differ in subtle ways.
-For example, the instrumented binary contains code for gathering the profile data as well as code for serializing that data to a file.
-This code is unnecessary and thus not present in the optimized binary.
-Looking at the Game Of Life example, the relevance around 70% is primarily due to the application being very small (a single Java class of less than 120 lines of code). 
-Thus the differences in the set of methods of the instrumented and the optimized binary are rather exaggerated.
-For larger, real-world applications, this percentage is typically larger, but not 100%.</p>
-</blockquote>
-    
-      <h3 id="further-reading">
-        
-        
-          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
-        
-        
-      </h3>
+<h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
-  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/merging-profiles/">Merging Profiles from Multiple Sources</a></li>
-  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/faq/">PGO Frequently Asked Questions</a></li>
+  <li><a href="/jdk24/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Memory Management in Native Image</a></li>
 </ul>
 
       </div>
-      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
-        <div class="hamburger">
-          <div class="inner"></div>
-        </div>
-      </div>
-    </div>
   </div>
-</article>
 </div>
-
       </main>
       <!-- Connect with us -->
 <section class="content-section socials">
@@ -805,8 +620,6 @@ For larger, real-world applications, this percentage is typically larger, but no
     <div class="overlay"></div>
     <script src='/resources/lib/slick-slider/slick.min.js'></script>
     <script src='/resources/js/main.js'></script>
-    <script src='/resources/js/download.js'></script>
-    <script src='/resources/js/sidebar.js'></script>
     <script src='/resources/js/favicon.js'></script>
   </body>
 </html>
