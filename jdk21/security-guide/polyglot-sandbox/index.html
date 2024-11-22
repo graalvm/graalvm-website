@@ -664,7 +664,7 @@ As an example, an antipattern would be to implement a third party interface and 
 
 <p>The ISOLATED and UNTRUSTED sandbox policies require setting resource limits for a context.
 Different configurations can be provided for each context.
-If a limit is exceeded, evaluation of the code fails and the context is canceled with a <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/PolyglotException.html"><code>PolyglotException</code></a> which returns <code>true</code> for <code>isResourceExhausted()</code>.
+If a limit is exceeded, evaluation of the code fails and the context is cancelled with a <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/PolyglotException.html"><code>PolyglotException</code></a> which returns <code>true</code> for <code>isResourceExhausted()</code>.
 At this point, no more guest code can be executed in the context</p>
 
 <p>The <code>--sandbox.TraceLimits</code> option allows you to trace guest code and record the maximum resource utilization.
@@ -862,7 +862,7 @@ This means that the limit may be exceeded by guest code.</p>
 There is one such thread for each memory-limited context (one with <code>sandbox.MaxHeapMemory</code> set).
 The retained bytes computation is done by yet another high-priority thread that is started from the allocated bytes checking thread as needed.
 The retained bytes computation thread also cancels the context if the heap memory limit is exeeded.
-Additionaly, when the low memory trigger is invoked, all contexts on engines with at least one memory-limited context are paused together with their allocation checkers.
+Additionaly, when the low memory trigger is invoked, all memory-limited contexts are paused together with their allocation checkers.
 All individual retained size computations are cancelled.
 Retained bytes in the heap for each memory-limited context are computed by a single high-priority thread.</p>
 
@@ -891,7 +891,7 @@ This can be configured by the <code>sandbox.RetainedBytesCheckInterval</code> op
 By default it is enabled (“true”). If disabled (“false”), retained size checking for the context can be triggered only by the low memory trigger.</p>
 
 <p>When the total number of bytes allocated in the heap for the whole host VM exceeds a certain factor of the total heap memory of the VM, <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.management/java/lang/management/MemoryMXBean.html">low memory notification</a> is invoked and initiates the following process.
-The execution for all engines with at least one execution context which has the <code>sandbox.MaxHeapMemory</code> option set is paused, retained bytes in the heap for each memory-limited context are computed, contexts exceeding their limits are cancelled, and then the execution is resumed.
+The execution pauses for all execution contexts where the <code>sandbox.MaxHeapMemory</code> option is set. The execution is resumed only when retained bytes in the heap for each memory-limited context are computed and contexts exceeding their limits are cancelled.
 The default factor is 0.7. This can be configured by the <code>sandbox.RetainedBytesCheckFactor</code> option.
 The factor must be between 0.0 and 1.0. All contexts using the <code>sandbox.MaxHeapMemory</code> option must use the same value for <code>sandbox.RetainedBytesCheckFactor</code>.</p>
 
@@ -902,6 +902,8 @@ That way the low memory trigger can be used together with libraries that also se
 <p>The described low memory trigger can be disabled by the <code>sandbox.UseLowMemoryTrigger</code> option.
 By default it is enabled (“true”). If disabled (“false”), retained size checking for the execution context can be triggered only by the allocated bytes checker.
 All contexts using the <code>sandbox.MaxHeapMemory</code> option must use the same value for <code>sandbox.UseLowMemoryTrigger</code>.</p>
+
+<p>The <code>sandbox.UseLowMemoryTrigger</code> option is not supported for the ISOLATED and UNTRUSTED sandbox policies as the polyglot engine runs in a <code>native-image</code> isolate for those policies. It is also not supported on a <code>native-image</code> host regardless of the policy. The option defaults to disabled (<code>false</code>) wherever it is not supported.</p>
     
       <h3 id="limiting-the-amount-of-data-written-to-standard-output-and-error-streams">
         
