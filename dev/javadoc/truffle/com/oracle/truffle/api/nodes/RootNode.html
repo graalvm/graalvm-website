@@ -25,7 +25,7 @@ loadScripts(document, 'script');</script>
 <!-- ========= START OF TOP NAVBAR ======= -->
 <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
 <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>47da7f5f47551468dac51ee1aa41626615175e7b</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>ad4220256a78cc48587e5ae9526c20cb22441d5c</div>
 <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
 <li><a href="../../../../../index.html">Overview</a></li>
 <li><a href="package-summary.html">Package</a></li>
@@ -334,9 +334,16 @@ loadScripts(document, 'script');</script>
 <div class="block">Allows languages to perform actions before a root node is attempted to be compiled without
  prior call to <a href="#execute(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute(VirtualFrame)</code></a>.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#translateStackTraceElement(com.oracle.truffle.api.TruffleStackTraceElement)" class="member-name-link">translateStackTraceElement</a><wbr>(<a href="../TruffleStackTraceElement.html" title="class in com.oracle.truffle.api">TruffleStackTraceElement</a>&nbsp;element)</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#prepareForCompilation(boolean,int,boolean)" class="member-name-link">prepareForCompilation</a><wbr>(boolean&nbsp;rootCompilation,
+ int&nbsp;compilationTier,
+ boolean&nbsp;lastTier)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Prepares this <a href="RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> for compilation.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#translateStackTraceElement(com.oracle.truffle.api.TruffleStackTraceElement)" class="member-name-link">translateStackTraceElement</a><wbr>(<a href="../TruffleStackTraceElement.html" title="class in com.oracle.truffle.api">TruffleStackTraceElement</a>&nbsp;element)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Translates the <a href="../TruffleStackTraceElement.html" title="class in com.oracle.truffle.api"><code>TruffleStackTraceElement</code></a> into an interop object supporting the
  <code>hasExecutableName</code> and potentially <code>hasDeclaringMetaObject</code> and
  <code>hasSourceLocation</code> messages.</div>
@@ -728,6 +735,76 @@ loadScripts(document, 'script');</script>
 </section>
 </li>
 <li>
+<section class="detail" id="prepareForCompilation(boolean,int,boolean)">
+<h3>prepareForCompilation</h3>
+<div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">prepareForCompilation</span><wbr><span class="parameters">(boolean&nbsp;rootCompilation,
+ int&nbsp;compilationTier,
+ boolean&nbsp;lastTier)</span></div>
+<div class="block">Prepares this <a href="RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> for compilation. This method is guaranteed to be called at
+ least once before any code paths are executed as compiled code (see
+ <a href="../CompilerDirectives.html#inCompiledCode()"><code>CompilerDirectives.inCompiledCode()</code></a>) for a given compilation tier. It may be called
+ multiple times per compilation and can be invoked concurrently by multiple compiler threads
+ without synchronization; therefore, it must be thread-safe.
+
+ By default, this method returns <code>true</code> to indicate sufficient profiling for
+ compilation, but implementations can return <code>false</code> if not. Returning
+ <code>false</code> for root compilations will defer the compilation to allow for additional
+ profiling, whereas otherwise returning <code>false</code> during inlining will disable
+ inlining for this call site. Any exception thrown will fail the compilation for this
+ <a href="RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> permanently.
+
+ Compilations are initiated by the runtime for optimization through partial evaluation and
+ compilation. The timing and threading of compilations are runtime-specific and should not be
+ relied upon. This method is not called for Truffle runtimes that do not support compilation,
+ such as the fallback runtime.
+
+ Compilations may be initiated for the following reasons:
+ <ul>
+ <li>The <a href="../CallTarget.html" title="interface in com.oracle.truffle.api"><code>CallTarget</code></a> for this <a href="RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> has been invoked frequently enough to
+ trigger compilation.
+ <li>A <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> or <a href="BytecodeOSRNode.html" title="interface in com.oracle.truffle.api.nodes"><code>BytecodeOSRNode</code></a> has executed frequently enough to trigger
+ OSR compilation.
+ <li>The compiler is exploring inlining during compilation, preparing to inline a
+ <a href="DirectCallNode.html" title="class in com.oracle.truffle.api.nodes"><code>DirectCallNode</code></a> or an indirect call with a partially evaluated constant
+ <a href="../CallTarget.html" title="interface in com.oracle.truffle.api"><code>CallTarget</code></a>.
+ </ul>
+
+ Work performed in this method counts towards compilation time, not interpretation time.
+ Implementing this method can help offload expensive computations to compiler threads. Cache
+ any preparation work to avoid repeating it for every compilation and inlining. To prevent
+ deadlocks when using synchronization, adhere to the following guidelines:
+ <ul>
+ <li>Do not execute guest code or invoke <a href="../CallTarget.html#call(java.lang.Object...)"><code>CallTarget.call(Object...)</code></a> within this
+ method.
+ <li>Avoid acquiring locks shared with execution threads, especially across call boundaries or
+ loop back-edges when OSR compilation is enabled.
+ <li>Use <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/atomic/AtomicReferenceFieldUpdater.html" title="class or interface in java.util.concurrent.atomic" class="external-link"><code>AtomicReferenceFieldUpdater</code></a> CAS-locking for caching non-expensive preparation
+ work to minimize contention.
+ <li>Ensure all synchronization primitives are released upon method exit; use finally blocks
+ for safety.
+ </ul>
+
+ Note that during the execution of this method, no language context is entered. Therefore, you
+ cannot use <a href="../ContextThreadLocal.html" title="class in com.oracle.truffle.api"><code>ContextThreadLocal</code></a>, <a href="../ContextLocal.html" title="class in com.oracle.truffle.api"><code>ContextLocal</code></a>, <a href="../TruffleLanguage.LanguageReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.LanguageReference</code></a>, or
+ <a href="../TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a>.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>rootCompilation</code> - <code>true</code> if this is a root compilation; <code>false</code> if
+            inlining this root.</dd>
+<dd><code>compilationTier</code> - the current compilation tier, as per
+            <a href="../frame/FrameInstance.html#getCompilationTier()"><code>FrameInstance.getCompilationTier()</code></a>.</dd>
+<dd><code>lastTier</code> - <code>true</code> if this is the last compilation tier for which this
+            <a href="RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> is prepared; <code>false</code> otherwise. Useful for performing
+            preparation only at the highest tier.</dd>
+<dt>Returns:</dt>
+<dd><code>true</code> if the method is sufficiently profiled; <code>false</code>
+         otherwise.</dd>
+<dt>Since:</dt>
+<dd>24.2</dd>
+</dl>
+</section>
+</li>
+<li>
 <section class="detail" id="isTrivial()">
 <h3>isTrivial</h3>
 <div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isTrivial</span>()</div>
@@ -835,10 +912,17 @@ loadScripts(document, 'script');</script>
  This method is invoked when no context is currently <a href="../TruffleContext.html#enter(com.oracle.truffle.api.nodes.Node)"><code>entered</code></a> therefore no guest application code must be executed. The execution might happen on
  any thread, even threads unknown to the guest language implementation. It is allowed to
  create new <a href="../CallTarget.html" title="interface in com.oracle.truffle.api"><code>call targets</code></a> during preparation of the root node or perform
- modifications to the <a href="../TruffleLanguage.html" title="class in com.oracle.truffle.api"><code>language</code></a> of this root node.</div>
+ modifications to the <a href="../TruffleLanguage.html" title="class in com.oracle.truffle.api"><code>language</code></a> of this root node.
+ <p></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>20.3</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#prepareForCompilation(boolean,int,boolean)"><code>prepareForCompilation(boolean, int, boolean)</code></a></li>
+</ul>
+</dd>
 </dl>
 </section>
 </li>
