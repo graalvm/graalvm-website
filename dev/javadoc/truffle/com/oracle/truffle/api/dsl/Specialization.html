@@ -25,7 +25,7 @@ loadScripts(document, 'script');</script>
 <!-- ========= START OF TOP NAVBAR ======= -->
 <div class="top-nav" id="navbar-top"><button id="navbar-toggle-button" aria-controls="navbar-top" aria-expanded="false" aria-label="Toggle navigation links"><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span><span class="nav-bar-toggle-icon">&nbsp;</span></button>
 <div class="skip-nav"><a href="#skip-navbar-top" title="Skip navigation links">Skip navigation links</a></div>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>095f62e270764a8e1f47b43c489508aa41784287</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>24.2.0-dev</b><br>7ea55ad8ac5cfcf3f2d4945991802bb7679536ef</div>
 <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
 <li><a href="../../../../../index.html">Overview</a></li>
 <li><a href="package-summary.html">Package</a></li>
@@ -220,8 +220,7 @@ loadScripts(document, 'script');</script>
 <div class="col-first odd-row-color"><code><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;[]</code></div>
 <div class="col-second odd-row-color"><code><a href="#rewriteOn()" class="member-name-link">rewriteOn</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">
- Declares an event guards that trigger re-specialization in case an exception is thrown in the
+<div class="block">Declares an event guards that trigger re-specialization in case an exception is thrown in the
  specialization body.</div>
 </div>
 <div class="col-first even-row-color"><code>int</code></div>
@@ -264,24 +263,16 @@ loadScripts(document, 'script');</script>
 <section class="detail" id="rewriteOn()">
 <h3>rewriteOn</h3>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;? extends <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Throwable.html" title="class or interface in java.lang" class="external-link">Throwable</a>&gt;[]</span>&nbsp;<span class="element-name">rewriteOn</span></div>
-<div class="block"><p>
- Declares an event guards that trigger re-specialization in case an exception is thrown in the
+<div class="block">Declares an event guards that trigger re-specialization in case an exception is thrown in the
  specialization body. This attribute can be used to declare a list of such exceptions. Guards
  of this kind are useful to avoid calculating a value twice when it is used in the guard and
  its specialization.
- </p>
-
  <p>
  If an event guard exception is triggered then all instantiations of this specialization are
  removed. If one of theses exceptions is thrown once then no further instantiations of this
  specialization are going to be created for this node.
 
- In case of explicitly declared <a href="../nodes/UnexpectedResultException.html" title="class in com.oracle.truffle.api.nodes"><code>UnexpectedResultException</code></a>s, the result from the
- exception will be used. For all other exception types, the next available specialization will
- be executed, so that the original specialization must ensure that no non-repeatable
- side-effect is caused until the rewrite is triggered.
- </p>
-
+ <p>
  <b>Example usage:</b>
 
  <pre>
@@ -302,7 +293,50 @@ loadScripts(document, 'script');</script>
    execute(Integer.MAX_VALUE - 1, 1) =&gt; doAddWithOverflow(Integer.MAX_VALUE - 1, 1)
  </pre>
 
- </p></div>
+ In case of explicitly declared <a href="../nodes/UnexpectedResultException.html" title="class in com.oracle.truffle.api.nodes"><code>UnexpectedResultException</code></a>s, the result from the
+ exception will be used. For all other exception types, the next available specialization will
+ be executed, so that the original specialization must ensure that no non-repeatable
+ side-effect is caused until the rewrite is triggered.
+ <p>
+ If a specialization declares an <a href="../nodes/UnexpectedResultException.html" title="class in com.oracle.truffle.api.nodes"><code>UnexpectedResultException</code></a> which is
+ <a href="#replaces()"><code>replaced</code></a> by another specialization with the same signature
+ and state, but without declared <a href="../nodes/UnexpectedResultException.html" title="class in com.oracle.truffle.api.nodes"><code>UnexpectedResultException</code></a> then the specialization is
+ used as so-called boxing overload of the replacing specialization. Boxing overloads share the
+ same state and must be implemented in a way such that they perform exactly the same
+ operation, with the exception of the unexpected result. Boxing overloads are used as direct
+ replacements when code for boxing elimination is generated. They are only used if an execute
+ method with the return type of the boxing overload and an <a href="../nodes/UnexpectedResultException.html" title="class in com.oracle.truffle.api.nodes"><code>UnexpectedResultException</code></a>
+ is declared in the node, or alternatively in the Bytecode DSL if the return type is
+ configured to be boxing eliminated. Boxing overloads share the state with its replacing
+ specialization, which makes them particularly useful to implement read nodes with boxing
+ elimination.
+ <p>
+ <b>Usage for boxing elimination:</b>
+
+ <pre>
+ &#64;Specialization(guards = "arg == cachedArg", limit = "2",
+                     rewriteOn = UnexpectedResultException.class)
+ int doInt(Object arg, &#64;Cached("arg") Object cachedArg)
+                                                  throws UnexpectedResultException {
+     if (cachedArg instanceof Integer i) {
+         return 42;
+     }
+     throw new UnexpectedResultException(cachedArg);
+ }
+
+ &#64;Specialization(guards = "arg == cachedArg", limit = "2", replaces = "doInt")
+ Object doGeneric(Object arg, &#64;Cached("arg") Object cachedArg) {
+     return cachedArg;
+ }
+
+ ...
+ Example executions:
+   execute(42) =&gt; doGeneric(42, 42)
+   executeInt(43) =&gt; doInt(43, 43)
+   executeInt(42) =&gt; doInt(42, 42)
+   // shared inline cache limit of 2 reached
+   execute(44) =&gt; <a href="UnsupportedSpecializationException.html" title="class in com.oracle.truffle.api.dsl"><code>UnsupportedSpecializationException</code></a>
+ </pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.8 or earlier</dd>
