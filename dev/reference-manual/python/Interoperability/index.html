@@ -536,8 +536,8 @@ assert java.instanceof(my_list, ArrayList)
 <p>Foreign objects are given a Python class corresponding to their interop traits:</p>
 
 <pre><code class="language-python">from java.util import ArrayList, HashMap
-type(ArrayList()).mro() # =&gt; [&lt;class 'polyglot.ForeignList'&gt;, &lt;class 'list'&gt;, &lt;class 'foreign'&gt;, &lt;class 'object'&gt;]
-type(HashMap()).mro() # =&gt; [&lt;class 'polyglot.ForeignDict'&gt;, &lt;class 'dict'&gt;, &lt;class 'foreign'&gt;, &lt;class 'object'&gt;]
+type(ArrayList()).mro() # =&gt; [&lt;class 'polyglot.ForeignList'&gt;, &lt;class 'list'&gt;, &lt;class 'polyglot.ForeignObject'&gt;, &lt;class 'object'&gt;]
+type(HashMap()).mro() # =&gt; [&lt;class 'polyglot.ForeignDict'&gt;, &lt;class 'dict'&gt;, &lt;class 'polyglot.ForeignObject'&gt;, &lt;class 'object'&gt;]
 </code></pre>
 
 <p>This means all Python methods of these types are available on the corresponding foreign objects, which behave as close as possible as if they were Python objects:</p>
@@ -559,20 +559,20 @@ h |= {3: 6} # {1: 2, 3: 6}
 h == {1: 2, 3: 6} # True
 </code></pre>
 
-<p>Specifically:</p>
-<ul>
-  <li>Foreign lists inherit from Python <code>list</code></li>
-  <li>Foreign dictionaries inherit from <code>dict</code></li>
-  <li>Foreign strings inherit from <code>str</code></li>
-  <li>Foreign iterators inherit from <code>iterator</code></li>
-  <li>Foreign exceptions inherit from <code>BaseException</code></li>
-  <li>Foreign numbers inherit from <code>ForeignNumberType</code> (since <code>InteropLibrary</code> has no way to differentiate integers and floats, but see below)</li>
-  <li>Foreign none/null inherit from <code>NoneType</code></li>
-  <li>Other foreign objects inherit from <code>foreign</code></li>
-</ul>
+<p>In case of a method defined both in Python and on the foreign object, the Python method wins.
+To call the foreign method instead, use <code>super(type_owning_the_python_method, foreign_object).method(*args)</code>:</p>
 
-<p>Note that Java primitives <code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code> and <code>BigInteger</code> values are considered Python <code>int</code> objects,
-and Java primitives <code>float</code>, <code>double</code> values are considered Python <code>float</code> objects.</p>
+<pre><code class="language-python">from java.util import ArrayList
+l = ArrayList()
+l.extend([5, 6, 7])
+l.remove(7) # Python list.remove
+assert l == [5, 6]
+
+super(list, l).remove(0) # ArrayList#remove(int index)
+assert l == [6]
+</code></pre>
+
+<p>See <a href="#interop-types-to-python">this section</a> for more interop traits and how they map to Python types.</p>
     
       <h2 id="interacting-with-other-dynamic-languages-from-python-scripts">
         
@@ -723,7 +723,7 @@ class Main {
         
       </h2>
 
-<p>The interop protocol defines different “types” which can overlap in all kinds of ways and have restrictions on how they can interact with Python.</p>
+<p>The interop protocol defines different “types/traits” which can overlap in all kinds of ways and have restrictions on how they can interact with Python.</p>
     
       <h3 id="interop-types-to-python">
         
@@ -733,12 +733,7 @@ class Main {
         
       </h3>
 
-<p>Most importantly and upfront: all foreign objects passed into Python have the Python type <code>foreign</code>.
-There is no emulation of (for example) objects that are of interop type “boolean” to have the Python type <code>bool</code>.
-This is because interop types can overlap in ways that the Python built-in types cannot, and we have yet to define which type should take precedence and such situations.
-We do expect to change this in the future, however.
-For now, the <code>foreign</code> type defines all of the Python special methods for type conversion that are used throughout the interpreter (methods such as <code>__add__</code>, <code>__int__</code>, <code>__str__</code>, <code>__getitem__</code>, and so on)
-and these try to “do the right thing” based on the interop type (or raise an exception).</p>
+<p>All foreign objects passed into Python have the Python type <code>polyglot.ForeignObject</code> or a subclass.</p>
 
 <p>Types not listed in the table below have no special interpretation in Python.</p>
 
@@ -746,68 +741,91 @@ and these try to “do the right thing” based on the interop type (or raise an
   <thead>
     <tr>
       <th style="text-align: left">Interop Type</th>
+      <th style="text-align: left">Inherits from</th>
       <th style="text-align: left">Python Interpretation</th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left">ForeignNone, <code>NoneType</code></td>
       <td style="text-align: left"><code>null</code> is like <code>None</code>. Important to know: interop <code>null</code> values are all identical to <code>None</code>. JavaScript defines two “null-like” values; <code>undefined</code> and <code>null</code>, which are <em>not</em> identical, but when passed to Python, they are treated so.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left">ForeignBoolean, ForeignNumber</td>
       <td style="text-align: left"><code>boolean</code> behaves like Python booleans, including the fact that in Python, all booleans are also integers (1 and 0 for true and false, respectively).</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>number</code></td>
-      <td style="text-align: left"><code>number</code> Behaves like Python numbers. Python only has one integer and one floating point type, but ranges are imported in some places such as typed arrays.</td>
+      <td style="text-align: left">ForeignNumber</td>
+      <td style="text-align: left"><code>number</code> behaves like Python numbers. Python only has one integer and one floating point type, but ranges are imported in some places such as typed arrays.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>string</code></td>
+      <td style="text-align: left">ForeignString, <code>str</code></td>
       <td style="text-align: left">Behaves in the same way as a Python string.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>buffer</code></td>
+      <td style="text-align: left">ForeignObject</td>
       <td style="text-align: left">Buffers are also a concept in Python’s native API (albeit slightly different). Interop buffers are treated in the same was as Python buffers in some places (such as <code>memoryview</code>) to avoid copies of data.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>array</code></td>
-      <td style="text-align: left">An <code>array</code> can be used with subscript access in the same way as Python lists, with integers and slices as indices.</td>
+      <td style="text-align: left">ForeignList, <code>list</code></td>
+      <td style="text-align: left">An <code>array</code> behaves like a Python <code>list</code>.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>hash</code></td>
-      <td style="text-align: left">A <code>hash</code> can be used with subscript access in the same way as Python dictionaries, with any “hashable” object as a key. “Hashable” follows Python semantics: generally every interop type with an identity is deemed “hashable”. Note that if an interop object is of type <code>Array</code> <strong>and</strong> <code>Hash</code>, the behavior of subscript access is undefined.</td>
+      <td style="text-align: left">ForeignDict, <code>dict</code></td>
+      <td style="text-align: left">A <code>hash</code> behaves like a Python <code>dict</code>, with any “hashable” object as a key. “Hashable” follows Python semantics: generally every interop type with an identity is deemed “hashable”.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>members</code></td>
+      <td style="text-align: left">ForeignObject</td>
       <td style="text-align: left">An object of type <code>members</code> can be read using conventional Python <code>.</code> notation or <code>getattr</code> and related functions.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>iterable</code></td>
+      <td style="text-align: left">ForeignIterable</td>
       <td style="text-align: left">An <code>iterable</code> is treated in the same way as any Python object with an <code>__iter__</code> method. That is, it can be used in a loop and other places that accept Python iterables.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>iterator</code></td>
+      <td style="text-align: left">ForeignIterator, <code>iterator</code></td>
       <td style="text-align: left">An <code>iterator</code> is treated in the same way as any Python object with a <code>__next__</code> method.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>exception</code></td>
+      <td style="text-align: left">ForeignException, <code>BaseException</code></td>
       <td style="text-align: left">An <code>exception</code> can be caught in a generic <code>except</code> clause.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>MetaObject</code></td>
+      <td style="text-align: left">ForeignAbstractClass</td>
       <td style="text-align: left">Meta objects can be used in subtype and <code>isinstance</code> checks.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>executable</code></td>
+      <td style="text-align: left">ForeignExecutable</td>
       <td style="text-align: left">An <code>executable</code> object can be executed as a function, but never with keyword arguments.</td>
     </tr>
     <tr>
       <td style="text-align: left"><code>instantiable</code></td>
+      <td style="text-align: left">ForeignInstantiable</td>
       <td style="text-align: left">An <code>instantiable</code> object can be called just like a Python type, but never with keyword arguments.</td>
     </tr>
   </tbody>
 </table>
+
+<p>Foreign numbers inherit from <code>polyglot.ForeignNumber</code> and not <code>int</code> or <code>float</code> because <code>InteropLibrary</code> has currently no way to differentiate integers and floats.
+However:</p>
+<ul>
+  <li>When foreign numbers are represented as Java primitives <code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, they are considered Python <code>int</code> objects.</li>
+  <li>When foreign numbers are represented as Java primitives <code>float</code>, <code>double</code>, they are considered Python <code>float</code> objects.</li>
+  <li>When foreign booleans re represented as Java primitives <code>boolean</code>, they are considered Python <code>bool</code> objects.</li>
+</ul>
     
       <h3 id="python-to-interop-types">
         
@@ -1017,8 +1035,8 @@ class Main {
         
       </h4>
 <p>The <code>register_interop_type</code> API allows the usage of python classes for foreign objects.
-The type of such a foreign object will no longer be <code>foreign</code>. 
-Instead, it will be a generated class with the registered python classes and <code>foreign</code> and as super classes.
+The class of such a foreign object will no longer be <code>polyglot.ForeignObject</code> or <code>polyglot.Foreign*</code>. 
+Instead, it will be a generated class with the registered python classes and <code>polyglot.ForeignObject</code> as super class.
 This allows custom mapping of foreign methods and attributes to Python’s magic methods or more idiomatic Python code.</p>
 
 <pre><code class="language-java">package org.example;
@@ -1063,7 +1081,7 @@ import java
 from polyglot import register_interop_type
 
 print(my_java_object.getX()) # 42
-print(type(my_java_object)) # &lt;class 'foreign'&gt;
+print(type(my_java_object)) # &lt;class 'polyglot.ForeignObject'&gt;
 
 class MyPythonClass:
    def get_tuple(self):
@@ -1075,7 +1093,7 @@ register_interop_type(foreign_class, MyPythonClass)
 
 print(my_java_object.get_tuple()) # (42, 17)
 print(type(my_java_object)) # &lt;class 'polyglot.Java_org.example.MyJavaClass_generated'&gt;
-print(type(my_java_object).mro()) # [polyglot.Java_org.example.MyJavaClass_generated, MyPythonClass, foreign, object]
+print(type(my_java_object).mro()) # [polyglot.Java_org.example.MyJavaClass_generated, MyPythonClass, polyglot.ForeignObject, object]
 
 class MyPythonClassTwo:
    def get_tuple(self):
@@ -1089,7 +1107,7 @@ register_interop_type(foreign_class, MyPythonClassTwo, allow_method_overwrites=T
 
 # A newly registered class will be before already registered classes in the mro.
 # It allows overwriting methods from already registered classes with the flag 'allow_method_overwrites=True'
-print(type(my_java_object).mro()) # [generated_class, MyPythonClassTwo, MyPythonClass, foreign, object]
+print(type(my_java_object).mro()) # [generated_class, MyPythonClassTwo, MyPythonClass, polyglot.ForeignObject, object]
 
 print(my_java_object.get_tuple()) # (17, 42)
 print(my_java_object) # MyJavaInstance(x=42, y=17)

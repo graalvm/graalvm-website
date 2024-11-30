@@ -153,13 +153,11 @@ The agent generates the configuration for you automatically when you run an appl
 
 <p>To learn how to build a native executable with the metadata precomputed in the code, <a href="/jdk23/reference-manual/native-image/metadata/">see the documentation</a>.</p>
 
-<p>The example application in this guide uses Java reflection. 
-The <code>native-image</code> tool only partially detects application elements that are accessed using the Java Reflection API. 
-So, you need to provide it with details about reflectively accessed classes, methods, and fields.</p>
+<p>The example application in this guide makes use of reflection.
+The <code>native-image</code> tool can only partially detect application elements accessed through the Java Reflection API.
+Therefore, you need to explicitly provide details about the classes, methods, and fields accessed reflectively.</p>
 
 <h2 id="example-with-no-configuration">Example with No Configuration</h2>
-
-<p>The following application demonstrates the use of Java reflection.</p>
 
 <h3 id="prerequisite">Prerequisite</h3>
 <p>Make sure you have installed a GraalVM JDK.
@@ -211,20 +209,17 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <p>The output of each command should be <code>"olleh"</code> and <code>"HELLO"</code>, respectively. (An exception is thrown if you provide any other string to identify the class or method.)</p>
   </li>
   <li>Create a native executable, as follows:
-    <pre><code class="language-shell"> native-image --no-fallback ReflectionExample
+    <pre><code class="language-shell"> native-image ReflectionExample
 </code></pre>
-    <blockquote>
-      <p><strong>NOTE:</strong> The <code>--no-fallback</code> option to <code>native-image</code> causes the utility to fail if it can not create an executable file.</p>
-    </blockquote>
   </li>
   <li>Run the resulting native executable, using the following command:
     <pre><code class="language-bash"> ./reflectionexample StringReverser reverse "hello"
 </code></pre>
     <p>You should see an exception, similar to:</p>
     <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringReverser
-     at java.lang.Class.forName(DynamicHub.java:1338)
-     at java.lang.Class.forName(DynamicHub.java:1313)
-     at ReflectionExample.main(ReflectionExample.java:25)
+     at org.graalvm.nativeimage.builder/com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:190)
+     ...
+     at ReflectionExample.main(ReflectionExample.java:68)
 </code></pre>
     <p>This shows that, from its static analysis, the <code>native-image</code> tool was unable to determine that class <code>StringReverser</code> is used by the application and therefore did not include it in the native executable.</p>
   </li>
@@ -244,10 +239,17 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
     <p>This command creates a file named <em>rechability-metadata.json</em> containing the name of the class <code>StringReverser</code> and its <code>reverse()</code> method.</p>
     <pre><code class="language-json"> {
-   "reflection": [
+ "reflection": [
      {
-     "type":"StringReverser",
-     "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
+       "type": "StringReverser",
+       "methods": [
+         {
+           "name": "reverse",
+           "parameterTypes": [
+               "java.lang.String"
+           ]
+         }
+       ]
      }
    ]
  }
@@ -268,12 +270,12 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 
     <p>You should see again an exception, similar to:</p>
     <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringCapitalizer
-     at java.lang.Class.forName(DynamicHub.java:1338)
-     at java.lang.Class.forName(DynamicHub.java:1313)
-     at ReflectionExample.main(ReflectionExample.java:25)
+     at org.graalvm.nativeimage.builder/com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:190)
+     ...
+     at ReflectionExample.main(ReflectionExample.java:68)
 </code></pre>
     <p>Neither the Tracing Agent nor the <code>native-image</code> tool can ensure that the configuration file is complete.
- The agent observes and records which program elements are accessed using reflection when you run the program. 
+ The agent observes and records which program elements are accessed using reflection when you run the application. 
  In this case, the <code>native-image</code> tool has not been configured to include references to class <code>StringCapitalizer</code>.</p>
   </li>
   <li>Update the configuration to include class <code>StringCapitalizer</code>.
@@ -285,15 +287,29 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <pre><code class="language-json"> {
    "reflection": [
      {
-     "type":"StringCapitalizer",
-     "methods":[{"name":"capitalize","parameterTypes":["java.lang.String"] }]
+       "type": "StringCapitalizer",
+       "methods": [
+         {
+           "name": "capitalize",
+           "parameterTypes": [
+             "java.lang.String"
+           ]
+         }
+       ]
      },
      {
-     "type":"StringReverser",
-     "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
+       "type": "StringReverser",
+       "methods": [
+         {
+           "name": "reverse",
+           "parameterTypes": [
+             "java.lang.String"
+           ]
+         }
+       ]
      }
    ]
-}
+ }
 </code></pre>
   </li>
   <li>Rebuild the native executable and run it.
@@ -311,7 +327,6 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 <ul>
   <li><a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/#tracing-agent">Assisted Configuration with Tracing Agent</a></li>
   <li><a href="/jdk23/reference-manual/native-image/metadata/#reflection">Reachability Metadata: Reflection</a></li>
-  <li><a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.base/java/lang/reflect/package-summary.html">java.lang.reflect Javadoc</a></li>
 </ul>
 
       </div>

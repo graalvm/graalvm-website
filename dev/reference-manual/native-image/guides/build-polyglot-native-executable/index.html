@@ -149,9 +149,31 @@
 GraalVM makes it possible to compile a Java application ahead-of-time with embedded JavaScript and to create a polyglot native executable. 
 See the <a href="/dev/reference-manual/embed-languages/">Embedding Languages documentation</a> for more information about how a Java host application can interact with a guest language like JavaScript.</p>
 
+<blockquote>
+  <p>Note: JavaScript support by GraalVM Native Image is considered general availability.</p>
+</blockquote>
+
 <p>This guide demonstrates how to build a polyglot native executable with Java as a host language and JavaScript as a guest language.</p>
 
-<p>For the demo part, you will use a simple JSON Pretty Printer Java application that prints the output in JSON format.</p>
+<p>For the demo part, you will use a simple JSON Pretty Printer Java application that prints the output in JSON format:</p>
+<pre><code class="language-java">import java.io.*;
+import java.util.stream.*;
+import org.graalvm.polyglot.*;
+
+public class PrettyPrintJSON {
+  public static void main(String[] args) throws java.io.IOException {
+    BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+    String input = reader.lines()
+    .collect(Collectors.joining(System.lineSeparator()));
+    try (Context context = Context.create("js")) {
+      Value parse = context.eval("js", "JSON.parse");
+      Value stringify = context.eval("js", "JSON.stringify");
+      Value result = stringify.execute(parse.execute(input), null, 2);
+      System.out.println(result.asString());
+    }
+  }
+}
+</code></pre>
 
 <h3 id="prerequisite">Prerequisite</h3>
 <p>Make sure you have installed a GraalVM JDK.
@@ -159,37 +181,19 @@ The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SD
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
-  <li>
-    <p>Create a Maven project and replace the default <em>Application.java</em> file with a file named <em>PrettyPrintJSON.java</em>. Copy and paste the following contents into the file:</p>
-
-    <pre><code class="language-java"> import java.io.*;
- import java.util.stream.*;
- import org.graalvm.polyglot.*;
-
- public class PrettyPrintJSON {
-   public static void main(String[] args) throws java.io.IOException {
-     BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-     String input = reader.lines()
-     .collect(Collectors.joining(System.lineSeparator()));
-     try (Context context = Context.create("js")) {
-       Value parse = context.eval("js", "JSON.parse");
-       Value stringify = context.eval("js", "JSON.stringify");
-       Value result = stringify.execute(parse.execute(input), null, 2);
-       System.out.println(result.asString());
-     }
-   }
- } 
+  <li>Download or clone the demos repository and navigate to the directory <em>native-image/build-with-js-embedded/</em>:
+    <pre><code class="language-bash"> git clone https://github.com/graalvm/graalvm-demos
+</code></pre>
+    <pre><code class="language-bash"> cd graalvm-demos/native-image/build-with-js-embedded
 </code></pre>
   </li>
-  <li>
-    <p>Open your project configuration file (in this case, <em>pom.xml</em>) and add the following dependencies to enable interoperability with JavaScript.</p>
-
+  <li>Open the project configuration file (in this case, <em>pom.xml</em>) and examine the required dependencies to enable interoperability with JavaScript.
     <ul>
       <li>To enable the polyglot runtime:
         <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;polyglot&lt;/artifactId&gt; 
-    &lt;version&gt;${graalvm.version}&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre>
       </li>
@@ -197,20 +201,19 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
         <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;js&lt;/artifactId&gt; 
-    &lt;version&gt;${graalvm.version}&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre>
       </li>
     </ul>
   </li>
-  <li>Compile the project using the GraalVM JDK:
-    <pre><code class="language-shell"> ./mvnw clean package
+  <li>Compile and package the project with Maven:
+    <pre><code class="language-bash"> mvn clean package
 </code></pre>
   </li>
   <li>Build a native executable:
-    <pre><code class="language-shell"> native-image PrettyPrintJSON
+    <pre><code class="language-shell"> mvn -Pnative package
 </code></pre>
-
     <p>It takes several minutes as it does not just build the executable, but also pulls in the JavaScript engine. 
  The JavaScript context will be available in the generated image.</p>
 
@@ -219,40 +222,29 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     </blockquote>
   </li>
   <li>Run the resulting executable and perform some pretty-printing:
-    <pre><code class="language-shell"> ./prettyprintjson &lt;&lt;EOF
- {"GraalVM":{"description":"Language Abstraction Platform","supports":["combining languages","embedding languages","creating native images"],"languages": ["Java","JavaScript","Node.js", "Python", "Ruby","R","LLVM"]}}
+    <pre><code class="language-shell"> ./target/PrettyPrintJSON &lt;&lt;EOF
+ {"GraalVM":{"description":"Language Abstraction Platform","supports":["combining languages","embedding languages","creating native images"],"languages": ["Java", "JavaScript", "Python"]}}
  EOF
 </code></pre>
     <p>The expected output is:</p>
-
     <pre><code class="language-JSON"> {
  "GraalVM": {
      "description": "Language Abstraction Platform",
      "supports": [
-     "combining languages",
-     "embedding languages",
-     "creating native images"
+       "combining languages",
+       "embedding languages",
+       "creating native images"
      ],
      "languages": [
-     "Java",
-     "JavaScript",
-     "Node.js",
-     "Python",
-     "Ruby",
-     "R",
-     "LLVM"
+       "Java",
+       "JavaScript",
+       "Python"
      ]
- }
+   }
  }
 </code></pre>
   </li>
 </ol>
-
-<p>The native executable version runs faster than running the same application on the GraalVM JDK.</p>
-
-<blockquote>
-  <p>Note: JavaScript support by GraalVM Native Image is considered general availability. The remaining languages support is experimental.</p>
-</blockquote>
 
 <h3 id="related-documentation">Related Documentation</h3>
 
