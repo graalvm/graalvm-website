@@ -72,6 +72,7 @@ const platforms = {
 };
 
 const fullJavaVersions = {
+  "17": "17.0.12",
   "21": "21.0.5",
   "23": "23.0.1",
 }
@@ -118,18 +119,54 @@ function updateDownloadButton(majorJavaVersion) {
   }
 }
 
+function toggleJDK17Banner(majorJavaVersion) {
+  const banner = document.getElementById("jdk17-banner");
+  const optionTabs = document.querySelector(".downloads__option-tabs");
+
+  if (majorJavaVersion === "17") {
+    banner.style.display = "block";
+    setTimeout(() => banner.classList.add("visible"), 10);
+    optionTabs.classList.add("disabled");
+  } else {
+    banner.classList.remove("visible");
+    setTimeout(() => (banner.style.display = "none"), 500);
+    optionTabs.classList.remove("disabled");
+  }
+}
+
+function toggleInteractivityForJava17(majorJavaVersion) {
+  const platformSelector = document.getElementById("selector-platform");
+  const downloadButton = document.getElementById("download-main-btn");
+
+  if (majorJavaVersion === "17") {
+    platformSelector.disabled = true;
+    downloadButton.disabled = true;
+    platformSelector.classList.add("disabled");
+    downloadButton.classList.add("disabled");
+  } else {
+    platformSelector.disabled = false;
+    downloadButton.disabled = false;
+    platformSelector.classList.remove("disabled");
+    downloadButton.classList.remove("disabled");
+  }
+}
+
 function changeVersion(majorJavaVersion, platform) {
   currentMajorJavaVersion = majorJavaVersion;
   currentPlatform = platform;
   const fileExtension = platform.indexOf("windows") === 0 ? "zip" : "tar.gz";
-  currentDownloadLink = `https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`
+  currentDownloadLink = `https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`;
 
   updateDownloadButton(majorJavaVersion);
   updateGHASnippet(majorJavaVersion);
   updateContainerSnippet(majorJavaVersion);
   updateSDKMANSnippet(majorJavaVersion);
   updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension);
+  
+  toggleJDK17Banner(majorJavaVersion);
+  toggleInteractivityForJava17(majorJavaVersion);
 }
+
 
 function downloadGraalVMJDK() {
   if (!currentDownloadLink) {
