@@ -145,20 +145,20 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="specify-class-initialization-explicitly">Specify Class Initialization Explicitly</h1>
 
-<p>By default, Native Image initializes application classes at runtime, except for the classes that Native Image proves “safe” for initialization at build time. 
-However, you can influence the default behavior by explicitly specifying the classes to be initialized at build-time or runtime.
+<p>By default, Native Image initializes application classes at run time, except for the classes that Native Image proves “safe” for initialization at build time. 
+However, you can influence the default behavior by explicitly specifying the classes to be initialized at build-time or run time.
 For that, there are two command-line options: <code>--initialize-at-build-time</code> and <code>--initialize-at-run-time</code>.
 You can use these options to specify whole packages or individual classes.
 For example, if you have the classes <code>p.C1</code>, <code>p.C2</code>, … ,<code>p.Cn</code>, you can specify that all the classes in the package <code>p</code> are to be initialized at build time by passing the following option to <code>native-image</code>:</p>
 <pre><code class="language-shell">--initialize-at-build-time=p
 </code></pre>
-<p>If you want only class <code>C1</code> in package <code>p</code> to be initialized at runtime, use:</p>
+<p>If you want only class <code>C1</code> in package <code>p</code> to be initialized at run time, use:</p>
 <pre><code class="language-shell">--initialize-at-run-time=p.C1
 </code></pre>
 
 <p>You can also programmatically specify class initialization using the [<code>RuntimeClassInitialization</code>] class (https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/hosted/RuntimeClassInitialization.java) from the <a href="https://github.com/oracle/graal/blob/master/sdk/src/org.graalvm.nativeimage/src/org/graalvm/nativeimage/hosted/Feature.java">Native Image Feature interface</a>.</p>
 
-<p>This guide demonstrates how to build a native executable by running the class initializer at runtime (default behavior), and then at build time, and compares the two approaches.</p>
+<p>This guide demonstrates how to build a native executable by running the class initializer at run time (default behavior), and then at build time, and compares the two approaches.</p>
 
 <h3 id="prerequisite">Prerequisite</h3>
 <p>Make sure you have installed a GraalVM JDK.
@@ -206,7 +206,7 @@ The parser creates records and adds them to a <code>List&lt;Talk&gt;</code> coll
     <pre><code class="language-bash"> javac TalkParser.java
 </code></pre>
   </li>
-  <li>Build a native executable, explicitly running the class initializer at runtime:
+  <li>Build a native executable, explicitly running the class initializer at run time:
     <pre><code class="language-bash"> native-image --initialize-at-run-time=TalkParser,Talk -o runtime-parser TalkParser
 </code></pre>
     <p>You can omit the <code>--initialize-at-run-time=TalkParser,Talk</code> option in this example because these classes are marked for initialization at run time by default.
@@ -225,14 +225,14 @@ The parser creates records and adds them to a <code>List&lt;Talk&gt;</code> coll
       <li>Bootiful Spring Boot 3 by Josh Long
  ./runtime-parser  0.00s user 0.00s system 52% cpu 0.010 total
  ```
- The application parses the text block at runtime.</li>
+ The application parses the text block at run time.</li>
     </ul>
 
     <p>Check the file size which should be around 13M:</p>
     <pre><code> du -sh runtime-parser
 </code></pre>
   </li>
-  <li>Next, build a native executable initializing <code>TalkParser</code> at build time, and providing a different name for the output file to differentiate it from the previous build. The <code>Talk</code> record has to be initialized explicitly too, so the objects of this type will be persisted in the executable heap.
+  <li>Next, build a native executable initializing <code>TalkParser</code> at build time, and providing a different name for the output file to differentiate it from the previous build. The <code>Talk</code> record has to be initialized explicitly too, so the objects of this type will be persisted in the image heap.
     <pre><code class="language-bash">native-image --initialize-at-build-time=TalkParser,Talk -o buildtime-parser TalkParser
 </code></pre>
 
@@ -298,11 +298,11 @@ Talks loaded using scanner:
        0.002226000 seconds sys 
 </code></pre>
 
-<p>This demonstrates how Native Image can shift work from runtime to build time: when the class is initialized at build time, the text block is parsed when the executable is being built and only the parsed objects are included.
+<p>This demonstrates how Native Image can shift work from run time to build time: when the class is initialized at build time, the text block is parsed when the executable is being built and only the parsed objects are included.
 This not only makes the executable smaller in file size, but also faster to run: when the executable runs, the <code>Talk</code> records already exist and only need to be printed.
 <br /></p>
 
-<p>To ensure native executables built with Native Image are as compatible as possible with the HotSpot behavior, application classes that cannot be safely initialized at build time, are initialized at runtime.
+<p>To ensure native executables built with Native Image are as compatible as possible with the HotSpot behavior, application classes that cannot be safely initialized at build time, are initialized at run time.
 You as a user, or a framework that you use, must explicitly request build-time initialization for certain classes to benefit from smaller file sizes and faster times to run.
 Include the right data structures to avoid the image size blowing up instead.
 We also recommend using <code>--initialize-at-build-time</code> with single classes only. 

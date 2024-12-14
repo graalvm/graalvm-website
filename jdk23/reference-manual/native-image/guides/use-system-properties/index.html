@@ -157,12 +157,12 @@
 This means it is available to the <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/ImageInfo.html#inImageBuildtimeCode--">code in your application that is run at build time</a> (usually static field initializations and static initializers).
 Thus, if you run the resulting executable, it will not contain <code>foo</code> in the printed list of properties.</p>
 
-<p>If, on the other hand, you run the executable with <code>app -Dfoo=bar</code>, it will display <code>foo</code> in the list of properties because you specified property at <em>executable runtime</em>.</p>
+<p>If, on the other hand, you run the executable with <code>app -Dfoo=bar</code>, it will display <code>foo</code> in the list of properties because you specified property at <em>executable run time</em>.</p>
 
 <p>In other words:</p>
 <ul>
-  <li>Pass <code>-D&lt;key&gt;=&lt;value&gt;</code> as an argument to <code>native-image</code> to control the properties seen at build time.</li>
-  <li>Pass <code>-D&lt;key&gt;=&lt;value&gt;</code> as an argument to a native executable to control the properties seen at runtime.</li>
+  <li>Pass <code>-D&lt;key&gt;=&lt;value&gt;</code> as an option to <code>native-image</code> to control the properties seen at build time.</li>
+  <li>Pass <code>-D&lt;key&gt;=&lt;value&gt;</code> as an option to a native executable to control the properties seen at run time.</li>
 </ul>
 
 <h2 id="read-system-properties-at-build-time">Read System Properties at Build Time</h2>
@@ -175,7 +175,7 @@ The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SD
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
-  <li>Save the following Java code into a file named <em>ReadProperties.java</em>, then compile it using <code>javac</code>:
+  <li>Save the following Java code into a file named <em>ReadProperties.java</em>:
     <pre><code class="language-java"> public class ReadProperties {
      private static final String STATIC_PROPERTY_KEY = "static_key";
      private static final String INSTANCE_PROPERTY_KEY = "instance_key";
@@ -203,7 +203,11 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  }
 </code></pre>
   </li>
-  <li>Build the native executable, passing a system property as a command-line argument. Then run the native executable, passing a different system property on the command line.
+  <li>Compile the application:
+    <pre><code class="language-shell"> javac ReadProperties.java
+</code></pre>
+  </li>
+  <li>Build the native executable, passing a system property as a command-line option. Then run the native executable, passing a different system property on the command line.
     <pre><code class="language-shell"> native-image -Dstatic_key=STATIC_VALUE ReadProperties
 </code></pre>
     <pre><code class="language-shell"> ./readproperties -Dinstance_key=INSTANCE_VALUE
@@ -216,27 +220,28 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  Value of instance property: INSTANCE_VALUE
 </code></pre>
 
-    <p>This indicates that the class static initializer was not run at build time, but at <strong>runtime</strong>.</p>
+    <p>This indicates that the class static initializer was not run at build time, but at <strong>run time</strong>.</p>
   </li>
-  <li>To force the class static initializer to run at build time, use the <code>--initialize-at-build-time</code> flag, as follows:
+  <li>To force the class static initializer to run at build time, use the <code>--initialize-at-build-time</code> option, as follows:
     <pre><code class="language-shell"> native-image --initialize-at-build-time=ReadProperties -Dstatic_key=STATIC_VALUE ReadProperties
 </code></pre>
-    <p>In the output from the <code>native-image</code> tool you should see output similar to the following:</p>
-    <pre><code class="language-shell"> ...
- [1/7] Initializing...                                            (7.7s @ 0.07GB)
+    <p>In the output from the <code>native-image</code> tool you should see the message like this:</p>
+    <pre><code> GraalVM Native Image: Generating 'readproperties' (executable)...
+ ==========================================================================
  Getting value of static property with key: static_key
+ [1/8] Initializing...                                      (4.0s @ 0.13GB)
  ...
 </code></pre>
   </li>
   <li>Run the executable again, as follows:
-    <pre><code class="language-shell">./readproperties -Dinstance_key=INSTANCE_VALUE
+    <pre><code class="language-shell"> ./readproperties -Dinstance_key=INSTANCE_VALUE
 </code></pre>
 
-    <p>This time you should see the following output, confirming that the static initializer was run at <strong>build time</strong>, not at runtime.</p>
+    <p>This time you should see the following output, confirming that the static initializer was run at <strong>build time</strong>, not at run time.</p>
 
-    <pre><code class="language-shell">Value of static property: STATIC_VALUE
-Getting value for instance property key: instance_key
-Value of instance property: INSTANCE_VALUE
+    <pre><code class="language-shell"> Value of static property: STATIC_VALUE
+ Getting value for instance property key: instance_key
+ Value of instance property: INSTANCE_VALUE
 </code></pre>
   </li>
 </ol>
