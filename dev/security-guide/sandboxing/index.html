@@ -523,7 +523,7 @@ The CONSTRAINED policy:</p>
   <li>Restricts host access:
     <ul>
       <li>Disallows <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostClassLoading-boolean-">host class loading</a>.</li>
-      <li>Disallows <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#allowPublicAccess-boolean-">to all public host classes and methods by default</a>.</li>
+      <li>Disallows <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#allowPublicAccess-boolean-">access to all public host classes and methods by default</a>.</li>
       <li>Disallows <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#allowAccessInheritance-boolean-">access inheritance</a>.</li>
       <li>Disallows implementation of arbitrary host <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#allowAllClassImplementations-boolean-">classes</a> and <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#allowAllImplementations-boolean-">interfaces</a>.</li>
       <li>Disallows implementation of <code>java.lang.FunctionalInterface</code>.</li>
@@ -582,7 +582,7 @@ Isolated versions of the languages can be downloaded from Maven using the follow
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
-    &lt;version&gt;${graalvm.version}&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
     &lt;type&gt;pom&lt;/type&gt;
 &lt;/dependency&gt;
 </code></pre>
@@ -732,7 +732,7 @@ Recommended Command Line Limits:
 
 <p>The <code>sandbox.MaxCPUTime</code> option allows you to specify the maximum CPU time spent running guest code.
 CPU time spent depends on the underlying hardware.
-The maximum <a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.management/java/lang/management/ThreadMXBean.html#getThreadCpuTime\(long\)">CPU time</a> specifies how long a context can be active until it is automatically cancelled and the context is closed.
+The maximum <a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.management/java/lang/management/ThreadMXBean.html#getThreadCpuTime\(long\)">CPU time</a> specifies how long a context can be active until it is automatically cancelled and the context is closed.
 By default the time limit is checked every 10 milliseconds.
 This can be customized using the <code>sandbox.MaxCPUTimeCheckInterval</code> option.</p>
 
@@ -869,7 +869,7 @@ This means that the limit may be exceeded by guest code.</p>
 }
 </code></pre>
 
-<p>The limit is checked by retained size computation triggered either based on <a href="https://docs.oracle.com/en/java/javase/22/docs/api/jdk.management/com/sun/management/ThreadMXBean.html#getThreadAllocatedBytes\(long\)">allocated</a> bytes or on <a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.management/java/lang/management/MemoryMXBean.html">low memory notification</a>.</p>
+<p>The limit is checked by retained size computation triggered either based on <a href="https://docs.oracle.com/en/java/javase/23/docs/api/jdk.management/com/sun/management/ThreadMXBean.html#getThreadAllocatedBytes\(long\)">allocated</a> bytes or on <a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.management/java/lang/management/MemoryMXBean.html">low memory notification</a>.</p>
 
 <p>The allocated bytes are checked by a separate high-priority thread that will be woken regularly.
 There is one such thread for each memory-limited context (one with <code>sandbox.MaxHeapMemory</code> set).
@@ -886,7 +886,7 @@ Guest code that allocates many objects in quick succession has a lower accuracy 
 
 <p>Retained size computation for a context is triggered when a retained bytes estimate exceeds a certain factor of specified <code>sandbox.MaxHeapMemory</code>.
 The estimate is based on heap memory
-<a href="https://docs.oracle.com/en/java/javase/22/docs/api/jdk.management/com/sun/management/ThreadMXBean.html#getThreadAllocatedBytes\(long\)">allocated</a> by threads where the context has been active.
+<a href="https://docs.oracle.com/en/java/javase/23/docs/api/jdk.management/com/sun/management/ThreadMXBean.html#getThreadAllocatedBytes\(long\)">allocated</a> by threads where the context has been active.
 More precisely, the estimate is the result of previous retained bytes computation, if available, plus bytes allocated since the start of the previous computation.
 By default the factor of <code>sandbox.MaxHeapMemory</code> is 1.0 and it can be customized by the <code>sandbox.AllocatedBytesCheckFactor</code> option.
 The factor must be positive.
@@ -903,7 +903,7 @@ This can be configured by the <code>sandbox.RetainedBytesCheckInterval</code> op
 <p>The allocated bytes checking for a context can be disabled by the <code>sandbox.AllocatedBytesCheckEnabled</code> option.
 By default it is enabled (“true”). If disabled (“false”), retained size checking for the context can be triggered only by the low memory trigger.</p>
 
-<p>When the total number of bytes allocated in the heap for the whole host VM exceeds a certain factor of the total heap memory of the VM, <a href="https://docs.oracle.com/en/java/javase/22/docs/api/java.management/java/lang/management/MemoryMXBean.html">low memory notification</a> is invoked and initiates the following process.
+<p>When the total number of bytes allocated in the heap for the whole host VM exceeds a certain factor of the total heap memory of the VM, <a href="https://docs.oracle.com/en/java/javase/23/docs/api/java.management/java/lang/management/MemoryMXBean.html">low memory notification</a> is invoked and initiates the following process.
 The execution pauses for all execution contexts where the <code>sandbox.MaxHeapMemory</code> option is set. The execution is resumed only when retained bytes in the heap for each memory-limited context are computed and contexts exceeding their limits are cancelled.
 The default factor is 0.7. This can be configured by the <code>sandbox.RetainedBytesCheckFactor</code> option.
 The factor must be between 0.0 and 1.0. All contexts using the <code>sandbox.MaxHeapMemory</code> option must use the same value for <code>sandbox.RetainedBytesCheckFactor</code>.</p>
