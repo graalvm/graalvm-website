@@ -454,7 +454,6 @@ required for embedding Python code in Java-based applications:</p>
 <ul>
   <li><em>Python application files</em> provided by the user, for example, Python sources which are part of the project.</li>
   <li><em>Third-party Python packages</em> installed by the plugin during the build according to the plugin configuration.</li>
-  <li><em>The Python standard library</em>, which is necessary to make Native Image generated executables self-contained.</li>
 </ul>
 
 <p>Apart from physically managing and deploying those files, it is also necessary to make them available in Python at runtime by configuring the <strong>GraalPy Context</strong> in your Java code accordingly. 
@@ -526,15 +525,12 @@ Python code will access the files directly from the real filesystem.</p>
   <li><code>${root}/venv</code>: used for the Python virtual environment holding installed third-party Python packages. 
 The Context will be configured as if it is executed from this virtual environment. Notably packages installed in this
 virtual environment will be automatically available for importing.</li>
-  <li><code>${root}/home</code>: used for the Python standard library (equivalent to <code>PYTHONHOME</code> environment variable).</li>
 </ul>
 
-<p>The Maven or Gradle plugin will fully manage the contents of the <code>venv</code> and <code>home</code> subdirectories.
-Any manual changes in these directories will be overridden by the plugin during the build.</p>
+<p>The Maven or Gradle plugin will fully manage the contents of the <code>venv</code> subdirectory.
+Any manual change will be overridden by the plugin during the build.</p>
 <ul>
   <li><code>${root}/venv</code>: the plugin creates a virtual environment and installs required packages according to the plugin configuration in <em>pom.xml</em> or <em>build.gradle</em>.</li>
-  <li><code>${root}/home</code>: the plugin copies the required (also configurable) parts of the Python standard library into this directory.
-By default, the full standard library is used.</li>
 </ul>
 
 <p>The <em>src</em> subdirectory is left to be manually populated by the user with custom Python scripts or modules.</p>
@@ -566,25 +562,6 @@ By default, the full standard library is used.</li>
         &lt;package&gt;termcolor==2.2&lt;/package&gt;
         ...
     &lt;/packages&gt;
-    ...
-&lt;/configuration&gt;
-</code></pre>
-  </li>
-  <li>
-    <p>The <strong>pythonHome</strong> subsection declares what parts of the standard library should be deployed.</p>
-
-    <p>Each <code>include</code> and <code>exclude</code> element is interpreted as a Java-like regular expression specifying which file paths should be included or excluded.</p>
-    <pre><code class="language-xml">&lt;configuration&gt;
-    &lt;pythonHome&gt;
-        &lt;includes&gt;
-            &lt;include&gt;.*&lt;/include&gt;
-            ...
-        &lt;/includes&gt;
-        &lt;excludes&gt;
-            &lt;exclude&gt;&lt;/exclude&gt;
-            ...
-        &lt;/excludes&gt;
-    &lt;/pythonHome&gt;
     ...
 &lt;/configuration&gt;
 </code></pre>
@@ -628,17 +605,6 @@ The <strong>version</strong> property defines which version of GraalPy to use.</
 The Python packages and their versions are specified as if used with <code>pip</code>.
     <pre><code>graalPy {
   packages = ["termcolor==2.2"]
-  ...
-}
-</code></pre>
-  </li>
-  <li>The <strong>pythonHome</strong> subsection declares what parts of the standard library should be deployed.
-Each element in the <code>includes</code> and <code>excludes</code> list is interpreted as a Java-like regular expression specifying which file paths should be included or excluded.
-    <pre><code>graalPy {
-  pythonHome {
-    includes = [".*"]
-    excludes = []
-  }
   ...
 }
 </code></pre>
