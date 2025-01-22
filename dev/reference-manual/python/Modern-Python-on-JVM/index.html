@@ -617,6 +617,7 @@ This enables you, for example, to use a Pandas frame as <code>double[][]</code> 
       </h3>
 
 <p>GraalPy implements the <code>jarray</code> module (to create primitive Java arrays) for compatibility.
+This module is always available, since we have not found its presence to have a negative impact.
 For example:</p>
 
 <pre><code class="language-python">&gt;&gt;&gt; import jarray
@@ -653,13 +654,8 @@ However, implicitly, this may produce a copy of the array data, which can be dec
         
       </h3>
 
-<p>To catch Java exceptions, use the <code>--python.EmulateJython</code> option.</p>
-
-<blockquote>
-  <p>Note: Catching a Java exception incurs a performance penalty.</p>
-</blockquote>
-
-<p>For example:</p>
+<p>You can catch Java exceptions as you would expect.
+For example:</p>
 
 <pre><code class="language-python">&gt;&gt;&gt; import java
 &gt;&gt;&gt; v = java.util.Vector()
@@ -681,8 +677,8 @@ However, implicitly, this may produce a copy of the array data, which can be dec
 
 <ul>
   <li>
-    <p>Java arrays and collections that implement the <code>java.util.Collection</code> interface can be accessed using the <code>[]</code> syntax. 
-An empty collection is considered <code>false</code> in boolean conversions. 
+    <p>Java arrays and collections that implement the <code>java.util.Collection</code> interface can be accessed using the <code>[]</code> syntax.
+An empty collection is considered <code>false</code> in boolean conversions.
 The length of a collection is exposed by the <code>len</code> built-in function.
 For example:</p>
 
@@ -706,7 +702,7 @@ For example:</p>
 </code></pre>
   </li>
   <li>
-    <p>Java iterables that implement the <code>java.lang.Iterable</code> interface can be iterated over using a <code>for</code> loop or the <code>iter</code> built-in function and are accepted by all built-ins that expect an iterable. 
+    <p>Java iterables that implement the <code>java.lang.Iterable</code> interface can be iterated over using a <code>for</code> loop or the <code>iter</code> built-in function and are accepted by all built-ins that expect an iterable.
 For example:</p>
 
     <pre><code class="language-python">  &gt;&gt;&gt; [x for x in l]
@@ -769,12 +765,24 @@ For example:</p>
         
       </h3>
 
-<p>Inheriting from a Java class (or implementing a Java interface) is supported with some syntactical differences from Jython. 
-To create a class that inherits from a Java class (or implements a Java interface), use the conventional Python <code>class</code> statement: declared methods
-override (implement) superclass (interface) methods when their names match. 
-To call the a superclass method, use the special attribute <code>self.__super__</code>. 
+<p>Inheriting from a Java class (or implementing a Java interface) is supported with some syntactical and significant behavioral differences from Jython.
+To create a class that inherits from a Java class (or implements a Java interface), use the conventional Python <code>class</code> statement.
+Declared methods override (implement) superclass (interface) methods when their names match.</p>
+
+<p>It is important to understand that there is actually delegation happening here - when inheriting from Java, two classes are created, one in Java and one in Python.
+These reference each other and any methods that are declared in Python that override or implement a Java method on the superclass are declared on the Java side as delegating to Python.
 The created object does not behave like a Python object but instead in the same way as a foreign Java object.
-Its Python-level members can be accessed using its <code>this</code> attribute. For example:</p>
+The reason for this is that when you create an instance of your new class, you get a reference to the <em>Java</em> object.</p>
+
+<p>To call Python methods that do <em>not</em> override or implement methods that already existed on the superclass, you need to use the special <code>this</code> attribute.
+Once you are in a Python method, your <code>self</code> refers to the Python object, and to get back from a Python method to Java, use the special attribute <code>__super__</code>.
+And since we do not expose static members on the instance side, if you need to call a static method from an instance on the Java side, use <code>getClass().static</code> to get to the meta-object holding the static members.</p>
+
+<p>One important consequence of the two-object-schema here is that the <code>__init__</code> method on the Python object is actually called <em>before</em> the connection to the Java side is established.
+So you cannot currently override construction of the Java object or run code during initialization that would affect the Java half of the combined structure.
+You will have to create a factory method if you want to achieve this.</p>
+
+<p>For example:</p>
 
 <pre><code class="language-python">import atexit
 from java.util.logging import Logger, Handler
@@ -802,6 +810,8 @@ logger.warning("Bye")
 for record in handler.this.logged:
     print(f'Python captured message "{record.getMessage()}" at level {record.getLevel().getName()}')
 </code></pre>
+
+<p>For more information about how the generated Java subclass behaves, see the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html#createHostAdapter(java.lang.Object%5B%5D)">Truffle documentation</a>.</p>
     
       <h2 id="embedding-python-into-java">
         
