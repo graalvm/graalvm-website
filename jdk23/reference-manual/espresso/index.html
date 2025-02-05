@@ -416,14 +416,14 @@ You can download a standalone based on Oracle GraalVM or GraalVM Community Editi
 
 <ol>
   <li>
-    <p>Download the Espresso 24.0 standalone for your operating system:</p>
+    <p>Download the Espresso 24.1 standalone for your operating system:</p>
 
     <ul>
-      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.0.1-linux-amd64.tar.gz">Linux x64</a></li>
-      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.0.1-linux-aarch64.tar.gz">Linux AArch64</a></li>
-      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.0.1-macos-amd64.tar.gz">macOS x64</a></li>
-      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.0.1-macos-aarch64.tar.gz">macOS AArch64</a></li>
-      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.0.1-windows-amd64.zip">Windows x64</a></li>
+      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.1.2-linux-amd64.tar.gz">Linux x64</a></li>
+      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.1.2-linux-aarch64.tar.gz">Linux AArch64</a></li>
+      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.1.2-macos-amd64.tar.gz">macOS x64</a></li>
+      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.1.2-macos-aarch64.tar.gz">macOS AArch64</a></li>
+      <li><a href="https://gds.oracle.com/download/espresso/archive/espresso-java21-24.1.2-windows-amd64.zip">Windows x64</a></li>
     </ul>
   </li>
   <li>Unzip the archive:
@@ -432,7 +432,7 @@ You can download a standalone based on Oracle GraalVM or GraalVM Community Editi
   </li>
   <li>A standalone comes with a JVM in addition to its native launcher. Check the version to see the runtime is active:
     <pre><code class="language-shell"> # Path to Espresso installation
- ./path/to/bin/java -truffle -version
+ ./path/to/bin/java -version
 </code></pre>
   </li>
 </ol>
@@ -445,25 +445,29 @@ You can download a standalone based on Oracle GraalVM or GraalVM Community Editi
         
       </h2>
 
-<p>You can run a Java application on Espresso, by passing the <code>-truffle</code> option to the standard <code>java</code> launcher.
-This is similar to how you used to switch between the <code>-client</code> and <code>-server</code> JVMs.</p>
+<p>The <code>java</code> launcher included in the Espresso standalone works like the standard <code>java</code> launcher:</p>
 
 <p>To execute a class file:</p>
-<pre><code class="language-shell">java -truffle [options] class
+<pre><code class="language-shell">java [options] class
 </code></pre>
 <p>To execute a JAR file:</p>
-<pre><code class="language-shell">java -truffle [options] -jar jarfile
+<pre><code class="language-shell">java [options] -jar jarfile
 </code></pre>
 
 <p>You can also run a Java application from the main class in a module, or run a single source-file program:</p>
-<pre><code class="language-shell">java -truffle [options] -m module[/&lt;mainclass&gt;]
-java -truffle [options] sourcefile
+<pre><code class="language-shell">java [options] -m module[/&lt;mainclass&gt;]
+java [options] sourcefile
 </code></pre>
 
-<p>By default, Espresso runs within GraalVM by reusing all GraalVM’s JAR files and native libraries, but it is possible to “cross-version” and specify a different Java installation directory (<code>java.home</code>).
-It will automatically switch versions regardless of the host JVM.</p>
-<pre><code class="language-shell">java -truffle --java.JavaHome=/path/to/java/home -version
+<p>By default, Espresso runs with the standard library included in the standalone, but it is possible to specify a different Java installation directory (<code>java.home</code>).
+It will automatically switch versions as long as the new Java home is a supported version (8, 11, 17, or 21).</p>
+<pre><code class="language-shell">java --java.JavaHome=/path/to/java/home -version
 </code></pre>
+
+<blockquote>
+  <p>Note: If you use <code>-server</code> option of the <code>java</code> launcher, espresso will not be used and HotSpot will be started instead.
+You can also use <code>-truffle</code> to explicitly require the use of espreso (the default).</p>
+</blockquote>
     
       <h2 id="performance-considerations">
         
@@ -474,10 +478,9 @@ It will automatically switch versions regardless of the host JVM.</p>
       </h2>
 
 <p>The startup time will not match the speed offered by the regular GraalVM just-in-time (JIT) execution yet, but having created a fully working Espresso runtime, the development team is now focusing on performance.
-You can still influence the performance by passing the following options to <code>java -truffle</code>:</p>
+You can still influence the performance by passing the following option to <code>java</code>:</p>
 <ul>
-  <li><code>--engine.MultiTier=true</code> to enable multi-tier compilation;</li>
-  <li><code>--engine.Inlining=false</code> in combination with <code>--java.InlineFieldAccessors=true</code> to make the compilation faster, in exchange for slower performance.</li>
+  <li><code>--engine.Mode=latency</code> to enable Truffle’s latency mode to make JIT compilation faster, in exchange for slower peak performance.</li>
 </ul>
 
 <p>The <code>--vm.XX:</code> syntax ensures the option is passed to the underlying <a href="/jdk23/reference-manual/native-image/overview/Options/">Native Image VM</a>.
@@ -503,7 +506,7 @@ This might be important for options such as <code>MaxDirectMemorySize</code> whi
 
 <p>To ensure you have successfully installed Espresso, verify its version:</p>
 <pre><code class="language-shell"># Path to Espresso installation
-./path/to/bin/java -truffle -version
+./path/to/bin/java -version
 </code></pre>
 
 <p>Taking this <code>HelloWorld.java</code> example, compile it and run from the command line:</p>
@@ -515,7 +518,7 @@ This might be important for options such as <code>MaxDirectMemorySize</code> whi
 </code></pre>
 
 <pre><code class="language-shell">$JAVA_HOME/bin/javac HelloWorld.java
-$JAVA_HOME/bin/java -truffle HelloWorld
+$JAVA_HOME/bin/java HelloWorld
 </code></pre>
 
 <p>Taking some real-world applications, try running <a href="https://github.com/spring-projects/spring-petclinic">Spring PetClinic</a> - a sample web application that demonstrates the use of Spring Boot with Spring MVC and Spring Data JPA.</p>
@@ -530,8 +533,8 @@ cd spring-petclinic
     <pre><code class="language-shell">./mvnw package
 </code></pre>
   </li>
-  <li>Then run it from the command line by selecting the <code>-truffle</code> runtime:
-    <pre><code class="language-java">java -truffle -jar target/spring-petclinic-&lt;version&gt;-SNAPSHOT.jar
+  <li>Then run it from the command line:
+    <pre><code class="language-shell">java -jar target/spring-petclinic-&lt;version&gt;-SNAPSHOT.jar
 </code></pre>
   </li>
   <li>When the application starts, access it on <a href="http://localhost:8080/">localhost:8000</a>.</li>
@@ -545,12 +548,12 @@ cd spring-petclinic
         
       </h4>
 
-<p>To run a Java project on Espresso from an IDE requires setting GraalVM as a project’s default JDK and enabling the Espresso execution mode.
+<p>To run a Java project on Espresso from an IDE, you need to set the Espresso standalone as the project’s default JDK.
 For example, to run the Spring PetClinic project using Intellij IDEA, you need to:</p>
 
 <ol>
   <li>
-    <p>Navigate to <strong>File</strong>, then to <strong>Project Structure</strong>. Click <strong>Project</strong>, and then click <strong>Project SDK</strong>. Expand the drop down, press Add <strong>JDK</strong> and open the directory where you installed GraalVM. For macOS users, JDK home path will be <code>/Library/Java/JavaVirtualMachines/{graalvm}/Contents/Home</code>. Give it a name, and press Apply.</p>
+    <p>Navigate to <strong>File</strong>, then to <strong>Project Structure</strong>. Click <strong>Project</strong>, and then click <strong>Project SDK</strong>. Expand the drop down, press Add <strong>JDK</strong>, and open the directory where you installed the Espresso standalone. For macOS users, JDK home path will be <code>/Library/Java/JavaVirtualMachines/{espresso-standalone}/Contents/Home</code>. Give it a name, and press Apply.</p>
 
     <p><img src="/docs/reference-manual/java-on-truffle/images/add-project-default-sdk.png" alt="Intellij IDEA: Add Project Name" /></p>
   </li>
@@ -560,16 +563,8 @@ For example, to run the Spring PetClinic project using Intellij IDEA, you need t
     <p><img src="/docs/reference-manual/java-on-truffle/images/generate-project-sources.png" alt="Intellij IDEA: Generate Project Sources" /></p>
   </li>
   <li>
-    <p>Enable Espresso. From the main menu select <strong>Run</strong>, then <strong>Run…</strong>. Click <strong>Edit Configurations</strong> and choose <strong>Environment</strong>. Put the <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code> command in <strong>VM options</strong> and press Apply.</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/pass-vmoption.png" alt="Intellij IDEA: Enable Environment Configuration" /></p>
+    <p>Press Run.</p>
   </li>
-</ol>
-
-<p>It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.</p>
-
-<ol>
-  <li>Press Run.</li>
 </ol>
     
       <h2 id="debugging">
@@ -581,11 +576,7 @@ For example, to run the Spring PetClinic project using Intellij IDEA, you need t
       </h2>
 
 <p>You do not have to configure anything special to debug Java applications running Espresso from your favorite IDE debugger.
-For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
-To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to Run -&gt; Debug… -&gt; Edit Configurations, expand Environment, check the JRE value and VM options values.
-It should show GraalVM as project’s JRE, and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>, where <code>-truffle</code> enables Espresso, and <code>-XX:+IgnoreUnrecognizedVMOptions</code> is a temporary workaround since the Espresso runtime does not yet support attaching Java agents.</p>
-
-<p><img src="/docs/reference-manual/java-on-truffle/images/debug-configuration.png" alt="Intellij IDEA: Debug Configuration" /></p>
+For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.</p>
     
       <h2 id="what-to-read-next">
         
