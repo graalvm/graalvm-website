@@ -637,10 +637,19 @@ $(document).ready(function(){
         
       </h2>
 
-<p>The JDWP feature is not included by default as part of Native Image. To use it, you need to <a href="https://github.com/oracle/graal/blob/master/vm/README.md">build GraalVM from source</a> using the following <a href="https://github.com/graalvm/mx/">mx</a> commands:</p>
-<pre><code class="language-shell">mx --dynamicimports /substratevm build
-export JAVA_HOME=$(mx --dynamicimports /substratevm graalvm-home)
+<p>The JDWP feature relies on a shared library, which is loaded only when the debugger is actively used.
+This library must be built once before building native images with JDWP enabled.</p>
+<pre><code class="language-shell">native-image --macro:svmjdwp-library
 </code></pre>
+
+<blockquote>
+  <p>Note: This is a one-time setup step. The same library will be used for all native images built with JDWP enabled.</p>
+</blockquote>
+
+<blockquote>
+  <p>Note: This library is stored in the GraalVM installation by default.
+If that directory is not writable, provide an alternative destination path with <code>-o &lt;path/to/writable/directory&gt;/libsvmjdwp</code>, or on Windows, use <code>-o &lt;path\\to\\writable\\directory&gt;\\svmjdwp</code>.</p>
+</blockquote>
     
       <h2 id="usage">
         
@@ -654,9 +663,9 @@ export JAVA_HOME=$(mx --dynamicimports /substratevm graalvm-home)
   <p>Note: JDWP debugging for Native Image is currently under development.</p>
 </blockquote>
 
-<p>To include JDWP support in a native image, add the <code>--macro:svmjdwp</code> option to your <code>native-image</code> command:</p>
+<p>To include JDWP support in a native image, add the <code>-H:+JDWP</code> option to your <code>native-image</code> command:</p>
 
-<pre><code class="language-shell">native-image --macro:svmjdwp ... -cp &lt;class/path&gt; YourApplication ...
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+JDWP ... -cp &lt;class/path&gt; YourApplication ...
 </code></pre>
 
 <p>This command produces:</p>
@@ -723,34 +732,6 @@ export JAVA_HOME=$(mx --dynamicimports /substratevm graalvm-home)
 </ul>
 
 <p>Note: If <code>lib:svmjdwp</code> cannot be found, the application will terminate with error code 1.</p>
-    
-      <h3 id="build-libsvmjdwp">
-        
-        
-          Build <code>lib:svmjdwp</code> <a href="#build-libsvmjdwp" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Run <code>mx --native-images=lib:svmjdwp build</code> to build the library.</p>
-    
-      <h3 id="build-a-native-executable-with-jdwp-support">
-        
-        
-          Build a Native Executable with JDWP Support <a href="#build-a-native-executable-with-jdwp-support" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Add the <code>--macro:svmjdwp</code> option to the <code>native-image</code> command:</p>
-<pre><code class="language-shell">mx native-image --macro:svmjdwp -cp &lt;class/path&gt; MainClass ...
-</code></pre>
-
-<p>To build and include <code>lib:svmjdwp</code> as a build artifact, run:</p>
-<pre><code class="language-shell">mx --native-images=lib:svmjdwp native-image --macro:svmjdwp -cp &lt;class/path&gt; MainClass ...
-</code></pre>
-
-<p>Both commands produce a binary, an <code>&lt;image-name&gt;.metadata</code> file.</p>
     
       <h2 id="goals-and-constraints">
         
