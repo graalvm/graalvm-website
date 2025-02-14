@@ -9,13 +9,13 @@
 
   <title>
     
-      Enhanced HotSwap Capabilities with Espresso
+      Continuation API
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/espresso/hotswap/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/espresso/continuations/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -272,7 +272,7 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/dev/reference-manual/espresso/hotswap/">
@@ -280,22 +280,6 @@ $(document).ready(function(){
             </a>
           </li>
 
-          
-            <div>
-  <script>
-    var scriptElement = document.currentScript;
-    var div = $(scriptElement.parentElement);
-    $(window).on("load", function() {
-      $("#content-wrapper h2").each(function() {
-        var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-        a.text($(this).text().replace('#', ''));
-        li.append(a);
-        div.append(li);
-      });
-    });
-  </script>
-</div>
           
         
           
@@ -430,325 +414,242 @@ $(document).ready(function(){
 
 
         
-        <h1 id="enhanced-hotswap-capabilities-with-espresso">
+        <h1 id="continuation-api">
         
         
-          Enhanced HotSwap Capabilities with Espresso
+          Continuation API
         
         
       </h1>
 
-<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
-You do not have to configure anything specific besides launching your app in debug mode and attaching a standard IDE debugger to gain the advantages of enhanced HotSwap.</p>
+<p>The <a href="https://mvnrepository.com/artifact/org.graalvm.espresso/continuations">Continuation API</a> enables you to control the program stack.
+When a continuation is <em>suspended</em>, the stack is unwound and copied onto the heap as ordinary Java objects.
+When a continuation is <em>resumed</em>, those objects are put back onto the stack, along with all the needed metadata to resume execution at the pause point.
+The heap objects can be serialized to resume execution in a different JVM running the same code (for example, after a restart).</p>
     
-      <h2 id="debugging-with-espresso">
+      <h2 id="usage">
         
         
-          Debugging with Espresso <a href="#debugging-with-espresso" class="anchor_heading">#</a>
+          Usage <a href="#usage" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>You can use your favorite IDE debugger to debug Java applications running in the Espresso runtime.
-For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
-To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to <strong>Run</strong>, <strong>Debug…</strong>, <strong>Edit Configurations</strong>, expand Environment, check the JRE value and VM options values.
-It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>. It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.
-Press Debug.</p>
+<p>Add the <code>continuations.jar</code> to your classpath at compilation time (it will be automatically provided at runtime).
+The continuation feature is experimental and needs to be explicitly enabled by using these options: <code>--experimental-options --java.Continuum=true</code>.</p>
 
-<p>This will run the application and start a debugger session in the background.</p>
+<p>See an <a href="/dev/reference-manual/espresso/continuations/serialization/">example usage</a> of the Continuation API with serialization.</p>
     
-      <h2 id="using-hotswap-during-a-debugging-session">
+      <h3 id="high-level">
         
         
-          Using HotSwap During a Debugging Session <a href="#using-hotswap-during-a-debugging-session" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>Once you have your debugger session running, you will be able to apply extensive code changes (HotSwap) without needing to restart the session.
-Feel free to try this out on your own applications or by following these instructions:</p>
-
-<ol>
-  <li>Create a new Java application.</li>
-  <li>Use the following <code>main</code> method as a starting point:
-    <pre><code class="language-java"> public class HotSwapDemo {
-
-     private static final int ITERATIONS = 100;
-
-     public static void main(String[] args) {
-         HotSwapDemo demo = new HotSwapDemo();
-         System.out.println("Starting HotSwap demo with Espresso: 'java.vm.name' = " + System.getProperty("java.vm.name"));
-         // run something in a loop
-         for (int i = 1; i &lt;= ITERATIONS; i++) {
-             demo.runDemo(i);
-         }
-         System.out.println("Completed HotSwap demo with Espresso");
-     }
-
-     public void runDemo(int iteration) {
-         int random = new Random().nextInt(iteration);
-         System.out.printf("\titeration %d ran with result: %d\n", iteration, random);
-     }
- }
-</code></pre>
-  </li>
-  <li>Check that the <code>java.vm.name</code> property says you’re running on Espresso.</li>
-  <li>Place a line breakpoint on the first line in <code>runDemo()</code>.</li>
-  <li>
-    <p>Setup the Run configurations to run with Espresso and press Debug. You will see:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-1.png" alt="HotSwap Debugging Session: Debug Output " /></p>
-  </li>
-  <li>
-    <p>While paused at the breakpoint, extract a method from the body of <code>runDemo()</code>:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-2.png" alt="HotSwap Debugging Session: Extract Method" /></p>
-  </li>
-  <li>
-    <p>Reload the changes by navigating to Run -&gt; Debugging Actions -&gt; Reload Changed Classes:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-3.png" alt="HotSwap Debugging Session: Reload Changed Classes" /></p>
-  </li>
-  <li>
-    <p>Verify that the change was applied by noticing the <code>&lt;obsolete&gt;:-1</code> current frame in the Debug -&gt; Frames view:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-4.png" alt="HotSwap Debugging Session: Frames View" /></p>
-  </li>
-  <li>
-    <p>Place a breakpoint on the first line of the new extracted method and press Resume Program. The breakpoint will hit:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-5.png" alt="HotSwap Debugging Session: Set a Breakpoint and Resume Program" /></p>
-  </li>
-  <li>
-    <p>Try to change the access modifiers of <code>printRandom()</code> from <code>private</code> to <code>public static</code>. Reload the changes. Press Resume Program to verify the change was applied:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-6.png" alt="HotSwap Debugging Session: Change Access Modifiers" /></p>
-  </li>
-</ol>
-
-<p>Watch the video <a href="https://www.youtube.com/watch?v=gfuvvV6mplo">version of the enhanced HotSwap capabilities with Espresso demo</a>.</p>
-    
-      <h3 id="supported-changes">
-        
-        
-          Supported Changes <a href="#supported-changes" class="anchor_heading">#</a>
+          High Level <a href="#high-level" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>The enhanced HotSwap of Espresso is almost feature complete.
-The following changes are supported:</p>
+<p>If you can model your use case as code that emits (or <em>yields</em>) a stream of objects, you can use the <code>Generator&lt;T&gt;</code>
+class. This provides something similar to Python’s generators with a convenient API:
+subclass it, implement <code>generate</code>, and call <code>emit</code> from inside it.</p>
+
+<p><a href="/dev/reference-manual/espresso/continuations/generators/">See an example of using the Generator API</a>.</p>
+    
+      <h3 id="low-level">
+        
+        
+          Low Level <a href="#low-level" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>You create a new <code>Continuation</code> by passing the constructor an object that implements the functional
+interface <code>ContinuationEntryPoint</code> (which can be a lambda). That object’s <code>start</code> method receives
+a <code>SuspendCapability</code> that lets you trigger suspension. You can do that from <em>any</em> depth in the stack as
+long as the code was invoked via the entry point, and all the frames between the call to <code>suspend</code> and <code>resume</code> will be
+unwound and stored inside the <code>Continuation</code> object. You can then call <code>resume()</code> on it to kick it off for the first
+time or to restart from the last suspend point.</p>
+
+<p>Continuations are single-threaded constructs. There are no second threads involved, and the <code>resume()</code> method blocks
+until the continuation either finishes successfully, throws an exception or calls suspend.
+You can use <code>isResumable()</code> to check if the continuation can be resumed (for example, if the continuation has been
+freshly created or it has been previously suspended), and <code>isCompleted()</code> to verify whether the continuation has completed
+(either by returning normally, or if an exception escaped).</p>
+
+<p><code>Continuation</code> implements <code>Serializable</code> and can serialize to a backwards compatible format. Because frames can point to
+anything in their parameters and local variables, the class <code>ContinuationSerializable</code> provides static
+methods <code>readObjectExternal</code> and <code>writeObjectExternal</code> which may be used to coordinate serialization of
+continuation-related objects with a non-jdk serialization engine. Note that when the <code>--java.Continuum</code> flag is specified, 
+all lambdas are serializable but deserialization will require special support from your serializer engine.</p>
+    
+      <h2 id="security">
+        
+        
+          Security <a href="#security" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Continuations that have <strong>not</strong> been <em>materialized</em> are safe, as the frame record is kept internal to the VM.</p>
+
+<p>Materializing a continuation refers to making the record visible to Java code, through the
+private <code>ContinuationImpl.stackFrameHead</code> field. Currently, the only path for materialization is through serialization.</p>
+
+<p>When restoring from a materialized frame (<em>dematerialization</em>), only minimal checks are performed by the VM, and only to
+prevent a VM crash. Examples of these checks are:</p>
 
 <ul>
-  <li>Add and remove methods</li>
-  <li>Add and remove constructors</li>
-  <li>Add and remove methods from interfaces</li>
-  <li>Change access modifiers of methods</li>
-  <li>Change access modifiers of constructors</li>
-  <li>Add and remove fields</li>
-  <li>Change field type</li>
-  <li>Move field in hierarchy and preserve state (see note below)</li>
-  <li>Changes to class access modifiers, for example, abstract and final modifiers</li>
-  <li>Changes to Lambdas</li>
-  <li>Add new anonymous inner classes</li>
-  <li>Remove anonymous inner classes</li>
-  <li>Changing the superclass</li>
-  <li>Changing implemented interfaces</li>
+  <li>Ensures that resume only happens on <code>invoke</code> bytecodes.</li>
+  <li>Ensures that the recorded frame data is consistent with what was computed by the bytecode verifier.</li>
+  <li>Ensures that the last frame in the record is <code>ContinuationImpl.suspend</code>.</li>
 </ul>
 
-<p><strong>Note</strong>: When instance fields are moved in the class hierarchy the state is preserved whenever possible.
-Examples include the Pull Up Field refactoring where all existing instances of the origin subclass will be able to read the previously stored value from the super class field.
-On the other hand, for unrelated subclass instances where the field was not present prior to the change, the new field value will be the language default (null for object-type fields, 0 for int, and so on).</p>
-
-<p>The following limitations remain:</p>
-<ul>
-  <li>Changes to Enums</li>
-</ul>
+<p>Deserializing a continuation supplied by an attacker will allow complete takeover of the JVM. Only resume continuations
+you persisted yourself!</p>
     
-      <h2 id="hotswap-plugin-api">
+      <h2 id="use-cases">
         
         
-          HotSwap Plugin API <a href="#hotswap-plugin-api" class="anchor_heading">#</a>
+          Use Cases <a href="#use-cases" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
-While code reloading (HotSwap) is a powerful tool, it is not sufficient to reflect all kinds of changes, for example, changes to annotations, framework-specific changes such as implemented services or beans.
-For these things the code often needs to be executed to reload configurations or contexts before the changes are fully reflected in the running instance.
-This is where the Espresso HotSwap Plugin API comes in handy.</p>
+<p>Serializing a continuation makes it <em>multi-shot</em>, meaning you can restart a continuation more than once and thus redo
+the same computation with different inputs. This ability to explore “parallel worlds” opens up many interesting use
+cases.</p>
 
-<p>The HotSwap Plugin API is meant for framework developers by setting up appropriate hooks to reflect changes in response to source code edits in your IDE.
-The main design principle is that you can register various HotSwap listeners that will be fired on specified HotSwap events.
-Examples include the ability to re-run a static initializer, a generic post HotSwap callback and hooks when implementations for a certain service provider changes.</p>
-
-<p><strong>Note</strong>: The HotSwap Plugin API is under development and more fine-grained registration of HotSwap listeners are likely to be added upon requests from the community.
-You are welcomed to send enhancement requests to help shape the API through our community support <a href="https://www.graalvm.org/community/">channels</a>.</p>
-
-<p>Review the HotSwap Plugin API by going through a running example that will enable more powerful reloading support on <a href="https://micronaut.io/">Micronaut</a>.</p>
+<ul>
+  <li><strong>Speculative Execution</strong>: CPU-style data speculation to accelerate usage of remote high-latency data
+stores. <a href="#speculative-execution">See below</a>.</li>
+  <li><strong>Backtracking in Search Algorithms</strong>: Utilizing continuations to represent states in search trees, allowing easy
+return to these states for further exploration.</li>
+  <li><strong>Implementing Coroutines/Yield</strong>: Facilitating cooperative multitasking by allowing functions to yield and resume
+execution at certain points.</li>
+  <li><strong>Web Request Handling</strong>: Maintaining state across HTTP requests in web applications without relying on global
+variables or session storage.</li>
+  <li><strong>Functional Reactive Programming (FRP)</strong>: Managing control flow in FRP systems, where continuations represent future
+states of data streams.</li>
+  <li><strong>Undo/Redo Functionality</strong>: Capturing application state at various points to enable undoing or redoing actions. Model
+your app as a continuation-based actor and serialize after each state mutation.</li>
+  <li><strong>Game Development</strong>: Model NPCs and other interactive entities using continuations instead of hand-crafted state
+machines. For example <code>monster.walkTo(...)</code> can be added to game logic, even though the walk operation is very slow.
+The state of these continuations can be included into save game files.</li>
+  <li><strong>Delimited Continuations for Modularity</strong>: Encapsulating control flow in modular components, aiding in separation of
+concerns and code maintainability.</li>
+  <li><strong>Serialized Continuations for Distributed Computing</strong>: Serializing continuation state, allowing distributed systems
+to migrate units of work.</li>
+  <li><strong>Parsing</strong>: Implementing non-deterministic parsers or interpreters where multiple potential parsing paths are
+explored simultaneously.</li>
+  <li><strong>Custom Control Structures</strong>: Creating new control structures (for example, loops, exception handling) that are not natively
+supported in the programming language.</li>
+  <li><strong>Time-travel Debugging</strong>: Capturing continuations at various points in a program to enable “stepping back” in time
+during debugging sessions.</li>
+  <li><strong>Live Programming/Hot Code Swapping</strong>: Using continuations to maintain program state while parts of the program are
+updated or reloaded.</li>
+</ul>
     
-      <h3 id="micronaut-hotswap-plugin">
+      <h3 id="speculative-execution">
         
         
-          Micronaut HotSwap Plugin <a href="#micronaut-hotswap-plugin" class="anchor_heading">#</a>
+          Speculative Execution <a href="#speculative-execution" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>The Micronaut HotSwap plugin example implementation is hosted as a <a href="https://github.com/javeleon/micronaut-core">fork</a> of Micronaut-core.
-The following instructions are based on a macOS X setup and only minor variations are needed for Windows.
-To get started:</p>
+<p>CPUs attempt to guess the direction of a branch when the data it depends on hasn’t arrived yet. This is helpful because
+memory is slow. The same trick can be done at much higher levels using continuations when reading data from slow data
+sources such as a far away server. If you have a computation where CPU intensive work is interleaved with long blocking
+periods, this can speed things up.</p>
 
-<ol>
-  <li>Clone the repository:
-    <pre><code class="language-shell">  git clone git@github.com:javeleon/micronaut-core.git
-</code></pre>
-  </li>
-  <li>Build and publish to local Maven repository:
-    <pre><code class="language-shell">  cd micronaut-core
-  ./gradlew publishMavenPublicationToMavenLocal
-</code></pre>
-  </li>
-</ol>
+<p>When a continuation performs a slow operation that yields a value (for example, an RPC), you can suspend, serialize, dispatch the request.
+Instead of waiting for the result and scheduling other work—as would be standard in continuation-based async threads implementations such as <a href="https://wiki.openjdk.org/display/loom/Main">Project Loom</a>—you
+can instead pick one or more values that we think the RPC <em>might</em> return.
+Then the continuation is deserialized for each value, resuming execution separately for each possibility.
+This approach forks the execution into multiple parallel paths. The new paths can then fork again, forming a tree of possibilities.</p>
 
-<p>Now you will have a HotSwap-ready version of Micronaut.
-Before setting up a sample application that uses the enhanced version of Micronaut, look at what the plugin does under the hood.</p>
+<p>If the continuation encounters an operation that is not controlled by the surrounding framework and cannot be undone (for example, a side
+effect), it suspends at that point and doesn’t continue speculatively.</p>
 
-<p>The interesting class is <code>MicronautHotSwapPlugin</code> which holds on to an application context that can be reloaded when certain changes are made to the application source code.
-The class looks like this:</p>
+<p>When results arrive from the remote server, the speculative tree of serialized continuations can be resolved incrementally.
+Serialized continuations corresponding to paths that are no longer valid are discarded.
+Once the final result is received, the continuation either completes execution or proceeds beyond a point where side effects occur.</p>
 
-<pre><code class="language-java">final class MicronautHotSwapPlugin implements HotSwapPlugin {
-
-    private final ApplicationContext context;
-    private boolean needsBeenRefresh = false;
-
-    MicronautHotSwapPlugin(ApplicationContext context) {
-        this.context = context;
-        // register class re-init for classes that provide annotation metadata
-        EspressoHotSwap.registerClassInitHotSwap(
-                AnnotationMetadataProvider.class,
-                true,
-                () -&gt; needsBeenRefresh = true);
-        // register ServiceLoader listener for declared bean definitions
-        EspressoHotSwap.registerMetaInfServicesListener(
-                BeanDefinitionReference.class,
-                context.getClassLoader(),
-                () -&gt; reloadContext());
-        EspressoHotSwap.registerMetaInfServicesListener(
-                BeanIntrospectionReference.class,
-                context.getClassLoader(),
-                () -&gt; reloadContext());
-    }
-
-    @Override
-    public String getName() {
-        return "Micronaut HotSwap Plugin";
-    }
-
-    @Override
-    public void postHotSwap(Class&lt;?&gt;[] changedClasses) {
-        if (needsBeenRefresh) {
-            reloadContext();
-        }
-        needsBeenRefresh = false;
-    }
-
-    private void reloadContext() {
-        if (Micronaut.LOG.isInfoEnabled()) {
-            Micronaut.LOG.info("Reloading app context");
-        }
-        context.stop();
-        context.flushBeanCaches();
-        context.start();
-
-        // fetch new embedded application bean which will re-wire beans
-        Optional&lt;EmbeddedApplication&gt; bean = context.findBean(EmbeddedApplication.class);
-        // now restart the embedded app/server
-        bean.ifPresent(ApplicationContextLifeCycle::start);
-    }
-}
-</code></pre>
-
-<p>The logic regarding the HotSwap API sits in the constructor of this class.
-Micronaut is architected around compile-time annotation processing where annotation metadata is gathered and stored into static fields in generated classes.
-Whenever a developer makes a change to a Micronaut-annotated class, the corresponding metadata classes are re-generated.
-Since standard HotSwap does not (and it should not) re-run static initializers, with HotSwap Plugin static initializer are re-run for all classes that provide metadata (the Micronaut-generated classes). Thus, this API method <code>EspressoHotSwap.registerClassInitHotSwap</code> is used:</p>
-
-<pre><code class="language-java">public static boolean registerClassInitHotSwap(Class&lt;?&gt; klass, boolean onChange, HotSwapAction action)
-</code></pre>
-
-<p>This will register a listener on Class changes for the specific class and importantly any subclass thereof.
-The <code>onChange</code> variable instructs if static initializers should only be re-run if the code within changed.
-The <code>action</code> parameter is a hook for firing a specific action whenever a static initializer has been re-run.
-Here we pass a function for setting the <code>needsBeenRefresh</code> field to true whenever an static initializer is re-run.
-Upon completion of a HotSwap action the plugin receives a <code>postHotSwap</code> call that, in response to a true <code>needsBeenRefresh</code>, executes the Micronaut-specific code to reload the application context in the <code>reloadContext</code> method.</p>
+<p>If the server protocol allows results to be chained together (for example,
+as <a href="https://capnproto.org/rpc.html#time-travel-promise-pipelining">Cap’n’Proto RPC does</a>,
+or <a href="https://github.com/apple/foundationdb/wiki/Everything-about-GetMappedRange">FoundationDB</a>), back-to-back speculative
+calls can be transmitted to the server for local processing, avoiding roundtrips.</p>
     
-      <h3 id="detecting-and-injecting-new-classes">
+      <h3 id="limitations">
         
         
-          Detecting and Injecting New Classes <a href="#detecting-and-injecting-new-classes" class="anchor_heading">#</a>
+          Limitations <a href="#limitations" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>HotSwap is designed to enable classes to be HotSwap’ed in a running application.
-However, if a developer introduces an entirely new class (for example, a new <code>@Controller </code>class in Micronaut), HotSwap does not magically inject a new class, as doing so would require knowledge about internal class loading logic at the very least.</p>
+<p>There are special situations in which a call to <code>suspend</code> may fail with <code>IllegalContinuationStateException</code>. These are:</p>
 
-<p>A standard way in which classes are discovered by a framework is through the <code>ServiceLoader</code> mechanism.
-The HotSwap API has built-in support for registering service implementation change listeners by means of the method <code>EspressoHotSwap.registerMetaInfServicesListener</code>:</p>
+<ul>
+  <li>If there is no call to <code>resume</code> in the call-stack.</li>
+  <li>If in between the call to <code>resume</code> and <code>suspend</code> any of the following holds:
+    <ul>
+      <li>A lock is held (this may be an object monitor through the <code>MONITORENTER</code> bytecode, or even
+a <code>java.util.concurrent.locks.ReentrantLock</code>).</li>
+      <li>There is a non-java frame on the stack (this could be a <code>native</code> method, or even a VM instrinsic).</li>
+    </ul>
+  </li>
+</ul>
 
-<pre><code class="language-java">public static boolean registerMetaInfServicesListener(Class&lt;?&gt; serviceType, ClassLoader loader, HotSwapAction action)
-</code></pre>
-
-<p>The current support is limited to listening for implementation changes for class path based service deployment in <code>META-INF/services</code>.
-Whenever there is a change to the set of service implementations for the registered class type, the <code>action</code> is fired.
-In the Micronaut HotSwap plugin, <code>reloadContext</code> is executed which will then pickup the changes automatically.</p>
-
-<p><strong>Note</strong>: HotSwap actions caused by changes to service implementation changes are fired independent of HotSwap. As a developer, you do not need to perform a HotSwap from your IDE to see the new functionality in the running application.</p>
+<p>Furthermore, there is currently no support for continuation-in-continuation.</p>
     
-      <h3 id="next-level-hotswap-for-micronaut">
+      <h2 id="internal-implementation-notes">
         
         
-          Next-Level HotSwap for Micronaut <a href="#next-level-hotswap-for-micronaut" class="anchor_heading">#</a>
+          Internal Implementation Notes <a href="#internal-implementation-notes" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p><em>This section is only relevant for people working on Espresso itself.</em></p>
+
+<p>Continuations interact with the VM through private intrinsics registered for the <code>Continuation</code> and <code>ContinuationImpl</code> classes.</p>
+
+<p>A continuation starts by calling into the VM. Execution resurfaces in the guest world at the private <code>run</code> method of
+<code>ContinuationImpl</code>, which then invokes the user’s given entry point.</p>
+
+<p>Suspending throws a host-side exception that is caught by the <code>BytecodeNode</code> interpreter loop. The stack frame is copied
+into a new host-side object called a <code>HostFrameRecord</code> (HFR). The exception is then rethrown. The HFRs are chained
+together in a linked list. Once execution reaches the private <code>run</code> method of <code>ContinuationImpl</code> the HFR list is
+attached into a hidden field of <code>ContinuationImpl</code>. Control is then returned to the guest.</p>
+
+<p>On resuming a <code>Continuation</code>, the entire call stack needs to be re-winded. This happens through a different <code>CallTarget</code>
+than for regular calls, and there is one such call target per encountered resume <code>bci</code>.</p>
+
+<p>These call targets take a single argument: the <code>HostFrameRecord</code> that was stored into the <code>Continuation</code>. Using this
+record, the frame is restored for the current method, the current record is unlinked from the rest (for GC purposes), and
+the rest of the records is passed to the next method. This is all done in a special invoke node, <code>InvokeContinuableNode</code>.</p>
+
+<p>The separation of the call targets has two advantages:</p>
+
+<ul>
+  <li>It does not interfere with regular calls.</li>
+  <li>Resuming and suspending can be partial-evaluated, leading to fast suspend/resume cycles.</li>
+</ul>
+
+<p>Serialization is done entirely in guest-side code, by having the <code>Continuation</code> class implement <code>Serializable</code>. The
+format is designed to enable backwards-compatible evolution of the format.</p>
+    
+      <h3 id="further-reading">
+        
+        
+          Further Reading <a href="#further-reading" class="anchor_heading">#</a>
         
         
       </h3>
-
-<p>Now that you know how the Micronaut HotSwap plugin works, use this feature in a real application.
-Here is a sample application created from the tutorial <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.html">“Creating your first Micronaut Graal Application”</a>.
-Example’s sources can be downloaded as a ready-made Gradle project from <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.zip">here</a>.
-Download, unzip and open the project in your IDE.</p>
-
-<p>Before you proceed, make sure that you have <a href="/dev/reference-manual/espresso/#install-java-on-truffle">Espresso installed</a> and GraalVM set as the project SDK.</p>
-
-<ol>
-  <li>In your IDE navigate to the root <code>build.gradle</code> within the sample project. Add:
-    <pre><code> run.jvmArgs+="-truffle"
-</code></pre>
-  </li>
-  <li>Also add maven local repository where we previously published the enhanced Micronaut framework. For example:
-    <pre><code> repositories {
- mavenLocal()
- ...
- }
-</code></pre>
-  </li>
-  <li>In <code>gradle.properties</code> update the Micronaut version that you published. For example:
-    <pre><code> micronautVersion=2.5.8-SNAPSHOT
-</code></pre>
-    <p>Now you are all setup.</p>
-  </li>
-  <li>
-    <p>Execute<code>assemble</code> task and create a run configuration using the defined <code>run</code> Gradle task.</p>
-  </li>
-  <li>
-    <p>Press the Debug button to start the application in debugging mode, which enables enhanced HotSwap support.</p>
-  </li>
-  <li>
-    <p>Once the application is started, verify that you get a response from the <code>ConferenceController</code> by going to <code>http://localhost:8080/conferences/random</code>.</p>
-  </li>
-  <li>Try to make various changes to the classes within the sample app, for example, change the <code>@Controller</code> mapping to a different value, or add a new <code>@Get</code>annotated method and apply HotSwap to see the magic. In case you define a new <code>@Controller</code> class, all you need is compiling the class and once the change is picked up by the file system watch, you will see the reload without the need for explicitly HotSwap.</li>
-</ol>
+<ul>
+  <li><a href="/dev/reference-manual/espresso/continuations/serialization/">Serialization of Continuations</a></li>
+  <li><a href="/dev/reference-manual/espresso/continuations/generators/">Generator API</a></li>
+</ul>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">

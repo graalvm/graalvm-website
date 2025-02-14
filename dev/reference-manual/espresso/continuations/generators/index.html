@@ -9,13 +9,13 @@
 
   <title>
     
-      Enhanced HotSwap Capabilities with Espresso
+      Generators
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/espresso/hotswap/">
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/espresso/continuations/generators/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -272,7 +272,7 @@ $(document).ready(function(){
           
         
           
-          <li class="toc-bullets-sub toc-bullets-highlight">
+          <li class="toc-bullets-sub">
           
             
             <a href="/dev/reference-manual/espresso/hotswap/">
@@ -280,22 +280,6 @@ $(document).ready(function(){
             </a>
           </li>
 
-          
-            <div>
-  <script>
-    var scriptElement = document.currentScript;
-    var div = $(scriptElement.parentElement);
-    $(window).on("load", function() {
-      $("#content-wrapper h2").each(function() {
-        var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
-        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
-        a.text($(this).text().replace('#', ''));
-        li.append(a);
-        div.append(li);
-      });
-    });
-  </script>
-</div>
           
         
           
@@ -425,330 +409,172 @@ $(document).ready(function(){
       
     
       
+      <li>
+        <a href="/dev/reference-manual/espresso/continuations/">
+          Continuations
+        </a>
+      </li>
+      
+    
+      
     
   </ul>
 
 
         
-        <h1 id="enhanced-hotswap-capabilities-with-espresso">
+        <h1 id="generators">
         
         
-          Enhanced HotSwap Capabilities with Espresso
+          Generators
         
         
       </h1>
 
-<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
-You do not have to configure anything specific besides launching your app in debug mode and attaching a standard IDE debugger to gain the advantages of enhanced HotSwap.</p>
-    
-      <h2 id="debugging-with-espresso">
-        
-        
-          Debugging with Espresso <a href="#debugging-with-espresso" class="anchor_heading">#</a>
-        
-        
-      </h2>
+<p>An example of how to use the included <code>Generator&lt;E&gt;</code> class below for Python-style generators. It prints out the numbers from 1-5.</p>
 
-<p>You can use your favorite IDE debugger to debug Java applications running in the Espresso runtime.
-For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
-To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to <strong>Run</strong>, <strong>Debug…</strong>, <strong>Edit Configurations</strong>, expand Environment, check the JRE value and VM options values.
-It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>. It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.
-Press Debug.</p>
+<pre><code class="language-java">import org.graalvm.continuations.Generator;
 
-<p>This will run the application and start a debugger session in the background.</p>
-    
-      <h2 id="using-hotswap-during-a-debugging-session">
-        
-        
-          Using HotSwap During a Debugging Session <a href="#using-hotswap-during-a-debugging-session" class="anchor_heading">#</a>
-        
-        
-      </h2>
+import java.io.*;
 
-<p>Once you have your debugger session running, you will be able to apply extensive code changes (HotSwap) without needing to restart the session.
-Feel free to try this out on your own applications or by following these instructions:</p>
+public class GeneratorTest {
+    public static void main(String[] args) throws IOException, ClassNotFoundException {
+        var generator = new Generator&lt;Integer&gt;() {
+            @Override
+            protected void generate() {
+                for (int i = 1; i &lt;= 5; i++) {
+                    doWork(i);
+                }
+            }
 
-<ol>
-  <li>Create a new Java application.</li>
-  <li>Use the following <code>main</code> method as a starting point:
-    <pre><code class="language-java"> public class HotSwapDemo {
+            private void doWork(int i) {
+                if (i % 2 == 0) {
+                    emit(i);
+                }
+            }
+        };
 
-     private static final int ITERATIONS = 100;
+        while (generator.hasMoreElements()) {
+            System.out.println(generator.nextElement());
 
-     public static void main(String[] args) {
-         HotSwapDemo demo = new HotSwapDemo();
-         System.out.println("Starting HotSwap demo with Espresso: 'java.vm.name' = " + System.getProperty("java.vm.name"));
-         // run something in a loop
-         for (int i = 1; i &lt;= ITERATIONS; i++) {
-             demo.runDemo(i);
-         }
-         System.out.println("Completed HotSwap demo with Espresso");
-     }
-
-     public void runDemo(int iteration) {
-         int random = new Random().nextInt(iteration);
-         System.out.printf("\titeration %d ran with result: %d\n", iteration, random);
-     }
- }
-</code></pre>
-  </li>
-  <li>Check that the <code>java.vm.name</code> property says you’re running on Espresso.</li>
-  <li>Place a line breakpoint on the first line in <code>runDemo()</code>.</li>
-  <li>
-    <p>Setup the Run configurations to run with Espresso and press Debug. You will see:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-1.png" alt="HotSwap Debugging Session: Debug Output " /></p>
-  </li>
-  <li>
-    <p>While paused at the breakpoint, extract a method from the body of <code>runDemo()</code>:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-2.png" alt="HotSwap Debugging Session: Extract Method" /></p>
-  </li>
-  <li>
-    <p>Reload the changes by navigating to Run -&gt; Debugging Actions -&gt; Reload Changed Classes:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-3.png" alt="HotSwap Debugging Session: Reload Changed Classes" /></p>
-  </li>
-  <li>
-    <p>Verify that the change was applied by noticing the <code>&lt;obsolete&gt;:-1</code> current frame in the Debug -&gt; Frames view:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-4.png" alt="HotSwap Debugging Session: Frames View" /></p>
-  </li>
-  <li>
-    <p>Place a breakpoint on the first line of the new extracted method and press Resume Program. The breakpoint will hit:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-5.png" alt="HotSwap Debugging Session: Set a Breakpoint and Resume Program" /></p>
-  </li>
-  <li>
-    <p>Try to change the access modifiers of <code>printRandom()</code> from <code>private</code> to <code>public static</code>. Reload the changes. Press Resume Program to verify the change was applied:</p>
-
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-6.png" alt="HotSwap Debugging Session: Change Access Modifiers" /></p>
-  </li>
-</ol>
-
-<p>Watch the video <a href="https://www.youtube.com/watch?v=gfuvvV6mplo">version of the enhanced HotSwap capabilities with Espresso demo</a>.</p>
-    
-      <h3 id="supported-changes">
-        
-        
-          Supported Changes <a href="#supported-changes" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The enhanced HotSwap of Espresso is almost feature complete.
-The following changes are supported:</p>
-
-<ul>
-  <li>Add and remove methods</li>
-  <li>Add and remove constructors</li>
-  <li>Add and remove methods from interfaces</li>
-  <li>Change access modifiers of methods</li>
-  <li>Change access modifiers of constructors</li>
-  <li>Add and remove fields</li>
-  <li>Change field type</li>
-  <li>Move field in hierarchy and preserve state (see note below)</li>
-  <li>Changes to class access modifiers, for example, abstract and final modifiers</li>
-  <li>Changes to Lambdas</li>
-  <li>Add new anonymous inner classes</li>
-  <li>Remove anonymous inner classes</li>
-  <li>Changing the superclass</li>
-  <li>Changing implemented interfaces</li>
-</ul>
-
-<p><strong>Note</strong>: When instance fields are moved in the class hierarchy the state is preserved whenever possible.
-Examples include the Pull Up Field refactoring where all existing instances of the origin subclass will be able to read the previously stored value from the super class field.
-On the other hand, for unrelated subclass instances where the field was not present prior to the change, the new field value will be the language default (null for object-type fields, 0 for int, and so on).</p>
-
-<p>The following limitations remain:</p>
-<ul>
-  <li>Changes to Enums</li>
-</ul>
-    
-      <h2 id="hotswap-plugin-api">
-        
-        
-          HotSwap Plugin API <a href="#hotswap-plugin-api" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
-While code reloading (HotSwap) is a powerful tool, it is not sufficient to reflect all kinds of changes, for example, changes to annotations, framework-specific changes such as implemented services or beans.
-For these things the code often needs to be executed to reload configurations or contexts before the changes are fully reflected in the running instance.
-This is where the Espresso HotSwap Plugin API comes in handy.</p>
-
-<p>The HotSwap Plugin API is meant for framework developers by setting up appropriate hooks to reflect changes in response to source code edits in your IDE.
-The main design principle is that you can register various HotSwap listeners that will be fired on specified HotSwap events.
-Examples include the ability to re-run a static initializer, a generic post HotSwap callback and hooks when implementations for a certain service provider changes.</p>
-
-<p><strong>Note</strong>: The HotSwap Plugin API is under development and more fine-grained registration of HotSwap listeners are likely to be added upon requests from the community.
-You are welcomed to send enhancement requests to help shape the API through our community support <a href="https://www.graalvm.org/community/">channels</a>.</p>
-
-<p>Review the HotSwap Plugin API by going through a running example that will enable more powerful reloading support on <a href="https://micronaut.io/">Micronaut</a>.</p>
-    
-      <h3 id="micronaut-hotswap-plugin">
-        
-        
-          Micronaut HotSwap Plugin <a href="#micronaut-hotswap-plugin" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The Micronaut HotSwap plugin example implementation is hosted as a <a href="https://github.com/javeleon/micronaut-core">fork</a> of Micronaut-core.
-The following instructions are based on a macOS X setup and only minor variations are needed for Windows.
-To get started:</p>
-
-<ol>
-  <li>Clone the repository:
-    <pre><code class="language-shell">  git clone git@github.com:javeleon/micronaut-core.git
-</code></pre>
-  </li>
-  <li>Build and publish to local Maven repository:
-    <pre><code class="language-shell">  cd micronaut-core
-  ./gradlew publishMavenPublicationToMavenLocal
-</code></pre>
-  </li>
-</ol>
-
-<p>Now you will have a HotSwap-ready version of Micronaut.
-Before setting up a sample application that uses the enhanced version of Micronaut, look at what the plugin does under the hood.</p>
-
-<p>The interesting class is <code>MicronautHotSwapPlugin</code> which holds on to an application context that can be reloaded when certain changes are made to the application source code.
-The class looks like this:</p>
-
-<pre><code class="language-java">final class MicronautHotSwapPlugin implements HotSwapPlugin {
-
-    private final ApplicationContext context;
-    private boolean needsBeenRefresh = false;
-
-    MicronautHotSwapPlugin(ApplicationContext context) {
-        this.context = context;
-        // register class re-init for classes that provide annotation metadata
-        EspressoHotSwap.registerClassInitHotSwap(
-                AnnotationMetadataProvider.class,
-                true,
-                () -&gt; needsBeenRefresh = true);
-        // register ServiceLoader listener for declared bean definitions
-        EspressoHotSwap.registerMetaInfServicesListener(
-                BeanDefinitionReference.class,
-                context.getClassLoader(),
-                () -&gt; reloadContext());
-        EspressoHotSwap.registerMetaInfServicesListener(
-                BeanIntrospectionReference.class,
-                context.getClassLoader(),
-                () -&gt; reloadContext());
-    }
-
-    @Override
-    public String getName() {
-        return "Micronaut HotSwap Plugin";
-    }
-
-    @Override
-    public void postHotSwap(Class&lt;?&gt;[] changedClasses) {
-        if (needsBeenRefresh) {
-            reloadContext();
+            // Round-trip the generator through Java object serialization.
+            // In a real program you'd write to disk, or just use
+            // generators alone without serialization.
+            generator = deserialize(serialize(generator));
         }
-        needsBeenRefresh = false;
     }
 
-    private void reloadContext() {
-        if (Micronaut.LOG.isInfoEnabled()) {
-            Micronaut.LOG.info("Reloading app context");
+    private static ByteArrayOutputStream serialize(Object obj) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream oos = new ObjectOutputStream(bytes)) {
+            oos.writeObject(obj);
         }
-        context.stop();
-        context.flushBeanCaches();
-        context.start();
+        return bytes;
+    }
 
-        // fetch new embedded application bean which will re-wire beans
-        Optional&lt;EmbeddedApplication&gt; bean = context.findBean(EmbeddedApplication.class);
-        // now restart the embedded app/server
-        bean.ifPresent(ApplicationContextLifeCycle::start);
+    @SuppressWarnings("unchecked")
+    private static &lt;T&gt; T deserialize(ByteArrayOutputStream firstSuspension) throws IOException, ClassNotFoundException {
+        return (T) new ObjectInputStream(new ByteArrayInputStream(firstSuspension.toByteArray())).readObject();
     }
 }
 </code></pre>
 
-<p>The logic regarding the HotSwap API sits in the constructor of this class.
-Micronaut is architected around compile-time annotation processing where annotation metadata is gathered and stored into static fields in generated classes.
-Whenever a developer makes a change to a Micronaut-annotated class, the corresponding metadata classes are re-generated.
-Since standard HotSwap does not (and it should not) re-run static initializers, with HotSwap Plugin static initializer are re-run for all classes that provide metadata (the Micronaut-generated classes). Thus, this API method <code>EspressoHotSwap.registerClassInitHotSwap</code> is used:</p>
+<p>Here’s what the implementation looks like using <a href="/dev/reference-manual/espresso/continuations/#low-level">the low level API</a>.</p>
 
-<pre><code class="language-java">public static boolean registerClassInitHotSwap(Class&lt;?&gt; klass, boolean onChange, HotSwapAction action)
+<pre><code class="language-java">package org.graalvm.continuations;
+
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+
+/**
+ * An {@link Enumeration} that emits an element any time {@link #emit(Object)} is called from inside
+ * the {@link #generate()} method. Emit can be called anywhere in the call stack. This type of
+ * enumeration is sometimes called a &lt;i&gt;generator&lt;/i&gt;.
+ */
+public abstract class Generator&lt;E&gt; implements Enumeration&lt;E&gt;, Serializable {
+    @Serial
+    private static final long serialVersionUID = -5614372125614425080L;
+
+    private final Continuation continuation;
+    private Continuation.SuspendCapability suspendCapability;
+    private transient E currentElement;
+    private transient boolean hasProduced;
+
+
+    /**
+     * This constructor exists only for deserialization purposes. Don't call it directly.
+     */
+    @SuppressWarnings("this-escape")
+    protected Generator() {
+        continuation = new Continuation((Continuation.EntryPoint &amp; Serializable) suspendCapability -&gt; {
+            this.suspendCapability = suspendCapability;
+            generate();
+        });
+    }
+
+    /**
+     * Runs the generator and returns true if it emitted an element. If it finished running, returns
+     * false. If the generator throws an exception it will be propagated from this method.
+     */
+    @Override
+    public final boolean hasMoreElements() {
+        if (hasProduced)
+            return true;
+        Continuation.State state = continuation.getState();
+        boolean ready = state == Continuation.State.SUSPENDED || state == Continuation.State.NEW;
+        if (!ready)
+            return false;
+        continuation.resume();
+        return hasProduced;
+    }
+
+    /**
+     * Runs the generator if necessary, and returns the element it yielded.
+     *
+     * @throws NoSuchElementException if the generator has finished and no longer emits elements,
+     * or if the generator has previously thrown an exception and failed.
+     */
+    @Override
+    public final E nextElement() {
+        if (!hasMoreElements())
+            throw new NoSuchElementException();
+        E el = currentElement;
+        currentElement = null;
+        hasProduced = false;
+        return el;
+    }
+
+    /**
+     * Call this method to emit an element from inside {@link #generate()}.
+     */
+    protected final void emit(E element) {
+        assert !hasProduced;
+        currentElement = element;
+        hasProduced = true;
+        suspendCapability.suspend();
+    }
+
+    /**
+     * Implement this method to {@link #emit(Object)} elements from the enumeration.
+     */
+    protected abstract void generate();
+
+    private transient boolean reentrancy = false;
+
+    @Override
+    public String toString() {
+        // Printing the continuation will invoke toString on everything reachable from the stack,
+        // thus we need to cancel the re-entrancy here.
+        if (reentrancy)
+            return "this generator";
+        reentrancy = true;
+        String result = continuation.toString();
+        reentrancy = false;
+        return result;
+    }
+}
 </code></pre>
-
-<p>This will register a listener on Class changes for the specific class and importantly any subclass thereof.
-The <code>onChange</code> variable instructs if static initializers should only be re-run if the code within changed.
-The <code>action</code> parameter is a hook for firing a specific action whenever a static initializer has been re-run.
-Here we pass a function for setting the <code>needsBeenRefresh</code> field to true whenever an static initializer is re-run.
-Upon completion of a HotSwap action the plugin receives a <code>postHotSwap</code> call that, in response to a true <code>needsBeenRefresh</code>, executes the Micronaut-specific code to reload the application context in the <code>reloadContext</code> method.</p>
-    
-      <h3 id="detecting-and-injecting-new-classes">
-        
-        
-          Detecting and Injecting New Classes <a href="#detecting-and-injecting-new-classes" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>HotSwap is designed to enable classes to be HotSwap’ed in a running application.
-However, if a developer introduces an entirely new class (for example, a new <code>@Controller </code>class in Micronaut), HotSwap does not magically inject a new class, as doing so would require knowledge about internal class loading logic at the very least.</p>
-
-<p>A standard way in which classes are discovered by a framework is through the <code>ServiceLoader</code> mechanism.
-The HotSwap API has built-in support for registering service implementation change listeners by means of the method <code>EspressoHotSwap.registerMetaInfServicesListener</code>:</p>
-
-<pre><code class="language-java">public static boolean registerMetaInfServicesListener(Class&lt;?&gt; serviceType, ClassLoader loader, HotSwapAction action)
-</code></pre>
-
-<p>The current support is limited to listening for implementation changes for class path based service deployment in <code>META-INF/services</code>.
-Whenever there is a change to the set of service implementations for the registered class type, the <code>action</code> is fired.
-In the Micronaut HotSwap plugin, <code>reloadContext</code> is executed which will then pickup the changes automatically.</p>
-
-<p><strong>Note</strong>: HotSwap actions caused by changes to service implementation changes are fired independent of HotSwap. As a developer, you do not need to perform a HotSwap from your IDE to see the new functionality in the running application.</p>
-    
-      <h3 id="next-level-hotswap-for-micronaut">
-        
-        
-          Next-Level HotSwap for Micronaut <a href="#next-level-hotswap-for-micronaut" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>Now that you know how the Micronaut HotSwap plugin works, use this feature in a real application.
-Here is a sample application created from the tutorial <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.html">“Creating your first Micronaut Graal Application”</a>.
-Example’s sources can be downloaded as a ready-made Gradle project from <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.zip">here</a>.
-Download, unzip and open the project in your IDE.</p>
-
-<p>Before you proceed, make sure that you have <a href="/dev/reference-manual/espresso/#install-java-on-truffle">Espresso installed</a> and GraalVM set as the project SDK.</p>
-
-<ol>
-  <li>In your IDE navigate to the root <code>build.gradle</code> within the sample project. Add:
-    <pre><code> run.jvmArgs+="-truffle"
-</code></pre>
-  </li>
-  <li>Also add maven local repository where we previously published the enhanced Micronaut framework. For example:
-    <pre><code> repositories {
- mavenLocal()
- ...
- }
-</code></pre>
-  </li>
-  <li>In <code>gradle.properties</code> update the Micronaut version that you published. For example:
-    <pre><code> micronautVersion=2.5.8-SNAPSHOT
-</code></pre>
-    <p>Now you are all setup.</p>
-  </li>
-  <li>
-    <p>Execute<code>assemble</code> task and create a run configuration using the defined <code>run</code> Gradle task.</p>
-  </li>
-  <li>
-    <p>Press the Debug button to start the application in debugging mode, which enables enhanced HotSwap support.</p>
-  </li>
-  <li>
-    <p>Once the application is started, verify that you get a response from the <code>ConferenceController</code> by going to <code>http://localhost:8080/conferences/random</code>.</p>
-  </li>
-  <li>Try to make various changes to the classes within the sample app, for example, change the <code>@Controller</code> mapping to a different value, or add a new <code>@Get</code>annotated method and apply HotSwap to see the magic. In case you define a new <code>@Controller</code> class, all you need is compiling the class and once the change is picked up by the file system watch, you will see the reload without the need for explicitly HotSwap.</li>
-</ol>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
