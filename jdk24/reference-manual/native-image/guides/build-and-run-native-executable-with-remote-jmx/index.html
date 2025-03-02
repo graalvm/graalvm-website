@@ -172,7 +172,7 @@ The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SD
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
-  <li>Save the following code to a file named <em>SimpleJmx.java</em>. The application <code>main()</code> method registers a custom MBean, then loops endlessly, so you have time to inspect the process using VisualVM.
+  <li>Create and navigate to a directory named <em>jmx-test</em>. Save the following code to a file named <em>SimpleJmx.java</em>. The application <code>main()</code> method registers a custom MBean, then loops endlessly, so you have time to inspect the process using VisualVM.
     <pre><code class="language-java"> import javax.management.MBeanServer;
  import javax.management.ObjectName;
  import java.lang.management.ManagementFactory;
@@ -219,12 +219,12 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  }
 </code></pre>
   </li>
-  <li>Ccompile the application using the GraalVM JDK:
+  <li>Compile the application using the GraalVM JDK:
     <pre><code class="language-shell"> javac SimpleJmx.java
 </code></pre>
     <p>This creates <em>SimpleJmx.class</em>, <em>SimpleJmx$Simple.class</em>, and <em>SimpleJmx$SimpleMBean.class</em> files.</p>
   </li>
-  <li>Add dynamic proxy configuration. JMX uses dynamic proxies, a <a href="/jdk24/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans. To be able to interact with the custom <code>SimpleMBean</code> at run time, you need to provide Native Image with additional <a href="/jdk24/reference-manual/native-image/metadata/#reflection">dynamic-proxy metadata</a> for the MBean interface. For this, create or modify a JSON file named <em>reachability-metadata.json</em> with the following contents:
+  <li>Add dynamic proxy configuration. JMX uses dynamic proxies, a <a href="/jdk24/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans. To be able to interact with the custom <code>SimpleMBean</code> at run time, you need to provide Native Image with additional <a href="/jdk24/reference-manual/native-image/metadata/#reflection">dynamic-proxy metadata</a> for the MBean interface. For this, create the <em>META-INF/native-image</em> directory in the current working directory (<em>jmx-test</em>). In the <em>META-INF/native-image</em> directory create a <em>reachability-metadata.json</em> file with the following contents:
     <pre><code class="language-json"> {
    "reflection": [
      {
@@ -236,8 +236,8 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  }
 </code></pre>
   </li>
-  <li>Build a native executable with the VM inspection enabled and pass the JSON configuration file to <code>native-image</code>:
-    <pre><code class="language-shell"> native-image --enable-monitoring=jmxserver,jmxclient,jvmstat -H:DynamicProxyConfigurationFiles=proxy-config.json SimpleJmx
+  <li>Build a native executable with the VM inspection enabled:
+    <pre><code class="language-shell"> native-image --enable-monitoring=jmxserver,jmxclient,jvmstat SimpleJmx
 </code></pre>
 
     <p>The <code>--enable-monitoring=jmxserver</code> option enables the JMX Server feature (to accept incoming connections).
