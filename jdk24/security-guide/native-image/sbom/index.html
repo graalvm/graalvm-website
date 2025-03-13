@@ -534,53 +534,51 @@ It outputs the SBOM in the following format:</p>
 }
 </code></pre>
     
-      <h2 id="vulnerability-scanning">
+      <h2 id="enabling-security-scanning">
         
         
-          Vulnerability Scanning <a href="#vulnerability-scanning" class="anchor_heading">#</a>
+          Enabling Security Scanning <a href="#enabling-security-scanning" class="anchor_heading">#</a>
         
         
       </h2>
 
-<p>To scan for vulnerable libraries, use either the <a href="https://github.com/marketplace/actions/github-action-for-graalvm">GraalVM GitHub Action</a> for automated scanning, or submit the SBOM to a vulnerability scanner directly.</p>
+<p>You can leverage the generated SBOM to integrate with security scanning solutions.
+There are a variety of tools to help detect and mitigate security vulnerabilities in your application dependencies.</p>
+
+<p>One example is <a href="https://docs.oracle.com/iaas/Content/application-dependency-management/concepts/adm_overview.htm" target="_blank">Application Dependency Management (ADM)</a> from Oracle.
+When submitting your SBOM to the ADM vulnerability scanner, it identifies application dependencies and flags those containing known security vulnerabilities.
+ADM relies on vulnerability reports from community sources, including the National Vulnerability Database (NVD).
+It also integrates with GitHub Actions, GitLab, and Jenkins Pipelines.</p>
+
+<p>Another popular command-line scanner is <code>grype</code>, part of the <a href="https://anchore.com/" target="_blank">Anchore software supply chain management platform</a>.
+With <code>grype</code>, you can check whether the libraries listed in your SBOMs have known vulnerabilities documented in Anchore’s database.
+The output of the <code>native-image-inspect</code> tool can be fed directly into <code>grype</code> to scan for vulnerable libraries using the following command:</p>
+<pre><code class="language-bash">$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype
+</code></pre>
+<p>It produces the following output:</p>
+<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
+netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
+</code></pre>
+
+<p>The generated report can then be used to update any vulnerable dependencies in your executable.</p>
     
-      <h3 id="github-integration">
+      <h3 id="automated-scanning">
         
         
-          GitHub Integration <a href="#github-integration" class="anchor_heading">#</a>
+          Automated Scanning <a href="#automated-scanning" class="anchor_heading">#</a>
         
         
       </h3>
 
-<p>When using the <a href="https://github.com/marketplace/actions/github-action-for-graalvm">GraalVM GitHub Action</a>, the SBOM can be automatically generated and submitted to GitHub’s dependency submission API for continuous scanning. 
-This enables:</p>
+<p>Integrating security scanning into your CI/CD workflows has never been easier.
+With SBOM support available in the <a href="https://github.com/marketplace/actions/github-action-for-graalvm" target="_blank">GraalVM GitHub Action</a>, your generated SBOM can be automatically submitted and analyzed using <a href="https://docs.github.com/en/rest/dependency-graph/dependency-submission" target="_blank">GitHub’s dependency submission API</a>.
+It enables:</p>
 <ul>
   <li>Vulnerability tracking with GitHub’s Dependabot.</li>
   <li>Dependency tracking with GitHub’s Dependency Graph.</li>
 </ul>
 
-<p>If you use GitHub, this integration offers you the simplest setup and powerful security tooling.</p>
-    
-      <h3 id="command-line-scanning">
-        
-        
-          Command-Line Scanning <a href="#command-line-scanning" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>The popular <a href="https://anchore.com/">Anchore software supply chain management platform</a> makes the <code>grype</code> scanner available for free.
-You can check whether the libraries given in your SBOMs have known vulnerabilities documented in Anchore’s database.
-For this purpose, the output of the tool can be fed directly to the <code>grype</code> scanner to check for vulnerable libraries, using the command <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype</code> which produces the following output:</p>
-<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
-netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
-</code></pre>
-
-<p>You can then use this report to update any vulnerable dependencies found in your executable.</p>
-
-<blockquote>
-  <p>Note: Running <code>native-image-inspect</code> without <code>--sbom</code> executes code from the native binary to extract class information. <strong>Do not use it on untrusted binaries.</strong> This extraction method is deprecated—use <a href="#including-class-level-metadata-in-the-sbom">class-level SBOMs</a> instead.</p>
-</blockquote>
+<p>This integration helps ensure that your application is continuously monitored for vulnerabilities throughout the development lifecycle.</p>
     
       <h2 id="dependency-tree">
         
@@ -642,7 +640,7 @@ This information can be useful for:</p>
         
       </h3>
 
-<p>The <a href="https://cyclonedx.org/docs/1.5/json/">CycloneDX specification</a> allows the use of a hierarchical representation by nesting components that have a parent-child relationship.
+<p>The <a href="https://cyclonedx.org/docs/1.5/json/" target="_blank">CycloneDX specification</a> allows the use of a hierarchical representation by nesting components that have a parent-child relationship.
 It is used to embed class-level information in SBOM components in the following way:</p>
 <pre><code>[component] SBOM Component
 └── [component] Java Modules
