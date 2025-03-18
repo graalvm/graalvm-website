@@ -1,0 +1,326 @@
+/*
+ * Copyright 2021 Oracle and/or its affiliates
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Remove generic rules such as paddings or list bullet types,
+ * so they don't cause unexpected interactions.
+ */
+
+.fiddle-main *,
+.fiddle-main *::before,
+.fiddle-main *::after,
+.CodeMirror-hints,
+.CodeMirror-hints *,
+.CodeMirror-hints *::before,
+.CodeMirror-hints *::after {
+    all: revert;
+}
+
+/*
+ * Toolbar with buttons and indicators.
+ */
+
+.fiddle-toolbar {
+}
+
+.fiddle-buttons button {
+    margin-right: .5em;
+}
+
+/*
+ * Only display indicators that are applicable (i.e. nonzero or `true`).
+ * This is not the only option, an alternative could be e.g. fading or blurring.
+ */
+
+.fiddle-indicator-wrapper {
+    display: none;
+}
+
+.fiddle-indicator-wrapper-visible {
+    display: inline-block;
+}
+
+/*
+ * Only display the description when the indicator is focused.
+ * Fiddle depends on this behavior and only updates the description on focus.
+ */
+
+.fiddle-indicator-desc {
+    display: none;
+}
+
+.fiddle-indicator-wrapper:focus .fiddle-indicator-desc {
+    display: block;
+}
+
+/*
+ * Invite the user to click on the indicator to display the description.
+ */
+
+.fiddle-indicator {
+    cursor: pointer;
+    padding: .5ex;
+    border-radius: 3px;
+}
+
+.fiddle-indicator-wrapper:hover .fiddle-indicator,
+.fiddle-indicator-wrapper:focus .fiddle-indicator {
+    background: rgba(0, 0, 0, .125);
+}
+
+/*
+ * Kinds of diagnostics, each represented by a symbol.
+ * The "OK" indicator does not need padding, since it is not followed by a number.
+ */
+
+.fiddle-error-indicator::before {
+    content: '\26D4'; /* no entry sign */
+    padding-right: .5ex;
+}
+
+.fiddle-warning-indicator::before {
+    content: '\26A0\FE0F'; /* warning sign */
+    padding-right: .5ex;
+}
+
+.fiddle-note-indicator::before {
+    content: '\2139\FE0F'; /* information source sign */
+    padding-right: .5ex;
+}
+
+.fiddle-ok-indicator::before {
+    content: '\2705'; /* check mark */
+}
+
+/*
+ * Indicator of ongoing compilation. The icon is a typical "loading" animation.
+ */
+
+@keyframes rotating {
+    to {transform: rotate(1turn)}
+}
+
+.fiddle-working-indicator::before {
+    content: '';
+    display: inline-block;
+    width: .75em;
+    height: .75em;
+    border: solid .125em black;
+    border-top-color: transparent;
+    border-radius: 100%;
+    vertical-align: baseline;
+    margin-bottom: -.125em;
+    animation: rotating .75s linear infinite;
+}
+
+/*
+ * Exclude the description from the layout and display it right below the indicator.
+ * Styled as a speech bubble. The ::before pseudo-element is an up-pointing triangle.
+ */
+
+.fiddle-indicator-wrapper {
+    position: relative;
+    z-index: 5;
+}
+
+.fiddle-indicator-desc {
+    position: absolute; /* "absolute" with respect to the parent indicator-wrapper */
+    left: 0;
+    top: 2.75em;
+    width: 512px;
+    padding: .25em .75em;
+    box-shadow: 2px 3px 5px rgba(0, 0, 0, .25);
+    border-radius: 3px;
+    border: 1px solid silver;
+    background: white;
+    font-family: monospace;
+    font-size: initial;
+    line-height: 175%;
+}
+
+.fiddle-indicator-desc::before {
+    content: '';
+    position: absolute; /* with respect to the indicator-desc */
+    left: 1ex;
+    top: -1em;
+    width: 0;
+    height: 0;
+    border: solid 1em transparent;
+    border-top: none;
+    border-bottom-color: white;
+    filter: drop-shadow(0 -.75px .5px rgba(0, 0, 0, .5));
+}
+
+/*
+ * Highlighting problems in source code.
+ */
+
+.fiddle-error {
+    border-bottom: dotted 2px red;
+}
+
+.fiddle-warning {
+    background-color: yellow;
+}
+
+.fiddle-note {
+    border-bottom: dotted 1px blue;
+}
+
+/*
+ * GraalVM site specific.
+ */
+
+.fiddle-toolbar {
+    height: 0;
+    direction: rtl;
+    text-align: right;
+    position: relative;
+    z-index: 5;
+    top: .5em;
+    padding: 0;
+}
+
+.fiddle-buttons, .fiddle-indicators {
+    direction: ltr;
+    text-align: left;
+    font-size: 112.5%;
+}
+
+.fiddle-working-indicator::before {
+    border-color: transparent #f29110 #f29110;
+}
+
+.fiddle-indicator {
+    color: #dee2e6;
+}
+
+.fiddle-main {
+    margin-top: 6px;
+    margin-bottom: 25px;
+    border-radius: 4px;
+    font-size: 15px;
+    border-radius: 0 0 4px 4px;
+}
+
+.fiddle-loading-message {
+    background-color: rgba(255, 255, 255, 0.875);
+    border-radius: 4px;
+    box-shadow: 0 0 16px black;
+    text-align: center;
+}
+
+/*
+ * Display a hint below the buttons. U+2009 is thin space (&thinsp;).
+ */
+
+.fiddle-toolbar::after {
+    content: 'Ctrl\2009+\2009Space = Completions';
+    display: block;
+    margin-right: .5em;
+    direction: ltr;
+    color: #cccccc;
+}
+
+/*
+ * Custom CodeMirror theme. Some rules from material theme (https://material-theme.site/).
+ * Others were changed to match the tomorrow theme (https://github.com/chriskempson/tomorrow-theme).
+ */
+
+.CodeMirror.CodeMirror {
+    background-color: #003C4A;
+    color: #cccccc;
+}
+
+.CodeMirror.CodeMirror .CodeMirror-gutters {
+    background: #003C4A;
+    color: #545454;
+    border: none;
+}
+
+.CodeMirror.CodeMirror .CodeMirror-guttermarker,
+.CodeMirror.CodeMirror .CodeMirror-guttermarker-subtle,
+.CodeMirror.CodeMirror .CodeMirror-linenumber {
+    color: #545454;
+}
+
+.CodeMirror.CodeMirror .CodeMirror-cursor {
+    border-left: 1px solid #f29110;
+}
+
+.CodeMirror.CodeMirror div.CodeMirror-selected {
+    background: rgba(97, 97, 97, 0.2);
+}
+
+.CodeMirror.CodeMirror.CodeMirror-focused div.CodeMirror-selected {
+    background: rgba(97, 97, 97, 0.2);
+}
+
+.CodeMirror.CodeMirror .CodeMirror-line::selection,
+.CodeMirror.CodeMirror .CodeMirror-line>span::selection,
+.CodeMirror.CodeMirror .CodeMirror-line>span>span::selection {
+    background: rgba(128, 203, 196, 0.2);
+}
+
+.CodeMirror.CodeMirror .CodeMirror-line::-moz-selection,
+.CodeMirror.CodeMirror .CodeMirror-line>span::-moz-selection,
+.CodeMirror.CodeMirror .CodeMirror-line>span>span::-moz-selection {
+    background: rgba(128, 203, 196, 0.2);
+}
+
+.CodeMirror.CodeMirror .CodeMirror-activeline-background {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.CodeMirror.CodeMirror .cm-keyword,
+.CodeMirror.CodeMirror .cm-atom {
+    color: #cc99cc;
+}
+
+.CodeMirror.CodeMirror .cm-operator {
+    color: #cccccc;
+}
+
+.CodeMirror.CodeMirror .cm-variable,
+.CodeMirror.CodeMirror .cm-variable-2,
+.CodeMirror.CodeMirror .cm-variable-3 {
+    color: #cccccc;
+}
+
+.CodeMirror.CodeMirror .cm-type {
+    color: #ccb2cc;
+}
+
+.CodeMirror.CodeMirror .cm-number {
+    color: #f99157;
+}
+
+.CodeMirror.CodeMirror .cm-def {
+    color: #6699cc;
+}
+
+.CodeMirror.CodeMirror .cm-string,
+.CodeMirror.CodeMirror .cm-string-2 {
+    color: #99cc99;
+}
+
+.CodeMirror.CodeMirror .cm-comment {
+    color: #999999;
+}
+
+.CodeMirror.CodeMirror .cm-meta {
+    color: #f99157;
+}

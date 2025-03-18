@@ -1,0 +1,102 @@
+<h1 id="include-resources-in-a-native-executable">Include Resources in a Native Executable</h1>
+
+<p>By default, the <code>native-image</code> tool does not integrate any resource files into a native executable.
+You must specify resources that should be accessible by your application at run time.</p>
+
+<p>This guide demonstrates how to register resources to be included in a native executable by providing a resource configuration file.
+See <a href="/jdk23/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a> for more ways to include resources.</p>
+
+<h3 id="prerequisite">Prerequisite</h3>
+
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<h2 id="run-a-demo">Run a Demo</h2>
+
+<p>In the following example, you run a “fortune teller” application that simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>).</p>
+
+<ol>
+  <li>Save the following Java source code as a file named <em>Fortune.java</em>:
+    <pre><code class="language-java"> import java.io.BufferedReader;
+ import java.io.InputStreamReader;
+ import java.util.ArrayList;
+ import java.util.Random;
+ import java.util.Scanner;
+
+ public class Fortune {
+
+     private static final String SEPARATOR = "%";
+     private static final Random RANDOM = new Random();
+     private ArrayList&lt;String&gt; fortunes = new ArrayList&lt;&gt;();
+
+     public Fortune(String path) {
+         // Scan the file into the array of fortunes
+         Scanner s = new Scanner(new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream(path))));
+         s.useDelimiter(SEPARATOR);
+         while (s.hasNext()) {
+             fortunes.add(s.next());
+         }
+     }
+        
+     private void printRandomFortune() throws InterruptedException {
+         int r = RANDOM.nextInt(fortunes.size()); // Pick a random number
+         String f = fortunes.get(r);  // Use the random number to pick a random fortune
+         for (char c: f.toCharArray()) {  // Print out the fortune
+           System.out.print(c);
+             Thread.sleep(100); 
+         }
+     }
+      
+     public static void main(String[] args) throws InterruptedException {
+         Fortune fortune = new Fortune("/fortunes.u8");
+         fortune.printRandomFortune();
+     }
+ }
+</code></pre>
+  </li>
+  <li>
+    <p>Download the <a href="https://github.com/oracle/graal/blob/3ed4a7ebc5004c51ae310e48be3828cd7c7802c2/docs/reference-manual/native-image/assets/fortunes.u8"><em>fortunes.u8</em></a> resource file and save it in the same directory as <em>Fortune.java</em>.</p>
+  </li>
+  <li>Create a configuration file, named <em>reachability-metadata.json</em>, and save it in the <em>META-INF/native-image/</em> subdirectory. Register the resource using a <a href="/jdk23/reference-manual/native-image/metadata/#resources">glob pattern</a>:
+    <pre><code class="language-json"> {
+   "resources": [
+     {
+       "glob": "fortunes.u8"
+     }
+   ]
+ }
+</code></pre>
+    <p>The <code>native-image</code> tool picks up all configuration files that it finds in the <em>META-INF/native-image/</em> directory automatically.</p>
+  </li>
+  <li>Compile the application:
+    <pre><code class="language-shell"> javac Fortune.java
+</code></pre>
+  </li>
+  <li>Build a native executable:
+    <pre><code class="language-shell"> native-image Fortune
+</code></pre>
+  </li>
+  <li>Run the fortune teller application to test:
+    <pre><code class="language-shell"> ./fortune
+</code></pre>
+  </li>
+</ol>
+
+<p>To see which resources were included in your native executable, pass the option <code>--emit build-report</code> to the <code>native-image</code> tool at build time.
+It generates an HTML file that can be examined with a regular web browser.
+The information about all included resources will be under the <strong>Resources</strong> tab.</p>
+
+<p>In this demo the path to the resource file is straightforward, but it may be more complex in a real-world use case.
+A resource or resource bundle may come from a module.
+Learn more how to specify it in <a href="/jdk23/reference-manual/native-image/metadata/#resources-in-java-modules">Resources in Java Modules</a>.</p>
+
+<p>For more advanced use-cases, you can register resources using the API methods (see <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/RuntimeResourceAccess.html">class RuntimeResourceAccess</a>).
+Learn more about specifying a resource path using a glob and some syntax rules to be observed from <a href="/jdk23/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a>.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/#resource-metadata-in-json">Resource Metadata in JSON</a></li>
+</ul>

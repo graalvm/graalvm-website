@@ -1,0 +1,105 @@
+<h1 id="embed-c-in-java-using-graalwasm">Embed C in Java Using GraalWasm</h1>
+
+<p>The example below demonstrates how to compile a C function to WebAssembly and run it embedded in a Java application.</p>
+
+<h3 id="prerequisites">Prerequisites</h3>
+
+<p>To run the demo, you need the following:</p>
+<ul>
+  <li><a href="https://www.graalvm.org/downloads/">GraalVM JDK</a></li>
+  <li><a href="https://emscripten.org/docs/tools_reference/emcc.html">Emscripten compiler frontend</a></li>
+  <li><a href="https://maven.apache.org/">Maven</a></li>
+</ul>
+
+<h3 id="demo-part">Demo Part</h3>
+
+<ol>
+  <li>Put the following C program in a file named <em>floyd.c</em>:
+    <pre><code class="language-c"> #include &lt;stdio.h&gt;
+
+ void floyd() {
+     int number = 1;
+     int rows = 10;
+     for (int i = 1; i &lt;= rows; i++) {
+         for (int j = 1; j &lt;= i; j++) {
+             printf("%d ", number);
+             ++number;
+         }
+         printf(".\n");
+     }
+ }
+
+ int main() {
+     floyd();
+     return 0;
+ }
+</code></pre>
+    <p>Note that <code>floyd</code> is defined as a separate function and can be exported.</p>
+  </li>
+  <li>Compile the C code using the most recent version of the <a href="https://emscripten.org/docs/tools_reference/emcc.html">Emscripten compiler frontend</a>:
+    <pre><code class="language-bash"> emcc --no-entry -s EXPORTED_FUNCTIONS=_floyd -o floyd.wasm floyd.c
+</code></pre>
+    <blockquote>
+      <p>The exported functions must be prefixed by <code>_</code>. If you reference that function in, for example, the Java code, the exported name should not contain the underscore.</p>
+    </blockquote>
+
+    <p>It produces a standalone file <em>floyd.wasm</em> in the current working directory.</p>
+  </li>
+  <li>
+    <p>Add dependencies. The GraalVM SDK Polyglot API can be easily added as a Maven dependency to your Java project.
+The GraalWasm artifact should be on the Java module or class path too. Add the following set of dependencies to the project configuration file (<em>pom.xml</em> in the case of Maven).</p>
+
+    <ul>
+      <li>To add the Polyglot API:
+        <pre><code class="language-xml">  &lt;dependency&gt;
+      &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+      &lt;artifactId&gt;polyglot&lt;/artifactId&gt; 
+      &lt;version&gt;${graalwasm.version}&lt;/version&gt;
+  &lt;/dependency&gt;
+</code></pre>
+      </li>
+      <li>To add GraalWasm:
+        <pre><code class="language-xml">  &lt;dependency&gt;
+      &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+      &lt;artifactId&gt;wasm&lt;/artifactId&gt; 
+      &lt;version&gt;${graalwasm.version}&lt;/version&gt;
+      &lt;type&gt;pom&lt;/type&gt;
+  &lt;/dependency&gt;
+</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>Now you can embed this WebAssembly function in a Java application, for example:</p>
+
+    <pre><code class="language-java"> import org.graalvm.polyglot.*;
+ import org.graalvm.polyglot.io.ByteSequence;
+
+ // Load the WebAssembly contents into a byte array
+ byte[] binary = Files.readAllBytes(Path.of("path", "to", "wasm", "file", "floyd.wasm"));
+
+ // Setup context
+ Context.Builder contextBuilder = Context.newBuilder("wasm").option("wasm.Builtins", "wasi_snapshot_preview1");
+ Source.Builder sourceBuilder = Source.newBuilder("wasm", ByteSequence.create(binary), "example");
+ Source source = sourceBuilder.build();
+ Context context = contextBuilder.build();
+
+ // Evaluate the WebAssembly module
+ context.eval(source);
+
+ // Execute the floyd function
+ context.getBindings("wasm").getMember("example").getMember("_initialize").executeVoid();
+ Value mainFunction =context.getBindings("wasm").getMember("example").getMember("floyd");
+ mainFunction.execute();
+ context.close();
+</code></pre>
+  </li>
+  <li>Compile and run this Java application with Maven as usual.</li>
+</ol>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/embed-languages/">Embedding Languages documentation</a></li>
+  <li><a href="/jdk23/reference-manual/wasm/">GraalWasm</a></li>
+</ul>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="running-demo-applications">Running Demo Applications</h1>
+
+<p>Espresso is an implementation of the Java Virtual Machine Specification, which offers some interesting capabilities in addition to being able to run applications in Java or other JVM languages.
+For example, the enhanced <a href="/jdk23/reference-manual/espresso/hotswap/">HotSwap capabilities</a> boosts developer productivity by enabling unlimited hot code reloading.
+Moreover, to illustrate what Espresso can do, consider the following short examples.</p>
+
+<h2 id="mixing-aot-and-jit-for-java">Mixing AOT and JIT for Java</h2>
+
+<p>GraalVM Native Image technology allows compiling applications ahead-of-time (AOT) to executable native binaries which:</p>
+<ul>
+  <li>are standalone</li>
+  <li>start instantly</li>
+  <li>have lower memory usage</li>
+</ul>
+
+<p>The main trade off for using Native Image is that the analysis and compilation of your program happens under the closed world assumption, meaning the static analysis needs to process all bytecode which will ever be executed in the application.
+This makes using some language features such as dynamic class loading or reflection tricky.</p>
+
+<p>Espresso is a JVM implementation of a JVM bytecode interpreter, built on the <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>.
+It is essentially a Java application, as are the Truffle framework itself and the GraalVM JIT compiler.
+All three of them can be compiled ahead-of-time with <code>native-image</code>.
+Using Espresso for some parts of your application makes it possible to isolate the required dynamic behavior and still use the native executable on the rest of your code.</p>
+
+<p>Consider a canonical Java Shell tool (JShell) as an example command line application.
+It is a REPL capable of evaluating Java code and consists of two parts:</p>
+<ul>
+  <li>the UI - CLI app handling input-output</li>
+  <li>the backend processor for running code you enter into Shell.</li>
+</ul>
+
+<p>This design naturally fits the point we are trying to illustrate. We can build a native executable of the JShell’s UI part, and make it include Espresso to run the code dynamically specified at run time.</p>
+
+<h4 id="prerequisites">Prerequisites:</h4>
+<ul>
+  <li><a href="https://www.graalvm.org/downloads/">GraalVM JDK</a></li>
+  <li><a href="/jdk23/reference-manual/espresso/#getting-started">Espresso</a></li>
+</ul>
+
+<p>Clone the <a href="https://github.com/graalvm/graalvm-demos">project</a> with the demo applications and navigate to the <code>espresso-jshell</code> directory:</p>
+<pre><code class="language-shell">git clone https://github.com/graalvm/graalvm-demos.git
+cd graalvm-demos/espresso-jshell
+</code></pre>
+
+<p>The JShell implementation is actually the normal JShell launcher code, which only accepts Espresso implementation of the execution engine.</p>
+
+<p>The “glue” code that binds the part which is AOT compiled with the component that dynamically evaluates the code is located in the <code>EspressoExecutionControl</code> class.
+It loads the JShell classes within the Espresso context and delegate the input to them:</p>
+
+<pre><code class="language-shell">protected final Lazy&lt;Value&gt; ClassBytecodes = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassBytecodes"));
+protected final Lazy&lt;Value&gt; byte_array = Lazy.of(() -&gt; loadClass("[B"));
+protected final Lazy&lt;Value&gt; ExecutionControlException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ExecutionControlException"));
+protected final Lazy&lt;Value&gt; RunException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$RunException"));
+protected final Lazy&lt;Value&gt; ClassInstallException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassInstallException"));
+protected final Lazy&lt;Value&gt; NotImplementedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$NotImplementedException"));
+protected final Lazy&lt;Value&gt; EngineTerminationException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$EngineTerminationException"));
+protected final Lazy&lt;Value&gt; InternalException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$InternalException"));
+protected final Lazy&lt;Value&gt; ResolutionException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ResolutionException"));
+protected final Lazy&lt;Value&gt; StoppedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$StoppedException"));
+protected final Lazy&lt;Value&gt; UserException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$UserException"));
+</code></pre>
+
+<p>There is more code to pass the values correctly and transform the exceptions.
+To try it out, build the <code>espresso-jshell</code> binary using the provided script, which will:</p>
+<ol>
+  <li>Build the Java sources to the bytecode</li>
+  <li>Build the JAR file</li>
+  <li>Build a native executable</li>
+</ol>
+
+<p>After the build you can observe the resulting binary file (<code>file</code> and <code>ldd</code> are Linux commands):</p>
+<pre><code class="language-shell">file ./espresso-jshell
+ldd ./espresso-jshell
+</code></pre>
+
+<p>It is indeed a binary file not depending on the JVM, and you can run it noticing how fast it starts:</p>
+<pre><code class="language-shell">./espresso-jshell
+|  Welcome to JShell -- Version 11.0.10
+|  For an introduction type: /help intro
+
+jshell&gt; 1 + 1
+1 ==&gt; 2
+</code></pre>
+
+<p>Experiment with loading new code into JShell and see how Espresso executes it.</p>
+
+<p>Watch a video version of the mixing AOT and JIT compiled code with the Espresso demo.</p>
+
+<div class="row">
+  <div class="col-sm-12">
+    <div class="vlog__video">
+      <img src="/resources/img/java-on-truffle/mixing-AOT-and-JIT-demo.png" alt="video_1" />
+          <a href="#" data-video="Z0Rb6QRyQVw" class="btn btn-primary btn-primary--filled js-popup">watch video</a>
+    </div>
+  </div>
+</div>
+
+<div id="video-view" class="modal-window">
+  <div class="modal-window__content">
+    <button type="button" title="Close" id="js-close" class="modal-window__close"><img src="/resources/img/btn-close.svg" alt="close_video" /></button>
+    <div class="modal-window__video">
+      <div id="player"></div>
+    </div>
+  </div>
+</div>
+<p><br /></p>
+
+<h2 id="graalvm-tools-with-espresso">GraalVM Tools with Espresso</h2>
+
+<p>Espresso is a proper part of the GraalVM ecosystem, and like other GraalVM-supported languages gets the support of developer tooling by default. The <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a> integrates with the tools such as the debugger, profiler, memory analyzer, the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">Instrumentation API</a>.
+The interpreter for a language needs to mark the AST nodes with some annotations to support those tools.</p>
+
+<p>For example, to be able to use a profiler, a language interpreter needs to mark the root nodes.
+For the debugger purposes, the language expressions should be marked as instrumental, the scopes for the variables specified, and so on. The language interpreter does not need to integrate with the tools itself.
+As a result, you can profile a Java application on Espresso out of the box using either the CPU Sampler or Memory Tracer tools.</p>
+
+<p>For example, if we have a class like the following one computing the prime numbers:</p>
+<pre><code class="language-java">import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
+public class Main {
+
+    public static void main(String[] args) {
+        Main m = new Main();
+
+        for (int i = 0; i &lt; 100_000; i++) {
+            System.out.println(m.random(100));
+        }
+    }
+
+    private Random r = new Random(41);
+    public List&lt;Long&gt; random(int upperbound) {
+        int to = 2 + r.nextInt(upperbound - 2);
+        int from = 1 + r.nextInt(to - 1);
+        return primeSequence(from, to);
+    }
+    public static List&lt;Long&gt; primeSequence(long min, long max) {
+        return LongStream.range(min, max)
+                .filter(Main::isPrime)
+                .boxed()
+                .collect(Collectors.toList());
+    }
+    public static boolean isPrime(long n) {
+        return LongStream.rangeClosed(2, (long) Math.sqrt(n))
+                .allMatch(i -&gt; n % i != 0);
+    }
+}
+</code></pre>
+
+<p>Build this program, and run it with the <code>--cpusampler</code> option.</p>
+<pre><code class="language-shell">javac Main.java
+java -truffle --cpusampler Main &gt; output.txt
+</code></pre>
+
+<p>At the end of the <code>output.txt</code> file you will find the profiler output, the histogram of the methods, and how much time the execution took.
+You can also try an experiment with the <code>--memtracer</code> option, to see where the allocations in this program are happening.</p>
+<pre><code class="language-shell">java -truffle --experimental-options --memtracer Main &gt; output.txt
+</code></pre>
+
+<p>Other tools that GraalVM offers are <a href="/jdk23/tools/chrome-debugger/">Chrome Debugger</a>, <a href="/jdk23/tools/code-coverage/">Code Coverage</a>, and <a href="/jdk23/tools/graalvm-insight/">GraalVM Insight</a>.</p>
+
+<p>Having the “out-of-the-box” support for the developer tooling makes Espresso an interesting choice of the JVM.</p>
+
+<p>Watch a short demonstration of GraalVM built-in tools for Espresso.</p>
+
+<div class="row">
+  <div class="col-sm-12">
+    <div class="vlog__video">
+      <img src="/resources/img/java-on-truffle/tools-for-Java-on-Truffle.png" alt="video_1" />
+          <a href="#" data-video="QHajwx7BPyo" class="btn btn-primary btn-primary--filled js-popup">watch video</a>
+    </div>
+  </div>
+</div>
+
+<div id="video-view" class="modal-window">
+  <div class="modal-window__content">
+    <button type="button" title="Close" id="js-close" class="modal-window__close"><img src="/resources/img/btn-close.svg" alt="close_video" /></button>
+    <div class="modal-window__video">
+      <div id="player"></div>
+    </div>
+  </div>
+</div>
+<p><br /></p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

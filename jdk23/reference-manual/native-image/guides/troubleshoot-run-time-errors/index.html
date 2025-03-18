@@ -1,0 +1,81 @@
+<h1 id="troubleshoot-native-image-run-time-errors">Troubleshoot Native Image Run-Time Errors</h1>
+
+<p>A successful ahead-of-time compilation can still generate images that crash at run time or do not behave the same way as the application would behave on a Java VM. 
+In this guide, some reasons for that are shown, along with the strategies to diagnose and resolve the issues.</p>
+
+<p>Note that sometimes upgrading to the latest version of GraalVM can already resolve an issue.</p>
+
+<h3 id="1-diagnose-missing-metadata-registration">1. Diagnose Missing Metadata Registration</h3>
+
+<p>Start by diagnosing if there is any metadata configuration missing.
+Native Image requires all utilized classes to be known during the build.
+The static analysis tries to make predictions about the run-time behavior of your application.
+In some cases, you need to provide the analysis with configuration to make all dynamic feature calls visible to it.
+Failing to do so will result in an image that terminates at run-time with hard-to-diagnose errors once the dynamic feature is used in the application.
+This can be avoided by eagerly checking for missing metadata.</p>
+
+<ol>
+  <li>
+    <p>Pass the <code>--exact-reachablity-metadata</code> option to the <code>native-image</code> tool and rebuild the application. If you want to do this only for a specific package, specify a package prefix <code>--exact-reachablity-metadata=[package prefix]</code>.</p>
+
+    <blockquote>
+      <p>This option was introduced in GraalVM for JDK 23 and will become the default in the next feature release. It is equivalent to the <code>-H:ThrowMissingRegistrationErrors=</code> host option.</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>Next run that native executable passing the <code>-XX:MissingRegistrationReportingMode=Warn</code> option to find all places in your code where missing registrations occur.</p>
+  </li>
+  <li>
+    <p>If there is some missing metadata reported, make sure to add it to the <em>reachability-metadata.json</em> file. See how to do it in the <a href="https://www.graalvm.org/latest/reference-manual/native-image/metadata/#specifying-metadata-with-json">Reachability Metadata documentation</a>.</p>
+  </li>
+  <li>
+    <p>Then restart the native executable with <code>-XX:MissingRegistrationReportingMode=Exit</code> to detect places where the application accidentally ignores a missing registration error (with <code>catch (Throwable t)</code> blocks). The application will then unconditionally print the error message with the stack trace and exit immediately. This behavior is ideal for running application tests to guarantee all metadata is included.</p>
+  </li>
+</ol>
+
+<h4 id="shared-libraries">Shared Libraries</h4>
+
+<p>For diagnosing shared libraries built with Native Image, you can either:</p>
+<ul>
+  <li>specify <code>-R:MissingRegistrationReportingMode=Exit</code> when building a native shared library;</li>
+  <li>or specify <code>-XX:MissingRegistrationReportingMode=Exit</code> when the isolate is created. <code>graal_create_isolate_params_t</code> has <code>argc (_reserved_1)</code> and <code>argv (_reserved_2)</code> fields that can be used to pass C-style command-line options at run time. However, note that both fields are currently not public APIs.</li>
+</ul>
+
+<h3 id="2-set-javahome-explicitly">2. Set java.home Explicitly</h3>
+
+<p>If your application code uses the <code>java.home</code> property, set it explicitly with <code>-Djava.home=&lt;path&gt;</code> when running a native executable.
+Otherwise, the <code>System.getProperty("java.home")</code> call will return a <code>null</code> value.</p>
+
+<h3 id="3-enable-url-protocols">3. Enable URL Protocols</h3>
+
+<p>Try enabling all URL protocols on-demand at build time: <code>--enable-url-protocols=&lt;protocols&gt;</code>.
+To enable the HTTPS support only, pass <code>--enable-https</code>.</p>
+
+<h3 id="4-enable-signal-handling">4. Enable Signal Handling</h3>
+
+<p>If your application is using signal handling or the <code>java.lang.Terminator</code> exit handlers, provide the option <code>--install-exit-handlers</code> option at build time.</p>
+
+<h3 id="5-include-all-charsets-and-locales">5. Include All Charsets and Locales</h3>
+
+<p>Other handy options are <code>-H:+AddAllCharsets</code> to add charsets support, and <code>-H:+IncludeAllLocales</code> to pre-initialize support for locale-sensitive behavior in the <code>java.util</code> and <code>java.text</code> packages. 
+Pass those options at build time.
+This might increase the size of the resulting binary.</p>
+
+<h3 id="6-add-missing-security-providers">6. Add Missing Security Providers</h3>
+
+<p>If your application is using Security Providers, try to pre-initialize security providers by passing the option <code>-H:AdditionalSecurityProviders=&lt;list-of-providers&gt;</code> at build time. 
+Here is a list of all JDK security providers to choose from:
+<code>sun.security.provider.Sun,sun.security.rsa.SunRsaSign,sun.security.ec.SunEC,sun.security.ssl.SunJSSE,com.sun.crypto.provider.SunJCE,sun.security.jgss.SunProvider,com.sun.security.sasl.Provider,org.jcp.xml.dsig.internal.dom.XMLDSigRI,sun.security.smartcardio.SunPCSC,sun.security.provider.certpath.ldap.JdkLDAP,com.sun.security.sasl.gsskerb.JdkSASL</code>.</p>
+
+<h3 id="7-file-a-native-image-run-time-issue">7. File a Native Image Run-Time Issue</h3>
+
+<p>Only if you tried all the above suggestions, file a <a href="https://github.com/oracle/graal/issues/new?assignees=&amp;labels=native-image%2Cbug%2Crun-time&amp;projects=&amp;template=1_1_native_image_run_time_bug_report.yml&amp;title=%5BNative+Image%5D+">Native Image Run-Time Issue Report</a> at GitHub, filling out the necessary information.</p>
+
+<p>To gather the required information for filing a proper and actionable ticket, it is recommended to run a <code>native-image</code> build with the diagnostics mode enabled. 
+Pass the <code>--diagnostics-mode</code> option enabling diagnostics output for class initialization, substitutions, and so on.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/#specifying-metadata-with-json">Specifying Metadata with JSON</a></li>
+</ul>
