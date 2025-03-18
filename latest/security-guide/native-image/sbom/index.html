@@ -470,10 +470,34 @@ To embed a CycloneDX SBOM into a native executable, pass the <code>--enable-sbom
 <p>The implementation constructs the SBOM by recovering all version information observable in external library manifests for classes included in a native executable.
 The SBOM is compressed to limit the SBOM’s impact on the native executable size.
 The SBOM is stored in the <code>gzip</code> format with the exported <code>sbom</code> symbol referencing its start address and the <code>sbom_length</code> symbol referencing its size.</p>
+    
+      <h2 id="extracting-sbom-contents">
+        
+        
+          Extracting SBOM Contents <a href="#extracting-sbom-contents" class="anchor_heading">#</a>
+        
+        
+      </h2>
 
-<p>After embedding the compressed SBOM into the executable, the <a href="/latest/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Native Image Inspect Tool</a> is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code> from both executables and shared libraries.
-It outputs the SBOM in the following format:</p>
+<p>After embedding the compressed SBOM into the image, there are two possible ways to extract the SBOM contents:</p>
+<ul>
+  <li>using the <a href="/latest/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Native Image Inspect Tool</a></li>
+  <li>using <a href="https://github.com/anchore/syft" target="_blank">Syft</a></li>
+</ul>
+    
+      <h3 id="native-image-inspect-tool">
+        
+        
+          Native Image Inspect Tool <a href="#native-image-inspect-tool" class="anchor_heading">#</a>
+        
+        
+      </h3>
 
+<p>The <a href="/latest/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Native Image Inspect Tool</a> is able to extract the compressed SBOM using the <code>--sbom</code> parameter, accessible from both executables and shared libraries:</p>
+<pre><code class="language-bash">native-image-inspect --sbom &lt;path_to_binary&gt;
+</code></pre>
+
+<p>It outputs the contents in the JSON format:</p>
 <pre><code class="language-json">{
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
@@ -521,6 +545,35 @@ It outputs the SBOM in the following format:</p>
 }
 </code></pre>
     
+      <h3 id="syft">
+        
+        
+          Syft <a href="#syft" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><a href="https://github.com/anchore/syft" target="_blank">Syft</a> is an open-source tool developed by Anchore that generates an SBOM for container images and filesystems.
+Additionally, it can extract an embedded SBOM and present it in both its native Syft format and the CycloneDX format.
+Thanks to the contribution from the GraalVM team, <code>syft</code> can extract an embedded SBOM from within a native image, built for Linux, macOS, or Windows.</p>
+
+<p>Run <code>syft scan</code> on the native executable to extract the entire SBOM contents:</p>
+<pre><code class="language-bash">syft scan &lt;path_to_binary&gt; -o cyclonedx-json
+</code></pre>
+
+<p>To list only the Java libraries included in it, run:</p>
+<pre><code class="language-bash">syft &lt;path_to_binary&gt;
+</code></pre>
+
+<p>It outputs the list similar to this:</p>
+<pre><code class="language-bash">NAME               VERSION       TYPE
+Oracle GraalVM     25+12-LTS     graalvm-native-image
+collections        25+12-LTS     java-archive
+commons-validator  1.9.0         java-archive
+json               20211205      java-archive
+...
+</code></pre>
+    
       <h2 id="enabling-security-scanning">
         
         
@@ -540,7 +593,7 @@ It also integrates with GitHub Actions, GitLab, and Jenkins Pipelines.</p>
 <p>Another popular command-line scanner is <code>grype</code>, part of the <a href="https://anchore.com/" target="_blank">Anchore software supply chain management platform</a>.
 With <code>grype</code>, you can check whether the libraries listed in your SBOMs have known vulnerabilities documented in Anchore’s database.
 The output of the <code>native-image-inspect</code> tool can be fed directly into <code>grype</code> to scan for vulnerable libraries using the following command:</p>
-<pre><code class="language-bash">$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype
+<pre><code class="language-bash">native-image-inspect --sbom &lt;path_to_binary&gt; | grype
 </code></pre>
 <p>It produces the following output:</p>
 <pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
@@ -618,6 +671,9 @@ This information can be useful for:</p>
 <blockquote>
   <p>Including class-level metadata increases the SBOM size substantially. For this <a href="https://github.com/graalvm/graalvm-demos/tree/master/micronaut-hello-rest-maven">Micronaut Hello World Rest</a> application, the SBOM size is 1.1 MB when embedded, and 13.7 MB when exported. The SBOM without class-level metadata is 3.5 kB when embedded, and 64 kB when exported. The size of the native image without an embedded SBOM is around 52 MB.</p>
 </blockquote>
+
+<p>Note that including class-level metadata is not supported by <a href="#syft">Syft</a>, as the nested components field containing this metadata is removed from the extracted SBOM.
+This limitation affects only metadata visibility in extracted SBOMs; it does not impact vulnerability scanning functionality.</p>
     
       <h3 id="data-format">
         
