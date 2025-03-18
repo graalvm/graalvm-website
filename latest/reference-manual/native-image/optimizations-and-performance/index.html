@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -360,6 +360,17 @@ $(document).ready(function(){
             
             <a href="/latest/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">
               Memory Management
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/latest/reference-manual/native-image/optimizations-and-performance/ObjectHeaderSize/">
+              Object Header Size in Native Image
             </a>
           </li>
 
@@ -599,7 +610,7 @@ The following table provides an overview of the different optimization levels an
         
       </h3>
 
-<p>Consider using Profile-Guided Optimization to optimize your application for improved throughput.
+<p>Consider using Profile-Guided Optimization (PGO) to optimize your application for improved throughput.
 These optimizations allow the Graal compiler to leverage profiling information, similar to when it is running as a JIT compiler, when AOT-compiling your application.
 For this, perform the following steps:</p>
 
@@ -609,7 +620,39 @@ For this, perform the following steps:</p>
   <li>Rebuild your application with the <code>--pgo</code> option. You can pass a custom <em>.iprof</em> file with <code>--pgo=&lt;your&gt;.iprof</code>, otherwise <em>default.iprof</em> is used. This will rebuild your image and generate an optimized version of your application.</li>
 </ol>
 
-<p>Find more information on this topic in <a href="/latest/reference-manual/native-image/optimizations-and-performance/PGO/basic-usage/">Basic Usage of Profile-Guided Optimization</a>.</p>
+<blockquote>
+  <p>Note: Not available in GraalVM Community Edition.</p>
+</blockquote>
+
+<p>Find more information on this topic in <a href="https://raw.githubusercontent.com/oracle/graal/master/PGO-Basic-Usage.md">Basic Usage of Profile-Guided Optimization</a>.</p>
+    
+      <h3 id="ml-powered-profile-inference-for-enhanced-performance">
+        
+        
+          ML-Powered Profile Inference for Enhanced Performance <a href="#ml-powered-profile-inference-for-enhanced-performance" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Native Image supports machine learning-driven static profiling, as a built-in capability.
+By default, GraalVM runs at the <code>-O2</code> optimization level, which uses the simple and fast <strong>Graal Static Profiler (GraalSP)</strong> for profile inference.
+This model is optimized for a wide range of applications.</p>
+
+<p>As of GraalVM for JDK 24, the new <strong>Graal Neural Network (GraalNN)</strong> static profiler can be used for ML-powered profile inference, offering even better performance.
+Enable it by passing the <code>-O3</code> option to Native Image.</p>
+
+<blockquote>
+  <p>Note: Not available in GraalVM Community Edition.</p>
+</blockquote>
+
+<p>Note that if the user provides a <a href="#profile-guided-optimization-for-improved-throughput">PGO profile</a> using the <code>--pgo</code> option, additional ML inference is unnecessary and therefore disabled automatically.</p>
+
+<p>Key Points:</p>
+
+<ul>
+  <li><strong>GraalSP</strong> (simple model) is used with <code>-O2</code> by default.</li>
+  <li><strong>GraalNN</strong> (advanced model) is used with <code>-O3</code> by default.</li>
+</ul>
     
       <h3 id="optimizing-for-specific-machines">
         
@@ -638,6 +681,7 @@ This reduces the set of instructions used by the compiler to a minimum and thus 
 <p>Native Image provides additional features to further optimize a generated binary:</p>
 <ul>
   <li>Choosing an appropriate Garbage Collector and tailoring the garbage collection policy can reduce GC times. See <a href="/latest/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Memory Management</a>.</li>
+  <li>Using compressed references can lead to better memory efficiency. See <a href="/latest/reference-manual/native-image/optimizations-and-performance/ObjectHeaderSize/">Object Header Size in Native Image</a>.</li>
   <li>Loading application configuration during the image build can speed up application startup. See <a href="/latest/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">Class Initialization at Image Build Time</a>.</li>
   <li>The build output may provide some other recommendations that help you get the best out of Native Image. See <a href="/latest/reference-manual/native-image/overview/BuildOutput/#recommendations">Build Output: Recommendations</a>.</li>
 </ul>

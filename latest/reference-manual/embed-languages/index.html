@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -2348,13 +2348,17 @@ A sample Maven and Gradle configuration for Native Image can be found in the <a 
 <pre><code>mvn -Pnative package
 </code></pre>
 
-<p>To build a native executable from a polyglot application, for example, a Java-host application embedding Python, a <code>./resources</code> directory containing all the required files is created by default.
-By default, the language runtime will look for the resources directory relative to the native executable or library image that was built.
+<p>Building a native executable from a polyglot application, for example, a Java-host application embedding Python, automatically captures all the internal resources required by the included languages and tools.
+By default, the resources are included in the native executable itself.
+The inclusion of resources in the native executable can be disabled by <code>-H:-IncludeLanguageResources</code>.
+Another option is a separate <em>resources</em> directory containing all the required files.
+To switch to this option, use <code>-H:+CopyLanguageResources</code>. This is the default behavior when <code>-H:+IncludeLanguageResources</code> is not supported, i.e., with Graal Languages earlier than 24.2.x (see the <a href="https://www.graalvm.org/release-calendar/">versions roadmap</a>).
+When <code>-H:+CopyLanguageResources</code> is used, the language runtime will look for the resources directory relative to the native executable or the shared library.
 At run time, the lookup location may be customized using the <code>-Dpolyglot.engine.resourcePath=path/to/resources</code> option.
-To disable the resource creation, the <code>-H:-CopyLanguageResources</code> build-time option may be used.
-Note that some languages may not support running without a resources directory.</p>
+To disable the capturing of resources altogether, add both <code>-H:-IncludeLanguageResources</code> and <code>-H:-CopyLanguageResources</code> to build-time options.
+Note that some languages may not support running without their resources.</p>
 
-<p>With Polyglot version 23.1 the language home options like <code>-Dorg.graalvm.home</code> should no longer be used and were replaced with the resource directory option.
+<p>With Graal Languages version 23.1 and newer the language home options like <code>-Dorg.graalvm.home</code> should no longer be used and were replaced with the resource directory option.
 The language home options remain functional for compatibility reasons but may be removed in future releases.</p>
     
       <h3 id="configuring-native-host-reflection">
@@ -2501,7 +2505,7 @@ We recommend, therefore, keeping a strong reference to the <code>Source</code> o
         
       </h2>
 
-<p>On Oracle GraalVM, a Polyglot engine can be configured to run in a dedicated Native Image isolate.
+<p>On Oracle GraalVM, a polyglot engine can be configured to run in a dedicated Native Image isolate.
 A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler.
 Polyglot isolates are useful for <a href="/latest/security-guide/sandboxing/">sandboxing</a>.
 Running languages in an isolate works with HotSpot and Native Image host virtual machines.</p>
@@ -2512,13 +2516,13 @@ For example, a dependency on isolated JavaScript can be configured by adding a M
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
     &lt;type&gt;jar&lt;/type&gt;
 &lt;/dependency&gt;
 &lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
     &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
-    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
     &lt;type&gt;pom&lt;/type&gt;
 &lt;/dependency&gt;
 </code></pre>
@@ -2553,7 +2557,7 @@ For example, to configure a dependency on isolated Python for Linux amd64, add t
 <p>For a complete Maven POM file that adds the polyglot isolate Native Image dependency for the current platform, refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demonstration</a> on GitHub.</p>
 
 <p>To enable isolate usage with the Polyglot API, the <code>--engine.SpawnIsolate=true</code> option must be passed to <code>Engine</code> or <code>Context</code> when constructed.
-The option <code>engine.SpawnIsolate</code> may not be available if used on any other JDK than Oracle GraalVM.</p>
+The option <code>engine.SpawnIsolate</code> may not be available if used on any JDK other than Oracle GraalVM.</p>
 
 <pre><code class="language-java">import org.graalvm.polyglot.*;
 
@@ -2585,6 +2589,10 @@ public class PolyglotIsolate {
     <tr>
       <td>JavaScript (<code>js-isolate</code>)</td>
       <td>23.1</td>
+    </tr>
+    <tr>
+      <td>Python (<code>python-isolate</code>)</td>
+      <td>24.1</td>
     </tr>
   </tbody>
 </table>

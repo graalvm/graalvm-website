@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -349,6 +349,17 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
+            <a href="/latest/security-guide/native-image/sbom/">
+              Software Bill of Materials (SBOM) in Native Image
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
             <a href="/latest/security-guide/native-image/Jipher/">
               Jipher JCE with Native Image
             </a>
@@ -470,66 +481,8 @@ Alternatively developers can make use of the <a href="https://www.graalvm.org/sd
         
       </h2>
 
-<p>GraalVM Native Image can assemble a Software Bill of Materials (SBOM) at build time to detect any libraries that may be susceptible to known security vulnerabilities.
-Native Image provides the <code>--enable-sbom</code> option to embed an SBOM into a native executable (only available in Oracle GraalVM). 
-In addition to being embedded, the SBOM can be added to the classpath or exported as a JSON by using <code>--enable-sbom=classpath,export</code>.</p>
-
-<p>The CycloneDX format is supported and the default. 
-To embed a CycloneDX SBOM into a native executable, pass the <code>--enable-sbom</code> option to the <code>native-image</code> command.</p>
-
-<p>The implementation constructs the SBOM by recovering all version information observable in external library manifests for classes included in a native executable. 
-The SBOM is also compressed in order to limit the SBOM’s impact on the native executable size.<br />
-The SBOM is stored in the <code>gzip</code> format with the exported <code>sbom</code> symbol referencing its start address and the <code>sbom_length</code> symbol its size.</p>
-
-<p>After embedding the compressed SBOM into the executable, the <a href="/latest/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Native Image Inspect Tool</a> is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code> from both executables and shared libraries.
-It outputs the SBOM in the following format:</p>
-
-<pre><code class="language-json">{
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.4",
-  "version": 1,
-  "components": [
-    {
-      "type": "library",
-      "group": "io.netty",
-      "name": "netty-codec-http2",
-      "version": "4.1.76.Final",
-      "properties": [
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:codec:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty-codec-http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty_codec_http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        ...
-      ]
-    },
-    ...
-  ],
-  "serialNumber": "urn:uuid:51ec305f-616e-4139-a033-a094bb94a17c"
-}
-</code></pre>
-
-<p>To scan for any vulnerable libraries, submit the SBOM to a vulnerability scanner.
-For example, the popular <a href="https://anchore.com/">Anchore software supply chain management platform</a> makes the <code>grype</code> scanner freely available.
-You can check whether the libraries given in your SBOMs have known vulnerabilities documented in Anchore’s database.
-For this purpose, the output of the tool can be fed directly to the <code>grype</code> scanner to check for vulnerable libraries, using the command <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype</code> which produces the following output:</p>
-<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
-netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
-</code></pre>
-
-<p>You can then use this report to update any vulnerable dependencies found in your executable.</p>
-
-<blockquote>
-  <p>Note that if <code>native-image-inspect</code> is used without the <code>--sbom</code> option, it will execute parts of the specified native binary to extract the method-level information.
-This functionality should not be used on native image executables from unknown or untrusted sources.</p>
-</blockquote>
+<p>Native Image can embed a Software Bill of Materials (SBOM) which is an inventory of all the components, libraries, and modules that make up an application.
+Read more in <a href="/latest/security-guide/native-image/sbom/">Software Bill of Materials (SBOM) in Native Image</a>.</p>
     
       <h2 id="java-serialization-in-native-image">
         

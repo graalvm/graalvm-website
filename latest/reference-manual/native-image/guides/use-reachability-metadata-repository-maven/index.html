@@ -318,59 +318,30 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
          &lt;plugins&gt;
              &lt;plugin&gt;
                  &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-                 &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
-                 &lt;version&gt;3.0.0-M5&lt;/version&gt;
-             &lt;/plugin&gt;
-
-             &lt;plugin&gt;
-                 &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-                 &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-                 &lt;version&gt;3.11.0&lt;/version&gt;
-             &lt;/plugin&gt;
-
-             &lt;plugin&gt;
-                 &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-                 &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
-                 &lt;version&gt;3.3.0&lt;/version&gt;
+                 &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+                 &lt;version&gt;3.7.0&lt;/version&gt;
                  &lt;configuration&gt;
+                     &lt;descriptorRefs&gt;
+                         &lt;descriptorRef&gt;jar-with-dependencies&lt;/descriptorRef&gt;
+                     &lt;/descriptorRefs&gt;
                      &lt;archive&gt;
                          &lt;manifest&gt;
-                             &lt;addClasspath&gt;true&lt;/addClasspath&gt;
                              &lt;mainClass&gt;${mainClass}&lt;/mainClass&gt;
                          &lt;/manifest&gt;
                      &lt;/archive&gt;
                  &lt;/configuration&gt;
-             &lt;/plugin&gt;
-
-             &lt;plugin&gt;
-                 &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
-                 &lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
-                 &lt;version&gt;3.1.1&lt;/version&gt;
                  &lt;executions&gt;
                      &lt;execution&gt;
-                         &lt;id&gt;java&lt;/id&gt;
+                         &lt;id&gt;assemble-all&lt;/id&gt;
+                         &lt;phase&gt;package&lt;/phase&gt;
                          &lt;goals&gt;
-                             &lt;goal&gt;java&lt;/goal&gt;
+                             &lt;goal&gt;single&lt;/goal&gt;
                          &lt;/goals&gt;
-                         &lt;configuration&gt;
-                             &lt;mainClass&gt;${mainClass}&lt;/mainClass&gt;
-                         &lt;/configuration&gt;
-                     &lt;/execution&gt;
-                     &lt;execution&gt;
-                         &lt;id&gt;native&lt;/id&gt;
-                         &lt;goals&gt;
-                             &lt;goal&gt;exec&lt;/goal&gt;
-                         &lt;/goals&gt;
-                         &lt;configuration&gt;
-                             &lt;executable&gt;${project.build.directory}/${imageName}&lt;/executable&gt;
-                             &lt;workingDirectory&gt;${project.build.directory}&lt;/workingDirectory&gt;
-                         &lt;/configuration&gt;
                      &lt;/execution&gt;
                  &lt;/executions&gt;
              &lt;/plugin&gt;
          &lt;/plugins&gt;
      &lt;/build&gt;
-
  &lt;/project&gt;
 </code></pre>
     <p><strong>1</strong> Add a dependency on the <a href="https://www.h2database.com/html/main.html">H2 Database</a>, an open source SQL database for Java. The application interacts with this database through the JDBC driver.</p>
@@ -472,7 +443,7 @@ In the <code>native</code> Maven profile section, add the <code>exec-maven-plugi
     <p>The agent captures and records calls to the H2 Database and all the dynamic features encountered during a test run into the <em>reachability-metadata.json</em> file in the <em>target/native/agent-output/main/</em> directory.</p>
   </li>
   <li>Build a native executable using configuration collected by the agent:
-    <pre><code class="language-shell"> mvn -Pnative -DskipTests package exec:exec@native
+    <pre><code class="language-shell"> mvn -Pnative -DskipTests package
 </code></pre>
     <p>It generates a native executable for the platform in the <em>target/</em> directory, called <em>h2example</em>.</p>
   </li>

@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -682,7 +682,7 @@ You can find more information on how to correctly report polymorphic specializat
         
       </h2>
 
-<p>Detecting of suitable splitting candidates relies on the languages reporting polymorphic specializations.
+<p>Detection of suitable splitting candidates relies on the languages reporting polymorphic specializations.
 Once the specialization is reported, you can assume that the polymorphism is coming from somewhere in the caller chain of the call target hosting the newly polymorphic node, and that by splitting the right call target (or call targets) you can return this node to a monomorphic state.</p>
 
 <p>You then identify the call targets for which the splitting could result in monomorphization and mark them as “needs split”. During further execution, if the interpreter is about to execute a direct call to a call target that is marked as “needs split”, that call target will be split (provided there are no outstanding factors preventing it such as the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#isCloningAllowed">root node not being allowed to be split</a>,
@@ -711,9 +711,9 @@ The full implementation can be found in <code>com.oracle.truffle.runtime.Optimiz
 </code></pre>
 
 <p>At the very beginning of the pseudo code you can have early termination conditions.
-If the call target is already marked as “needs split”, there is need to continue.
-Also, if the call targets has no known callers (e.g., it is the “main” of the execution) splitting is not applicable since splitting is inherently tied to duplicating ASTs for a particular call site.
-Finally, if this is happening during the first execution of call target, splitting is pointless since the polymorphic nature of the node is inevitable (i.e., not coming from the callers, but rather an integral property of that call target).</p>
+If the call target is already marked as “needs split”, there is no need to continue.
+Also, if the call target has no known callers (e.g., it is the “main” of the execution) splitting is not applicable since splitting is inherently tied to duplicating ASTs for a particular call site.
+Finally, if this is happening during the first execution of a call target, splitting is pointless since the polymorphic nature of the node is inevitable (i.e., not coming from the callers, but rather an integral property of that call target).</p>
 
 <p>In the second part of the pseudo code two cases are differentiated:</p>
 
@@ -778,10 +778,10 @@ function main() {
 }
 </code></pre>
 
-<p>As you can see, the source of the polymorphism was split, but that did not solve the issue, since both slits still call the same <code>add</code> function and the polymorphism remains.
+<p>As you can see, the source of the polymorphism was split, but that did not solve the issue, since both splits still call the same <code>add</code> function and the polymorphism remains.
 This is where the algorithms return value comes in to play.
-If the algorithm was successful in finding a target to mark than all the transitive callee’s of that target need to be marked “needs split” as well.
-With this final step in place, the final run time result of our splitting approach for the previous example can be represent as the following source code:</p>
+If the algorithm was successful in finding a target to mark then all the transitive callee’s of that target need to be marked “needs split” as well.
+With this final step in place, the final run time result of our splitting approach for the previous example can be represented as the following source code:</p>
 
 <pre><code>function add(arg1, arg2) {
     return arg1 + arg2; // + is polymorphic
@@ -834,7 +834,7 @@ Consider if the <code>main</code> of the previous example looked as follows.</p>
 </code></pre>
 
 <p>Once the execution reaches the newly added line you do not want it to call the <code>add</code> function with the polymorphic <code>+</code> since the arguments here do not merit the polymorphism.
-Luckily, since add was already marked as “needs split”, it will remain so during the entire execution, and this final call to <code>add</code> with cause another split of the <code>add</code> functions.</p>
+Luckily, since <code>add</code> was already marked as “needs split”, it will remain so during the entire execution, and this final call to <code>add</code> will cause another split of the <code>add</code> function.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">

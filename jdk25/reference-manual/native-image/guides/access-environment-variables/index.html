@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      Access Environment Variables in a Native Executable at Runtime
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/access-environment-variables/">
+  
+
+  <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/assets/main.css'>
+  <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
+  <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
+  <script src='/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/resources/lib/purl/purl.js'></script>
+  <script src='/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+
+
+
+  <body class="preload">
+    <div  class="wrapper wrapper--nofooter" >
+      <header  class="header header--content" 
+  role="banner">
+
+  
+  
+
+
+
+
+  <div class="d-flex">
+    <nav class="menu">
+      <div class="menu__logo">
+        <a class="menu__logojs" href="/">
+          <img src='/resources/img/home/logo_mobile_openmenu.svg' alt="GraalVM logo">
+        </a>
+      </div>
+      <ul class="menu__list">
+        <li class="menu__item">
+          <a href='/latest/docs/' class="menu__link">Docs</a>
+        </li>
+        <li class="menu__item">
+          <a href='/guides/' class="menu__link">Guides</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://medium.com/graalvm" class="menu__link" target="_blank">Blog</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://www.youtube.com/graalvm" class="menu__link" target="_blank">Videos</a>
+        </li>
+        <li class="menu__item">
+          <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal Projects</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gdk.svg">
+                    <a href="https://graal.cloud/gdk/" class="item-line">Graal Dev Kit for Micronaut</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="/python/" class="item-line">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/wasm-navi.svg">
+                    <a href="/webassembly/" class="item-line">GraalWasm</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href='/reference-manual/java-on-truffle/' class="item-line">Espresso</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/ruby-navi.svg">
+                    <a href="/ruby/" class="item-line">TruffleRuby</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <div class="menu__item icons githubstar" tabindex="0">
+          <span class="github-widget">
+            <a tabindex="-1" class="github-button" href="https://github.com/oracle/graal" data-icon="octicon-star"
+              data-show-count="true" aria-label="Star oracle/graal on GitHub">Star</a>
+          </span>
+        </div>
+        <div class="menu__downloads">
+          <a href='/downloads/' class="btn btn-try btn-primary">Download</a>
+        </div>
+      </ul>
+      <div role="button" class="menu-btn menu-btn--menu js-show-menu" tabindex="-1" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+  
+</header>
+      <main  class="content"   aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm light-back">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
+      <br>
+      <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
+      <h1 id="access-environment-variables-in-a-native-executable-at-runtime">Access Environment Variables in a Native Executable at Runtime</h1>
+
+<p>A native executable accesses environment variables in the same way as a regular Java application.</p>
+
+<h2 id="run-a-demo">Run a Demo</h2>
+
+<p>For example, run a Java application that iterates over your environment variables and prints out the ones that contain the String of characters passed as a command-line argument.</p>
+
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<ol>
+  <li>Save the following source code in a file named <em>EnvMap.java</em>:
+    <pre><code class="language-java"> import java.util.Map;
+
+ public class EnvMap {
+     public static void main (String[] args) {
+         var filter = args.length &gt; 0 ? args[0] : "";
+         Map&lt;String, String&gt; env = System.getenv();
+         for (String envName : env.keySet()) {
+             if(envName.contains(filter)) {
+                 System.out.format("%s=%s%n",
+                                 envName,
+                                 env.get(envName));
+             }
+         }
+     }
+ }
+</code></pre>
+  </li>
+  <li>Compile the file and build a native executable, as follows:
+    <pre><code class="language-shell"> javac EnvMap.java
+</code></pre>
+    <pre><code class="language-shell"> native-image EnvMap
+</code></pre>
+  </li>
+  <li>Run the native application and pass a command-line argument, such as “HELLO”. There should be no output, because there is no environment variable with a matching name.
+    <pre><code class="language-shell"> ./envmap HELLO
+ &lt;no output&gt;
+</code></pre>
+  </li>
+  <li>Create a new environment variable named “HELLOWORLD” and give it the value “Hello World!”. (If you are using a <code>bash</code> shell, follow the example below.) Now, run the native executable again—it will correctly print out the name and value of the matching environment variable(s).
+    <pre><code class="language-shell"> export HELLOWORLD='Hello World!'
+</code></pre>
+    <pre><code class="language-shell"> ./envmap HELLO
+</code></pre>
+    <p>You should receive the expected output:</p>
+    <pre><code> HELLOWORLD=Hello World!
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk25/reference-manual/native-image/overview/BuildConfiguration/">Native Image Build Configuration</a></li>
+</ul>
+
+
+      </div>
+  </div>
+</div>
+      </main>
+      <!-- Connect with us -->
+<section class="content-section socials">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row-socials">
+      <div class="title">
+        <h2 class="title-section">Connect with us</h2>
+      </div>
+      <div class="social-icons">
+        <div class="wider-logo">
+          <a href="https://github.com/oracle/graal" target="_blank" title="github social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="github social media icon">
+              <path
+                d="M12 0C5.374 0 0 5.373 0 12C0 17.302 3.438 21.8 8.207 23.387C8.806 23.498 9 23.126 9 22.81V20.576C5.662 21.302 4.967 19.16 4.967 19.16C4.421 17.773 3.634 17.404 3.634 17.404C2.545 16.659 3.717 16.675 3.717 16.675C4.922 16.759 5.556 17.912 5.556 17.912C6.626 19.746 8.363 19.216 9.048 18.909C9.155 18.134 9.466 17.604 9.81 17.305C7.145 17 4.343 15.971 4.343 11.374C4.343 10.063 4.812 8.993 5.579 8.153C5.455 7.85 5.044 6.629 5.696 4.977C5.696 4.977 6.704 4.655 8.997 6.207C9.954 5.941 10.98 5.808 12 5.803C13.02 5.808 14.047 5.941 15.006 6.207C17.297 4.655 18.303 4.977 18.303 4.977C18.956 6.63 18.545 7.851 18.421 8.153C19.191 8.993 19.656 10.064 19.656 11.374C19.656 15.983 16.849 16.998 14.177 17.295C14.607 17.667 15 18.397 15 19.517V22.81C15 23.129 15.192 23.504 15.801 23.386C20.566 21.797 24 17.3 24 12C24 5.373 18.627 0 12 0Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://twitter.com/graalvm" target="_blank" title="twitter social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="twitter social media icon">
+              <g clip-path="url(#clip0)">
+                <path
+                  d="M23.4561 4.44249C23.0791 4.60972 22.6915 4.75085 22.2954 4.86543C22.7643 4.33511 23.1218 3.71111 23.3401 3.02827C23.389 2.87522 23.3383 2.70768 23.2125 2.60758C23.0869 2.5074 22.9123 2.4954 22.7739 2.57739C21.9328 3.07627 21.0253 3.4348 20.0737 3.64446C19.1152 2.70784 17.8133 2.1748 16.4674 2.1748C13.6265 2.1748 11.3152 4.486 11.3152 7.32683C11.3152 7.55057 11.3294 7.77307 11.3574 7.99248C7.83215 7.68295 4.55475 5.95023 2.30417 3.18954C2.22397 3.09114 2.1004 3.03811 1.9739 3.04825C1.84732 3.05816 1.73359 3.12954 1.66964 3.23924C1.21318 4.02249 0.971862 4.91831 0.971862 5.82977C0.971862 7.07119 1.41509 8.24904 2.19803 9.1694C1.95996 9.08695 1.72895 8.98391 1.50846 8.86151C1.39008 8.79563 1.24562 8.79663 1.12802 8.86406C1.01034 8.9315 0.936558 9.05552 0.933462 9.19108C0.93292 9.21392 0.93292 9.23676 0.93292 9.25991C0.93292 11.1129 1.93024 12.7812 3.45501 13.6905C3.32402 13.6775 3.1931 13.6585 3.06304 13.6336C2.92895 13.608 2.79106 13.655 2.70064 13.7573C2.61006 13.8595 2.58009 14.0019 2.62182 14.132C3.18621 15.894 4.63929 17.1901 6.39594 17.5853C4.93898 18.4978 3.27284 18.9758 1.52378 18.9758C1.15883 18.9758 0.791784 18.9544 0.432558 18.9118C0.254107 18.8906 0.0834745 18.996 0.0227003 19.1657C-0.0380739 19.3355 0.026339 19.5248 0.178158 19.6221C2.4251 21.0628 5.02322 21.8243 7.69148 21.8243C12.9369 21.8243 16.2184 19.3507 18.0474 17.2757C20.3282 14.6882 21.6362 11.2634 21.6362 7.87952C21.6362 7.73815 21.6341 7.59539 21.6297 7.4531C22.5296 6.77514 23.3043 5.95465 23.9348 5.0116C24.0305 4.86838 24.0201 4.67909 23.9092 4.54724C23.7984 4.41532 23.6138 4.37266 23.4561 4.44249Z"
+                  fill="#171F26" />
+              </g>
+              <defs>
+                <clipPath id="clip0">
+                  <rect width="24" height="24" fill="white" />
+                </clipPath>
+              </defs>
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.linkedin.com/company/graalvm/" target="_blank" title="linkedin social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="linkedin social media icon">
+              <path
+                d="M12 0C5.3736 0 0 5.3736 0 12C0 18.6264 5.3736 24 12 24C18.6264 24 24 18.6264 24 12C24 5.3736 18.6264 0 12 0ZM8.51294 18.1406H5.59039V9.34808H8.51294V18.1406ZM7.05176 8.14746H7.03271C6.052 8.14746 5.41772 7.47235 5.41772 6.6286C5.41772 5.76581 6.07141 5.10938 7.07117 5.10938C8.07092 5.10938 8.68616 5.76581 8.7052 6.6286C8.7052 7.47235 8.07092 8.14746 7.05176 8.14746ZM19.051 18.1406H16.1288V13.4368C16.1288 12.2547 15.7057 11.4485 14.6483 11.4485C13.8409 11.4485 13.3601 11.9923 13.1488 12.5173C13.0715 12.7051 13.0527 12.9677 13.0527 13.2305V18.1406H10.1303C10.1303 18.1406 10.1686 10.173 10.1303 9.34808H13.0527V10.593C13.441 9.9939 14.1359 9.14172 15.6865 9.14172C17.6093 9.14172 19.051 10.3984 19.051 13.099V18.1406Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://medium.com/graalvm" target="_blank" title="medium social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="medium social media icon">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M12 0C5.374 0 0 5.372 0 12C0 18.627 5.374 24 12 24C18.627 24 24 18.627 24 12C24 5.372 18.627 0 12 0ZM18.974 17.557V17.322L17.882 16.25C17.786 16.177 17.738 16.056 17.758 15.937V8.063C17.738 7.944 17.786 7.823 17.882 7.75L19 6.678V6.443H15.131L12.373 13.323L9.235 6.443H5.176V6.678L6.484 8.253C6.612 8.368 6.678 8.538 6.66 8.71V14.898C6.698 15.121 6.628 15.349 6.471 15.512L5 17.296V17.531H9.17V17.296L7.699 15.512C7.541 15.349 7.466 15.123 7.497 14.898V9.546L11.157 17.531H11.582L14.725 9.546V15.911C14.725 16.081 14.725 16.113 14.614 16.224L13.484 17.322V17.557H18.974Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://bsky.app/profile/graalvm.org" target="_blank" title="blue sky social media link">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2442_17265)">
+              <path d="M6.6075 3.99362C9.59982 6.25419 12.8184 10.8377 14.0001 13.2975C15.1819 10.8379 18.4003 6.25415 21.3927 3.99362C23.5518 2.36248 27.0501 1.1004 27.0501 5.11641C27.0501 5.91846 26.5931 11.8541 26.3251 12.8177C25.3935 16.1679 21.9986 17.0224 18.9789 16.5052C24.2574 17.4093 25.6002 20.4037 22.7002 23.3982C17.1927 29.0853 14.7843 21.9713 14.1669 20.1484C14.0537 19.8143 14.0008 19.6579 14 19.7909C13.9992 19.6579 13.9463 19.8143 13.8332 20.1484C13.216 21.9713 10.8077 29.0855 5.29983 23.3982C2.39985 20.4037 3.74261 17.4091 9.0212 16.5052C6.00134 17.0224 2.60645 16.1679 1.67495 12.8177C1.40692 11.854 0.949951 5.91837 0.949951 5.11641C0.949951 1.1004 4.44834 2.36248 6.60735 3.99362H6.6075Z" fill="#171F26"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2442_17265">
+              <rect width="27" height="24" fill="white" transform="translate(0.5 2)"/>
+              </clipPath>
+              </defs>
+              </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="/slack-invitation/" title="slack social media link">
+            <svg class="social-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="slack social media icon">
+              <path
+                d="M13.0009 23.1698C12.9989 23.6678 12.8495 24.154 12.5714 24.5671C12.2933 24.9802 11.899 25.3017 11.4384 25.4909C10.9777 25.6801 10.4714 25.7285 9.98319 25.6302C9.49502 25.5318 9.04693 25.291 8.6955 24.9382C8.34408 24.5854 8.10506 24.1363 8.00863 23.6478C7.91221 23.1592 7.96269 22.6531 8.15371 22.1932C8.34474 21.7333 8.66773 21.3403 9.08193 21.0638C9.49612 20.7874 9.98294 20.6398 10.4809 20.6398H13.0009V23.1698ZM14.2709 29.4798C14.3636 30.0763 14.6665 30.6201 15.125 31.0128C15.5835 31.4055 16.1672 31.6214 16.7709 31.6214C17.3746 31.6214 17.9584 31.4055 18.4168 31.0128C18.8753 30.6201 19.1782 30.0763 19.2709 29.4798V23.1698C19.327 22.8091 19.3043 22.4404 19.2044 22.0893C19.1045 21.7381 18.9299 21.4127 18.6923 21.1354C18.4548 20.8582 18.1601 20.6356 17.8284 20.483C17.4968 20.3304 17.136 20.2514 16.7709 20.2514C16.4058 20.2514 16.0451 20.3304 15.7134 20.483C15.3817 20.6356 15.087 20.8582 14.8495 21.1354C14.612 21.4127 14.4373 21.7381 14.3374 22.0893C14.2375 22.4404 14.2149 22.8091 14.2709 23.1698V29.4798ZM19.2709 13.0398V10.5198C19.2806 10.0137 19.1382 9.51621 18.8622 9.09184C18.5861 8.66746 18.1891 8.33567 17.7224 8.13936C17.2558 7.94305 16.741 7.89125 16.2445 7.99067C15.7481 8.09009 15.293 8.33615 14.9379 8.69703C14.5829 9.05791 14.3442 9.51701 14.2529 10.015C14.1616 10.5129 14.2217 11.0268 14.4256 11.4902C14.6295 11.9536 14.9677 12.3452 15.3965 12.6143C15.8253 12.8835 16.325 13.0177 16.8309 12.9998L19.2709 13.0398ZM10.4309 14.3098C9.8344 14.4025 9.29069 14.7054 8.89796 15.1639C8.50523 15.6224 8.28938 16.2061 8.28938 16.8098C8.28938 17.4135 8.50523 17.9973 8.89796 18.4557C9.29069 18.9142 9.8344 19.2171 10.4309 19.3098H16.7409C17.1017 19.3659 17.4703 19.3432 17.8215 19.2433C18.1726 19.1434 18.498 18.9688 18.7753 18.7312C19.0526 18.4937 19.2751 18.199 19.4278 17.8673C19.5804 17.5357 19.6594 17.1749 19.6594 16.8098C19.6594 16.4447 19.5804 16.084 19.4278 15.7523C19.2751 15.4206 19.0526 15.1259 18.7753 14.8884C18.498 14.6509 18.1726 14.4762 17.8215 14.3763C17.4703 14.2765 17.1017 14.2538 16.7409 14.3098H10.4309ZM26.8709 19.3098H29.3909C29.8984 19.3379 30.4027 19.2124 30.8378 18.9497C31.273 18.6871 31.619 18.2994 31.8307 17.8373C32.0424 17.3752 32.1099 16.86 32.0246 16.3589C31.9392 15.8578 31.7049 15.3941 31.3522 15.0281C30.9995 14.6621 30.5447 14.4108 30.0471 14.307C29.5495 14.2032 29.0322 14.2517 28.5626 14.4461C28.093 14.6406 27.6928 14.972 27.4142 15.3972C27.1357 15.8224 26.9916 16.3216 27.0009 16.8298L26.8709 19.3098ZM25.6009 10.4698C25.5605 9.82762 25.2769 9.22495 24.8078 8.78447C24.3387 8.34399 23.7194 8.0988 23.0759 8.0988C22.4324 8.0988 21.8131 8.34399 21.3441 8.78447C20.875 9.22495 20.5914 9.82762 20.5509 10.4698V16.7798C20.5292 17.1248 20.5784 17.4705 20.6955 17.7957C20.8125 18.1209 20.995 18.4187 21.2316 18.6707C21.4682 18.9226 21.7539 19.1234 22.0711 19.2607C22.3883 19.398 22.7303 19.4688 23.0759 19.4688C23.4216 19.4688 23.7635 19.398 24.0807 19.2607C24.3979 19.1234 24.6837 18.9226 24.9203 18.6707C25.1568 18.4187 25.3393 18.1209 25.4564 17.7957C25.5734 17.4705 25.6226 17.1248 25.6009 16.7798V10.4698ZM20.6409 26.9998V29.5198C20.6389 30.0206 20.7856 30.5108 21.0624 30.9281C21.3392 31.3455 21.7337 31.6713 22.1958 31.8644C22.6579 32.0574 23.1669 32.1089 23.6583 32.0124C24.1498 31.9159 24.6015 31.6758 24.9563 31.3223C25.3112 30.9689 25.5531 30.5181 25.6516 30.0271C25.75 29.536 25.7005 29.0268 25.5093 28.564C25.3181 28.1011 24.9938 27.7054 24.5775 27.4269C24.1613 27.1485 23.6717 26.9998 23.1709 26.9998H20.6409ZM29.4809 25.7298C30.1231 25.6894 30.7258 25.4058 31.1663 24.9367C31.6068 24.4676 31.8519 23.8483 31.8519 23.2048C31.8519 22.5613 31.6068 21.942 31.1663 21.473C30.7258 21.0039 30.1231 20.7203 29.4809 20.6798H23.1709C22.826 20.6581 22.4802 20.7073 22.155 20.8244C21.8298 20.9414 21.532 21.1239 21.2801 21.3605C21.0281 21.5971 20.8273 21.8828 20.69 22.2C20.5528 22.5172 20.4819 22.8592 20.4819 23.2048C20.4819 23.5505 20.5528 23.8924 20.69 24.2096C20.8273 24.5268 21.0281 24.8126 21.2801 25.0492C21.532 25.2858 21.8298 25.4682 22.155 25.5853C22.4802 25.7023 22.826 25.7515 23.1709 25.7298H29.4809Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.youtube.com/graalvm" target="_blank" title="youtube social media link">
+            <svg class="social-icon" width="35" height="24" viewBox="0 0 35 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="youtube social media icon">
+              <path
+                d="M18.1713 23.9692L11.0316 23.839C8.71989 23.7937 6.40246 23.8843 4.13616 23.4143C0.688425 22.7121 0.444187 19.2692 0.188588 16.3812C-0.163569 12.321 -0.0272501 8.18716 0.637305 4.16095C1.01218 1.90151 2.48897 0.553774 4.77232 0.406542C12.48 -0.125756 20.2388 -0.0634659 27.9295 0.185695C28.7417 0.208346 29.5597 0.332927 30.3605 0.474496C34.3138 1.16535 34.4103 5.06699 34.6659 8.35138C34.9215 11.6698 34.8136 15.0051 34.3251 18.3008C33.9332 21.0303 33.1835 23.318 30.0197 23.5389C26.0551 23.8277 22.1814 24.0599 18.2054 23.9862C18.2054 23.9692 18.1827 23.9692 18.1713 23.9692ZM13.9738 17.0607C16.9615 15.3505 19.8924 13.6687 22.863 11.9699C19.8696 10.2597 16.9445 8.57789 13.9738 6.87907V17.0607Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__getstarted">
+        <div class="rubber-footer">
+          <p class="title-footer quickstart">Get started with GraalVM</p>
+          <p class="footer-desc">Available for Linux, macOS, and Windows platforms</p>
+          <a href="/latest/docs/getting-started/" class="btn btn-primary">Get started</a>
+        </div>
+      </div>
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
+              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/" target="_blank">GraalVM SDK
+                  Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">GraalVM Blog</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">GraalVM
+                  Workshops</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">GraalVM
+                  Demos</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
+                  GraalVM</a></li>
+              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
+                  Developers</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
+                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
+                  Guidelines</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
+              </li>
+              <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/support/">Support</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2018, 2025, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+            registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function fadeInAndOut(thz) {
+    var elmt = thz.nextElementSibling;//Get the element that is below the button that
+    //was just clicked
+    if (elmt.clientHeight) {
+      elmt.style.height = 0;
+    } else {
+      var wrapper = elmt.querySelector('ul');
+      elmt.style.height = wrapper.clientHeight + "px";
+    }
+  }
+</script>
+    </div>
+    <div class="overlay"></div>
+    <script src='/resources/lib/slick-slider/slick.min.js'></script>
+    <script src='/resources/js/main.js'></script>
+    <script src='/resources/js/favicon.js'></script>
+  </body>
+</html>

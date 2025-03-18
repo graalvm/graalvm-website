@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -548,8 +548,8 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 <p>Metadata can be provided to the <code>native-image</code> builder in the following ways:</p>
 <ul>
   <li>By <a href="#computing-metadata-in-code">computing metadata in code</a> <a href="/latest/reference-manual/native-image/basics/#image-build-time-vs-image-run-time">when the native binary is built</a> and storing required elements into the <a href="/latest/reference-manual/native-image/basics/#native-image-heap">initial heap of the native binary</a>.</li>
-  <li>By <a href="#specifying-metadata-with-json">providing the <em>reachability-metadata.json</em> file(s)</a> stored in the <em>META-INF/native-image/&lt;groupId&gt;/&lt;artifactId&gt;/</em> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
-  <li>For more advanced use cases, where classpath scanning or build-time initialization is needed, by using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/Feature.html">Native Image Feature API</a>.</li>
+  <li>By <a href="#specifying-metadata-with-json">providing the <em>reachability-metadata.json</em> file(s)</a> stored in the <em>META-INF/native-image/&lt;group.Id&gt;\/&lt;artifactId&gt;\/</em> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
+  <li>For more advanced use cases, where classpath scanning or build-time initialization is needed, by using the <a href="#public-api">public API</a>.</li>
 </ul>
 
 <blockquote>
@@ -674,8 +674,8 @@ This is necessary in cases when:</p>
         
       </h2>
 
-<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;groupId&gt;/&lt;artifactId&gt;/</em>.
-The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.0.0.json">reachability-metadata-schema-v1.0.0.json</a>.</p>
+<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;group.Id&gt;\/&lt;artifactId&gt;\/</em>.
+The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.1.0.json">reachability-metadata-schema-v1.1.0.json</a>.</p>
 
 <p>A sample <em>reachability-metadata.json</em> file can be found <a href="#sample-reachability-metadata">in the sample section</a>.
 The <em>reachability-metadata.json</em> configuration contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of <em>metadata entries</em>:</p>
@@ -683,7 +683,6 @@ The <em>reachability-metadata.json</em> configuration contains a single object w
   "reflection":[],
   "resources":[],
   "bundles":[],
-  "serialization":[],
   "jni":[]
 }
 </code></pre>
@@ -1296,13 +1295,14 @@ For example, the following pattern will register the class <code>pkg.Serializabl
         
         
       </h3>
-<p>Serialization metadata is specified in the <code>serialization</code> section of <em>reachability-metadata.json</em>.</p>
+<p>Serialization metadata is specified in the <code>reflection</code> section of <em>reachability-metadata.json</em>.</p>
 
 <p>To specify a regular <code>serialized.Type</code> use</p>
 <pre><code class="language-json">{
-  "serialization": [
+  "reflection": [
     {
-      "type": "serialized.Type"
+      "type": "serialized.Type",
+      "serializable": true
     }
   ]
 }
@@ -1310,10 +1310,11 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 
 <p>To specify a proxy class for serialization, use the following entry:</p>
 <pre><code class="language-json">{
-  "serialization": [
+  "reflection": [
     {
       "type": {
-        "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"]
+        "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"],
+        "serializable": true
       }
     }
   ]
@@ -1323,20 +1324,9 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 <p>In rare cases an application might explicitly make calls to:</p>
 <pre><code class="language-java">    ReflectionFactory.newConstructorForSerialization(Class&lt;?&gt; cl, Constructor&lt;?&gt; constructorToCall);
 </code></pre>
-<p>In which the passed <code>constructorToCall</code> differs from what would automatically be used if regular serialization of <code>cl</code>.</p>
-
-<p>To also support such serialization use cases, it is possible to register serialization for a class with a
-custom <code>constructorToCall</code>.
-For example, to allow serialization of <code>org.apache.spark.SparkContext$$anonfun$hadoopFile$1</code>, use the declared constructor of <code>java.lang.Object</code> as a custom <code>targetConstructor</code>, use:</p>
-<pre><code class="language-json">{
-  "serialization": [
-    {
-      "type": "&lt;fully-qualified-class-name&gt;",
-      "customTargetConstructorClass": "&lt;custom-target-constructor-class&gt;"
-    }
-  ]
-}
-</code></pre>
+<p>The specified <code>constructorToCall</code> differs from the one that would be automatically used during regular serialization of <code>cl</code>.
+When a class is registered for run-time serialization, all potential custom constructors are automatically registered.
+As a result, this use case does not require any additional metadata.</p>
     
       <h2 id="sample-reachability-metadata">
         
@@ -1369,7 +1359,8 @@ For example, to allow serialization of <code>org.apache.spark.SparkContext$$anon
       "allPublicFields": true,
       "allDeclaredMethods": true,
       "allPublicMethods": true,
-      "unsafeAllocated": true
+      "unsafeAllocated": true,
+      "serializable": true
     }
   ],
   "jni": [
@@ -1408,8 +1399,7 @@ For example, to allow serialization of <code>org.apache.spark.SparkContext$$anon
   ],
   "serialization": [
     {
-      "type": "serialized.Type",
-      "customTargetConstructorClass": "optional.serialized.super.Type"
+      "type": "serialized.Type"
     }
   ]
 }

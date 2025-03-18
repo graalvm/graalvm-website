@@ -193,8 +193,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 23 (Latest)', 'latest');">GraalVM for JDK 23 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Early Access)', 'jdk24');">GraalVM for JDK 24 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -604,7 +604,7 @@ GraalVM Native Image: Generating 'helloworld' (executable)...
  Garbage collector: Serial GC (max heap size: 80% of RAM)
 --------------------------------------------------------------------------------
  Build resources:
- - 13.24GB of memory (42.7% of 31.00GB system memory, determined at start)
+ - 13.24GB of memory (42.7% of system memory, using available memory)
  - 16 thread(s) (100.0% of 16 available processor(s), determined at start)
 [2/8] Performing analysis...  [****]                             (4.5s @ 0.54GB)
     3,163 reachable types   (72.5% of    4,364 total)
@@ -792,12 +792,13 @@ The <code>NATIVE_IMAGE_OPTIONS</code> environment variable is designed to be use
       </h4>
 <p>The memory limit and number of threads used by the build process.</p>
 
-<p>More precisely, the memory limit of the Java heap, so actual memory consumption can be even higher.
+<p>More precisely, the memory limit of the Java heap, so actual memory consumption can be higher.
 Please check the <a href="#glossary-peak-rss">peak RSS</a> reported at the end of the build to understand how much memory was actually used.
-By default, the build process tries to only use free memory (to avoid memory pressure on the build machine), and never more than 32GB of memory.
-If less than 8GB of memory are free, the build process falls back to use 85% of total memory.
+By default, the build process uses the dedicated mode (up to 85% of system memory) in containers or CI environments (when the <code>$CI</code> environment variable is set to <code>true</code>), but never more than 32GB of memory.
+Otherwise, it tries to use available memory to avoid memory pressure on developer machines (shared mode).
+If less than 8GB of memory are available, the build process falls back to the dedicated mode.
 Therefore, consider freeing up memory if your machine is slow during a build, for example, by closing applications that you do not need.
-It is possible to overwrite the default behavior, for example with <code>-J-XX:MaxRAMPercentage=60.0</code> or <code>-J-Xmx16g</code>.</p>
+It is possible to override the default behavior and set relative or absolute memory limits, for example with <code>-J-XX:MaxRAMPercentage=60.0</code> or <code>-J-Xmx16g</code>.</p>
 
 <p>By default, the build process uses all available processors to maximize speed, but not more than 32 threads.
 Use the <code>--parallelism</code> option to set the number of threads explicitly (for example, <code>--parallelism=4</code>).
