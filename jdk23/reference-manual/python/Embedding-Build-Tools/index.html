@@ -1,11 +1,298 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
+
+  <head>
   <meta charset="utf-8">
-  <title>Redirecting&hellip;</title>
-  <link rel="canonical" href="https://www.graalvm.org/jdk23/python/docs/">
-  <script>location="https://www.graalvm.org/jdk23/python/docs/"</script>
-  <meta http-equiv="refresh" content="0; url=https://www.graalvm.org/jdk23/python/docs/">
-  <meta name="robots" content="noindex">
-  <h1>Redirecting&hellip;</h1>
-  <a href="https://www.graalvm.org/jdk23/python/docs/">Click here if you are not redirected.</a>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="embedding-build-tools">Embedding Build Tools</h1>
+
+<p>The GraalPy <strong>Maven</strong> and <strong>Gradle</strong> plugins provide functionality to manage Python related resources
+required for embedding Python code in Java-based applications:</p>
+<ul>
+  <li><em>Python application files</em> provided by the user, for example, Python sources which are part of the project.</li>
+  <li><em>Third-party Python packages</em> installed by the plugin during the build according to the plugin configuration.</li>
+  <li><em>The Python standard library</em>, which is necessary to make Native Image generated executables self-contained.</li>
+</ul>
+
+<p>Apart from physically managing and deploying those files, it is also necessary to make them available in Python at runtime by configuring the <strong>GraalPy Context</strong> in your Java code accordingly. 
+The <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/utils/GraalPyResources.java">GraalPyResources</a> API provides factory methods to create a Context preconfigured for accessing Python, embedding relevant resources with a <strong>Virtual Filesystem</strong> or from a dedicated <strong>external directory</strong>.</p>
+
+<h2 id="deployment">Deployment</h2>
+
+<p>There are two modes how to deploy the resources: as Java resources using the Virtual Filesystem to access them in Python, or as an external directory.</p>
+
+<h3 id="virtual-filesystem">Virtual Filesystem</h3>
+
+<p>The Python related resources are embedded in the application file, either in JAR or Native Image generated
+executable, as standard Java resources. 
+The GraalPy Virtual Filesystem accesses resource files as standard Java resources and makes them available to Python code running in GraalPy.
+This is transparent to the Python code, which can use standard Python IO to access those files.</p>
+
+<p>Java resource files in a Maven or Gradle project are typically located in dedicated resources directories.
+All resources subdirectories named <em>org.graalvm.python.vfs</em> are merged and mapped to a configurable Virtual Filesystem mount point at the Python side, by default <code>/graalpy_vfs</code>. 
+For example, a Python file with the real filesystem path <code>${project_resources_directory}/org.graalvm.python.vfs/src/foo/bar.py</code> will be accessible as <code>/graalpy_vfs/src/foo/bar.py</code> in Python.</p>
+
+<p>Use the following <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/utils/GraalPyResources.java">GraalPyResources</a>
+factory methods to create GraalPy Context preconfigured for the use of the Virtual Filesystem:</p>
+<ul>
+  <li><code>GraalPyResources.createContext()</code></li>
+  <li><code>GraalPyResources.contextBuilder()</code></li>
+  <li><code>GraalPyResources.contextBuilder(VirtualFileSystem)</code></li>
+</ul>
+
+<h3 id="external-directory">External Directory</h3>
+
+<p>As an alternative to Java resources with the Virtual Filesystem, it is also possible to configure the Maven or Gradle plugin to manage the contents of an external directory, which will <strong>not be embedded</strong> as a Java resource into the resulting application. 
+A user is then responsible for the deployment of such directory. 
+Python code will access the files directly from the real filesystem.</p>
+
+<p>Use the following <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/utils/GraalPyResources.java">GraalPyResources</a> factory methods to create GraalPy Context preconfigured for the use of an external directory:</p>
+<ul>
+  <li><code>GraalPyResources.createContextBuilder(Path)</code></li>
+</ul>
+
+<h2 id="conventions">Conventions</h2>
+
+<p>The factory methods in <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/utils/GraalPyResources.java">GraalPyResources</a> rely on the following conventions, where the <code>${root}</code> is either an external directory, or a Virtual System mount point on the Python side and <code>${project_resources_directory}/org.graalvm.python.vfs</code> on the real filesystem:</p>
+<ul>
+  <li><code>${root}/src</code>: used for Python application files. This directory will be configured as the default search path for Python module files (equivalent to <code>PYTHONPATH</code> environment variable).</li>
+  <li><code>${root}/venv</code>: used for the Python virtual environment holding installed third-party Python packages. 
+The Context will be configured as if it is executed from this virtual environment. Notably packages installed in this
+virtual environment will be automatically available for importing.</li>
+  <li><code>${root}/home</code>: used for the Python standard library (equivalent to <code>PYTHONHOME</code> environment variable).</li>
+</ul>
+
+<p>The Maven or Gradle plugin will fully manage the contents of the <code>venv</code> and <code>home</code> subdirectories.
+Any manual changes in these directories will be overridden by the plugin during the build.</p>
+<ul>
+  <li><code>${root}/venv</code>: the plugin creates a virtual environment and installs required packages according to the plugin configuration in <em>pom.xml</em> or <em>build.gradle</em>.</li>
+  <li><code>${root}/home</code>: the plugin copies the required (also configurable) parts of the Python standard library into this directory.
+By default, the full standard library is used.</li>
+</ul>
+
+<p>The <em>src</em> subdirectory is left to be manually populated by the user with custom Python scripts or modules.</p>
+
+<h2 id="graalpy-maven-plugin-configuration">GraalPy Maven Plugin Configuration</h2>
+
+<p>Add the plugin configuration in the <code>configuration</code> block of <code>graalpy-maven-plugin</code> in the <em>pom.xml</em> file:</p>
+<pre><code class="language-xml">&lt;plugin&gt;
+    &lt;groupId&gt;org.graalvm.python&lt;/groupId&gt;
+    &lt;artifactId&gt;graalpy-maven-plugin&lt;/artifactId&gt;
+    ...
+    &lt;configuration&gt;
+        ...
+    &lt;/configuration&gt;
+    ...
+&lt;/plugin&gt;
+</code></pre>
+<p>The <strong>packages</strong> element declares a list of third-party Python packages to be downloaded and installed by the plugin.</p>
+<ul>
+  <li>The Python packages and their versions are specified as if used with <code>pip</code>:
+    <pre><code class="language-xml">&lt;configuration&gt;
+    &lt;packages&gt;
+        &lt;package&gt;termcolor==2.2&lt;/package&gt;
+        ...
+    &lt;/packages&gt;
+    ...
+&lt;/configuration&gt;
+</code></pre>
+  </li>
+  <li>
+    <p>The <strong>pythonHome</strong> subsection declares what parts of the standard library should be deployed.</p>
+
+    <p>Each <code>include</code> and <code>exclude</code> element is interpreted as a Java-like regular expression specifying which file paths should be included or excluded.</p>
+    <pre><code class="language-xml">&lt;configuration&gt;
+    &lt;pythonHome&gt;
+        &lt;includes&gt;
+            &lt;include&gt;.*&lt;/include&gt;
+            ...
+        &lt;/includes&gt;
+        &lt;excludes&gt;
+            &lt;exclude&gt;&lt;/exclude&gt;
+            ...
+        &lt;/excludes&gt;
+    &lt;/pythonHome&gt;
+    ...
+&lt;/configuration&gt;
+</code></pre>
+  </li>
+  <li>If the <strong>pythonResourcesDirectory</strong> element is specified, then the given directory is used as an <a href="#external-directory">external directory</a> and no Java resources are embedded.
+Remember to use the appropriate <code>GraalPyResources</code> API to create the Context.
+    <pre><code class="language-xml">&lt;configuration&gt;
+    &lt;pythonResourcesDirectory&gt;${basedir}/python-resources&lt;/pythonResourcesDirectory&gt;
+    ...
+&lt;/configuration&gt;
+</code></pre>
+  </li>
+</ul>
+
+<h2 id="graalpy-gradle-plugin-configuration">GraalPy Gradle Plugin Configuration</h2>
+
+<blockquote>
+  <p>Note: GraalPy Gradle Plugin will become available as of GraalPy version 24.1.1, planned for October 15, 2024.</p>
+</blockquote>
+
+<p>Add the plugin configuration in the <code>GraalPy</code> block in the <em>build.gradle</em> file.
+The <strong>packages</strong> element declares a list of third-party Python packages to be downloaded and installed by the plugin.</p>
+<ul>
+  <li>The Python packages and their versions are specified as if used with <code>pip</code>.
+    <pre><code>graalPy {
+  packages = ["termcolor==2.2"]
+  ...
+}
+</code></pre>
+  </li>
+  <li>
+    <p>The <strong>pythonHome</strong> subsection declares what parts of the standard library should be deployed.</p>
+
+    <p>Each element in the <code>includes</code> and <code>excludes</code> list is interpreted as a Java-like regular expression specifying which file paths should be included or excluded.</p>
+    <pre><code>graalPy {
+  pythonHome {
+    includes = [".*"]
+    excludes = []
+  }
+  ...
+}
+</code></pre>
+  </li>
+  <li>If the <strong>pythonResourcesDirectory</strong> element is specified, then the given directory is used as an <a href="#external-directory">external directory</a> and no Java resources are embedded. 
+Remember to use the appropriate <code>GraalPyResources</code> API to create the Context.
+    <pre><code>graalPy {
+  pythonResourcesDirectory = file("$rootDir/python-resources")
+  ...
+}
+</code></pre>
+  </li>
+</ul>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="https://www.graalvm.org/reference-manual/embed-languages/">Embedding Graal languages in Java</a></li>
+  <li><a href="/jdk23/reference-manual/python/Embedding-Permissions/">Permissions for Python Embeddings</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
 </html>
