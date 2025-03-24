@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="points-to-analysis-reports">Points-to Analysis Reports</h1>
+
+<p>The points-to analysis produces two kinds of reports: an analysis call tree and an object tree. 
+This information is produced by an intermediate step in the building process and represents the static analysis view of the call graph and heap object graph. 
+These graphs are further transformed in the building process before they are compiled ahead-of-time into the binary and written into the binary heap, respectively.</p>
+
+<p>In addition to the comprehensive report of the whole analysis universe, the points-to analysis can also produce reachability reports on why certain type/method/field is reachable.</p>
+
+<h2 id="call-tree">Call tree</h2>
+<p>The call tree is a breadth-first tree reduction of the call graph as seen by the points-to analysis.
+The points-to analysis eliminates calls to methods that it determines cannot be reachable at runtime, based on the analyzed receiver types.
+It also completely eliminates invocations in unreachable code blocks, such as blocks guarded by a type check that always fails.
+The call tree report is enabled using the <code>-H:+PrintAnalysisCallTree</code> command-line option and can be formatted either as a <code>TXT</code> file (default) or as a set of <code>CSV</code> files using the <code>-H:PrintAnalysisCallTreeType=CSV</code> option.</p>
+
+<h3 id="txt-format">TXT Format</h3>
+
+<p>When using the <code>TXT</code> format a file with the following structure is generated:</p>
+
+<pre><code>VM Entry Points
+├── entry &lt;entry-method&gt; id=&lt;entry-method-id&gt;
+│   ├── directly calls &lt;callee&gt; id=&lt;callee-id&gt; @bci=&lt;invoke-bci&gt;
+│   │   └── &lt;callee-sub-tree&gt;
+│   ├── virtually calls &lt;callee&gt; @bci=&lt;invoke-bci&gt;
+│   │   ├── is overridden by &lt;override-method-i&gt; id=&lt;override-method-i-id&gt;
+│   │   │   └── &lt;callee-sub-tree&gt;
+│   │   └── is overridden by &lt;override-method-j&gt; id-ref=&lt;override-method-j-id&gt;
+│   └── interfacially calls &lt;callee&gt; @bci=&lt;invoke-bci&gt;
+│       ├── is implemented by &lt;implementation-method-x&gt; id=&lt;implementation-method-x-id&gt;
+│       │   └── &lt;callee-sub-tree&gt;
+│       └── is implemented by &lt;implementation-method-y&gt; id-ref=&lt;implementation-method-y-id&gt;
+├── entry &lt;entry-method&gt; id=&lt;entry-method-id&gt;
+│   └── &lt;callee-sub-tree&gt;
+└── ...
+</code></pre>
+
+<p>The tags between <code>&lt;</code>and <code>&gt;</code> are expanded with concrete values, the remainder is printed as illustrated.
+The methods are formatted using <code>&lt;qualified-holder&gt;.&lt;method-name&gt;(&lt;qualified-parameters&gt;):&lt;qualified-return-type&gt;</code> and are expanded until no more callees can be reached.</p>
+
+<p>Since this is a tree reduction of the call graph each concrete method is expanded exactly once.
+The tree representation inherently omits calls to methods that have already been explored in a different branch or previously on the same branch.
+This restriction implicitly fixes the recursion problem.
+To convey the information that is lost through tree reduction each concrete method is given a unique id.
+Thus when a method is reached for the first time it declares an identifier as <code>id=&lt;method-id&gt;</code>.
+Subsequent discoveries of the same method use an identifier reference to point to the previously expansion location: <code>id-ref=&lt;method-id&gt;</code>.
+Each <code>id=&lt;method-id&gt;</code> and <code>id-ref=&lt;method-id&gt;</code> are followed by a blank space to make it easy to search.</p>
+
+<p>Each invoke is tagged with the invocation bci: <code>@bci=&lt;invoke-bci&gt;</code>.
+For invokes of inline methods the <code>&lt;invoke-bci&gt;</code> is a list of bci values, separated with <code>-&gt;</code>, enumerating the inline locations, backwards to the original invocation location.</p>
+
+<h3 id="csv-format">CSV Format</h3>
+<p>When using the <code>CSV</code> format a set of files containing raw data for methods and their relationships is generated.
+In particular, three files are generated—they represent methods, method invocations, and call targets.
+The <code>call_tree_methods_*.csv</code> has the following columns:</p>
+
+<ul>
+  <li><code>Id</code>: The unique identifier of this method.</li>
+  <li><code>Name</code>: The name of the method.</li>
+  <li><code>Type</code>: The declaring type.</li>
+  <li><code>Parameters</code>: A space-separated list of parameter types.</li>
+  <li><code>Return</code>: The return type.</li>
+  <li><code>Display</code>: A shortened version of the qualified name of the method, useful for visualizations.</li>
+  <li><code>Flags</code>: Other metadata such as visibility modifiers, synchronization, and so on.</li>
+  <li><code>IsEntryPoint</code>: If <code>true</code>, the method is an entry point (root method) in the call graph, <code>false</code> otherwise.</li>
+</ul>
+
+<p>The <code>call_tree_invokes_*.csv</code> has the following columns:</p>
+
+<ul>
+  <li><code>Id</code>: The unique identifier of the invocation.</li>
+  <li><code>MethodId</code>: The identifier of the method in which the invocation is located.</li>
+  <li><code>BytecodeIndexes</code>: The bytecode index of the invocation. It can be a chain of bytecode indexes connected via <code>-&gt;</code> if
+the method was inlined.</li>
+  <li><code>TargetId</code>: The id of the target method.</li>
+  <li><code>IsDirect</code>: If <code>true</code>, the invocation is direct, <code>false</code> otherwise.</li>
+</ul>
+
+<p>The <code>call_tree_targets_*.csv</code>  has two columns: <code>InvokeId</code> and <code>TargetId</code>, connecting invocations with their call
+targets.</p>
+
+<p>The aim of these files is to enable the raw data to be easily processed by custom scripts or imported into a graph
+database.
+A graph database can provide the following functionality:</p>
+
+<ul>
+  <li>Sophisticated graphical visualization of the call tree graph that provides a different perspective compared to text-based formats.</li>
+  <li>Ability to execute complex queries that can (for example) show a subset of the tree that causes certain code path to be included in the call tree analysis.
+This querying functionality is crucial in making big analysis call trees manageable.</li>
+</ul>
+
+<p>The process to import the files into a graph database is specific to each database.
+Please follow the instructions provided by the graph database provider.</p>
+
+<h2 id="object-tree">Object Tree</h2>
+<p>The object tree is an exhaustive expansion of the objects included in the native binary heap.
+The tree is obtained by a depth first walk of the native binary heap object graph.
+It is enabled using the <code>-H:+PrintImageObjectTree</code> option.
+The roots are either static fields or method graphs that contain embedded constants.
+The printed values are concrete constant objects added to the native binary heap.
+Produces a file with the structure:</p>
+
+<pre><code>Heap roots
+├── root &lt;root-field&gt; value:
+│   └── &lt;value-type&gt; id=&lt;value-id&gt; toString=&lt;value-as-string&gt; fields:
+│       ├── &lt;field-1&gt; value=null
+│       ├── &lt;field-2&gt; toString=&lt;field-2-value-as-string&gt; (expansion suppressed)
+│       ├── &lt;field-3&gt; value:
+│       │   └── &lt;field-3-value-type&gt; id=&lt;field-3-value-id&gt; toString=&lt;field-3-value-as-string&gt; fields:
+│       │       └── &lt;object-tree-rooted-at-field-3&gt;
+│       ├── &lt;array-field-4&gt; value:
+│       │   └── &lt;array-field-4-value-type&gt; id=&lt;array-field-4-value-id&gt; toString=&lt;array-field-4-value-as-string&gt; elements (excluding null):
+│       │       ├── [&lt;index-i&gt;] &lt;element-index-i-value-type&gt; id=&lt;element-index-i-value-id&gt; toString=&lt;element-index-i-value-as-string&gt; fields:
+│       │       │   └── &lt;object-tree-rooted-at-index-i&gt;
+│       │       └── [&lt;index-j&gt;] &lt;element-index-j-value-type&gt; id=&lt;element-index-j-value-id&gt; toString=&lt;element-index-j-value-as-string&gt; elements (excluding null):
+│       │           └── &lt;object-tree-rooted-at-index-j&gt;
+│       ├── &lt;field-5&gt; value:
+│       │   └── &lt;field-5-value-type&gt; id-ref=&lt;field-5-value-id&gt; toString=&lt;field-5-value-as-string&gt;
+│       ├── &lt;field-6&gt; value:
+│       │   └── &lt;field-6-value-type&gt; id=&lt;field-6-value-id&gt; toString=&lt;field-6-value-as-string&gt; (no fields)
+│       └── &lt;array-field-7&gt; value:
+│           └── &lt;array-field-7-value-type&gt; id=&lt;array-field-7-id&gt; toString=&lt;array-field-7-as-string&gt; (no elements)
+├── root &lt;root-field&gt; id-ref=&lt;value-id&gt; toString=&lt;value-as-string&gt;
+├── root &lt;root-method&gt; value:
+│   └── &lt;object-tree-rooted-at-constant-embeded-in-the-method-graph&gt;
+└── ...
+</code></pre>
+
+<p>The tags between <code>&lt;</code>and <code>&gt;</code> are expanded with concrete values, the remainder is printed as illustrated.
+The root fields are formatted using <code>&lt;qualified-holder&gt;.&lt;field-name&gt;:&lt;qualified-declared-type&gt;</code>.
+The non-root fields are formatted using <code>&lt;field-name&gt;:&lt;qualified-declared-type&gt;</code>.
+The value types are formatted using <code>&lt;qualified-type&gt;</code>.
+The root methods are formatted using <code>&lt;qualified-holder&gt;.&lt;method-name&gt;(&lt;unqualified-parameters&gt;):&lt;qualified-return-type&gt;</code>
+No-array objects are expanded for all fields (including null).
+No-array objects with no fields are tagged with <code>(no fields)</code>.
+Array objects are expanded for all non-null indexes: <code>[&lt;element-index&gt;] &lt;object-tree-rooted-at-array-element&gt;</code>
+Empty array objects or with all null elements are tagged with <code>(no elements)</code>.</p>
+
+<p>Each constant value is expanded exactly once to compress the format.
+When a value is reached from multiple branches it is expanded only the first time and given an identifier: <code>id=&lt;value-id&gt;</code>.
+Subsequent discoveries of the same value use an identifier reference to point to the previously expansion location: <code>id-ref=&lt;value-id&gt;</code>.</p>
+
+<h3 id="suppressing-expansion-of-values">Suppressing Expansion of Values</h3>
+
+<p>Some values, such as <code>String</code>, <code>BigInteger</code> and primitive arrays, are not expanded by default and marked with <code>(expansion suppressed)</code>.
+All the other types are expanded by default.
+To force the suppression of types expanded by default you can use <code>-H:ImageObjectTreeSuppressTypes=&lt;comma-separated-patterns&gt;</code>.
+To force the expansion of types suppressed by default or through the option you can use <code>-H:ImageObjectTreeExpandTypes=&lt;comma-separated-patterns&gt;</code>.
+When both <code>-H:ImageObjectTreeSuppressTypes</code> and <code>-H:ImageObjectTreeExpandTypes</code> are specified <code>-H:ImageObjectTreeExpandTypes</code> has precedence.</p>
+
+<p>Similarly, some roots, such as <code>java.lang.Character$UnicodeBlock.map"</code> that prints a lot of strings, are not expanded at all and marked with <code>(expansion suppressed)</code> as well.
+All the other roots are expanded by default.
+To force the suppression of roots expanded by default you can use <code>-H:ImageObjectTreeSuppressRoots=&lt;comma-separated-patterns&gt;</code>.
+To force the expansion of roots suppressed by default or through the option you can use <code>-H:ImageObjectTreeExpandRoots=&lt;comma-separated-patterns&gt;</code>.
+When both <code>-H:ImageObjectTreeSuppressRoots</code> and <code>-H:ImageObjectTreeExpandRoots</code> are specified <code>-H:ImageObjectTreeExpandRoots</code> has precedence.</p>
+
+<p>All the suppression/expansion options above accept a comma-separated list of patterns.
+For types the pattern is based on the fully qualified name of the type and refers to the concrete type of the constants.
+(For array types it is enough to specify the elemental type; it will match all the arrays of that type, of all dimensions.)
+For roots the pattern is based on the string format of the root as described above.
+The pattern accepts the <code>*</code> modifier:</p>
+<ul>
+  <li>ends-with: <code>*&lt;str&gt;</code> - the pattern exactly matches all entries that end with <code>&lt;str&gt;</code></li>
+  <li>starts-with: <code>&lt;str&gt;*</code> - the pattern exactly matches all entries that start with <code>&lt;str&gt;</code></li>
+  <li>contains: <code>*&lt;str&gt;*</code> - the pattern exactly matches all entries that contain <code>&lt;str&gt;</code></li>
+  <li>equals: <code>&lt;str&gt;</code> - the pattern exactly matches all entries that are equal to <code>&lt;str&gt;</code></li>
+  <li>all: <code>*</code> - the pattern matches all entries</li>
+</ul>
+
+<h4 id="examples">Examples</h4>
+<p>Types suppression/expansion:</p>
+<ul>
+  <li><code>-H:ImageObjectTreeSuppressTypes=java.io.BufferedWriter</code> - suppress the expansion of <code>java.io.BufferedWriter</code> objects</li>
+  <li><code>-H:ImageObjectTreeSuppressTypes=java.io.BufferedWriter,java.io.BufferedOutputStream</code> - suppress the expansion of <code>java.io.BufferedWriter</code> and <code>java.io.BufferedOutputStream</code> objects</li>
+  <li><code>-H:ImageObjectTreeSuppressTypes=java.io.*</code> - suppress the expansion of all <code>java.io.*</code> objects</li>
+  <li><code>-H:ImageObjectTreeExpandTypes=java.lang.String</code> - force the expansion of <code>java.lang.String</code> objects</li>
+  <li><code>-H:ImageObjectTreeExpandTypes=java.lang.String,java.math.BigInteger</code> - force the expansion of <code>java.lang.String</code> and <code>java.math.BigInteger</code> objects</li>
+  <li><code>-H:ImageObjectTreeExpandTypes=java.lang.*</code> - force the expansion of all <code>java.lang.*</code> objects</li>
+  <li><code>-H:ImageObjectTreeSuppressTypes=java.io.* -H:ImageObjectTreeExpandTypes=java.io.PrintStream</code> - suppress the expansion of all <code>java.io.*</code> but not <code>java.io.PrintStream</code> objects</li>
+  <li><code>-H:ImageObjectTreeExpandTypes=*</code> - force the expansion of objects of all types, including those suppressed by default</li>
+</ul>
+
+<p>Roots suppression/expansion:</p>
+<ul>
+  <li><code>-H:ImageObjectTreeSuppressRoots="java.nio.charset.Charset.lookup(String)"</code> - suppress the expansion of all constants embedded in the graph of <code>com.oracle.svm.core.amd64.FrameAccess.wordSize()</code></li>
+  <li><code>-H:ImageObjectTreeSuppressRoots=java.util.*</code> - suppress the expansion of all roots that start with <code>java.util.</code></li>
+  <li><code>-H:ImageObjectTreeExpandRoots=java.lang.Character$UnicodeBlock.map</code> - force the expansion of <code>java.lang.Character$UnicodeBlock.map</code> static field root</li>
+  <li><code>-H:ImageObjectTreeSuppressRoots=java.util.* -H:ImageObjectTreeExpandRoots=java.util.Locale</code> - suppress the expansion of all roots that start with <code>java.util.</code> but not <code>java.util.Locale</code></li>
+  <li><code>-H:ImageObjectTreeExpandRoots=*</code> - force the expansion of all roots, including those suppressed by default</li>
+</ul>
+
+<h2 id="reachability-report">Reachability Report</h2>
+
+<p>In diagnosing code size or security problems, the developer often has the need to know why certain code element (type/method/field) is reachable.
+Reachability reports are designed for the purpose.
+There are three options for diagnosing the reachability reasons for types, methods, and fields respectively:</p>
+
+<ul>
+  <li><code>-H:AbortOnTypeReachable=&lt;pattern&gt;</code></li>
+  <li><code>-H:AbortOnMethodReachable=&lt;pattern&gt;</code></li>
+  <li><code>-H:AbortOnFieldReachable=&lt;pattern&gt;</code></li>
+</ul>
+
+<p>For each option, the right-hand side specifies the pattern of the code element to be diagnosed.</p>
+
+<ul>
+  <li>The syntax for specifying types and fields is the same as that of suppression/expansion (See documentation for <code>-H:ImageObjectTreeSuppressTypes</code> above).</li>
+  <li>The syntax for specifying methods is the same as that of method filters (See documentation for <code>-Djdk.graal.MethodFilter</code>).</li>
+</ul>
+
+<p>When one of the option is enabled and the corresponding code element is reachable, a reachability trace will be dumped to a TXT file and Native Image will stop.
+Here is an example of the reachability report for <code>-H:AbortOnTypeReachable=java.io.File</code>:</p>
+
+<pre><code>Type java.io.File is marked as allocated
+at virtual method com.oracle.svm.core.jdk.NativeLibrarySupport.loadLibraryRelative(NativeLibrarySupport.java:105), implementation invoked
+├── at virtual method com.oracle.svm.core.jdk.JNIPlatformNativeLibrarySupport.loadJavaLibrary(JNIPlatformNativeLibrarySupport.java:44), implementation invoked
+│       ├── at virtual method com.oracle.svm.core.posix.PosixNativeLibrarySupport.loadJavaLibrary(PosixNativeLibraryFeature.java:117), implementation invoked
+│       │       ├── at virtual method com.oracle.svm.core.posix.PosixNativeLibrarySupport.initializeBuiltinLibraries(PosixNativeLibraryFeature.java:98), implementation invoked
+│       │       │       ├── at static method com.oracle.svm.core.graal.snippets.CEntryPointSnippets.initializeIsolate(CEntryPointSnippets.java:346), implementation invoked
+│       │       │       │       str: static root method
+│       │       │       └── type com.oracle.svm.core.posix.PosixNativeLibrarySupport is marked as in-heap
+│       │       │               scanning root com.oracle.svm.core.posix.PosixNativeLibrarySupport@4839bf0d: com.oracle.svm.core.posix.PosixNativeLibrarySupport@4839bf0d embedded in
+│       │       │                   org.graalvm.nativeimage.ImageSingletons.lookup(ImageSingletons.java)
+│       │       │                   at static method org.graalvm.nativeimage.ImageSingletons.lookup(Class), intrinsified
+│       │       │                       at static method com.oracle.svm.core.graal.snippets.CEntryPointSnippets.createIsolate(CEntryPointSnippets.java:209), implementation invoked
+│       │       └── type com.oracle.svm.core.posix.PosixNativeLibrarySupport is marked as in-heap
+│       └── type com.oracle.svm.core.jdk.JNIPlatformNativeLibrarySupport is reachable
+└── type com.oracle.svm.core.jdk.NativeLibrarySupport is marked as in-heap
+        scanning root com.oracle.svm.core.jdk.NativeLibrarySupport@6e06bbea: com.oracle.svm.core.jdk.NativeLibrarySupport@6e06bbea embedded in
+            org.graalvm.nativeimage.ImageSingletons.lookup(ImageSingletons.java)
+            at static method org.graalvm.nativeimage.ImageSingletons.lookup(Class), intrinsified
+</code></pre>
+
+<h2 id="report-files">Report Files</h2>
+
+<p>The reports are generated in the <code>reports</code> subdirectory, relative to the build directory.
+When executing the <code>native-image</code> executable the build directory defaults to the working directory and can be modified using the <code>-H:Path=&lt;dir&gt;</code> option.</p>
+
+<p>The call tree report name has the structure <code>call_tree_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code> when using the <code>TXT</code> format or, when using the <code>CSV</code> format, the call tree reports’ names have the structure <code>call_tree_*_&lt;binary_name&gt;_&lt;date_time&gt;.csv</code>.
+When producing <code>CSV</code> formatted call tree reports, symbolic links following the structure <code>call_tree_*.csv</code> pointing to the latest call tree CSV reports are also generated.
+The object tree report name has the structure: <code>object_tree_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code>.
+The binary name is the name of the generated binary, which can be set with the <code>-H:Name=&lt;name&gt;</code> option.
+The <code>&lt;date_time&gt;</code> is in the <code>yyyyMMdd_HHmmss</code> format.</p>
+
+<p>The reachability reports are also located in the reports directory.
+They follow the same naming convention:</p>
+
+<ul>
+  <li>Type reachability report: <code>trace_types_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+  <li>Method reachability report: <code>trace_methods_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+  <li>Field reachability report: <code>trace_fields_&lt;binary_name&gt;_&lt;date_time&gt;.txt</code></li>
+</ul>
+
+<h2 id="further-reading">Further Reading</h2>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/overview/Options/">Command-line Options</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

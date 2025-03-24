@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="truffle-dsl-guidelines">Truffle DSL Guidelines</h1>
+
+<p>This document describes some Truffle DSL guidelines. Keep in mind that those are only guidelines that do not have
+to be strictly followed in every case. The most important part is the reasoning behind every guideline - use
+that to assess the trade-offs for the specific situation at hand and to chose appropriate solution.</p>
+
+<p>One of the general high-level guidelines for partially evaluated (PE) code is to <strong>minimize code duplication during
+the PE process</strong>. This not only helps the Truffle compilation that uses partial evaluation, but also
+<a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">host inlining</a>, which
+follows similar rules to PE when compiling the interpreter.</p>
+
+<p>Another general high-level guideline for any Truffle interpreter code is to have as little code as possible
+in order to <strong>minimize the native-image size</strong>. This applies to runtime code and PE code, but is even
+more important for PE code, since native-image also AOT compiles it, but the host-inlining greatly
+increases the amount of code the AOT compilation produces, and on top of that native-image also needs
+to retain serialized Graal IR graphs of all PE code for runtime compilation.</p>
+
+<h2 id="avoid-subclassing-for-minor-changes">Avoid subclassing for minor changes</h2>
+
+<p>Example:</p>
+<pre><code class="language-java">abstract class MyBaseNode extends Node {
+  abstract int execute(Object o);
+
+  @Specialization(guards = "arg == 0")
+  int doZero(int arg) { /* ... */ }
+
+  @Specialization(guards = "arg != 0")
+  int doInt(int arg) { /* ... */ }
+
+  @Specialization
+  int doOther(Object o) { throw new AbstractMethodError(); }
+}
+
+abstract class Node1 extends MyBaseNode {
+  @Specialization
+  @Override
+  final int doOther(Object o) { return 42; }
+}
+
+abstract class Node2 extends MyBaseNode {
+  @Specialization
+  @Override
+  final int doOther(Object o) { return -1; }
+}
+</code></pre>
+
+<p>Why: native-image binary size</p>
+
+<p>Truffle DSL will generate multiple <code>execute</code> and <code>executeAndSpecialize</code> methods,
+which will contain the same code. Native-image does not deduplicate the code.</p>
+
+<p>Solution: use delegation to a child node instead of inheritance or, if the code is simple enough,
+inline all the implementations and switch on a field value or argument to the execute method.
+Example of the former:</p>
+
+<pre><code class="language-java">abstract class MyNodeHandleOther extends Node {
+    abstract int execute(Object o);
+}
+
+abstract class MyNode extends Node {
+  @Child MyNodeHandleOther otherHandler;
+
+  MyNode(MyNodeHandleOther otherHandler) {
+      this.otherHandler = otherHandler;
+  }
+
+  abstract int execute(Object o);
+
+  @Specialization(guards = "arg == 0")
+  int doZero(int arg) { /* ... */ }
+
+  @Specialization(guards = "arg != 0")
+  int doInt(int arg) { /* ... */ }
+
+  @Specialization
+  int doOther(Object o) {
+      return otherHandler.execute(o);
+  }
+}
+</code></pre>
+
+<p>Alternative solution: if the common code is only one <code>@Specialization</code> or there is a simple and efficient guard
+that captures all the common <code>@Specialization</code>s, then move the common <code>@Specialization</code>s to an inline node and
+in all the former subclasses add one <code>@Specialization</code> that delegates to the common inline node.</p>
+
+<pre><code class="language-java">@GenerateCached(false)
+@GenerateInline
+abstract class MyCommonNode extends Node {
+  abstract int execute(Node node, Object o);
+
+  @Specialization(guards = "arg == 0")
+  int doZero(int arg) { /* ... */ }
+
+  @Specialization(guards = "arg != 0")
+  int doInt(int arg) { /* ... */ }
+}
+
+abstract class Node1 extends Node {
+    abstract int execute(Object o);
+
+    @Specialization
+    int doInts(int o,
+               @Cached MyCommonNode node) {
+        return node.execute(this, o);
+    }
+
+    @Specialization
+    int doOther(Object o) { return 42; }
+}
+
+// analogically for Node2
+</code></pre>
+
+<h2 id="avoid-duplicated-specializations">Avoid duplicated Specializations</h2>
+
+<p>Avoid specializations with (almost) the same method body.</p>
+
+<p>When two or more <code>@Specialization</code>s differ only in guards or in some minor detail. This includes <code>@Specialization</code>s
+that delegate to the same helper method. Example:</p>
+
+<pre><code class="language-java">abstract class MyNode extends Node {
+  abstract void execute(Object o);
+
+  @Specialization
+  void doObj1(MyObject1 o) { helper(o); }
+
+  @Specialization
+  void doObj2(MyObject2 o) { helper(o); }
+
+  void helper(Object o) { /* some code */ }
+
+  // ... more @Specializations
+}
+</code></pre>
+
+<p>Why:</p>
+<ul>
+  <li>code duplication during PE</li>
+</ul>
+
+<p>We want to reduce code duplication as seen by PE process and not by the developer. Refactoring the code
+to a helper method does not help PE, because it explores every call separately.</p>
+
+<p>For instance, with host inlining and our code example, the cost of fully inlining <code>Node#execute</code> will be
+(omitting some details):</p>
+
+<p><code>size(Node#execute) + size(Node#doIt1) + size(Node#doIt2) + 2 * size(Node#helper)</code></p>
+
+<p>Solution: refactor the code to avoid the duplication. The concrete approach differs depending on concrete
+situation. There is no one-size-fits-all solution. General advice is to try to merge the <code>@Specialization</code>s
+that contain the code duplication. One can create an inline node that profiles the now merged conditions
+that used to be implicitly profiled by being separate <code>@Specialization</code>s. For example:</p>
+
+<pre><code class="language-java">@GenerateInline
+@GenerateCached(false)
+abstract class GuardNode extends Node {
+  abstract boolean execute(Node inliningTarget, Object o);
+
+  @Specialization
+  static boolean doObj1(MyObject1 o) { return true; }
+
+  @Specialization
+  static boolean doObj2(MyObject2 o) { return true; }
+
+  @Fallback
+  static boolean doFallback(Object o) { return false; }
+}
+
+abstract class MyNode extends Node {
+  abstract void execute(Object o);
+
+  @Specialization(guards = "guardNode.execute(this, o)", limit = "1")
+  void doObj(Object o,
+             @Cached GuardNode guardNode) { helper(o); }
+
+  // ...other @Specializations
+}
+</code></pre>
+
+<p>Note that if the guard needs to be used for multiple specializations, or will be used by generated fallback guard,
+we are duplicating the guard logic in the same way as we were duplicating the logic inside the specializations.
+This may be acceptable as guards tend to be simple, but the user needs to assess if that is a good trade-off.</p>
+
+<h2 id="avoid-duplicated-calls-to-helper-methodsnodes">Avoid duplicated calls to helper methods/nodes</h2>
+
+<p>Example:</p>
+<pre><code class="language-java">@Specialization
+void doDefault(boolean b, Object o) {
+  if (b) {
+    helper.execute(o, 42);
+  } else {
+    helper.execute(o, -1);
+  }
+}
+</code></pre>
+
+<p>Why: code duplication during PE</p>
+
+<p>The PE process has to explore each call separately and only in later phases the Graal compiler may deduplicate the code.</p>
+
+<p>Solution: common-out the calls if possible</p>
+<pre><code class="language-java">  int num = b ? 42 : -1;
+  helper.execute(o, num);
+</code></pre>
+
+<h2 id="mixing-shared-and-non-shared-inline-nodesprofiles">Mixing @Shared and non-@Shared inline nodes/profiles</h2>
+
+<p>Avoid mixing <code>@Shared</code> and non-<code>@Shared</code> inline nodes/profiles in one <code>@Specialization</code> if Truffle DSL generates
+“data-class” for the <code>@Specialization</code>.</p>
+
+<p>Example:</p>
+<pre><code class="language-java">@GenerateInline(false)
+class MyNode extends Node {
+  // ...
+  @Specialization
+  void doIt(...,
+      @Bind("this") Node node,
+      /* more @Cached arguments such that data-class is generated */
+      @Exclusive @Cached InlinedBranchProfile b1,
+      @Shared @Cached InlinedBranchProfile b2)
+</code></pre>
+
+<p>Why: Truffle DSL generates code that is less efficient in the interpreter.</p>
+
+<p>In our example: non-shared inline profile has its data stored in the data-class object, but the shared inline profile
+has its data stored in the instance of <code>MyNode</code>. However, both profiles receive the same <code>node</code> argument,
+which will be an instance of the generated data-class, so the shared profile must call <code>node.getParent()</code> to access
+its data stored in <code>MyNode</code>. In general, such inline nodes/profiles may need to traverse multiple parent pointers
+until they reach their data.</p>
+
+<p>Note: this does not concern any non-inline nodes, it is OK to mix those, and it is OK to mix them with inline nodes,
+however, inline nodes used in one <code>@Specialization</code> should be either all shared or all exclusive.</p>
+
+<p>Solution: change the <code>@Shared</code> nodes/profiles to <code>@Exclusive</code> or refactor the code such that sharing is not
+necessary anymore. Usage of <code>@Shared</code> (not only inline nodes/profiles) can be a sign of
+<a href="#avoid-duplicated-specializations">duplicated <code>@Specialization</code>s</a>, and refactoring the <code>@Specialization</code>s will resolve the problem.
+If the footprint benefit outweighs the possible interpreter performance degradation, this guideline can be ignored.</p>
+
+<p>Generic solution that trades off some code readability for good interpreter performance and lower footprint at the
+same time is to split the code into two nodes, where the outer node takes only the shared inline nodes/profiles
+and the inner node takes only the non-shared. The outer node can execute some common logic and also forward the
+shared nodes along with their inlining target node to the inner node.</p>
+
+<h2 id="avoid-unused-large-inline-nodes">Avoid unused large inline nodes</h2>
+
+<p>Avoid inlining large nodes that are used only on rarely executed code-paths.</p>
+
+<p>Example:</p>
+<pre><code class="language-java">@Specialization
+void doObject(Object arg,
+    @Bind("this") Node inliningTarget,
+    @Cached LargeInlineNode n) {
+
+    if (arg == null) {
+        // unlikely situation
+        n.execute(inliningTarget, ...);
+    }
+}
+</code></pre>
+
+<p>Why: runtime memory footprint</p>
+
+<p>All the fields of <code>LargeInlineNode</code> node will be inlined into the caller node (or Specialization data-class)
+increasing its memory footprint significantly.</p>
+
+<p>For code-paths that are not performance sensitive in the interpreter, better alternative is
+the <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/DSLNodeObjectInlining/#lazy-initialized-nodes-with-dsl-inlining">lazily initialized nodes</a>.</p>
+
+<p>For Code-paths that are performance sensitive in the interpreter:</p>
+<ul>
+  <li>The footprint increase may be justified by the performance</li>
+  <li>Use the handwritten lazily initialized <code>@Child</code> field pattern if applicable</li>
+  <li>If possible restructure the code to avoid such situation</li>
+</ul>
+
+<h2 id="avoid-generating-cached-uncached-and-inline-variant-of-one-node">Avoid generating cached, uncached, and inline variant of one node</h2>
+
+<p>If possible avoid having all three variants, because it increases the PE code footprint.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

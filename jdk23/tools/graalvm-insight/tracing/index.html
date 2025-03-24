@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/index.html" class="link-back"><i>&#9664;</i>Table of Contents</a>
+
+      <h1 id="tracing-with-insight">Tracing with Insight</h1>
+
+<p>It is possible to use the GraalVM Insight to implement smooth, declarative, ad hoc tracing via standard <a href="https://github.com/opentracing/opentracing-javascript"><code>OpenTracing API</code></a>.
+The traces can be added into running application and customized on the fly to extract the right information needed to investigate any misbehavior incident.</p>
+
+<p>The following examples will demonstrate the tracing capabilities with GraalVM Insight.
+To start, install the Jaeger’s client side instrumentation library for Node.js:</p>
+
+<pre><code class="language-bash">./bin/npm install jaeger-client@3.17.1
+</code></pre>
+
+<p>Now you can use the <a href="https://github.com/opentracing/opentracing-javascript">OpenTracing API</a> provided by the <code>jaeger-client</code> module in your instrument <code>agent.js</code> via the <code>tracer</code> object (once it becomes available, it will discussed later in this guide):</p>
+
+<pre><code class="language-js">let initialize = function(tracer) {
+    var counter = 0;
+
+    insight.on('enter', function(ctx, frame) {
+        const args = frame.args;
+        if ('request' !== frame.type || args.length !== 2 || typeof args[0] !== 'object' || typeof args[1] !== 'object') {
+            return;
+        }
+        const req = args[0];
+        const res = args[1];
+        const span = tracer.startSpan("request");
+        span.setTag("span.kind", "server");
+        span.setTag("http.url", req.url);
+        span.setTag("http.method", req.method);
+        res.id = ++counter;
+        res.span = span;
+        console.log(`agent: handling #${res.id} request for ${req.url}`);
+    }, {
+        roots: true,
+        rootNameFilter: 'emit',
+        at: {
+            sourcePath: '.*events.js'
+        }
+    });
+
+    insight.on('return', function(ctx, frame) {
+        var res = frame['this'];
+        if (res.span) {
+            res.span.finish();
+            console.log(`agent: finished #${res.id} request`);
+        } else {
+            //Caused, for example, by Tracer itself connecting to the Jaeger server
+        }
+    }, {
+        roots: true,
+        rootNameFilter: 'end',
+        at: {
+            sourcePath: '.*_http_outgoing.js'
+        }
+    });
+    console.log('agent: ready');
+};
+</code></pre>
+
+<p>The system hooks into <code>emit('request', ...)</code> and <code>res.end()</code> functions which are used to initialize a response to an HTTP request and finish it.
+Because the <code>res</code> object is a dynamic JavaScript object, it is possible to add <code>id</code> and <code>span</code> attributes to it in the <code>enter</code> handler of the <code>emit</code> function from the source <code>events.js</code>.
+Then it is possible to use these attributes in the <code>return</code> handler of the <code>end</code> function.</p>
+
+<p>GraalVM Insight provides access to <code>frame</code> variables and their fields.
+As such, the instrument can read value of <code>req.url</code> or <code>req.method</code> and provide them as <code>span.setTag</code> values to the OpenTracing server.</p>
+
+<p>With this instrument, it is just a matter of being able to enable it at the right time.
+Check the <a href="/jdk23/tools/graalvm-insight/embedding/">Embedding Insight into Node.js Application</a> section to see how to create an admin server and apply any trace scripts (including OpenTracing based ones) dynamically when needed.
+For purposes of this guide, something simpler will be used.</p>
+
+<p>Enable the instrument when the <code>jaeger</code> object is provided to it:</p>
+
+<pre><code class="language-js">let initializeJaeger = function (ctx, frame) {
+    insight.off('enter', initializeJaeger);
+
+    let jaeger = frame.jaeger;
+
+    var initTracer = jaeger.initTracer;
+    console.log('agent: Jaeger tracer obtained');
+
+    // See schema https://github.com/jaegertracing/jaeger-client-node/blob/master/src/configuration.js#L37
+    var config = {
+      serviceName: 'insight-demo',
+      reporter: {
+        // Provide the traces endpoint. This forces the client to connect directly to the Collector and send
+        // spans over HTTP
+        collectorEndpoint: 'http://localhost:14268/api/traces',
+        // Provide username and password if authentication is enabled in the Collector
+        // username: '',
+        // password: '',
+      },
+      sampler: {
+          type : 'const',
+          param : 1
+      }
+    };
+    var options = {
+      tags: {
+        'insight-demo.version': '1.1.2',
+      },
+    //  metrics: metrics,
+      logger: console,
+      sampler: {
+          type : 'const',
+          param : 1
+      }
+    };
+
+    var tracer = initTracer(config, options);
+    initialize(tracer);
+};
+
+insight.on('return', initializeJaeger, {
+  roots: true,
+  rootNameFilter: 'jaegerAvailable'
+});
+</code></pre>
+
+<p>This instrument needs help from the main server script.
+Let the <code>server.js</code> obtain the <code>jaeger-client</code> module and pass it to the agent via the <code>jaegerAvailable</code> function.
+Then it creates a typical HTTP server.
+The content of <code>server.js</code> is:</p>
+
+<pre><code class="language-js">function jaegerAvailable(jaeger) {
+    console.log("Providing Jaeger object to the agent");
+}
+jaegerAvailable(require("jaeger-client"));
+
+const http = require("http");
+const srv = http.createServer((req, res) =&gt; {
+    console.log(`server: obtained request ${res.id}`);
+    setTimeout(() =&gt; {
+        res.write(`OK# ${res.id}`);
+        console.log(`server: replied to request ${res.id}`);
+        res.end();
+    }, 5);
+});
+srv.listen(8080);
+</code></pre>
+
+<p>With these two files you can launch the node application as well as the agent.
+But, first of all, start the Jaeger server:</p>
+
+<pre><code class="language-bash">docker run -d --name jaeger \
+-e COLLECTOR_ZIPKIN_HTTP_PORT=9411 \
+-p 5775:5775/udp   -p 6831:6831/udp   -p 6832:6832/udp \
+-p 5778:5778   -p 16686:16686   -p 14268:14268   -p 9411:9411 \
+jaegertracing/all-in-one:latest
+
+./bin/node --insight=agent.js server.js
+Providing Jaeger object to the agent
+agent: Jaeger tracer obtained
+Initializing Jaeger Tracer with RemoteReporter and ConstSampler(always)
+agent: ready
+</code></pre>
+
+<p>Now you can connect to the Jaeger UI available at <a href="http://localhost:16686/">http://localhost:16686/</a> and put the server under some load:</p>
+
+<pre><code class="language-bash">ab -c 10 -n 10000 http://localhost:8080/
+</code></pre>
+
+<p>The server prints to the console detailed information while handling the requests and the Jaeger UI fills with the traces:</p>
+
+<p><img src="/jdk23/docs/tools/insight/img/Insight-Jaeger.png" alt="Jaeger UI" /></p>
+
+<p>This completes the guide how to enhance a plain Node.js application with tracing.
+The traces remain separated in its own <code>agent.js</code> file and can be applied at start time (demonstrated here) or <a href="/jdk23/tools/graalvm-insight/embedding/">dynamically</a> when needed.</p>
+
+<h3 id="what-to-read-next">What to Read Next</h3>
+
+<p>To learn more about Insight and find some challenging tasks, go to the <a href="/jdk23/tools/graalvm-insight/manual/">Insight Manual</a>.</p>
+
+      </div>
+  </div>
+</div>
+
+</div>
+
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

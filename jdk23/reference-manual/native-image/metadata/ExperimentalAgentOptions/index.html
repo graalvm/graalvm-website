@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="experimental-agent-options">Experimental Agent Options</h1>
+
+<p>The <code>native-image-agent</code> tool has options which are currently experimental and might be enabled in future releases, but can also be changed or removed entirely.
+These options are described here.</p>
+
+<h2 id="support-for-predefined-classes">Support For Predefined Classes</h2>
+
+<p>Native-image needs all classes to be known at image build time (a “closed-world assumption”).
+However, Java has support for loading new classes at runtime.
+To emulate class loading, the agent can be told to trace dynamically loaded classes and save their bytecode for later use by the image builder.
+This functionality can be enabled by adding <code>experimental-class-define-support</code> to the agent option string, for example: <code>-agentlib:native-image-agent=config-output-dir=config,experimental-class-define-support</code>
+Apart from the standard configuration files, the agent will create an <code>agent-extracted-predefined-classes</code> directory in the configuration output directory and write bytecode of newly loaded classes on the go.
+The configuration directory can then be used by image builder without additional tweaks,.
+The classes will be loaded during the image build, but will not be initialized or made available to the application.
+At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
+
+<h3 id="known-limitations">Known Limitations</h3>
+
+<ul>
+  <li>Native images support “loading” a predefined class only once per execution, by just a single class loader.</li>
+  <li>Predefined classes are initialized when they are “loaded” at runtime and cannot be initialized at build time.</li>
+  <li>The agent collects all classes which are not loaded by one of the Java VM’s built-in class loaders (with some exceptions), that is, from the class path or module path. This includes classes loaded by any custom class loaders.</li>
+  <li>Classes that are generated with varying data in their name or bytecode, such as sequential or random numbers or timestamps, can generally not be matched to predefined classes at runtime. In these cases, the way such classes are generated needs to be adjusted.</li>
+</ul>
+
+<h2 id="printing-configuration-with-origins">Printing Configuration With Origins</h2>
+
+<p>For debugging, it may be useful to know the origin of certain configuration entries.
+By supplying <code>experimental-configuration-with-origins</code> to the agent option string, the agent will output configuration files with configuration entries broken down to the calling context (stack trace) they originate from in tree form.
+This option should be used in conjunction with <code>config-output-dir=&lt;path&gt;</code> to tell the agent where to output the configuration files.
+An example agent option string: <code>-agentlib:native-image-agent=config-output-dir=config-with-origins/,experimental-configuration-with-origins</code></p>
+
+<h2 id="omitting-configuration-from-the-agents-output">Omitting Configuration From The Agent’s Output</h2>
+
+<p>The agent can omit traced configuration entries present in existing configuration files.
+There are two ways to specify these existing configuration files:</p>
+<ul>
+  <li>By using configuration files from the class path or module path. When <code>experimental-omit-config-from-classpath</code> is added to the agent option string, the class path and module path of the running application are scanned for <code>META-INF/native-image/**/*.json</code> configuration files.</li>
+  <li>By explicitly pointing the agent to an existing configuration file directory using <code>config-to-omit=&lt;path&gt;</code>.</li>
+</ul>
+
+<h2 id="generating-conditional-configuration-using-the-agent">Generating Conditional Configuration Using the Agent</h2>
+
+<p>The agent can, using a heuristic, generate configuration with reachability conditions on user specified classes.
+The agent will track configuration origins and try to deduce the conditions automatically.
+User classes are specified via an agent filter file (for more information on the format, see <a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/#caller-based-filters">more about the agent</a>).
+Additionally, the resulting configuration can further be filtered using another filter file.</p>
+
+<p>Currently, this feature supports two modes:</p>
+<ol>
+  <li>Generating conditional configuration in a single run with the agent.</li>
+  <li>Generating conditional configuration from multiple runs with the agent and finally merging the collected data.</li>
+</ol>
+
+<h3 id="generating-conditional-configuration-during-an-agent-run">Generating Conditional Configuration During an Agent Run</h3>
+
+<p>To enable this mode, add <code>experimental-conditional-config-filter-file=&lt;path&gt;</code> to the agent’s command line, where <code>&lt;path&gt;</code> points to an agent filter file.
+Classes that are considered included by this filter will be designated as user code classes.
+To further filter the generated configuration, you can use <code>conditional-config-class-filter-file=&lt;path&gt;</code>, where <code>&lt;path&gt;</code> is a path to an agent filter file.</p>
+
+<h3 id="generating-conditional-configuration-from-multiple-agent-runs">Generating Conditional Configuration From Multiple Agent Runs</h3>
+
+<p>Conditional configuration can be generated from multiple agent runs that reach different code paths in the application.
+Each agent run produces configuration with metadata. <code>native-image-configure</code> is then used to merge the collected data and produce a conditional configuration.
+To run the agent in this mode, add <code>experimental-conditional-config-part</code> to the agent’s command line.
+Once all the agent runs have finished, you can generate a conditional configuration by invoking:</p>
+<pre><code class="language-shell">native-image-configure generate-conditional --user-code-filter=&lt;path-to-filter-file&gt; --class-name-filter=&lt;path-to-filter-file&gt; --input-dir=&lt;path-to-agent-run-output-1&gt; --input-dir=&lt;path-to-agent-run-ouput-2&gt; ... --output-dir=&lt;path-to-resulting-conditional-config&gt;
+</code></pre>
+<p>where:</p>
+<ul>
+  <li><code>--user-code-filter=&lt;path-to-filter-file&gt;</code>: path to an agent filter file that specifies user classes</li>
+  <li>(optional) <code>--class-name-filter=&lt;path-to-filter-file&gt;</code>: path to an agent filter file that further filters the generated configuration</li>
+</ul>
+
+<h3 id="the-underlying-heuristics">The Underlying Heuristics</h3>
+
+<p>Conditions are generated using the call tree of the application. The heuristics work as follows:</p>
+<ol>
+  <li>For each unique method, create a list of all nodes in the call tree that correspond to the method</li>
+  <li>For each unique method, if the method has more than one call node in the tree:
+    <ul>
+      <li>Find common configuration across all call nodes of that method</li>
+      <li>For each call node of the method, propagate configuration that isn’t common across these calls to the caller node</li>
+    </ul>
+  </li>
+  <li>Repeat 2. until an iteration produced no changes in the call tree.</li>
+  <li>For each node that contains configuration, generate a conditional configuration entry with the method’s class as the condition.</li>
+</ol>
+
+<p>The primary goal of this heuristic is to attempt to find where a method creates different configuration entries depending on the caller (for example, a method that wraps <code>Class.forName</code> calls.)
+This implies that the heuristic will not work well for code that generates configuration through a different dependency (for example, same method returns calls <code>Class.forName</code> with different class parameters depending on a system property).</p>
+
+<h3 id="further-reading">Further Reading</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Metadata Collection with the Tracing Agent</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>
