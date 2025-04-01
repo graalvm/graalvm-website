@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -59,7 +59,11 @@ loadScripts(document, 'script');</script>
 <ol class="toc-list">
 <li><a href="#terminology-heading" tabindex="0">Terminology</a></li>
 <li><a href="#unroll-vs-explode-heading" tabindex="0">UNROLL vs EXPLODE</a></li>
-<li><a href="#until_return-heading" tabindex="0">UNTIL_RETURN</a></li>
+<li><a href="#until_return-heading" tabindex="0">UNTIL_RETURN</a>
+<ol class="toc-list">
+<li><a href="#break-heading" tabindex="0">break</a></li>
+</ol>
+</li>
 </ol>
 </li>
 <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
@@ -107,14 +111,13 @@ loadScripts(document, 'script');</script>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Enum.html" title="class or interface in java.lang" class="external-link">Enum</a>&lt;<a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a>&gt;</span></div>
 <div class="block">Controls the behavior of the <a href="ExplodeLoop.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>ExplodeLoop</code></a> annotation.
 
- <h2 id="terminology-heading">Terminology</h2>
+<h2 id="terminology-heading">Terminology</h2>
 
- In the explanations below, the term <i>loop end</i> refers to control flow reaching the end
- of the loop body such as <code>continue</code> or a statement at the end of the loop body. The
- term <i>loop exit</i> refers to control flow exiting the loop, such as <code>return</code> or
- <code>break</code>. Example:
+In the explanations below, the term <i>loop end</i> refers to control flow reaching the end
+of the loop body such as <code>continue</code> or a statement at the end of the loop body. The
+term <i>loop exit</i> refers to control flow exiting the loop, such as <code>return</code> or
+<code>break</code>. Example:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind1"><code class="language-java">int loopEndExits() {
     int state = -1;
@@ -141,15 +144,14 @@ loadScripts(document, 'script');</script>
 </div>
 
 
- There are 4 loop explosion kinds (plus <code>MERGE_EXPLODE</code>, which is meant for bytecode
- interpreters), configurable by 2 parameters: UNROLL vs EXPLODE and UNTIL_RETURN vs not.
+There are 4 loop explosion kinds (plus <code>MERGE_EXPLODE</code>, which is meant for bytecode
+interpreters), configurable by 2 parameters: UNROLL vs EXPLODE and UNTIL_RETURN vs not.
 
- <h2 id="unroll-vs-explode-heading">UNROLL vs EXPLODE</h2>
+<h2 id="unroll-vs-explode-heading">UNROLL vs EXPLODE</h2>
 
- The first parameter specifies whether the partial evaluator should duplicate loop ends.
- UNROLL merges after each loop end and EXPLODE keeps exploding nested iterations like a tree.
+The first parameter specifies whether the partial evaluator should duplicate loop ends.
+UNROLL merges after each loop end and EXPLODE keeps exploding nested iterations like a tree.
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind2"><code class="language-java">@ExplodeLoop
 void unrollVsExplodeLoop() {
@@ -166,9 +168,8 @@ void unrollVsExplodeLoop() {
 </div>
 
 
- gets unrolled with <code>FULL_UNROLL</code> to:
+gets unrolled with <code>FULL_UNROLL</code> to:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind3"><code class="language-java">void unrollVsExplodeLoopUnrolled() {
     int state = 1;
@@ -188,9 +189,8 @@ void unrollVsExplodeLoop() {
 </div>
 
 
- and exploded with <code>FULL_EXPLODE</code> to:
+and exploded with <code>FULL_EXPLODE</code> to:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind4"><code class="language-java">void unrollVsExplodeLoopExploded() {
     int state = 1;
@@ -212,12 +212,11 @@ void unrollVsExplodeLoop() {
 </div>
 
 
- <h2 id="until_return-heading">UNTIL_RETURN</h2>
+<h2 id="until_return-heading">UNTIL_RETURN</h2>
 
- The second parameter specifies whether the partial evaluator should duplicate loop exits.
- UNTIL_RETURN duplicates them, otherwise control flow is merged.
+The second parameter specifies whether the partial evaluator should duplicate loop exits.
+UNTIL_RETURN duplicates them, otherwise control flow is merged.
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind5"><code class="language-java">@ExplodeLoop
 int untilReturnLoop() {
@@ -234,9 +233,8 @@ int untilReturnLoop() {
 </div>
 
 
- is expanded with <code>FULL_UNROLL_UNTIL_RETURN</code> to:
+is expanded with <code>FULL_UNROLL_UNTIL_RETURN</code> to:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind6"><code class="language-java">int untilReturn() {
     if (condition(0)) {
@@ -253,9 +251,8 @@ int untilReturnLoop() {
 </div>
 
 
- while <code>FULL_UNROLL</code> merges loop exits:
+while <code>FULL_UNROLL</code> merges loop exits:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind7"><code class="language-java">int notUntilReturn() {
     int i;
@@ -279,12 +276,11 @@ int untilReturnLoop() {
 </div>
 
 
- <h3 id="break-heading">break</h3>
+<h3 id="break-heading">break</h3>
 
- Note that <code>break</code> statements inside the loop will duplicate code after the loop since
- they add new loop exits:
+Note that <code>break</code> statements inside the loop will duplicate code after the loop since
+they add new loop exits:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind8"><code class="language-java">@ExplodeLoop
 int breaksLoop() {
@@ -305,9 +301,8 @@ int breaksLoop() {
 </div>
 
 
- is expanded with <code>FULL_UNROLL_UNTIL_RETURN</code> to:
+is expanded with <code>FULL_UNROLL_UNTIL_RETURN</code> to:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.nodes.ExplodeLoop.LoopExplosionKind9"><code class="language-java">int breaksLoopUnrollUntilReturn() {
     if (condition1(0)) {
@@ -367,12 +362,12 @@ int breaksLoop() {
 <div class="col-first odd-row-color"><code><a href="#FULL_UNROLL_UNTIL_RETURN" class="member-name-link">FULL_UNROLL_UNTIL_RETURN</a></code></div>
 <div class="col-last odd-row-color">
 <div class="block">Like <a href="#FULL_UNROLL"><code>FULL_UNROLL</code></a>, but in addition loop unrolling duplicates loop exits in every
- iteration instead of merging them.</div>
+iteration instead of merging them.</div>
 </div>
 <div class="col-first even-row-color"><code><a href="#MERGE_EXPLODE" class="member-name-link">MERGE_EXPLODE</a></code></div>
 <div class="col-last even-row-color">
 <div class="block">like <a href="#FULL_EXPLODE"><code>FULL_EXPLODE</code></a>, but copies of the loop body that have the exact same state
- (all local variables have the same value) are merged.</div>
+(all local variables have the same value) are merged.</div>
 </div>
 </div>
 </section>
@@ -425,9 +420,9 @@ the order they are declared.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a></span>&nbsp;<span class="element-name">FULL_UNROLL</span></div>
 <div class="block">Fully unroll all loops. The loops must have a known finite number of iterations. If a
- loop has multiple loop ends, they are merged so that the subsequent loop iteration is
- processed only once. For example, a loop with 4 iterations and 2 loop ends leads to
- 1+1+1+1 = 4 copies of the loop body.</div>
+loop has multiple loop ends, they are merged so that the subsequent loop iteration is
+processed only once. For example, a loop with 4 iterations and 2 loop ends leads to
+1+1+1+1 = 4 copies of the loop body.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.15</dd>
@@ -441,13 +436,13 @@ the order they are declared.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a></span>&nbsp;<span class="element-name">FULL_UNROLL_UNTIL_RETURN</span></div>
 <div class="block">Like <a href="#FULL_UNROLL"><code>FULL_UNROLL</code></a>, but in addition loop unrolling duplicates loop exits in every
- iteration instead of merging them. Code after a loop exit is duplicated for every loop
- exit and every loop iteration. For example, a loop with 4 iterations and 2 loop exits
- (exit1 and exit2, where exit1 is an early return inside a loop, such as
- <a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes"><code>untilReturnLoop()</code></a>) leads to 4 copies of the loop body and 4
- copies of exit1 and 1 copy of exit2. After each exit all code until a return is
- duplicated per iteration. Beware of break statements inside loops since they cause
- additional loop exits leading to code duplication along exit2.</div>
+iteration instead of merging them. Code after a loop exit is duplicated for every loop
+exit and every loop iteration. For example, a loop with 4 iterations and 2 loop exits
+(exit1 and exit2, where exit1 is an early return inside a loop, such as
+<a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes"><code>untilReturnLoop()</code></a>) leads to 4 copies of the loop body and 4
+copies of exit1 and 1 copy of exit2. After each exit all code until a return is
+duplicated per iteration. Beware of break statements inside loops since they cause
+additional loop exits leading to code duplication along exit2.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>20.0</dd>
@@ -461,9 +456,9 @@ the order they are declared.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a></span>&nbsp;<span class="element-name">FULL_EXPLODE</span></div>
 <div class="block">Fully explode all loops. The loops must have a known finite number of iterations. If a
- loop has multiple loop ends, they are not merged so that subsequent loop iterations are
- processed multiple times. For example, a loop with 4 iterations and 2 loop ends leads to
- 1+2+4+8 = 15 copies of the loop body.</div>
+loop has multiple loop ends, they are not merged so that subsequent loop iterations are
+processed multiple times. For example, a loop with 4 iterations and 2 loop ends leads to
+1+2+4+8 = 15 copies of the loop body.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.15</dd>
@@ -477,9 +472,9 @@ the order they are declared.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a></span>&nbsp;<span class="element-name">FULL_EXPLODE_UNTIL_RETURN</span></div>
 <div class="block">Like <a href="#FULL_EXPLODE"><code>FULL_EXPLODE</code></a>, but in addition explosion does not stop at loop exits. Code
- after the loop is duplicated for every loop exit of every loop iteration. For example, a
- loop with 4 iterations and 2 loop exits leads to 4 * 2 = 8 copies of the code after the
- loop.</div>
+after the loop is duplicated for every loop exit of every loop iteration. For example, a
+loop with 4 iterations and 2 loop exits leads to 4 * 2 = 8 copies of the code after the
+loop.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.15</dd>
@@ -493,9 +488,9 @@ the order they are declared.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type"><a href="ExplodeLoop.LoopExplosionKind.html" title="enum class in com.oracle.truffle.api.nodes">ExplodeLoop.LoopExplosionKind</a></span>&nbsp;<span class="element-name">MERGE_EXPLODE</span></div>
 <div class="block">like <a href="#FULL_EXPLODE"><code>FULL_EXPLODE</code></a>, but copies of the loop body that have the exact same state
- (all local variables have the same value) are merged. This reduces the number of copies
- necessary, but can introduce loops again. This kind is useful for bytecode interpreter
- loops.</div>
+(all local variables have the same value) are merged. This reduces the number of copies
+necessary, but can introduce loops again. This kind is useful for bytecode interpreter
+loops.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.15</dd>

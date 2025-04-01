@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -74,83 +74,83 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">MessageTransport</span></div>
 <div class="block">Allows to take over transport of message communication initiated by an instrument. Implement this
- interface to provide a transport of message communication. When an instrument is about to create
- a server endpoint, it calls the <a href="#open(java.net.URI,org.graalvm.polyglot.io.MessageEndpoint)"><code>open(URI, MessageEndpoint)</code></a> method with
- the server URI. Usage example:
- 
- <pre>
- class RoutedServer implements MessageEndpoint {
+interface to provide a transport of message communication. When an instrument is about to create
+a server endpoint, it calls the <a href="#open(java.net.URI,org.graalvm.polyglot.io.MessageEndpoint)"><code>open(URI, MessageEndpoint)</code></a> method with
+the server URI. Usage example:
 
-     private final MessageEndpoint remoteEndpoint;
-     private final OutputStream routerOut = getRouterOutputStream();
-     private final WritableByteChannel routerOutChannel;
+<pre>
+class RoutedServer implements MessageEndpoint {
 
-     RoutedServer(MessageEndpoint remoteEndpoint) {
-         this.remoteEndpoint = remoteEndpoint;
-         this.routerOutChannel = Channels.newChannel(routerOut);
-         new Thread(() -&gt; {
-             try {
-                 runInputLoop();
-             } catch (IOException ex) {
-             }
-         }).start();
-     }
+    private final MessageEndpoint remoteEndpoint;
+    private final OutputStream routerOut = getRouterOutputStream();
+    private final WritableByteChannel routerOutChannel;
 
-     &#64;Override
-     public void sendText(String text) throws IOException {
-         routerOut.write(text.getBytes());
-         routerOut.flush();
-     }
+    RoutedServer(MessageEndpoint remoteEndpoint) {
+        this.remoteEndpoint = remoteEndpoint;
+        this.routerOutChannel = Channels.newChannel(routerOut);
+        new Thread(() -&gt; {
+            try {
+                runInputLoop();
+            } catch (IOException ex) {
+            }
+        }).start();
+    }
 
-     &#64;Override
-     public void sendBinary(ByteBuffer data) throws IOException {
-         routerOutChannel.write(data);
-         routerOut.flush();
-     }
+    &#64;Override
+    public void sendText(String text) throws IOException {
+        routerOut.write(text.getBytes());
+        routerOut.flush();
+    }
 
-     &#64;Override
-     public void sendPing(ByteBuffer data) throws IOException {
-         remoteEndpoint.sendPong(data);
-     }
+    &#64;Override
+    public void sendBinary(ByteBuffer data) throws IOException {
+        routerOutChannel.write(data);
+        routerOut.flush();
+    }
 
-     &#64;Override
-     public void sendPong(ByteBuffer data) throws IOException {
-         // Did we send ping?
-     }
+    &#64;Override
+    public void sendPing(ByteBuffer data) throws IOException {
+        remoteEndpoint.sendPong(data);
+    }
 
-     &#64;Override
-     public void sendClose() throws IOException {
-         routerOut.close();
-     }
+    &#64;Override
+    public void sendPong(ByteBuffer data) throws IOException {
+        // Did we send ping?
+    }
 
-     private void runInputLoop() throws IOException {
-         try (InputStream routerIn = getRouterInputStream()) {
-             byte[] buf = new byte[1024];
-             ByteBuffer bb = ByteBuffer.wrap(buf);
-             int l;
-             while ((l = routerIn.read(buf)) &gt; 0) {
-                 bb.limit(l);
-                 remoteEndpoint.sendBinary(bb);
-                 bb.rewind();
-             }
-         } finally {
-             remoteEndpoint.sendClose();
-         }
-     }
- }
+    &#64;Override
+    public void sendClose() throws IOException {
+        routerOut.close();
+    }
 
- Engine.newBuilder().serverTransport(
-                 (uri, peerEndpoint) -&gt; {
-                     if (denyHost.equals(uri.getHost())) {
-                         throw new MessageTransport.VetoException("Denied access.");
-                     } else if (routedURI.equals(uri)) {
-                         return new RoutedServer(peerEndpoint);
-                     } else {
-                         // Permit instruments to setup the servers themselves
-                         return null;
-                     }
-                 }).build();
- </pre></div>
+    private void runInputLoop() throws IOException {
+        try (InputStream routerIn = getRouterInputStream()) {
+            byte[] buf = new byte[1024];
+            ByteBuffer bb = ByteBuffer.wrap(buf);
+            int l;
+            while ((l = routerIn.read(buf)) &gt; 0) {
+                bb.limit(l);
+                remoteEndpoint.sendBinary(bb);
+                bb.rewind();
+            }
+        } finally {
+            remoteEndpoint.sendClose();
+        }
+    }
+}
+
+Engine.newBuilder().serverTransport(
+                (uri, peerEndpoint) -&gt; {
+                    if (denyHost.equals(uri.getHost())) {
+                        throw new MessageTransport.VetoException("Denied access.");
+                    } else if (routedURI.equals(uri)) {
+                        return new RoutedServer(peerEndpoint);
+                    } else {
+                        // Permit instruments to setup the servers themselves
+                        return null;
+                    }
+                }).build();
+</pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>
@@ -223,13 +223,13 @@ loadScripts(document, 'script');</script>
               throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a>,
 <a href="MessageTransport.VetoException.html" title="class in org.graalvm.polyglot.io">MessageTransport.VetoException</a></span></div>
 <div class="block">Called when a connection to an URI is to be established. The virtualized connection is either
- opened and an endpoint call back is returned, or the connection is not virtualized in which
- case <code>null</code> is returned.
- <p>
- This method can be called concurrently from multiple threads. However, the
- <a href="MessageEndpoint.html" title="interface in org.graalvm.polyglot.io"><code>MessageEndpoint</code></a> ought to be called on one thread at a time, unless you're sure that
- the particular implementation can handle concurrent calls. The same holds true for the
- returned endpoint, it's called synchronously.</div>
+opened and an endpoint call back is returned, or the connection is not virtualized in which
+case <code>null</code> is returned.
+<p>
+This method can be called concurrently from multiple threads. However, the
+<a href="MessageEndpoint.html" title="interface in org.graalvm.polyglot.io"><code>MessageEndpoint</code></a> ought to be called on one thread at a time, unless you're sure that
+the particular implementation can handle concurrent calls. The same holds true for the
+returned endpoint, it's called synchronously.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>uri</code> - the connection URI</dd>

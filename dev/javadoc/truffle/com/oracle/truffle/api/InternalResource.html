@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -75,42 +75,42 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public interface </span><span class="element-name type-name-label">InternalResource</span></div>
 <div class="block">Represents an internal resource of a language that can be lazily unpacked to a cache user
- directory.
- <p>
- A typical implementation of an <code>InternalResource</code> for a platform-specific library stored in
- the <code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;</code> looks like this:
+directory.
+<p>
+A typical implementation of an <code>InternalResource</code> for a platform-specific library stored in
+the <code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;</code> looks like this:
 
- <pre>
- &#64;InternalResource.Id("resource-id")
- final class NativeLibResource implements InternalResource {
+<pre>
+&#64;InternalResource.Id("resource-id")
+final class NativeLibResource implements InternalResource {
 
-     &#64;Override
-     public void unpackFiles(Env env, Path targetDirectory) throws IOException {
-         Path base = Path.of("META-INF", "resources", "mylanguage", "resource-id",
-                         env.getOS().toString(), env.getCPUArchitecture().toString());
-         env.unpackResourceFiles(base.resolve("file-list"), targetDirectory, base);
-     }
+    &#64;Override
+    public void unpackFiles(Env env, Path targetDirectory) throws IOException {
+        Path base = Path.of("META-INF", "resources", "mylanguage", "resource-id",
+                        env.getOS().toString(), env.getCPUArchitecture().toString());
+        env.unpackResourceFiles(base.resolve("file-list"), targetDirectory, base);
+    }
 
-     &#64;Override
-     public String versionHash(Env env) {
-         try {
-             Path hashResource = Path.of("META-INF", "resources", "mylanguage", "resource-id",
-                             env.getOS().toString(), env.getCPUArchitecture().toString(), "sha256");
-             return env.readResourceLines(hashResource).get(0);
-         } catch (IOException ioe) {
-             throw CompilerDirectives.shouldNotReachHere(ioe);
-         }
-     }
- }
- </pre>
+    &#64;Override
+    public String versionHash(Env env) {
+        try {
+            Path hashResource = Path.of("META-INF", "resources", "mylanguage", "resource-id",
+                            env.getOS().toString(), env.getCPUArchitecture().toString(), "sha256");
+            return env.readResourceLines(hashResource).get(0);
+        } catch (IOException ioe) {
+            throw CompilerDirectives.shouldNotReachHere(ioe);
+        }
+    }
+}
+</pre>
 
- The resource files are listed in the
- <code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;/file-list</code> file. For the file
- list format, refer to <a href="#unpackFiles(com.oracle.truffle.api.InternalResource.Env,java.nio.file.Path)"><code>unpackFiles(Env, Path)</code></a>. Additionally, the
- <code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;/sha256</code> file contains an
- SHA-256 hash of the resource files. It is recommended to use non-encapsulated resource paths that
- include the component ID and resource ID, as this helps prevent ambiguity when the language or
- instrument is used in an unnamed module.</div>
+The resource files are listed in the
+<code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;/file-list</code> file. For the file
+list format, refer to <a href="#unpackFiles(com.oracle.truffle.api.InternalResource.Env,java.nio.file.Path)"><code>unpackFiles(Env, Path)</code></a>. Additionally, the
+<code>META-INF/resources/&lt;language-id&gt;/&lt;resource-id&gt;/&lt;os&gt;/&lt;arch&gt;/sha256</code> file contains an
+SHA-256 hash of the resource files. It is recommended to use non-encapsulated resource paths that
+include the component ID and resource ID, as this helps prevent ambiguity when the language or
+instrument is used in an unnamed module.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>23.1</dd>
@@ -195,18 +195,18 @@ loadScripts(document, 'script');</script>
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Path.html" title="class or interface in java.nio.file" class="external-link">Path</a>&nbsp;targetDirectory)</span>
           throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a></span></div>
 <div class="block">Unpacks all resources to a given target directory. The target directory is guaranteed to be
- writable and the unpacking is synchronized by a file system lock. If a resource was
- previously cached then <a href="#versionHash(com.oracle.truffle.api.InternalResource.Env)"><code>versionHash(Env)</code></a> is invoked and the version string is
- compared. If it matches then <a href="#unpackFiles(com.oracle.truffle.api.InternalResource.Env,java.nio.file.Path)"><code>unpackFiles(Env, Path)</code></a> will not be invoked and the
- directory will be used as previously unpacked. The target directory is guaranteed to exist
- and guaranteed to be empty.
- <p>
- Ideally the result of this method should be idempotent in order to be safely cacheable. Care
- should be taken, if system properties are used that change the result of this method. It is
- safe to use <a href="InternalResource.OS.html" title="enum class in com.oracle.truffle.api"><code>InternalResource.OS</code></a> and <a href="InternalResource.CPUArchitecture.html" title="enum class in com.oracle.truffle.api"><code>InternalResource.CPUArchitecture</code></a> enums as internal resources are never
- cached or moved across operating system architectures.
- <p>
- No guest language code must run as part of this method.</div>
+writable and the unpacking is synchronized by a file system lock. If a resource was
+previously cached then <a href="#versionHash(com.oracle.truffle.api.InternalResource.Env)"><code>versionHash(Env)</code></a> is invoked and the version string is
+compared. If it matches then <a href="#unpackFiles(com.oracle.truffle.api.InternalResource.Env,java.nio.file.Path)"><code>unpackFiles(Env, Path)</code></a> will not be invoked and the
+directory will be used as previously unpacked. The target directory is guaranteed to exist
+and guaranteed to be empty.
+<p>
+Ideally the result of this method should be idempotent in order to be safely cacheable. Care
+should be taken, if system properties are used that change the result of this method. It is
+safe to use <a href="InternalResource.OS.html" title="enum class in com.oracle.truffle.api"><code>InternalResource.OS</code></a> and <a href="InternalResource.CPUArchitecture.html" title="enum class in com.oracle.truffle.api"><code>InternalResource.CPUArchitecture</code></a> enums as internal resources are never
+cached or moved across operating system architectures.
+<p>
+No guest language code must run as part of this method.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>targetDirectory</code> - the target directory to extract files to</dd>
@@ -225,11 +225,11 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">versionHash</span><wbr><span class="parameters">(<a href="InternalResource.Env.html" title="class in com.oracle.truffle.api">InternalResource.Env</a>&nbsp;env)</span>
             throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a></span></div>
 <div class="block">Returns the version hash to be used for this resource. It is the responsibility of the
- implementer to ensure that this version hash is unique. For example, an SHA-256 could be a
- good version identifier for file based resources. Since the version hash serves as a path
- component on the host filesystem, its length is restricted to a maximum of 128 bytes. If the
- version hash length exceeds this limit, an <code>IOException</code> will be thrown during
- unpacking.</div>
+implementer to ensure that this version hash is unique. For example, an SHA-256 could be a
+good version identifier for file based resources. Since the version hash serves as a path
+component on the host filesystem, its length is restricted to a maximum of 128 bytes. If the
+version hash length exceeds this limit, an <code>IOException</code> will be thrown during
+unpacking.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a></code></dd>

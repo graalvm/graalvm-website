@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -81,57 +81,57 @@ loadScripts(document, 'script');</script>
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Repeatable.html" title="class or interface in java.lang.annotation" class="external-link">@Repeatable</a>(<a href="ShortCircuitOperation.Repeat.html" title="annotation interface in com.oracle.truffle.api.bytecode">ShortCircuitOperation.Repeat</a>.class)
 </span><span class="modifiers">public @interface </span><span class="element-name type-name-label">ShortCircuitOperation</span></div>
 <div class="block">Declares a short-circuiting operation. A short-circuiting operation serves as a specification for
- a short-circuiting bytecode instruction in the generated interpreter. Whereas regular operations
- evaluate all of their operands eagerly, short-circuiting operations evaluate them one at a time.
- <p>
- A short-circuiting operation <a href="#booleanConverter()"><code>converts</code></a> each operand to a <code>boolean</code>
- to determine whether to continue execution. An OR operation continues until it encounters
- <code>true</code>; an AND operation continues until it encounters <code>false</code>.
- <p>
- A short-circuiting operation produces either the last operand evaluated, or the <code>boolean</code>
- it converted to. Both the boolean operator and the return semantics are specified by the
- <a href="#operator()"><code>operator()</code></a>.
- <p>
- For example, the following code declares a short-circuiting "Or" operation that continues to
- evaluate operands as long as they coerce to <code>false</code>:
+a short-circuiting bytecode instruction in the generated interpreter. Whereas regular operations
+evaluate all of their operands eagerly, short-circuiting operations evaluate them one at a time.
+<p>
+A short-circuiting operation <a href="#booleanConverter()"><code>converts</code></a> each operand to a <code>boolean</code>
+to determine whether to continue execution. An OR operation continues until it encounters
+<code>true</code>; an AND operation continues until it encounters <code>false</code>.
+<p>
+A short-circuiting operation produces either the last operand evaluated, or the <code>boolean</code>
+it converted to. Both the boolean operator and the return semantics are specified by the
+<a href="#operator()"><code>operator()</code></a>.
+<p>
+For example, the following code declares a short-circuiting "Or" operation that continues to
+evaluate operands as long as they coerce to <code>false</code>:
 
- <pre>
- &#64;GenerateBytecode(...)
- &#64;ShortCircuitOperation(name = "Or", operator=Operator.OR_RETURN_VALUE, booleanConverter = CoerceBoolean.class)
- public static final class MyBytecodeNode extends RootNode implements BytecodeRootNode {
-   &#64;Operation
-   public static final class CoerceBoolean {
-     &#64;Specialization
-     public static boolean fromInt(int x) { return x != 0; }
-     &#64;Specialization
-     public static boolean fromBool(boolean x) { return x; }
-     &#64;Specialization
-     public static boolean fromObject(Object x) { return x != null; }
-   }
+<pre>
+&#64;GenerateBytecode(...)
+&#64;ShortCircuitOperation(name = "Or", operator=Operator.OR_RETURN_VALUE, booleanConverter = CoerceBoolean.class)
+public static final class MyBytecodeNode extends RootNode implements BytecodeRootNode {
+  &#64;Operation
+  public static final class CoerceBoolean {
+    &#64;Specialization
+    public static boolean fromInt(int x) { return x != 0; }
+    &#64;Specialization
+    public static boolean fromBool(boolean x) { return x; }
+    &#64;Specialization
+    public static boolean fromObject(Object x) { return x != null; }
+  }
 
-   ...
- }
- </pre>
+  ...
+}
+</pre>
 
- In pseudocode, the <code>Or</code> operation declared above has the following semantics:
+In pseudocode, the <code>Or</code> operation declared above has the following semantics:
 
- <pre>
- value_1 = // compute operand_1
- if CoerceBoolean(value_1) != false
-   return value_1
+<pre>
+value_1 = // compute operand_1
+if CoerceBoolean(value_1) != false
+  return value_1
 
- value_2 = // compute operand_2
- if CoerceBoolean(value_2) != false
-   return value_2
+value_2 = // compute operand_2
+if CoerceBoolean(value_2) != false
+  return value_2
 
- ...
+...
 
- value_n = // compute operand_n
- return value_n
- </pre>
+value_n = // compute operand_n
+return value_n
+</pre>
 
- Since the operand value itself is returned, this operation can be used to implement
- null-coalescing operations (e.g., <code>someArray or []</code> in Python).</div>
+Since the operand value itself is returned, this operation can be used to implement
+null-coalescing operations (e.g., <code>someArray or []</code> in Python).</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>
@@ -234,14 +234,14 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="ShortCircuitOperation.Operator.html" title="enum class in com.oracle.truffle.api.bytecode">ShortCircuitOperation.Operator</a></span>&nbsp;<span class="element-name">operator</span></div>
 <div class="block">The short-circuit operator to use for this operation. The operator decides whether to perform
- a boolean AND or OR. It also determines whether the operation produces the original operand
- or the boolean that results from conversion.
- <p>
- An OR operation will execute children until a <code>true</code> value; an AND operation will
- execute children until a <code>false</code> value. Note that this means <a href="#booleanConverter()"><code>booleanConverter()</code></a>
- can be negated by changing an OR to an AND (or vice-versa) and then inverting the result. For
- example, <code>!convert(A) OR !convert(B) OR ...</code> can be implemented using
- <code>!(convert(A) AND convert(B) AND ...)</code>.</div>
+a boolean AND or OR. It also determines whether the operation produces the original operand
+or the boolean that results from conversion.
+<p>
+An OR operation will execute children until a <code>true</code> value; an AND operation will
+execute children until a <code>false</code> value. Note that this means <a href="#booleanConverter()"><code>booleanConverter()</code></a>
+can be negated by changing an OR to an AND (or vice-versa) and then inverting the result. For
+example, <code>!convert(A) OR !convert(B) OR ...</code> can be implemented using
+<code>!(convert(A) AND convert(B) AND ...)</code>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>
@@ -255,24 +255,24 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;?&gt;</span>&nbsp;<span class="element-name">booleanConverter</span></div>
 <div class="block">A node or operation class. The short-circuit operation uses this class to convert each
- operand value to a <code>boolean</code> value used by the boolean operation.
- <p>
- If no converter is provided, the operands must already be <code>boolean</code>s. The interpreter
- will cast each operand to <code>boolean</code> in order to compare it against <code>true</code> or
- <code>false</code> (throwing <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> or <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link"><code>NullPointerException</code></a> as
- appropriate). However, since the last operand is not compared against <code>true</code> or
- <code>false</code>, it is <b>not checked</b>; it is the language's responsibility to ensure the
- operands are <code>boolean</code> (or to properly handle a non-<code>boolean</code> result in the
- consuming operation).
- <p>
- The class can be (but does not need to be) declared as an <a href="Operation.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>Operation</code></a> or
- <a href="OperationProxy.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>OperationProxy</code></a>. If it is not declared as either, it will undergo the same validation
- as an <a href="Operation.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>Operation</code></a> (see the Operation Javadoc for the specific requirements). In
- addition, such a node/operation must:
- <ul>
- <li>Only have specializations returning <code>boolean</code>.
- <li>Only have specializations that take a single dynamic operand.
- </ul></div>
+operand value to a <code>boolean</code> value used by the boolean operation.
+<p>
+If no converter is provided, the operands must already be <code>boolean</code>s. The interpreter
+will cast each operand to <code>boolean</code> in order to compare it against <code>true</code> or
+<code>false</code> (throwing <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> or <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link"><code>NullPointerException</code></a> as
+appropriate). However, since the last operand is not compared against <code>true</code> or
+<code>false</code>, it is <b>not checked</b>; it is the language's responsibility to ensure the
+operands are <code>boolean</code> (or to properly handle a non-<code>boolean</code> result in the
+consuming operation).
+<p>
+The class can be (but does not need to be) declared as an <a href="Operation.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>Operation</code></a> or
+<a href="OperationProxy.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>OperationProxy</code></a>. If it is not declared as either, it will undergo the same validation
+as an <a href="Operation.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>Operation</code></a> (see the Operation Javadoc for the specific requirements). In
+addition, such a node/operation must:
+<ul>
+<li>Only have specializations returning <code>boolean</code>.
+<li>Only have specializations that take a single dynamic operand.
+</ul></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>
@@ -290,7 +290,7 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">javadoc</span></div>
 <div class="block">Optional documentation for the short circuit operation. This documentation is included in the
- javadoc for the generated interpreter.</div>
+javadoc for the generated interpreter.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>

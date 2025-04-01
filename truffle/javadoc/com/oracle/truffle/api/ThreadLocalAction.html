@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -87,97 +87,97 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="modifiers">public abstract class </span><span class="element-name type-name-label">ThreadLocalAction</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
 <div class="block">Represents an action that is executed at a <a href="TruffleSafepoint.html" title="class in com.oracle.truffle.api"><code>safepoint</code></a> location of the
- guest language execution. Thread local actions can be submitted by
- <a href="TruffleLanguage.Env.html#submitThreadLocal(java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)"><code>languages</code></a> or
- <a href="instrumentation/TruffleInstrument.Env.html#submitThreadLocal(com.oracle.truffle.api.TruffleContext,java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)"><code>instruments</code></a>. When an action is submitted it will be <a href="#perform(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>performed</code></a> locally
- on the threads they are submitted to. After submitting a thread local action a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/Future.html" title="class or interface in java.util.concurrent" class="external-link"><code>Future</code></a> is
- returned that allows to wait for and cancel the submitted action.
- <p>
- Thread local actions can be configured to allow side-effects using the constructor of the action.
- If side-effects are allowed (<code>true</code>), then the thread-local action is allowed to throw
- non-internal guest language exceptions from the action and modify the observable guest
- application state. Otherwise, the action is not allowed to modify the observable state, and any
- non-internal guest language exception will be transformed to an internal error of type
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link"><code>AssertionError</code></a>. Side-effects may be temporarily
- <a href="TruffleSafepoint.html#setAllowSideEffects(boolean)"><code>disabled</code></a> by the guest language.
- <p>
- Thread local actions can also be set to be executed in a synchronous or asynchronous way. A
- submitted synchronous thread-local action waits until it is started on all threads that it was
- submitted on. Then the action is <a href="#perform(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>performed</code></a> on all
- threads. After they were performed on a thread, the action waits for all threads to complete. No
- synchronous thread-local actions can be submitted while performing synchronous actions, as this
- may lead to deadlocks. If a synchronous event is submitted during a synchronous event, then a
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> is thrown when the action is submitted. Asynchronous thread-local
- actions might start and complete to perform independently of each other. There is no restriction
- on how they may be submitted.
- <p>
- Thread local actions are guaranteed to be executed in the same order as they were submitted for a
- context. If a context has pending thread-local actions, the actions may be canceled when the
- context is canceled or closed invalid. Exceptions thrown by the action will be forwarded handled
- by the guest language implementation. The only exception is for truffle exceptions that are
- thrown for non-side-effecting events.
- <p>
- Notifications of blocking:
- <p>
- <a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a> and <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> notify thread local actions
- that their processing has been blocked/unblocked due to
- <a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>. <a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a> is called for each pending action at the
- beginning of a blocked call and for each of the continuations of the blocked call after it is
- interrupted and thread local actions are processed.
- <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> is called for each pending action at the end of
- a blocked call and also right after each of its interruptions, before thread local actions are
- processed and the blocked call continues.
- <p>
- In case a thread local action is submitted during a blocked call, the call is interrupted and
- <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> is called without a previous call to
- <a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a>. Recurring thread local actions do not repeatedly interrupt a
- blocked call - a blocked call is not interrupted if all pending actions are recurring actions
- submitted before the blocked call. New submissions of thread local actions still interrupt
- blocked calls, no matter if the new thread local actions are recurring or not. When a blocked
- call is interrupted, all pending actions are processed no matter if they are recurring or not.
- <p>
- The notifications of blocking are especially useful for recurring thread local actions as those
- actions don't interrupt blocked calls and the notifications inform them about the potentially
- long time intervals when those actions are not executed due to the blocked calls. Non-recurring
- thread local actions mainly benefit from the <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a>
- notification telling them that they interrupted a blocked call. For example, a safepoint sampler
- might want to exclude the samples from blocked calls.
+guest language execution. Thread local actions can be submitted by
+<a href="TruffleLanguage.Env.html#submitThreadLocal(java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)"><code>languages</code></a> or
+<a href="instrumentation/TruffleInstrument.Env.html#submitThreadLocal(com.oracle.truffle.api.TruffleContext,java.lang.Thread%5B%5D,com.oracle.truffle.api.ThreadLocalAction)"><code>instruments</code></a>. When an action is submitted it will be <a href="#perform(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>performed</code></a> locally
+on the threads they are submitted to. After submitting a thread local action a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/Future.html" title="class or interface in java.util.concurrent" class="external-link"><code>Future</code></a> is
+returned that allows to wait for and cancel the submitted action.
+<p>
+Thread local actions can be configured to allow side-effects using the constructor of the action.
+If side-effects are allowed (<code>true</code>), then the thread-local action is allowed to throw
+non-internal guest language exceptions from the action and modify the observable guest
+application state. Otherwise, the action is not allowed to modify the observable state, and any
+non-internal guest language exception will be transformed to an internal error of type
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/AssertionError.html" title="class or interface in java.lang" class="external-link"><code>AssertionError</code></a>. Side-effects may be temporarily
+<a href="TruffleSafepoint.html#setAllowSideEffects(boolean)"><code>disabled</code></a> by the guest language.
+<p>
+Thread local actions can also be set to be executed in a synchronous or asynchronous way. A
+submitted synchronous thread-local action waits until it is started on all threads that it was
+submitted on. Then the action is <a href="#perform(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>performed</code></a> on all
+threads. After they were performed on a thread, the action waits for all threads to complete. No
+synchronous thread-local actions can be submitted while performing synchronous actions, as this
+may lead to deadlocks. If a synchronous event is submitted during a synchronous event, then a
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> is thrown when the action is submitted. Asynchronous thread-local
+actions might start and complete to perform independently of each other. There is no restriction
+on how they may be submitted.
+<p>
+Thread local actions are guaranteed to be executed in the same order as they were submitted for a
+context. If a context has pending thread-local actions, the actions may be canceled when the
+context is canceled or closed invalid. Exceptions thrown by the action will be forwarded handled
+by the guest language implementation. The only exception is for truffle exceptions that are
+thrown for non-side-effecting events.
+<p>
+Notifications of blocking:
+<p>
+<a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a> and <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> notify thread local actions
+that their processing has been blocked/unblocked due to
+<a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>. <a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a> is called for each pending action at the
+beginning of a blocked call and for each of the continuations of the blocked call after it is
+interrupted and thread local actions are processed.
+<a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> is called for each pending action at the end of
+a blocked call and also right after each of its interruptions, before thread local actions are
+processed and the blocked call continues.
+<p>
+In case a thread local action is submitted during a blocked call, the call is interrupted and
+<a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a> is called without a previous call to
+<a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyBlocked(Access)</code></a>. Recurring thread local actions do not repeatedly interrupt a
+blocked call - a blocked call is not interrupted if all pending actions are recurring actions
+submitted before the blocked call. New submissions of thread local actions still interrupt
+blocked calls, no matter if the new thread local actions are recurring or not. When a blocked
+call is interrupted, all pending actions are processed no matter if they are recurring or not.
+<p>
+The notifications of blocking are especially useful for recurring thread local actions as those
+actions don't interrupt blocked calls and the notifications inform them about the potentially
+long time intervals when those actions are not executed due to the blocked calls. Non-recurring
+thread local actions mainly benefit from the <a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)"><code>notifyUnblocked(Access)</code></a>
+notification telling them that they interrupted a blocked call. For example, a safepoint sampler
+might want to exclude the samples from blocked calls.
 
- <p>
- Example Usage:
+<p>
+Example Usage:
 
- <pre>
- Env env; // language or instrument environment
+<pre>
+Env env; // language or instrument environment
 
- env.submitThreadLocal(null, new ThreadLocalAction(true, true) {
-     &#64;Override
-     protected void perform(Access access) {
-         assert access.getThread() == Thread.currentThread();
-     }
+env.submitThreadLocal(null, new ThreadLocalAction(true, true) {
+    &#64;Override
+    protected void perform(Access access) {
+        assert access.getThread() == Thread.currentThread();
+    }
 
-     &#64;Override
-     protected void notifyBlocked(Access access) {
-         assert access.getThread() == Thread.currentThread();
-     }
+    &#64;Override
+    protected void notifyBlocked(Access access) {
+        assert access.getThread() == Thread.currentThread();
+    }
 
-     &#64;Override
-     protected void notifyUnblocked(Access access) {
-         assert access.getThread() == Thread.currentThread();
-     }
+    &#64;Override
+    protected void notifyUnblocked(Access access) {
+        assert access.getThread() == Thread.currentThread();
+    }
 
-     &#64;Override
-     protected String name() {
-        return "MyAction"
-     }
+    &#64;Override
+    protected String name() {
+       return "MyAction"
+    }
 
- });
+});
 
- </pre>
+</pre>
 
- <p>
- Further information can be found in the
- <a href="http://github.com/oracle/graal/blob/master/truffle/docs/Safepoints.md">safepoint
- tutorial</a>.</div>
+<p>
+Further information can be found in the
+<a href="http://github.com/oracle/graal/blob/master/truffle/docs/Safepoints.md">safepoint
+tutorial</a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>21.1</dd>
@@ -251,14 +251,14 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notifyBlocked(com.oracle.truffle.api.ThreadLocalAction.Access)" class="member-name-link">notifyBlocked</a><wbr>(<a href="ThreadLocalAction.Access.html" title="class in com.oracle.truffle.api">ThreadLocalAction.Access</a>&nbsp;access)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Callback for notifying the thread local action that its processing has been blocked due to
- <a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
+<a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#notifyUnblocked(com.oracle.truffle.api.ThreadLocalAction.Access)" class="member-name-link">notifyUnblocked</a><wbr>(<a href="ThreadLocalAction.Access.html" title="class in com.oracle.truffle.api">ThreadLocalAction.Access</a>&nbsp;access)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Callback for notifying the thread local action that its processing has been unblocked during
- or while leaving
- <a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
+or while leaving
+<a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>protected abstract void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#perform(com.oracle.truffle.api.ThreadLocalAction.Access)" class="member-name-link">perform</a><wbr>(<a href="ThreadLocalAction.Access.html" title="class in com.oracle.truffle.api">ThreadLocalAction.Access</a>&nbsp;access)</code></div>
@@ -293,7 +293,7 @@ loadScripts(document, 'script');</script>
 <dt>Parameters:</dt>
 <dd><code>hasSideEffects</code> - true if the event may have side-effects else false.</dd>
 <dd><code>synchronous</code> - true if the event should run synchronous else the event will run
-            asynchronous.</dd>
+           asynchronous.</dd>
 <dt>Since:</dt>
 <dd>21.1</dd>
 <dt>See Also:</dt>
@@ -318,7 +318,7 @@ loadScripts(document, 'script');</script>
 <dt>Parameters:</dt>
 <dd><code>hasSideEffects</code> - true if the event may have side-effects else false.</dd>
 <dd><code>synchronous</code> - true if the event should run synchronous else the event will run
-            asynchronous.</dd>
+           asynchronous.</dd>
 <dd><code>recurring</code> - true if the event should be rescheduled until cancelled, else false.</dd>
 <dt>Since:</dt>
 <dd>21.1</dd>
@@ -367,7 +367,7 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">notifyBlocked</span><wbr><span class="parameters">(<a href="ThreadLocalAction.Access.html" title="class in com.oracle.truffle.api">ThreadLocalAction.Access</a>&nbsp;access)</span></div>
 <div class="block">Callback for notifying the thread local action that its processing has been blocked due to
- <a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
+<a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>access</code> - allows access to the current thread and the current code location.</dd>
@@ -389,8 +389,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">protected</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">notifyUnblocked</span><wbr><span class="parameters">(<a href="ThreadLocalAction.Access.html" title="class in com.oracle.truffle.api">ThreadLocalAction.Access</a>&nbsp;access)</span></div>
 <div class="block">Callback for notifying the thread local action that its processing has been unblocked during
- or while leaving
- <a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
+or while leaving
+<a href="TruffleSafepoint.html#setBlockedFunction(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.TruffleSafepoint.Interrupter,com.oracle.truffle.api.TruffleSafepoint.InterruptibleFunction,T,java.lang.Runnable,java.util.function.Consumer)"><code>a blocked call</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>access</code> - allows access to the current thread and the current code location.</dd>

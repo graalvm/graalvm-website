@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -77,71 +77,71 @@ loadScripts(document, 'script');</script>
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Target.html" title="class or interface in java.lang.annotation" class="external-link">@Target</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/ElementType.html#TYPE" title="class or interface in java.lang.annotation" class="external-link">TYPE</a>)
 </span><span class="modifiers">public @interface </span><span class="element-name type-name-label">CStruct</span></div>
 <div class="block">Denotes Java interface that imports a C struct. The interface must extend <a href="../../../word/PointerBase.html" title="interface in org.graalvm.word"><code>PointerBase</code></a>,
- i.e., it is a word type. There is never a Java class that implements the interface.
- <p>
- Field accesses are done via interface methods that are annotated with <a href="CField.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CField</code></a>,
- <a href="CFieldAddress.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CFieldAddress</code></a>, or <a href="CFieldOffset.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CFieldOffset</code></a>. All calls of the interface methods are replaced
- with the appropriate memory or address arithmetic operations. Here is an example to define a
- complex number structure:
+i.e., it is a word type. There is never a Java class that implements the interface.
+<p>
+Field accesses are done via interface methods that are annotated with <a href="CField.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CField</code></a>,
+<a href="CFieldAddress.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CFieldAddress</code></a>, or <a href="CFieldOffset.html" title="annotation interface in org.graalvm.nativeimage.c.struct"><code>CFieldOffset</code></a>. All calls of the interface methods are replaced
+with the appropriate memory or address arithmetic operations. Here is an example to define a
+complex number structure:
 
- <pre>
- &#64;CStruct
- interface ComplexValue extends PointerBase {
-     &#64;CField("re")
-     double realPart();
+<pre>
+&#64;CStruct
+interface ComplexValue extends PointerBase {
+    &#64;CField("re")
+    double realPart();
 
-     &#64;CField("re")
-     void realPart(double re);
+    &#64;CField("re")
+    void realPart(double re);
 
-     &#64;CField("im")
-     double imagineryPart();
+    &#64;CField("im")
+    double imagineryPart();
 
-     &#64;CField("im")
-     void imagineryPart(double im);
- }
- </pre>
+    &#64;CField("im")
+    void imagineryPart(double im);
+}
+</pre>
 
- The annotated interface, or an outer class that contains the interface, must be annotated with
- <a href="../CContext.html" title="annotation interface in org.graalvm.nativeimage.c"><code>CContext</code></a>. Allocate an instances of the <code>struct</code> either by
- <a href="../../StackValue.html#get(java.lang.Class)"><code>StackValue.get(java.lang.Class)</code></a> or by
- <a href="../../UnmanagedMemory.html#malloc(org.graalvm.word.UnsignedWord)"><code>UnmanagedMemory.malloc(org.graalvm.word.UnsignedWord)</code></a>.
+The annotated interface, or an outer class that contains the interface, must be annotated with
+<a href="../CContext.html" title="annotation interface in org.graalvm.nativeimage.c"><code>CContext</code></a>. Allocate an instances of the <code>struct</code> either by
+<a href="../../StackValue.html#get(java.lang.Class)"><code>StackValue.get(java.lang.Class)</code></a> or by
+<a href="../../UnmanagedMemory.html#malloc(org.graalvm.word.UnsignedWord)"><code>UnmanagedMemory.malloc(org.graalvm.word.UnsignedWord)</code></a>.
 
- To access an array of structs one can define a special <code>addressOf</code> method:
- <p>
+To access an array of structs one can define a special <code>addressOf</code> method:
+<p>
 
- <pre>
- &#64;CStruct("int_double")
- interface IntOrDouble extends PointerBase {
-     // allows access to individual structs in an array
-     IntOrDouble addressOf(int index);
+<pre>
+&#64;CStruct("int_double")
+interface IntOrDouble extends PointerBase {
+    // allows access to individual structs in an array
+    IntOrDouble addressOf(int index);
 
-     &#64;CField
-     int i();
+    &#64;CField
+    int i();
 
-     &#64;CField
-     void i(int i);
+    &#64;CField
+    void i(int i);
 
-     &#64;CField
-     double d();
+    &#64;CField
+    double d();
 
-     &#64;CField
-     void d(double d);
+    &#64;CField
+    void d(double d);
 
- }
- </pre>
+}
+</pre>
 
- Implementation of such method then allows one to do <em>array arithmetics</em> - e.g. obtain
- pointer to the first element of the array and then access the others:
- <p>
+Implementation of such method then allows one to do <em>array arithmetics</em> - e.g. obtain
+pointer to the first element of the array and then access the others:
+<p>
 
- <pre>
- private static double acceptIntIntDouble(IntOrDouble arr) {
-     IntOrDouble firstInt = arr.addressOf(0);
-     IntOrDouble secondInt = arr.addressOf(1);
-     IntOrDouble thirdDouble = arr.addressOf(2);
-     return firstInt.i() + secondInt.i() + thirdDouble.d();
- }
- </pre></div>
+<pre>
+private static double acceptIntIntDouble(IntOrDouble arr) {
+    IntOrDouble firstInt = arr.addressOf(0);
+    IntOrDouble secondInt = arr.addressOf(1);
+    IntOrDouble thirdDouble = arr.addressOf(2);
+    return firstInt.i() + secondInt.i() + thirdDouble.d();
+}
+</pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>
@@ -199,7 +199,7 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">value</span></div>
 <div class="block">Specifies the name of the imported C struct type. If no name is provided, the type name is
- used as the struct name.</div>
+used as the struct name.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>

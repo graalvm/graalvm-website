@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -76,72 +76,72 @@ loadScripts(document, 'script');</script>
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Target.html" title="class or interface in java.lang.annotation" class="external-link">@Target</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/ElementType.html#PARAMETER" title="class or interface in java.lang.annotation" class="external-link">PARAMETER</a>)
 </span><span class="modifiers">public @interface </span><span class="element-name type-name-label">CachedLibrary</span></div>
 <div class="block">The cached library annotation allows to use <a href="package-summary.html"><code>Truffle
- Libraries</code></a> conveniently in <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>specializations</code></a> or <a href="ExportMessage.html" title="annotation interface in com.oracle.truffle.api.library"><code>exported messages</code></a>. It is designed as the primary way of using libraries. The
- <a href="CachedLibrary.html" title="annotation interface in com.oracle.truffle.api.library"><code>CachedLibrary</code></a> annotation may be used for any parameters of methods annotated with
- <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl">@Specialization</a> or <a href="ExportMessage.html" title="annotation interface in com.oracle.truffle.api.library">@ExportMessage</a>.
+Libraries</code></a> conveniently in <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>specializations</code></a> or <a href="ExportMessage.html" title="annotation interface in com.oracle.truffle.api.library"><code>exported messages</code></a>. It is designed as the primary way of using libraries. The
+<a href="CachedLibrary.html" title="annotation interface in com.oracle.truffle.api.library"><code>CachedLibrary</code></a> annotation may be used for any parameters of methods annotated with
+<a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl">@Specialization</a> or <a href="ExportMessage.html" title="annotation interface in com.oracle.truffle.api.library">@ExportMessage</a>.
 
- <h3 id="using-specialized-libraries-heading">Using Specialized Libraries</h3>
+<h3 id="using-specialized-libraries-heading">Using Specialized Libraries</h3>
 
- A cached library can be specialized for a value that is referred to with the <a href="#value()"><code>value expression</code></a> attribute. A specialized library implicitly prepends a guard for the
- <a href="Library.html#accepts(java.lang.Object)"><code>acceptance</code></a> of a library with the provided value expression.
- Adding the acceptance guard leads to multiple specialization instances as it binds to the cached
- library value. The <a href="../dsl/Specialization.html#limit()"><code>specialization</code></a> or <a href="ExportMessage.html#limit()"><code>export</code></a> limit attribute must therefore be specified. If this limit overflows then the operation
- will rewrite itself to an <a href="LibraryFactory.html#getUncached(java.lang.Object)"><code>uncached</code></a> version of the
- library. Multiple specialized libraries may be used per export or specialization. The acceptance
- guards for these libraries will be added in the order of their declaration.
- <p>
- <h4 id="usage--heading">Usage:</h4>
+A cached library can be specialized for a value that is referred to with the <a href="#value()"><code>value expression</code></a> attribute. A specialized library implicitly prepends a guard for the
+<a href="Library.html#accepts(java.lang.Object)"><code>acceptance</code></a> of a library with the provided value expression.
+Adding the acceptance guard leads to multiple specialization instances as it binds to the cached
+library value. The <a href="../dsl/Specialization.html#limit()"><code>specialization</code></a> or <a href="ExportMessage.html#limit()"><code>export</code></a> limit attribute must therefore be specified. If this limit overflows then the operation
+will rewrite itself to an <a href="LibraryFactory.html#getUncached(java.lang.Object)"><code>uncached</code></a> version of the
+library. Multiple specialized libraries may be used per export or specialization. The acceptance
+guards for these libraries will be added in the order of their declaration.
+<p>
+<h4 id="usage--heading">Usage:</h4>
 
- <pre>
- &#64;NodeChild
- &#64;NodeChild
- abstract static class ArrayReadNode extends ExpressionNode {
-     &#64;Specialization(guards = "arrays.isArray(array)", limit = "2")
-     int doDefault(Object array, int index,
-                     &#64;CachedLibrary("array") ArrayLibrary arrays) {
-         return arrays.read(array, index);
-     }
- }
- </pre>
+<pre>
+&#64;NodeChild
+&#64;NodeChild
+abstract static class ArrayReadNode extends ExpressionNode {
+    &#64;Specialization(guards = "arrays.isArray(array)", limit = "2")
+    int doDefault(Object array, int index,
+                    &#64;CachedLibrary("array") ArrayLibrary arrays) {
+        return arrays.read(array, index);
+    }
+}
+</pre>
 
- <p>
- It is recommended to use the plural of the specialized parameter name as naming convention for
- the library parameter name, e.g. a library for an <code>array</code> value is called
- <code>arrays</code>. If multiple libraries are specialized for the same specialized expression it
- is recommended to prepend the library name e.g. <code>interopArrays</code>.
+<p>
+It is recommended to use the plural of the specialized parameter name as naming convention for
+the library parameter name, e.g. a library for an <code>array</code> value is called
+<code>arrays</code>. If multiple libraries are specialized for the same specialized expression it
+is recommended to prepend the library name e.g. <code>interopArrays</code>.
 
- <h3 id="using-dispatched-libraries-heading">Using Dispatched Libraries</h3>
- <p>
- If no specialized value expression can be specified, i.e. if the value is computed as part of the
- operation, then a dispatched version of a library can be used by omitting the <a href="#value()"><code>value</code></a> attribute and specifying the <a href="#limit()"><code>limit()</code></a> attribute instead. A dispatched library
- builds the specialized value inline cache internally for each invocation of a message instead of
- once per outer specialization or export. An instance of a dispatched library therefore
- <a href="Library.html#accepts(java.lang.Object)"><code>accepts</code></a> any value as receiver. It is recommended to use the same
- generic library instance for few message invocations of similar values only, could lead to
- duplication of inline cache dispatches in the compiled code. The limit of a dispatched library
- may be set to 0 to directly switch to an uncached version of a library.
- <p>
+<h3 id="using-dispatched-libraries-heading">Using Dispatched Libraries</h3>
+<p>
+If no specialized value expression can be specified, i.e. if the value is computed as part of the
+operation, then a dispatched version of a library can be used by omitting the <a href="#value()"><code>value</code></a> attribute and specifying the <a href="#limit()"><code>limit()</code></a> attribute instead. A dispatched library
+builds the specialized value inline cache internally for each invocation of a message instead of
+once per outer specialization or export. An instance of a dispatched library therefore
+<a href="Library.html#accepts(java.lang.Object)"><code>accepts</code></a> any value as receiver. It is recommended to use the same
+generic library instance for few message invocations of similar values only, could lead to
+duplication of inline cache dispatches in the compiled code. The limit of a dispatched library
+may be set to 0 to directly switch to an uncached version of a library.
+<p>
 
- <h4 id="usage--heading1">Usage:</h4>
+<h4 id="usage--heading1">Usage:</h4>
 
- The following example combines the use of specialized and dispatched libraries. In this example
- the array is read twice. For the first <i>outer</i> read the specializing expression can be used.
- For the second read the specializing expression cannot be used as it depends on the result of the
- outer read. We therefore use a dispatched library for the inner array.
+The following example combines the use of specialized and dispatched libraries. In this example
+the array is read twice. For the first <i>outer</i> read the specializing expression can be used.
+For the second read the specializing expression cannot be used as it depends on the result of the
+outer read. We therefore use a dispatched library for the inner array.
 
- <pre>
- &#64;NodeChild
- &#64;NodeChild
- &#64;NodeChild
- abstract static class TwoDimReadNode extends ExpressionNode {
-     &#64;Specialization(guards = "outerArrays.isArray(array)", limit = "2")
-     int doDefault(Object array, int outerIndex, int innerIndex,
-                     &#64;CachedLibrary("array") ArrayLibrary outerArrays,
-                     &#64;CachedLibrary(limit = "2") ArrayLibrary innerArrays) {
-         return innerArrays.read(outerArrays.read(outerIndex), innerIndex);
-     }
- }
- </pre></div>
+<pre>
+&#64;NodeChild
+&#64;NodeChild
+&#64;NodeChild
+abstract static class TwoDimReadNode extends ExpressionNode {
+    &#64;Specialization(guards = "outerArrays.isArray(array)", limit = "2")
+    int doDefault(Object array, int outerIndex, int innerIndex,
+                    &#64;CachedLibrary("array") ArrayLibrary outerArrays,
+                    &#64;CachedLibrary(limit = "2") ArrayLibrary innerArrays) {
+        return innerArrays.read(outerArrays.read(outerIndex), innerIndex);
+    }
+}
+</pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>
@@ -194,7 +194,7 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">value</span></div>
 <div class="block">Sets the specialized value expression when using specialized libraries. The same syntax
- applies as for <a href="../dsl/Cached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Cached</code></a> value expressions.</div>
+applies as for <a href="../dsl/Cached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Cached</code></a> value expressions.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>
@@ -218,8 +218,8 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></span>&nbsp;<span class="element-name">limit</span></div>
 <div class="block">Sets the limit expression when using dispatched libraries. The limit expression sets the
- number of internally dispatched specialized libraries until an
- <a href="LibraryFactory.html#getUncached()"><code>uncached</code></a> version of the library will be used.</div>
+number of internally dispatched specialized libraries until an
+<a href="LibraryFactory.html#getUncached()"><code>uncached</code></a> version of the library will be used.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>

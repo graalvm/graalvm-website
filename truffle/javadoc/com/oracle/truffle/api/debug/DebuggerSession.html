@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -107,83 +107,82 @@ loadScripts(document, 'script');</script>
 implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/Closeable.html" title="class or interface in java.io" class="external-link">Closeable</a></span></div>
 <div class="block">Represents a single debugging session of a Debugger.
 
- <h4 id="session-lifetime-heading">Session lifetime</h4>
- <p>
- <ul>
- <li>A debugging client <a href="Debugger.html#startSession(com.oracle.truffle.api.debug.SuspendedCallback)">requests</a> a new
- <a href="DebuggerSession.html" title="class in com.oracle.truffle.api.debug">session</a> from the <a href="Debugger.html" title="class in com.oracle.truffle.api.debug">Debugger</a>.</li>
+<h4 id="session-lifetime-heading">Session lifetime</h4>
+<p>
+<ul>
+<li>A debugging client <a href="Debugger.html#startSession(com.oracle.truffle.api.debug.SuspendedCallback)">requests</a> a new
+<a href="DebuggerSession.html" title="class in com.oracle.truffle.api.debug">session</a> from the <a href="Debugger.html" title="class in com.oracle.truffle.api.debug">Debugger</a>.</li>
 
- <li>A client uses a session to request suspension of guest language execution threads, for
- example by setting breakpoints or stepping.</li>
+<li>A client uses a session to request suspension of guest language execution threads, for
+example by setting breakpoints or stepping.</li>
 
- <li>When a session suspends a guest language execution thread, it passes its client a new
- <a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> via synchronous <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug">callback</a> on the execution
- thread.</li>
+<li>When a session suspends a guest language execution thread, it passes its client a new
+<a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> via synchronous <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug">callback</a> on the execution
+thread.</li>
 
- <li>A suspended guest language execution thread resumes language execution only after the client
- callback returns.</li>
+<li>A suspended guest language execution thread resumes language execution only after the client
+callback returns.</li>
 
- <li>Sessions that are no longer needed should be <a href="#close()">closed</a>; a closed session
- has no further affect on engine execution.</li>
- </ul>
- </p>
+<li>Sessions that are no longer needed should be <a href="#close()">closed</a>; a closed session
+has no further affect on engine execution.</li>
+</ul>
+</p>
 
- <h4 id="debugging-requests-heading">Debugging requests</h4>
- <p>
- Session clients can manage guest language execution in several ways:
- <ul>
- <li><a href="#install(com.oracle.truffle.api.debug.Breakpoint)">Install</a> a newly created <a href="Breakpoint.html" title="class in com.oracle.truffle.api.debug"><code>Breakpoint</code></a>.</li>
+<h4 id="debugging-requests-heading">Debugging requests</h4>
+<p>
+Session clients can manage guest language execution in several ways:
+<ul>
+<li><a href="#install(com.oracle.truffle.api.debug.Breakpoint)">Install</a> a newly created <a href="Breakpoint.html" title="class in com.oracle.truffle.api.debug"><code>Breakpoint</code></a>.</li>
 
- <li><a href="#suspendNextExecution()">Request</a> suspension of the next execution on the first
- thread that is encountered.</li>
+<li><a href="#suspendNextExecution()">Request</a> suspension of the next execution on the first
+thread that is encountered.</li>
 
- <li>Request a stepping action (e.g. <a href="SuspendedEvent.html#prepareStepInto(int)">step into</a>,
- <a href="SuspendedEvent.html#prepareStepOver(int)">step over</a>,
- <a href="SuspendedEvent.html#prepareKill()">kill</a>) on a suspended execution thread, to take effect
- after the client callback returns.</li>
- </ul>
- </p>
+<li>Request a stepping action (e.g. <a href="SuspendedEvent.html#prepareStepInto(int)">step into</a>,
+<a href="SuspendedEvent.html#prepareStepOver(int)">step over</a>,
+<a href="SuspendedEvent.html#prepareKill()">kill</a>) on a suspended execution thread, to take effect
+after the client callback returns.</li>
+</ul>
+</p>
 
- <h4 id="event-merging-heading">Event merging</h4>
- <p>
- A session may suspend a guest language execution thread in response to more than one request from
- its client. For example:
- <ul>
- <li>A stepping action may land where a breakpoint is installed.</li>
- <li>Multiple installed breakpoints may apply to a particular location.</li>
- </ul>
- In such cases the client receives a single <em>merged</em> event. A call to
- <a href="SuspendedEvent.html#getBreakpoints()">SuspendedEvent.getBreakpoints()</a> lists all breakpoints (possibly none) that apply to
- the suspended event's location.</li>
- </p>
+<h4 id="event-merging-heading">Event merging</h4>
+<p>
+A session may suspend a guest language execution thread in response to more than one request from
+its client. For example:
+<ul>
+<li>A stepping action may land where a breakpoint is installed.</li>
+<li>Multiple installed breakpoints may apply to a particular location.</li>
+</ul>
+In such cases the client receives a single <em>merged</em> event. A call to
+<a href="SuspendedEvent.html#getBreakpoints()">SuspendedEvent.getBreakpoints()</a> lists all breakpoints (possibly none) that apply to
+the suspended event's location.</li>
+</p>
 
- <h4 id="multiple-sessions-heading">Multiple sessions</h4>
- <p>
- There can be multiple sessions associated with a single engine, which are independent of one
- another in the following ways:
- <ul>
- <li>Breakpoints created by a session are not visible to clients of other sessions.</li>
+<h4 id="multiple-sessions-heading">Multiple sessions</h4>
+<p>
+There can be multiple sessions associated with a single engine, which are independent of one
+another in the following ways:
+<ul>
+<li>Breakpoints created by a session are not visible to clients of other sessions.</li>
 
- <li>A client receives no notification when guest language execution threads are suspended by
- sessions other than its own.</li>
+<li>A client receives no notification when guest language execution threads are suspended by
+sessions other than its own.</li>
 
- <li>Events are <em>not merged</em> across sessions. For example, when a guest language execution
- thread hits a location where two sessions have installed breakpoints, each session notifies its
- client with a new <a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> instance.</li>
- </ul>
- Because all sessions can control engine execution, some interactions are inherently possible. For
- example:
- <ul>
- <li>A session's client can <a href="SuspendedEvent.html#prepareKill()">kill</a> an execution at just
- about any time.</li>
- <li>A session's client can <em>starve</em> execution by not returning from the synchronous
- <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug">callback</a> on the guest language execution thread.</li>
- </ul>
- </p>
- <p>
- Usage example:
+<li>Events are <em>not merged</em> across sessions. For example, when a guest language execution
+thread hits a location where two sessions have installed breakpoints, each session notifies its
+client with a new <a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> instance.</li>
+</ul>
+Because all sessions can control engine execution, some interactions are inherently possible. For
+example:
+<ul>
+<li>A session's client can <a href="SuspendedEvent.html#prepareKill()">kill</a> an execution at just
+about any time.</li>
+<li>A session's client can <em>starve</em> execution by not returning from the synchronous
+<a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug">callback</a> on the guest language execution thread.</li>
+</ul>
+</p>
+<p>
+Usage example:
 
- 
 <div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
 <pre class="snippet" id="snippet-com.oracle.truffle.api.debug.DebuggerSession1"><code class="language-java">try (DebuggerSession session = Debugger.find(instrumentEnv).
                 startSession(new SuspendedCallback() {
@@ -235,7 +234,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getBreakpoints()" class="member-name-link">getBreakpoints</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns all breakpoints <a href="#install(com.oracle.truffle.api.debug.Breakpoint)"><code>installed</code></a>
- in this session, in the install order.</div>
+in this session, in the install order.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Debugger.html" title="class in com.oracle.truffle.api.debug">Debugger</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getDebugger()" class="member-name-link">getDebugger</a>()</code></div>
@@ -307,7 +306,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
  boolean&nbsp;includeActiveContexts)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Set a <a href="DebugContextsListener.html" title="interface in com.oracle.truffle.api.debug"><code>listener</code></a> to be notified about changes in contexts in
- guest language application.</div>
+guest language application.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setShowHostStackFrames(boolean)" class="member-name-link">setShowHostStackFrames</a><wbr>(boolean&nbsp;showHostStackFrames)</code></div>
@@ -329,7 +328,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
  boolean&nbsp;includeInitializedThreads)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Set a <a href="DebugThreadsListener.html" title="interface in com.oracle.truffle.api.debug"><code>listener</code></a> to be notified about changes in threads in guest
- language application.</div>
+language application.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#suspend(java.lang.Thread)" class="member-name-link">suspend</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Thread.html" title="class or interface in java.lang" class="external-link">Thread</a>&nbsp;t)</code></div>
@@ -391,7 +390,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Debugger.html" title="class in com.oracle.truffle.api.debug">Debugger</a></span>&nbsp;<span class="element-name">getDebugger</span>()</div>
 <div class="block">Returns the <a href="Debugger.html" title="class in com.oracle.truffle.api.debug"><code>debugger</code></a> instance that this session is associated with. Can be
- used also after the session has already been closed.</div>
+used also after the session has already been closed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.17</dd>
@@ -406,7 +405,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="DebugScope.html" title="class in com.oracle.truffle.api.debug">DebugScope</a></span>&nbsp;<span class="element-name">getTopScope</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;languageId)</span>
                        throws <span class="exceptions"><a href="DebugException.html" title="class in com.oracle.truffle.api.debug">DebugException</a></span></div>
 <div class="block">Returns a language top scope. The top scopes have global validity and unlike
- <a href="DebugStackFrame.html#getScope()"><code>DebugStackFrame.getScope()</code></a> have no relation to the suspended location.</div>
+<a href="DebugStackFrame.html#getScope()"><code>DebugStackFrame.getScope()</code></a> have no relation to the suspended location.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="DebugException.html" title="class in com.oracle.truffle.api.debug">DebugException</a></code> - when guest language code throws an exception</dd>
@@ -435,8 +434,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setShowHostStackFrames</span><wbr><span class="parameters">(boolean&nbsp;showHostStackFrames)</span></div>
 <div class="block">Set to provide host information in stack traces. When <code>true</code>,
- <a href="DebugStackFrame.html#isHost()"><code>host frames</code></a> and <a href="DebugStackTraceElement.html#isHost()"><code>host
- trace elements</code></a> are provided, when available.</div>
+<a href="DebugStackFrame.html#isHost()"><code>host frames</code></a> and <a href="DebugStackTraceElement.html#isHost()"><code>host
+trace elements</code></a> are provided, when available.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>20.3</dd>
@@ -470,10 +469,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">suspendNextExecution</span>()</div>
 <div class="block">Suspends the next execution on the first thread that is encountered. After the first thread
- was suspended no further executions are suspended unless <a href="#suspendNextExecution()"><code>suspendNextExecution()</code></a> is
- called again. If multiple threads are executing at the same time then there are no guarantees
- on which thread is going to be suspended. Will throw an <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the
- session is already closed.</div>
+was suspended no further executions are suspended unless <a href="#suspendNextExecution()"><code>suspendNextExecution()</code></a> is
+called again. If multiple threads are executing at the same time then there are no guarantees
+on which thread is going to be suspended. Will throw an <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the
+session is already closed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.17</dd>
@@ -487,23 +486,23 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">suspendHere</span><wbr><span class="parameters">(<a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;node)</span></div>
 <div class="block">Suspend immediately at the current location of the current execution thread. A <a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>
- argument can be provided as an exact current location, if known. This method can be called on
- the guest execution thread only.
- <p>
- This method calls <a href="SuspendedCallback.html#onSuspend(com.oracle.truffle.api.debug.SuspendedEvent)"><code>SuspendedCallback.onSuspend(SuspendedEvent)</code></a> synchronously, with
- <a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> created at the actual location of the current thread. This method can
- not be called from an existing <a href="SuspendedCallback.html#onSuspend(com.oracle.truffle.api.debug.SuspendedEvent)"><code>callback</code></a>.</div>
+argument can be provided as an exact current location, if known. This method can be called on
+the guest execution thread only.
+<p>
+This method calls <a href="SuspendedCallback.html#onSuspend(com.oracle.truffle.api.debug.SuspendedEvent)"><code>SuspendedCallback.onSuspend(SuspendedEvent)</code></a> synchronously, with
+<a href="SuspendedEvent.html" title="class in com.oracle.truffle.api.debug"><code>SuspendedEvent</code></a> created at the actual location of the current thread. This method can
+not be called from an existing <a href="SuspendedCallback.html#onSuspend(com.oracle.truffle.api.debug.SuspendedEvent)"><code>callback</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>node</code> - the top Node of the execution, or <code>null</code></dd>
 <dt>Returns:</dt>
 <dd><code>true</code> when there is a guest code execution on the current thread and
-         <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug"><code>SuspendedCallback</code></a> was called, <code>false</code> otherwise.</dd>
+        <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug"><code>SuspendedCallback</code></a> was called, <code>false</code> otherwise.</dd>
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link">IllegalStateException</a></code> - when the current thread is suspended already</dd>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></code> - when a node with no <a href="../nodes/RootNode.html" title="class in com.oracle.truffle.api.nodes"><code>RootNode</code></a> is provided, or it's
-             root node does not match the current execution root, or the node does not match
-             the current call node, if known.</dd>
+            root node does not match the current execution root, or the node does not match
+            the current call node, if known.</dd>
 <dt>Since:</dt>
 <dd>20.3</dd>
 </dl>
@@ -516,9 +515,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">suspend</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Thread.html" title="class or interface in java.lang" class="external-link">Thread</a>&nbsp;t)</span></div>
 <div class="block">Suspends the current or the next execution of a given thread. Will throw an
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the session is already closed.
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the session is already closed.
 
- Note that if a stepping strategy is currently active, we preserve the stepping state.</div>
+Note that if a stepping strategy is currently active, we preserve the stepping state.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>20.0</dd>
@@ -532,8 +531,8 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">suspendAll</span>()</div>
 <div class="block">Suspends the current or the next execution on all threads. All new executing threads will
- start suspended until <a href="#resumeAll()"><code>resumeAll()</code></a> is called or the session is closed. Will throw an
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the session is already closed.</div>
+start suspended until <a href="#resumeAll()"><code>resumeAll()</code></a> is called or the session is closed. Will throw an
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> if the session is already closed.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>20.0</dd>
@@ -577,14 +576,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
  <a href="../nodes/LanguageInfo.html" title="class in com.oracle.truffle.api.nodes">LanguageInfo</a>&nbsp;language)</span>
                                 throws <span class="exceptions"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link">IllegalArgumentException</a></span></div>
 <div class="block">Creates a <a href="DebugValue.html" title="class in com.oracle.truffle.api.debug"><code>DebugValue</code></a> object that wraps a primitive value. Strings and boxed Java
- primitive types are considered primitive. Throws <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a> if the
- value is not primitive.</div>
+primitive types are considered primitive. Throws <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a> if the
+value is not primitive.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>primitiveValue</code> - a primitive value</dd>
 <dd><code>language</code> - guest language this value is value is associated with. Some value attributes
-            depend on the language, like <a href="DebugValue.html#getMetaObject()"><code>DebugValue.getMetaObject()</code></a>. Can be
-            <code>null</code>.</dd>
+           depend on the language, like <a href="DebugValue.html#getMetaObject()"><code>DebugValue.getMetaObject()</code></a>. Can be
+           <code>null</code>.</dd>
 <dt>Returns:</dt>
 <dd>a <a href="DebugValue.html" title="class in com.oracle.truffle.api.debug"><code>DebugValue</code></a> that wraps the primitive value.</dd>
 <dt>Throws:</dt>
@@ -618,10 +617,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html" title="class or interface in java.util" class="external-link">List</a>&lt;<a href="Breakpoint.html" title="class in com.oracle.truffle.api.debug">Breakpoint</a>&gt;</span>&nbsp;<span class="element-name">getBreakpoints</span>()</div>
 <div class="block">Returns all breakpoints <a href="#install(com.oracle.truffle.api.debug.Breakpoint)"><code>installed</code></a>
- in this session, in the install order. The returned list contains a current snapshot of
- breakpoints, those that were <a href="Breakpoint.html#dispose()"><code>disposed</code></a>, or
- <a href="Debugger.html#install(com.oracle.truffle.api.debug.Breakpoint)"><code>installed on Debugger</code></a> are
- not included.</div>
+in this session, in the install order. The returned list contains a current snapshot of
+breakpoints, those that were <a href="Breakpoint.html#dispose()"><code>disposed</code></a>, or
+<a href="Debugger.html#install(com.oracle.truffle.api.debug.Breakpoint)"><code>installed on Debugger</code></a> are
+not included.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.17</dd>
@@ -645,12 +644,12 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="deprecation-comment">Use <a href="#setBreakpointsActive(com.oracle.truffle.api.debug.Breakpoint.Kind,boolean)"><code>setBreakpointsActive(Breakpoint.Kind, boolean)</code></a> instead.</div>
 </div>
 <div class="block">Set whether breakpoints are active in this session. This has no effect on breakpoints
- enabled/disabled state. Breakpoints need to be active to actually break the execution. The
- breakpoints are active by default.</div>
+enabled/disabled state. Breakpoints need to be active to actually break the execution. The
+breakpoints are active by default.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>active</code> - <code>true</code> to make all breakpoints active, <code>false</code> to make
-            all breakpoints inactive.</dd>
+           all breakpoints inactive.</dd>
 <dt>Since:</dt>
 <dd>0.24</dd>
 </dl>
@@ -664,13 +663,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setBreakpointsActive</span><wbr><span class="parameters">(<a href="Breakpoint.Kind.html" title="enum class in com.oracle.truffle.api.debug">Breakpoint.Kind</a>&nbsp;breakpointKind,
  boolean&nbsp;active)</span></div>
 <div class="block">Set whether breakpoints of the given kind are active in this session. This has no effect on
- breakpoints enabled/disabled state. Breakpoints need to be active to actually break the
- execution. The breakpoints are active by default.</div>
+breakpoints enabled/disabled state. Breakpoints need to be active to actually break the
+execution. The breakpoints are active by default.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>breakpointKind</code> - the kind of breakpoints to activate/deactivate</dd>
 <dd><code>active</code> - <code>true</code> to make breakpoints active, <code>false</code> to make
-            breakpoints inactive.</dd>
+           breakpoints inactive.</dd>
 <dt>Since:</dt>
 <dd>19.0</dd>
 </dl>
@@ -687,7 +686,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="deprecation-comment">Use <a href="#isBreakpointsActive(com.oracle.truffle.api.debug.Breakpoint.Kind)"><code>isBreakpointsActive(Breakpoint.Kind)</code></a> instead.</div>
 </div>
 <div class="block">Test whether breakpoints are active in this session. Breakpoints do not break execution when
- not active.</div>
+not active.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.24</dd>
@@ -701,7 +700,7 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isBreakpointsActive</span><wbr><span class="parameters">(<a href="Breakpoint.Kind.html" title="enum class in com.oracle.truffle.api.debug">Breakpoint.Kind</a>&nbsp;breakpointKind)</span></div>
 <div class="block">Test whether breakpoints of the given kind are active in this session. Breakpoints do not
- break execution when not active.</div>
+break execution when not active.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>breakpointKind</code> - the kind of breakpoints to test</dd>
@@ -717,10 +716,10 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Breakpoint.html" title="class in com.oracle.truffle.api.debug">Breakpoint</a></span>&nbsp;<span class="element-name">install</span><wbr><span class="parameters">(<a href="Breakpoint.html" title="class in com.oracle.truffle.api.debug">Breakpoint</a>&nbsp;breakpoint)</span></div>
 <div class="block">Adds a new breakpoint to this session and makes it capable of suspending execution.
- <p>
- The breakpoint suspends execution by making a <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug"><code>callback</code></a> to this
- session, together with an event description that includes
- <a href="SuspendedEvent.html#getBreakpoints()">which breakpoint(s)</a> were hit.</div>
+<p>
+The breakpoint suspends execution by making a <a href="SuspendedCallback.html" title="interface in com.oracle.truffle.api.debug"><code>callback</code></a> to this
+session, together with an event description that includes
+<a href="SuspendedEvent.html#getBreakpoints()">which breakpoint(s)</a> were hit.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>breakpoint</code> - a new breakpoint</dd>
@@ -740,14 +739,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setAsynchronousStackDepth</span><wbr><span class="parameters">(int&nbsp;depth)</span></div>
 <div class="block">Request for languages to provide stack frames of scheduled asynchronous execution. Languages
- might not provide asynchronous stack frames by default for performance reasons. At most
- <code>depth</code> asynchronous stack frames are asked for. When multiple debugger sessions
- or other instruments call this method, the languages get a maximum depth of these calls and
- may therefore provide longer asynchronous stacks than requested. Also, languages may provide
- asynchronous stacks if it's of no performance penalty, or if requested by other options.
- <p/>
- Asynchronous stacks can then be accessed via <a href="SuspendedEvent.html#getAsynchronousStacks()"><code>SuspendedEvent.getAsynchronousStacks()</code></a>,
- or <a href="DebugException.html#getDebugAsynchronousStacks()"><code>DebugException.getDebugAsynchronousStacks()</code></a>.</div>
+might not provide asynchronous stack frames by default for performance reasons. At most
+<code>depth</code> asynchronous stack frames are asked for. When multiple debugger sessions
+or other instruments call this method, the languages get a maximum depth of these calls and
+may therefore provide longer asynchronous stacks than requested. Also, languages may provide
+asynchronous stacks if it's of no performance penalty, or if requested by other options.
+<p/>
+Asynchronous stacks can then be accessed via <a href="SuspendedEvent.html#getAsynchronousStacks()"><code>SuspendedEvent.getAsynchronousStacks()</code></a>,
+or <a href="DebugException.html#getDebugAsynchronousStacks()"><code>DebugException.getDebugAsynchronousStacks()</code></a>.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>depth</code> - the requested stack depth, 0 means no asynchronous stack frames are required.</dd>
@@ -771,13 +770,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setContextsListener</span><wbr><span class="parameters">(<a href="DebugContextsListener.html" title="interface in com.oracle.truffle.api.debug">DebugContextsListener</a>&nbsp;listener,
  boolean&nbsp;includeActiveContexts)</span></div>
 <div class="block">Set a <a href="DebugContextsListener.html" title="interface in com.oracle.truffle.api.debug"><code>listener</code></a> to be notified about changes in contexts in
- guest language application. One listener can be set at a time, call with <code>null</code> to
- remove the current listener.</div>
+guest language application. One listener can be set at a time, call with <code>null</code> to
+remove the current listener.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>listener</code> - a listener to receive the context events, or <code>null</code> to reset it</dd>
 <dd><code>includeActiveContexts</code> - whether or not this listener should be notified for present
-            active contexts</dd>
+           active contexts</dd>
 <dt>Since:</dt>
 <dd>0.30</dd>
 </dl>
@@ -791,13 +790,13 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setThreadsListener</span><wbr><span class="parameters">(<a href="DebugThreadsListener.html" title="interface in com.oracle.truffle.api.debug">DebugThreadsListener</a>&nbsp;listener,
  boolean&nbsp;includeInitializedThreads)</span></div>
 <div class="block">Set a <a href="DebugThreadsListener.html" title="interface in com.oracle.truffle.api.debug"><code>listener</code></a> to be notified about changes in threads in guest
- language application. One listener can be set at a time, call with <code>null</code> to
- remove the current listener.</div>
+language application. One listener can be set at a time, call with <code>null</code> to
+remove the current listener.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>listener</code> - a listener to receive the context events</dd>
 <dd><code>includeInitializedThreads</code> - whether or not this listener should be notified for present
-            initialized threads</dd>
+           initialized threads</dd>
 <dt>Since:</dt>
 <dd>0.30</dd>
 </dl>
@@ -810,9 +809,9 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setSourcePath</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Iterable.html" title="class or interface in java.lang" class="external-link">Iterable</a>&lt;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/net/URI.html" title="class or interface in java.net" class="external-link">URI</a>&gt;&nbsp;uris)</span></div>
 <div class="block">Set a list of source path roots that are used to resolve relative <a href="../source/Source.html#getURI()"><code>source URIs</code></a>. All debugger methods that provide <a href="../source/Source.html" title="class in com.oracle.truffle.api.source"><code>Source</code></a> object, resolve relative
- sources with respect to this source-path. When the resolution does not succeed (the relative
- path does not exist under any of the supplied source-path elements), the original relative
- <a href="../source/Source.html" title="class in com.oracle.truffle.api.source"><code>Source</code></a> is provided.</div>
+sources with respect to this source-path. When the resolution does not succeed (the relative
+path does not exist under any of the supplied source-path elements), the original relative
+<a href="../source/Source.html" title="class in com.oracle.truffle.api.source"><code>Source</code></a> is provided.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>uris</code> - a list of absolute URIs</dd>
@@ -836,14 +835,14 @@ implements <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="../source/Source.html" title="class in com.oracle.truffle.api.source">Source</a></span>&nbsp;<span class="element-name">resolveSource</span><wbr><span class="parameters">(<a href="../source/Source.html" title="class in com.oracle.truffle.api.source">Source</a>&nbsp;source)</span></div>
 <div class="block">Resolve the source with respect to the actual <a href="#setSourcePath(java.lang.Iterable)"><code>source path</code></a>.
- Sources with relative <a href="../source/Source.html#getURI()"><code>URI</code></a> are subject to resolution to an existing
- absolute location. The first source-path URI that resolves to an existing location is used.</div>
+Sources with relative <a href="../source/Source.html#getURI()"><code>URI</code></a> are subject to resolution to an existing
+absolute location. The first source-path URI that resolves to an existing location is used.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>source</code> - the source to resolve</dd>
 <dt>Returns:</dt>
 <dd>the provided source if no resolution is necessary, or the resolved source, or
-         <code>null</code> when it's not possible to resolve the provided source</dd>
+        <code>null</code> when it's not possible to resolve the provided source</dd>
 <dt>Since:</dt>
 <dd>19.0</dd>
 </dl>

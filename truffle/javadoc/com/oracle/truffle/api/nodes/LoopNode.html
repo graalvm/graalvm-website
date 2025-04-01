@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -92,78 +92,78 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="modifiers">public abstract class </span><span class="element-name type-name-label">LoopNode</span>
 <span class="extends-implements">extends <a href="Node.html" title="class in com.oracle.truffle.api.nodes">Node</a></span></div>
 <div class="block"><p>
- A loop node calls <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>repeating nodes</code></a> as long as
- it returns <code>true</code>. Using the loop node in a guest language implementation allows the
- Truffle runtime to optimize loops in a better way. For example a Truffle runtime implementation
- might decide to optimize loop already during its first execution (also called on stack
- replacement OSR). Loop nodes are intended to be implemented by Truffle runtime implementations
- and not by guest language implementations.
+A loop node calls <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>repeating nodes</code></a> as long as
+it returns <code>true</code>. Using the loop node in a guest language implementation allows the
+Truffle runtime to optimize loops in a better way. For example a Truffle runtime implementation
+might decide to optimize loop already during its first execution (also called on stack
+replacement OSR). Loop nodes are intended to be implemented by Truffle runtime implementations
+and not by guest language implementations.
 
- Note: The loop condition is automatically profiled by the loop node, so the <a href="RepeatingNode.html" title="interface in com.oracle.truffle.api.nodes"><code>repeating node</code></a> should not use a loop condition profile.
- </p>
- <p>
- Full usage example for guest language while node:
- </p>
+Note: The loop condition is automatically profiled by the loop node, so the <a href="RepeatingNode.html" title="interface in com.oracle.truffle.api.nodes"><code>repeating node</code></a> should not use a loop condition profile.
+</p>
+<p>
+Full usage example for guest language while node:
+</p>
 
- <pre>
- <code>
- public class WhileNode extends GuestLanguageNode {
+<pre>
+<code>
+public class WhileNode extends GuestLanguageNode {
 
-     &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> loop;
+    &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> loop;
 
-     public WhileNode(GuestLanguageNode conditionNode, GuestLanguageNode bodyNode) {
-         loop = Truffle.getRuntime().createLoopNode(new WhileRepeatingNode(conditionNode, bodyNode));
-     }
+    public WhileNode(GuestLanguageNode conditionNode, GuestLanguageNode bodyNode) {
+        loop = Truffle.getRuntime().createLoopNode(new WhileRepeatingNode(conditionNode, bodyNode));
+    }
 
-     &#064;Override
-     public Object execute(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame) {
-         loop.executeLoop(frame);
-         return null;
-     }
+    &#064;Override
+    public Object execute(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame) {
+        loop.executeLoop(frame);
+        return null;
+    }
 
-     private static class WhileRepeatingNode extends <a href="Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> implements <a href="RepeatingNode.html" title="interface in com.oracle.truffle.api.nodes"><code>RepeatingNode</code></a> {
+    private static class WhileRepeatingNode extends <a href="Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> implements <a href="RepeatingNode.html" title="interface in com.oracle.truffle.api.nodes"><code>RepeatingNode</code></a> {
 
-         &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private GuestLanguageNode conditionNode;
-         &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private GuestLanguageNode bodyNode;
+        &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private GuestLanguageNode conditionNode;
+        &#064;<a href="Node.Child.html" title="annotation interface in com.oracle.truffle.api.nodes"><code>Node.Child</code></a> private GuestLanguageNode bodyNode;
 
-         public WhileRepeatingNode(GuestLanguageNode conditionNode, GuestLanguageNode bodyNode) {
-             this.conditionNode = conditionNode;
-             this.bodyNode = bodyNode;
-         }
+        public WhileRepeatingNode(GuestLanguageNode conditionNode, GuestLanguageNode bodyNode) {
+            this.conditionNode = conditionNode;
+            this.bodyNode = bodyNode;
+        }
 
-         public boolean executeRepeating(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame) {
-             if ((boolean) conditionNode.execute(frame)) {
-                 try {
-                     bodyNode.execute(frame);
-                 } catch (ContinueException ex) {
-                     // the body might throw a continue control-flow exception
-                     // continue loop invocation
-                 } catch (BreakException ex) {
-                     // the body might throw a break control-flow exception
-                     // break loop invocation by returning false
-                     return false;
-                 }
-                 return true;
-             } else {
-                 return false;
-             }
-         }
-     }
+        public boolean executeRepeating(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame) {
+            if ((boolean) conditionNode.execute(frame)) {
+                try {
+                    bodyNode.execute(frame);
+                } catch (ContinueException ex) {
+                    // the body might throw a continue control-flow exception
+                    // continue loop invocation
+                } catch (BreakException ex) {
+                    // the body might throw a break control-flow exception
+                    // break loop invocation by returning false
+                    return false;
+                }
+                return true;
+            } else {
+                return false;
+            }
+        }
+    }
 
- }
+}
 
- // substitute with a guest language node type
- public abstract class GuestLanguageNode extends <a href="Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> {
+// substitute with a guest language node type
+public abstract class GuestLanguageNode extends <a href="Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> {
 
-     public abstract Object execute(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame);
+    public abstract Object execute(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame"><code>VirtualFrame</code></a> frame);
 
- }
- // thrown by guest language continue statements
- public final class ContinueException extends <a href="ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a> {}
- // thrown by guest language break statements
- public final class BreakException extends <a href="ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a> {}
- </code>
- </pre></div>
+}
+// thrown by guest language continue statements
+public final class ContinueException extends <a href="ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a> {}
+// thrown by guest language break statements
+public final class BreakException extends <a href="ControlFlowException.html" title="class in com.oracle.truffle.api.nodes"><code>ControlFlowException</code></a> {}
+</code>
+</pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.8 or earlier</dd>
@@ -220,8 +220,8 @@ loadScripts(document, 'script');</script>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#execute(com.oracle.truffle.api.frame.VirtualFrame)" class="member-name-link">execute</a><wbr>(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;frame)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Invokes one loop invocation by repeatedly calling
- <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute)</code></a> on the repeating node the loop
- was initialized with.</div>
+<a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute)</code></a> on the repeating node the loop
+was initialized with.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract <a href="RepeatingNode.html" title="interface in com.oracle.truffle.api.nodes">RepeatingNode</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getRepeatingNode()" class="member-name-link">getRepeatingNode</a>()</code></div>
@@ -233,7 +233,7 @@ loadScripts(document, 'script');</script>
  int&nbsp;iterations)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">
- Reports the execution count of a loop for which no <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used.</div>
+Reports the execution count of a loop for which no <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used.</div>
 </div>
 </div>
 </div>
@@ -282,18 +282,18 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span>&nbsp;<span class="element-name">execute</span><wbr><span class="parameters">(<a href="../frame/VirtualFrame.html" title="interface in com.oracle.truffle.api.frame">VirtualFrame</a>&nbsp;frame)</span></div>
 <div class="block">Invokes one loop invocation by repeatedly calling
- <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute)</code></a> on the repeating node the loop
- was initialized with. Any exceptions that occur in the execution of the repeating node will
- just be forwarded to this method and will cancel the current loop invocation.</div>
+<a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute)</code></a> on the repeating node the loop
+was initialized with. Any exceptions that occur in the execution of the repeating node will
+just be forwarded to this method and will cancel the current loop invocation.</div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>frame</code> - the current execution frame or null if the repeating node does not require a
-            frame</dd>
+           frame</dd>
 <dt>Returns:</dt>
 <dd>a value <code>v</code> returned by
-         <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute</code></a> satisfying
-         <a href="RepeatingNode.html#shouldContinue(java.lang.Object)"><code>shouldContinue(v)</code></a><code> == false</code>, which
-         can be used in a language-specific way (for example, to encode structured jumps)</dd>
+        <a href="RepeatingNode.html#executeRepeating(com.oracle.truffle.api.frame.VirtualFrame)"><code>execute</code></a> satisfying
+        <a href="RepeatingNode.html#shouldContinue(java.lang.Object)"><code>shouldContinue(v)</code></a><code> == false</code>, which
+        can be used in a language-specific way (for example, to encode structured jumps)</dd>
 <dt>Since:</dt>
 <dd>19.3</dd>
 </dl>
@@ -320,54 +320,54 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">reportLoopCount</span><wbr><span class="parameters">(<a href="Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;source,
  int&nbsp;iterations)</span></div>
 <div class="block"><p>
- Reports the execution count of a loop for which no <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used. The
- optimization heuristics can use the loop count from non Truffle loops to guide compilation
- and inlining better. Do not use <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> and <a href="#reportLoopCount(com.oracle.truffle.api.nodes.Node,int)"><code>reportLoopCount(Node, int)</code></a> at
- the same time for one loop. If the number of iterations needs to be counted and can overflow,
- only count if <a href="../CompilerDirectives.html#hasNextTier()"><code>CompilerDirectives.hasNextTier()</code></a> is <code>true</code> (reporting will
- have no effect in the last tier) and consider reporting <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> in case of
- overflows. If the number is often zero and <a href="#reportLoopCount(com.oracle.truffle.api.nodes.Node,int)"><code>reportLoopCount(Node, int)</code></a> is called
- frequently (e.g. in a loop), consider adding a check to avoid the overhead of redundant calls
- with an <code>iterations</code> argument of zero in the interpreter.
+Reports the execution count of a loop for which no <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> was used. The
+optimization heuristics can use the loop count from non Truffle loops to guide compilation
+and inlining better. Do not use <a href="LoopNode.html" title="class in com.oracle.truffle.api.nodes"><code>LoopNode</code></a> and <a href="#reportLoopCount(com.oracle.truffle.api.nodes.Node,int)"><code>reportLoopCount(Node, int)</code></a> at
+the same time for one loop. If the number of iterations needs to be counted and can overflow,
+only count if <a href="../CompilerDirectives.html#hasNextTier()"><code>CompilerDirectives.hasNextTier()</code></a> is <code>true</code> (reporting will
+have no effect in the last tier) and consider reporting <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html#MAX_VALUE" title="class or interface in java.lang" class="external-link"><code>Integer.MAX_VALUE</code></a> in case of
+overflows. If the number is often zero and <a href="#reportLoopCount(com.oracle.truffle.api.nodes.Node,int)"><code>reportLoopCount(Node, int)</code></a> is called
+frequently (e.g. in a loop), consider adding a check to avoid the overhead of redundant calls
+with an <code>iterations</code> argument of zero in the interpreter.
 
- <p>
- Example usage for a custom loop iterating over an array: <code>
- <pre>
- public int executeCustomLoopSum(int[] data) {
-     int sum = 0;
-     for (int i = 0; i &lt; data.length; i++) {
-         sum += data[i];
-     }
-     LoopNode.reportLoopCount(this, data.length);
-     return sum;
- }
- </pre>
- </code>
+<p>
+Example usage for a custom loop iterating over an array: <code>
+<pre>
+public int executeCustomLoopSum(int[] data) {
+    int sum = 0;
+    for (int i = 0; i &lt; data.length; i++) {
+        sum += data[i];
+    }
+    LoopNode.reportLoopCount(this, data.length);
+    return sum;
+}
+</pre>
+</code>
 
- Example usage for a custom loop with an unknown number of iterations and a potential
- <code>int</code> overflow: <code>
- <pre>
- public Object executeCustomLoopWithUnknownIterations(int[] data) {
-     Object result;
-     int counter = 0;
-     while(true) {
-         if (isResultAvailable()) {
-             result = getResult();
-             break;
-         }
-         // do some work to calculate result
-         if (CompilerDirectives.hasNextTier()) {
-             counter++;
-         }
-     }
-     if (counter != 0) {
-         LoopNode.reportLoopCount(this, counter &gt; 0 ? counter : Integer.MAX_VALUE);
-     }
-     return result;
- }
- </pre>
- </code>
- </p></div>
+Example usage for a custom loop with an unknown number of iterations and a potential
+<code>int</code> overflow: <code>
+<pre>
+public Object executeCustomLoopWithUnknownIterations(int[] data) {
+    Object result;
+    int counter = 0;
+    while(true) {
+        if (isResultAvailable()) {
+            result = getResult();
+            break;
+        }
+        // do some work to calculate result
+        if (CompilerDirectives.hasNextTier()) {
+            counter++;
+        }
+    }
+    if (counter != 0) {
+        LoopNode.reportLoopCount(this, counter &gt; 0 ? counter : Integer.MAX_VALUE);
+    }
+    return result;
+}
+</pre>
+</code>
+</p></div>
 <dl class="notes">
 <dt>Parameters:</dt>
 <dd><code>source</code> - the Node which invoked the loop.</dd>

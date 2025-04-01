@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -89,67 +89,67 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="modifiers">public abstract static class </span><span class="element-name type-name-label">TruffleLanguage.ContextReference&lt;C&gt;</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
 <div class="block">Represents a reference to the current context. The current context is a thread local value
- that changes when polyglot context is entered or left. Context references are created using
- <a href="#create(java.lang.Class)"><code>create(Class)</code></a> and are intended to be stored in static final fields and accessed at
- runtime using <a href="#get(com.oracle.truffle.api.nodes.Node)"><code>get(Node)</code></a> with the current <a href="nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>, if available,
- as parameter.
- <p>
- Example intended usage:
+that changes when polyglot context is entered or left. Context references are created using
+<a href="#create(java.lang.Class)"><code>create(Class)</code></a> and are intended to be stored in static final fields and accessed at
+runtime using <a href="#get(com.oracle.truffle.api.nodes.Node)"><code>get(Node)</code></a> with the current <a href="nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a>, if available,
+as parameter.
+<p>
+Example intended usage:
 
- <pre>
- public final class MyContext  {
+<pre>
+public final class MyContext  {
 
-     private static final ContextReference&lt;MyContext&gt; REFERENCE =
-                    ContextReference.create(MyLanguage.class);
+    private static final ContextReference&lt;MyContext&gt; REFERENCE =
+                   ContextReference.create(MyLanguage.class);
 
-     public static MyContext get(Node node) {
-          return REFERENCE.get(node);
-     }
- }
-
- &#64;Registration(...)
- public final class MyLanguage extends TruffleLanguage<MyContext> {
-
-    // ...
-
-    private static final LanguageReference&lt;MyLanguage&gt; REFERENCE =
-                   LanguageReference.create(MyLanguage.class);
-
-    public static MyLanguage get(Node node) {
+    public static MyContext get(Node node) {
          return REFERENCE.get(node);
     }
- }
+}
 
- public final class MyLanguageNode extends Node {
+&#64;Registration(...)
+public final class MyLanguage extends TruffleLanguage<MyContext> {
 
-     // ...
-     public Object execute(VirtualFrame frame) {
-         MyContext currentContext = getContext();
-         MyLanguage currentLanguage = getLanguage();
+   // ...
 
-         // use context or language on the fast-path
+   private static final LanguageReference&lt;MyLanguage&gt; REFERENCE =
+                  LanguageReference.create(MyLanguage.class);
 
-         // references can also be used behind the boundary
-         exampleBoundary();
-     }
+   public static MyLanguage get(Node node) {
+        return REFERENCE.get(node);
+   }
+}
 
-     &#64;TruffleBoundary
-     public void exampleBoundary() {
-        MyLanguage currentLanguage = MyLanguage.get(null);
-        MyContext currentContext = MyContext.get(null);
+public final class MyLanguageNode extends Node {
 
-        // use context or language on the slow-path
-     }
+    // ...
+    public Object execute(VirtualFrame frame) {
+        MyContext currentContext = getContext();
+        MyLanguage currentLanguage = getLanguage();
 
-     public final MyLanguage getLanguage() {
-         return MyLanguage.get(this);
-     }
+        // use context or language on the fast-path
 
-     public final MyContext getContext() {
-         return MyContext.get(this);
-     }
- }
- </pre></div>
+        // references can also be used behind the boundary
+        exampleBoundary();
+    }
+
+    &#64;TruffleBoundary
+    public void exampleBoundary() {
+       MyLanguage currentLanguage = MyLanguage.get(null);
+       MyContext currentContext = MyContext.get(null);
+
+       // use context or language on the slow-path
+    }
+
+    public final MyLanguage getLanguage() {
+        return MyLanguage.get(this);
+    }
+
+    public final MyContext getContext() {
+        return MyContext.get(this);
+    }
+}
+</pre></div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.25 revised in 21.3</dd>
@@ -240,22 +240,22 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public abstract</span>&nbsp;<span class="return-type"><a href="#type-param-C" title="type parameter in TruffleLanguage.ContextReference">C</a></span>&nbsp;<span class="element-name">get</span><wbr><span class="parameters">(<a href="nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;node)</span></div>
 <div class="block">Returns the current language context associated with the current thread. An enclosing
- node should be provided as parameter if available, otherwise <code>null</code> may be
- provided. This method is designed to be called safely from compiled code paths. In order
- to maximize efficiency in compiled code paths, a partial evaluation constant and adopted
- node should be passed as parameter. If this is the case then the return context will get
- constant folded in compiled code paths if there is only a single context instance for the
- enclosing engine or lookup location/node.
- <p>
- The current context might vary between <a href="nodes/RootNode.html#execute(com.oracle.truffle.api.frame.VirtualFrame)"><code>executions</code></a>
- if resources or code is <a href="TruffleLanguage.ContextPolicy.html#SHARED"><code>shared</code></a> between multiple contexts or
- when used as part of an InteropLibrary export. It is recommended to *not* cache values of
- the context in the AST to reduce footprint. Getting it through a context reference will
- either constant fold or be very efficient in compiled code paths.
- <p>
- If a context is accessed during <a href="TruffleLanguage.html#createContext(com.oracle.truffle.api.TruffleLanguage.Env)"><code>context
- creation</code></a>, on an unknown Thread, or in the language class constructor an
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> is thrown.</div>
+node should be provided as parameter if available, otherwise <code>null</code> may be
+provided. This method is designed to be called safely from compiled code paths. In order
+to maximize efficiency in compiled code paths, a partial evaluation constant and adopted
+node should be passed as parameter. If this is the case then the return context will get
+constant folded in compiled code paths if there is only a single context instance for the
+enclosing engine or lookup location/node.
+<p>
+The current context might vary between <a href="nodes/RootNode.html#execute(com.oracle.truffle.api.frame.VirtualFrame)"><code>executions</code></a>
+if resources or code is <a href="TruffleLanguage.ContextPolicy.html#SHARED"><code>shared</code></a> between multiple contexts or
+when used as part of an InteropLibrary export. It is recommended to *not* cache values of
+the context in the AST to reduce footprint. Getting it through a context reference will
+either constant fold or be very efficient in compiled code paths.
+<p>
+If a context is accessed during <a href="TruffleLanguage.html#createContext(com.oracle.truffle.api.TruffleLanguage.Env)"><code>context
+creation</code></a>, on an unknown Thread, or in the language class constructor an
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalStateException.html" title="class or interface in java.lang" class="external-link"><code>IllegalStateException</code></a> is thrown.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>21.3</dd>
@@ -276,11 +276,11 @@ loadScripts(document, 'script');</script>
 <div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="type-parameters">&lt;T extends <a href="TruffleLanguage.html" title="class in com.oracle.truffle.api">TruffleLanguage</a>&lt;C&gt;, C&gt;</span>
 <span class="return-type"><a href="TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api">TruffleLanguage.ContextReference</a>&lt;C&gt;</span>&nbsp;<span class="element-name">create</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;languageClass)</span></div>
 <div class="block">Creates a new instance of a context reference for an registered language. Throws
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a> if the provided language class is not
- <a href="TruffleLanguage.Registration.html" title="annotation interface in com.oracle.truffle.api"><code>registered</code></a>. Guaranteed to always return the same context reference
- for a given language class.
- <p>
- See <a href="TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a> for a usage example.</div>
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/IllegalArgumentException.html" title="class or interface in java.lang" class="external-link"><code>IllegalArgumentException</code></a> if the provided language class is not
+<a href="TruffleLanguage.Registration.html" title="annotation interface in com.oracle.truffle.api"><code>registered</code></a>. Guaranteed to always return the same context reference
+for a given language class.
+<p>
+See <a href="TruffleLanguage.ContextReference.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage.ContextReference</code></a> for a usage example.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>21.3</dd>

@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>6086ff083909852c9b785594493ad2fb10e9c917</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>da40831316b25575631ec5c10a01a5c55de2e83a</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -75,76 +75,76 @@ loadScripts(document, 'script');</script>
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Target.html" title="class or interface in java.lang.annotation" class="external-link">@Target</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/ElementType.html#TYPE" title="class or interface in java.lang.annotation" class="external-link">TYPE</a>)
 </span><span class="modifiers">public @interface </span><span class="element-name type-name-label">TypeSystem</span></div>
 <div class="block">Type guards are the most common form of guards used in Truffle languages. By default all type
- checks and casts use the default method of checking and casting a type in Java. A default type
- check is performed using the <code>instanceof</code> operator, and a default cast is done using a
- standard Java cast conversion. However, for some types, this behavior needs to be customized or
- extended. Therefore, operations can decide to use type systems. If used, type systems are applied
- to operation classes using the <a href="TypeSystemReference.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeSystemReference</code></a> annotation. Only one type system can
- be active for a single operation. Type systems are inherited from operation superclasses so that
- the most concrete type system reference is used. If no type system reference is found in the type
- hierarchy, all type checks and casts are kept default.
- <p>
- Example usage:
+checks and casts use the default method of checking and casting a type in Java. A default type
+check is performed using the <code>instanceof</code> operator, and a default cast is done using a
+standard Java cast conversion. However, for some types, this behavior needs to be customized or
+extended. Therefore, operations can decide to use type systems. If used, type systems are applied
+to operation classes using the <a href="TypeSystemReference.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeSystemReference</code></a> annotation. Only one type system can
+be active for a single operation. Type systems are inherited from operation superclasses so that
+the most concrete type system reference is used. If no type system reference is found in the type
+hierarchy, all type checks and casts are kept default.
+<p>
+Example usage:
 
- <pre>
- &#64;TypeSystem
- public static class ExampleTypeSystem {
+<pre>
+&#64;TypeSystem
+public static class ExampleTypeSystem {
 
-     &#64;TypeCast(Undefined.class)
-     public static Undefined asUndefined(Object value) {
-         return Undefined.INSTANCE;
-     }
+    &#64;TypeCast(Undefined.class)
+    public static Undefined asUndefined(Object value) {
+        return Undefined.INSTANCE;
+    }
 
-     &#64;TypeCheck(Undefined.class)
-     public static boolean isUndefined(Object value) {
-         return value == Undefined.INSTANCE;
-     }
+    &#64;TypeCheck(Undefined.class)
+    public static boolean isUndefined(Object value) {
+        return value == Undefined.INSTANCE;
+    }
 
-     &#64;ImplicitCast
-     public static double castInt(int value) {
-         return value;
-     }
- }
+    &#64;ImplicitCast
+    public static double castInt(int value) {
+        return value;
+    }
+}
 
- &#64;TypeSystemReference(ExampleTypeSystem.class)
- public abstract class BaseNode extends Node {
-     abstract Object execute();
- }
+&#64;TypeSystemReference(ExampleTypeSystem.class)
+public abstract class BaseNode extends Node {
+    abstract Object execute();
+}
 
- public static final class Undefined {
-     public static final Undefined INSTANCE = new Undefined();
- }
- </pre>
+public static final class Undefined {
+    public static final Undefined INSTANCE = new Undefined();
+}
+</pre>
 
- The example type system declared in here defines a special type check and cast for the type
- Undefined using methods annotated with <a href="TypeCheck.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeCheck</code></a> and <a href="TypeCast.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeCast</code></a>. Undefined is a
- singleton type and therefore, only a single instance of it exists at a time. For singleton types
- the type check can be implemented using an identity comparison and instead of casting a value to
- Undefined we can implement it by returning a constant value. Both the singleton check and cast
- are considered more efficient than the default check and cast behavior.
- <p>
- Multiple distinct Java types can be used to represent values of the same semantic guest language
- type. For example our JavaScript implementation uses the Java types <code>int</code> and
- <code>double</code> to represent the JavaScript numeric type. Whenever a type needs to be checked
- for the type numeric we need to check the value for each representation type. Defining a
- specialization with two numeric parameters would normally require us to specify four
- specializations, for each combination of the representation type. However, in Java, an
- <code>int</code> type has the interesting property of always being representable with a double
- value without losing precision. Type systems allows the user to specify such relationships using
- implicit casts such as the <code>castInt</code> method declared in the example After declaring an
- implicit cast from <code>int</code> to <code>double</code> we can specify a single specialization
- with double type guards to implicitly represent all the cases of the JavaScript numeric type.
- Whenever the DSL implementation needs to cast a value from <code>int</code> to
- <code>double</code> then the implicit cast method is called. Specializations with
- <code>int</code> type guards can be declared before specializations with <code>double</code> type
- guards. If an int specialization is declared after the <code>double</code> specialization then
- the <code>int</code> specialization is unreachable due to the implicit cast. The requirements for
- implicit casts can vary between guest languages. Therefore, no implicit cast is enabled by
- default or if no type system is referenced.
- <p>
- If multiple implicit casts are declared for a single target type then their types are checked in
- declaration order. Languages implementations are encouraged to optimize their implicit cast
- declaration order by sorting them starting with the most frequently used type.</div>
+The example type system declared in here defines a special type check and cast for the type
+Undefined using methods annotated with <a href="TypeCheck.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeCheck</code></a> and <a href="TypeCast.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>TypeCast</code></a>. Undefined is a
+singleton type and therefore, only a single instance of it exists at a time. For singleton types
+the type check can be implemented using an identity comparison and instead of casting a value to
+Undefined we can implement it by returning a constant value. Both the singleton check and cast
+are considered more efficient than the default check and cast behavior.
+<p>
+Multiple distinct Java types can be used to represent values of the same semantic guest language
+type. For example our JavaScript implementation uses the Java types <code>int</code> and
+<code>double</code> to represent the JavaScript numeric type. Whenever a type needs to be checked
+for the type numeric we need to check the value for each representation type. Defining a
+specialization with two numeric parameters would normally require us to specify four
+specializations, for each combination of the representation type. However, in Java, an
+<code>int</code> type has the interesting property of always being representable with a double
+value without losing precision. Type systems allows the user to specify such relationships using
+implicit casts such as the <code>castInt</code> method declared in the example After declaring an
+implicit cast from <code>int</code> to <code>double</code> we can specify a single specialization
+with double type guards to implicitly represent all the cases of the JavaScript numeric type.
+Whenever the DSL implementation needs to cast a value from <code>int</code> to
+<code>double</code> then the implicit cast method is called. Specializations with
+<code>int</code> type guards can be declared before specializations with <code>double</code> type
+guards. If an int specialization is declared after the <code>double</code> specialization then
+the <code>int</code> specialization is unreachable due to the implicit cast. The requirements for
+implicit casts can vary between guest languages. Therefore, no implicit cast is enabled by
+default or if no type system is referenced.
+<p>
+If multiple implicit casts are declared for a single target type then their types are checked in
+declaration order. Languages implementations are encouraged to optimize their implicit cast
+declaration order by sorting them starting with the most frequently used type.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.8 or earlier</dd>
