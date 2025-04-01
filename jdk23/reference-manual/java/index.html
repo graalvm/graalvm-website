@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="graalvm-as-a-java-virtual-machine">GraalVM as a Java Virtual Machine</h1>
+
+<p>GraalVM is based on the <a href="https://docs.oracle.com/en/java/javase/23/vm/java-virtual-machine-technology-overview.html">Java HotSpot Virtual Machine</a>, so any application that runs on the Java HotSpot Virtual Machine will also on GraalVM.</p>
+
+<p>GraalVM includes an advanced compiler written in Java, known as the <em>Graal compiler</em>.
+At runtime, just like any other Java Virtual Machine (JVM), GraalVM loads an application and analyzes its code to detect performance bottlenecks, or <em>hot spots</em>. 
+GraalVM passes the performance-critical code to the Graal just-in-time (JIT) compiler, which compiles it to machine code and then returns it.</p>
+
+<p>The Graal compiler can improve the efficiency and the speed of applications written in Java, Scala, Kotlin, or other JVM languages through its unique approaches to code analysis and optimization.
+For example, it assures performance advantages for highly-abstracted applications due to its ability to remove costly object allocations.
+See the <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java" target="_blank"><code>CEOptimization enum</code></a> in the GraalVM Community Edition GitHub repository for more information about platform-independent compiler optimizations.</p>
+
+<blockquote>
+  <p>The Graal (JIT) compiler is now also integrated with the Java HotSpot Virtual Machine.
+To find out more, see the section <a href="/jdk23/reference-manual/java/compiler/">Graal Compiler</a>.</p>
+</blockquote>
+
+<h2 id="interoperability">Interoperability</h2>
+
+<p>GraalVM also includes the <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a>—a library, written in Java—to build interpreters for programming languages, which then run on GraalVM.
+These “Graal languages” can consequently benefit from the optimization possibilities of the Graal compiler.
+The pipeline for such compilation is:</p>
+
+<ol>
+  <li>The Truffle framework code and data represented by Abstract Syntax Trees (ASTs) are partially evaluated to produce a compilation graph. When such an AST is “hot” (that is, called many times), it is scheduled for compilation by the compiler.</li>
+  <li>The compilation graph is optimized by the Graal compiler to produce machine code.</li>
+  <li>JVMCI installs this machine code in the JVM’s code cache.</li>
+  <li>The AST will automatically redirect execution to the installed machine code once it is available.</li>
+</ol>
+
+<p>See the <a href="/jdk23/reference-manual/polyglot-programming/">Polyglot Programming</a> and <a href="/jdk23/reference-manual/embed-languages/">Embedding Languages</a> guides for more information about interoperability with other programming languages.</p>
+
+<h2 id="ahead-of-time-compilation">Ahead-of-time Compilation</h2>
+
+<p>Besides the Truffle framework, GraalVM incorporates its compiler into an advanced ahead-of-time (AOT) compilation technology—Native Image—which translates Java and JVM-based code into a native platform executable.
+These native executables start nearly instantaneously, are smaller, and consume less resources than their JVM counterparts, making them ideal for cloud deployments and microservices.
+For more information about AOT compilation, see <a href="/jdk23/reference-manual/native-image/">Native Image</a>.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/java/compiler/">Graal Compiler</a></li>
+  <li><a href="/jdk23/reference-manual/java/options/">Graal JIT Compiler Configuration</a></li>
+  <li><a href="/jdk23/reference-manual/compiler/operations/">Graal JIT Compiler Operations Manual</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/">Native Image</a></li>
+  <li><a href="https://docs.oracle.com/pls/topic/lookup?ctx=javase23&amp;id=java_tool_reference" target="_blank">JDK tool reference</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="on-stack-replacement-osr">On-Stack Replacement (OSR)</h1>
+
+<p>During execution, Truffle will schedule “hot” call targets for compilation.
+Once a target is compiled, later invocations of the target can execute the compiled version.
+However, an ongoing execution of a call target will not benefit from this compilation, since it cannot transfer execution to the compiled code.
+This means that a long-running target can get “stuck” in the interpreter, harming warmup performance.</p>
+
+<p>On-stack replacement (OSR) is a technique used in Truffle to “break out” of the interpreter, transferring execution from interpreted to compiled code.
+Truffle supports OSR for both AST interpreters (i.e., ASTs with <code>LoopNode</code>s) and bytecode interpreters (i.e., nodes with dispatch loops).
+In either case, Truffle uses heuristics to detect when a long-running loop is being interpreted and can perform OSR to speed up execution.</p>
+
+<h2 id="osr-for-ast-interpreters">OSR for AST interpreters</h2>
+
+<p>Languages using standard Truffle APIs get OSR for free on Graal.
+The runtime tracks the number of times a <code>LoopNode</code> (created using <code>TruffleRuntime.createLoopNode(RepeatingNode)</code>) executes in the interpreter.
+Once the loop iterations exceed a threshold, the runtime considers the loop “hot”, and it will transparently compile the loop, poll for completion, and then call the compiled OSR target.
+The OSR target uses the same <code>Frame</code> used by the interpreter.
+When the loop exits in the OSR execution, it returns to the interpreted execution, which forwards the result.</p>
+
+<p>See the <code>LoopNode</code> <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/LoopNode.html">javadoc</a> for more details.</p>
+
+<h2 id="osr-for-bytecode-interpreters">OSR for bytecode interpreters</h2>
+
+<p>OSR for bytecode interpreters requires slightly more cooperation from the language.
+A bytecode dispatch node typically looks something like the following:</p>
+
+<pre><code class="language-java">class BytecodeDispatchNode extends Node {
+  @CompilationFinal byte[] bytecode;
+
+  ...
+
+  @ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE)
+  Object execute(VirtualFrame frame) {
+    int bci = 0;
+    while (true) {
+      int nextBCI;
+      switch (bytecode[bci]) {
+        case OP1:
+          ...
+          nextBCI = ...
+          ...
+        case OP2:
+          ...
+          nextBCI = ...
+          ...
+        ...
+      }
+      bci = nextBCI;
+    }
+  }
+}
+</code></pre>
+
+<p>Unlike with AST interpreters, loops in a bytecode interpreter are often unstructured (and implicit).
+Though bytecode languages do not have structured loops, backward jumps in the code (“back-edges”) tend to be a good proxy for loop iterations.
+Thus, Truffle’s bytecode OSR is designed around back-edges and the destination of those edges (which often correspond to loop headers).</p>
+
+<p>To make use of Truffle’s bytecode OSR, a language’s dispatch node should implement the <code>BytecodeOSRNode</code> interface.
+This interface requires (at minimum) three method implementations:</p>
+
+<ul>
+  <li><code>executeOSR(osrFrame, target, interpreterState)</code>: This method dispatches execution to the given <code>target</code> (i.e., bytecode index) using <code>osrFrame</code> as the current program state. The <code>interpreterState</code> object can pass any additional interpreter state needed to resume execution.</li>
+  <li><code>getOSRMetadata()</code> and <code>setOSRMetadata(osrMetadata)</code>: These methods proxy accesses to a field declared on the class. The runtime will use these accessors to maintain state related to OSR compilation (e.g., back-edge counts). The field should be annotated <code>@CompilationFinal</code>.</li>
+</ul>
+
+<p>In the main dispatch loop, when the language hits a back-edge, it should invoke the provided <code>BytecodeOSRNode.pollOSRBackEdge(osrNode)</code> method to notify the runtime of the back-edge.
+If the runtime deems the node eligible for OSR compilation, this method returns <code>true</code>.</p>
+
+<p>If (and only if) <code>pollOSRBackEdge</code> returns <code>true</code>, the language can call <code>BytecodeOSRNode.tryOSR(osrNode, target, interpreterState, beforeTransfer, parentFrame)</code> to attempt OSR.
+This method will request compilation starting from <code>target</code>, and once compiled code is available, a subsequent call can transparently invoke the compiled code and return the computed result.
+We will discuss the <code>interpreterState</code> and <code>beforeTransfer</code> parameters shortly.</p>
+
+<p>The example above can be refactored to support OSR as follows:</p>
+
+<pre><code class="language-java">class BytecodeDispatchNode extends Node implements BytecodeOSRNode {
+  @CompilationFinal byte[] bytecode;
+  @CompilationFinal private Object osrMetadata;
+
+  ...
+
+  Object execute(VirtualFrame frame) {
+    return executeFromBCI(frame, 0);
+  }
+
+  Object executeOSR(VirtualFrame osrFrame, int target, Object interpreterState) {
+    return executeFromBCI(osrFrame, target);
+  }
+
+  Object getOSRMetadata() {
+    return osrMetadata;
+  }
+
+  void setOSRMetadata(Object osrMetadata) {
+    this.osrMetadata = osrMetadata;
+  }
+
+  @ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE)
+  Object executeFromBCI(VirtualFrame frame, int bci) {
+    while (true) {
+      int nextBCI;
+      switch (bytecode[bci]) {
+        case OP1:
+          ...
+          nextBCI = ...
+          ...
+        case OP2:
+          ...
+          nextBCI = ...
+          ...
+        ...
+      }
+
+      if (nextBCI &lt; bci) { // back-edge
+        if (BytecodeOSRNode.pollOSRBackEdge(this)) { // OSR can be tried
+          Object result = BytecodeOSRNode.tryOSR(this, nextBCI, null, null, frame);
+          if (result != null) { // OSR was performed
+            return result;
+          }
+        }
+      }
+      bci = nextBCI;
+    }
+  }
+}
+</code></pre>
+
+<p>A subtle difference with bytecode OSR is that the OSR execution continues past the end of the loop until the end of the call target.
+Thus, execution does not need to continue in the interpreter once execution returns from OSR; the result can simply be forwarded to the caller.</p>
+
+<p>The <code>interpreterState</code> parameter to <code>tryOSR</code> can contain any additional interpreter state required for execution.
+This state is passed to <code>executeOSR</code> and can be used to resume execution.
+For example, if an interpreter uses a data pointer to manage reads/writes, and it is unique for each <code>target</code>, this pointer can be passed in <code>interpreterState</code>.
+It will be visible to the compiler and used in partial evaluation.</p>
+
+<p>The <code>beforeTransfer</code> parameter to <code>tryOSR</code> is an optional callback which will be invoked before performing OSR.
+Since <code>tryOSR</code> may or may not perform OSR, this parameter is a way to perform any actions before transferring to OSR code.
+For example, a language may pass a callback to send an instrumentation event before jumping to OSR code.</p>
+
+<p>The <code>BytecodeOSRNode</code> interface also contains a few hook methods whose default implementations can be overridden:</p>
+
+<ul>
+  <li><code>copyIntoOSRFrame(osrFrame, parentFrame, target)</code> and <code>restoreParentFrame(osrFrame, parentFrame)</code>: Reusing the interpreted <code>Frame</code> inside OSR code is not optimal, because it escapes the OSR call target and prevents scalar replacement (for background on scalar replacement, see <a href="https://dl.acm.org/doi/10.1145/2581122.2544157">this paper</a>).
+When possible, Truffle will use <code>copyIntoOSRFrame</code> to copy the interpreted state (<code>parentFrame</code>) into the OSR <code>Frame</code> (<code>osrFrame</code>), and <code>restoreParentFrame</code> to copy state back into the parent <code>Frame</code> afterwards.
+By default, both hooks copy each slot between the source and destination frames, but this can be overridden for finer control (e.g., to only copy over live variables).
+If overridden, these methods should be written carefully to support scalar replacement.</li>
+  <li><code>prepareOSR(target)</code>: This hook gets called before compiling an OSR target.
+It can be used to force any initialization to happen before compilation.
+For example, if a field can only be initialized in the interpreter, <code>prepareOSR</code> can ensure it is initialized, so that OSR code does not deoptimize when trying to access it.</li>
+</ul>
+
+<p>Bytecode-based OSR can be tricky to implement. Some debugging tips:</p>
+
+<ul>
+  <li>Ensure that the metadata field is marked <code>@CompilationFinal</code>.</li>
+  <li>If a <code>Frame</code> with a given <code>FrameDescriptor</code> has been materialized before, Truffle will reuse the interpreter <code>Frame</code> instead of copying (if copying is used, any existing materialized <code>Frame</code> could get out of sync with the OSR <code>Frame</code>).</li>
+  <li>It is helpful to trace compilation and deoptimization logs to identify any initialization work which could be done in <code>prepareOSR</code>.</li>
+  <li>Inspecting the compiled OSR targets in IGV can be useful to ensure the copying hooks interact well with partial evaluation.</li>
+</ul>
+
+<p>See the <code>BytecodeOSRNode</code> <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/BytecodeOSRNode.html">javadoc</a> for more details.</p>
+
+<h2 id="command-line-options">Command-line options</h2>
+<p>There are two (experimental) options which can be used to configure OSR:</p>
+<ul>
+  <li><code>engine.OSR</code>: whether to perform OSR (default: <code>true</code>)</li>
+  <li><code>engine.OSRCompilationThreshold</code>: the number of loop iterations/back-edges required to trigger OSR compilation (default: <code>100,352</code>).</li>
+</ul>
+
+<h2 id="debugging">Debugging</h2>
+<p>OSR compilation targets are marked with <code>&lt;OSR&gt;</code> (or <code>&lt;OSR@n&gt;</code> where <code>n</code> is the dispatch target, in the case of bytecode OSR).
+These targets can be seen and debugged using standard debugging tools like the compilation log and IGV.
+For example, in the compilation log, a bytecode OSR entry may look something like:</p>
+
+<pre><code>[engine] opt done     BytecodeNode@2d3ca632&lt;OSR@42&gt;                               |AST    2|Tier 1|Time   21(  14+8   )ms|Inlined   0Y   0N|IR   161/  344|CodeSize   1234|Addr 0x7f3851f45c10|Src n/a
+</code></pre>
+
+<p>See <a href="https://github.com/oracle/graal/blob/master/compiler/docs/Debugging.md">Debugging</a> for more details on debugging Graal compilations.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

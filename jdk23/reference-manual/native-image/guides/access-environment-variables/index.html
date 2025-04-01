@@ -1,0 +1,60 @@
+<h1 id="access-environment-variables-in-a-native-executable-at-runtime">Access Environment Variables in a Native Executable at Runtime</h1>
+
+<p>A native executable accesses environment variables in the same way as a regular Java application.</p>
+
+<h2 id="run-a-demo">Run a Demo</h2>
+
+<p>For example, run a Java application that iterates over your environment variables and prints out the ones that contain the String of characters passed as a command-line argument.</p>
+
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<ol>
+  <li>Save the following source code in a file named <em>EnvMap.java</em>:
+    <pre><code class="language-java"> import java.util.Map;
+
+ public class EnvMap {
+     public static void main (String[] args) {
+         var filter = args.length &gt; 0 ? args[0] : "";
+         Map&lt;String, String&gt; env = System.getenv();
+         for (String envName : env.keySet()) {
+             if(envName.contains(filter)) {
+                 System.out.format("%s=%s%n",
+                                 envName,
+                                 env.get(envName));
+             }
+         }
+     }
+ }
+</code></pre>
+  </li>
+  <li>Compile the file and build a native executable, as follows:
+    <pre><code class="language-shell"> javac EnvMap.java
+</code></pre>
+    <pre><code class="language-shell"> native-image EnvMap
+</code></pre>
+  </li>
+  <li>Run the native application and pass a command-line argument, such as “HELLO”. There should be no output, because there is no environment variable with a matching name.
+    <pre><code class="language-shell"> ./envmap HELLO
+ &lt;no output&gt;
+</code></pre>
+  </li>
+  <li>Create a new environment variable named “HELLOWORLD” and give it the value “Hello World!”. (If you are using a <code>bash</code> shell, follow the example below.) Now, run the native executable again—it will correctly print out the name and value of the matching environment variable(s).
+    <pre><code class="language-shell"> export HELLOWORLD='Hello World!'
+</code></pre>
+    <pre><code class="language-shell"> ./envmap HELLO
+</code></pre>
+    <p>You should receive the expected output:</p>
+    <pre><code> HELLOWORLD=Hello World!
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/overview/BuildConfiguration/">Native Image Build Configuration</a></li>
+</ul>
+

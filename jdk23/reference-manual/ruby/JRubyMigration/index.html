@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/index.html" class="link-back"><i>&#9664;</i>Table of Contents</a>
+
+      <h1 id="migration-from-jruby-to-truffleruby">Migration from JRuby to TruffleRuby</h1>
+
+<p>When trying TruffleRuby on your gems and applications, you are encouraged to <a href="/jdk23/reference-manual/ruby/#contact">get in touch with the TruffleRuby team</a> for help.</p>
+
+<h2 id="deployment">Deployment</h2>
+
+<p>If you are migrating from JRuby, probably the easiest way to use TruffleRuby is to install the <a href="/jdk23/reference-manual/ruby/#getting-started">TruffleRuby JVM Standalone</a>.</p>
+
+<p>If you do not need the Java interoperability capabilities of TruffleRuby, then you can install the <a href="/jdk23/reference-manual/ruby/#getting-started">TruffleRuby Native Standalone</a>.</p>
+
+<h2 id="using-ruby-from-java">Using Ruby from Java</h2>
+
+<p>JRuby supports many different ways to embed Ruby in Java, including JSR 223 (also know as <code>javax.script</code>), the Bean Scripting Framework (BSF), JRuby Embed (also known as Red Bridge), and the JRuby direct embedding API.</p>
+
+<p>The best way to embed TruffleRuby is to use the Polyglot API.
+The API is different because it is designed to support many languages, not just Ruby.</p>
+
+<p>TruffleRuby also supports JSR 223, compatible with JRuby, to make it easier to run legacy JRuby code.
+See <a href="/jdk23/reference-manual/embed-languages/#compatibility-with-jsr-223-scriptengine">this documentation</a> for how to use it.</p>
+
+<p>You will need to use the JVM standalone or depend on the <code>org.graalvm.polyglot:polyglot</code> Maven package to use the Polyglot API.</p>
+
+<p>See the <a href="/jdk23/reference-manual/ruby/Polyglot/">polyglot</a> documentation for more information about how to use Ruby from other languages including Java; this document only shows the comparison to JRuby.</p>
+
+<h3 id="creating-a-context">Creating a Context</h3>
+
+<p>In JRuby with JSR 223 you would have written:</p>
+
+<pre><code class="language-java">ScriptEngineManager m = new ScriptEngineManager();
+ScriptEngine scriptEngine = m.getEngineByName("ruby");
+</code></pre>
+
+<p>Or with BSF you would have written:</p>
+
+<pre><code class="language-java">BSFManager.registerScriptingEngine("jruby", "org.jruby.embed.bsf.JRubyEngine", null);
+BSFManager bsfManager = new BSFManager();
+</code></pre>
+
+<p>Or with JRuby Embed you would have written:</p>
+
+<pre><code class="language-java">ScriptingContainer container = new ScriptingContainer();
+</code></pre>
+
+<p>Or with the direct embedding API you would have written:</p>
+
+<pre><code class="language-java">Ruby ruby = Ruby.newInstance(new RubyInstanceConfig());
+</code></pre>
+
+<p>In TruffleRuby you now write:</p>
+
+<pre><code class="language-java">Context polyglot = Context.newBuilder().allowAllAccess(true).build();
+</code></pre>
+
+<p>The <code>allowAllAccess(true)</code> method allows the permissive access privileges that Ruby needs for full functionality.
+GraalVM by default disallows many privileges which may not be safe, such as native file access, but a normal Ruby installation uses these so we enable them.
+You can decide not to grant those privileges, but this will restrict some of Ruby’s functionality.</p>
+
+<pre><code class="language-java">// No privileges granted, restricts functionality
+Context polyglot = Context.newBuilder().build();
+</code></pre>
+
+<p>You would normally create your context inside a <code>try</code> block to ensure it is properly disposed:</p>
+
+<pre><code class="language-java">try (Context polyglot = Context.newBuilder().allowAllAccess(true).build()) {
+}
+</code></pre>
+
+<p>See the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">Context API</a> for detailed documentation about <code>Context</code>.</p>
+
+<h3 id="setting-options">Setting Options</h3>
+
+<p>You can set TruffleRuby <a href="/jdk23/reference-manual/ruby/Options/">options</a> via system properties, or via the <code>.option(name, value)</code> builder method.</p>
+
+<h3 id="evaluating-code">Evaluating Code</h3>
+
+<p>In JRuby where you would have written one of these JRuby examples, the options available are given:</p>
+
+<pre><code class="language-java">scriptEngine.eval("puts 'hello'");
+bsfManager.exec("jruby", "&lt;script&gt;", 1, 0, "puts 'hello'");
+container.runScriptlet("puts 'hello'");
+ruby.evalScriptlet("puts 'hello'");
+</code></pre>
+
+<p>In TruffleRuby you now write this:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "puts 'hello'");
+</code></pre>
+
+<p>Note that <code>eval</code> supports multiple languages, so you need to specify the language each time.</p>
+
+<h3 id="evaluating-code-with-parameters">Evaluating Code with Parameters</h3>
+
+<p>In JRuby with JSR 223 you can pass parameters, called bindings, into a script:</p>
+
+<pre><code class="language-java">Bindings bindings = scriptEngine.createBindings();
+bindings.put("a", 14);
+bindings.put("b", 2);
+scriptEngine.eval("puts a + b", bindings);
+</code></pre>
+
+<p>In TruffleRuby the <code>eval</code> method does not take parameters. Instead you should return a proc which does take parameters, and then call <code>execute</code> on this value:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "-&gt; a, b { puts a + b }").execute(14, 2);
+</code></pre>
+
+<h3 id="primitive-values">Primitive Values</h3>
+
+<p>The different embedding APIs handle primitive values in different ways.
+In JSR 223, BSF, and JRuby Embed, the return type is <code>Object</code> and can be cast to a primitive like <code>long</code> and checked with <code>instanceof</code>.
+In the direct embedding API the return is the root <code>IRubyObject</code> interface and you will need to convert a primitive to an <code>Integer</code>, and from there to a Java <code>long</code>:</p>
+
+<pre><code class="language-java">(long) scriptEngine.eval("14 + 2");
+(long) bsfManager.eval("jruby", "&lt;script&gt;", 1, 0, "14 + 2");
+(long) container.runScriptlet("14 + 2");
+ruby.evalScriptlet("14 + 2").convertToInteger().getLongValue();
+</code></pre>
+
+<p>In TruffleRuby the return value is always an encapsulated <code>Value</code> object, which can be accessed as a <code>long</code> if that is possible for the object. <code>fitsInLong()</code> can test this:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "14 + 2").asLong();
+</code></pre>
+
+<h3 id="calling-methods">Calling Methods</h3>
+
+<p>To call a method on an object you get from an <code>eval</code>, or any other object, in the JRuby embedding APIs you either need to ask the context to invoke the method, or in the case of direct embedding you need to call a method on the receiver and marshal the arguments into JRuby types yourself.
+The BSF does not appear to have a way to call methods:</p>
+
+<pre><code class="language-java">((Invocable) scriptEngine).invokeMethod(scriptEngine.eval("Math"), "sin", 2);
+container.callMethod(container.runScriptlet("Math"), "sin", 2);
+ruby.evalScriptlet("Math").callMethod(ruby.getCurrentContext(), "sin", new IRubyObject[]{ruby.newFixnum(2)})
+</code></pre>
+
+<p>In TruffleRuby the <code>Value</code> class has a <code>getMember</code> method to return Ruby methods on an object, which you can then call by calling <code>execute</code>.
+You do not need to marshal the arguments:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "Math").getMember("sin").execute(2);
+</code></pre>
+
+<p>To call methods on a primitive, use a lambda:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "-&gt; x { x.succ }").execute(2).asInt();
+</code></pre>
+
+<h3 id="passing-blocks">Passing Blocks</h3>
+
+<p>Blocks are a Ruby-specific language feature, so they don’t appear in language agnostic APIs like JSR 223 and BSF.
+The JRuby Embed API and direct embedding do allow passing a <code>Block</code> parameter to the <code>callMethod</code> method, but it is not clear how you would create a <code>Block</code> object to use this.</p>
+
+<p>In TruffleRuby you should return a Ruby lambda that performs your call, passing a block that executes a Java lambda that you pass in:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "-&gt; block { (1..3).each { |n| block.call n } }")
+  .execute(polyglot.asValue((IntConsumer) n -&gt; System.out.println(n)));
+</code></pre>
+
+<h3 id="creating-objects">Creating Objects</h3>
+
+<p>JRuby embedding APIs don’t have support for creating new objects, but you can just call the <code>new</code> method yourself:</p>
+
+<pre><code class="language-java">((Invocable) scriptEngine).invokeMethod(scriptEngine.eval("Time"), "new", 2021, 3, 18);
+container.callMethod(container.runScriptlet("Time"), "new", 2021, 3, 18)
+ruby.evalScriptlet("Time").callMethod(ruby.getCurrentContext(), "new",
+  new IRubyObject[]{ruby.newFixnum(2021), ruby.newFixnum(3), ruby.newFixnum(8)})
+</code></pre>
+
+<p>In TruffleRuby you can create an object from a Ruby <code>class</code> using <code>newInstance</code>.
+You can use <code>canInstantiate</code> to see if this will be possible:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "Time").newInstance(2021, 3, 18);
+</code></pre>
+
+<h3 id="handling-strings">Handling Strings</h3>
+
+<p>In JRuby’s embedding APIs you would use <code>toString</code> to convert to a Java <code>String</code>.
+Use <code>asString</code> in TruffleRuby (and <code>isString</code> to check).</p>
+
+<h3 id="accessing-arrays">Accessing Arrays</h3>
+
+<p>JRuby’s arrays implement <code>List&lt;Object&gt;</code>, so you can cast to this interface to access them:</p>
+
+<pre><code class="language-java">((List) scriptEngine.eval("[3, 4, 5]")).get(1);
+((List) container.runScriptlet("[3, 4, 5]")).get(1);
+((List) bsfManager.eval("jruby", "&lt;script&gt;", 1, 0, "[3, 4, 5]")).get(1);
+((List) ruby.evalScriptlet("[3, 4, 5]")).get(1);
+</code></pre>
+
+<p>In TruffleRuby you can use <code>getArrayElement</code>, <code>setArrayElement</code>, and
+<code>getArraySize</code>, or you can use <code>as(List.class)</code> to get a <code>List&lt;Object&gt;</code>:</p>
+
+<pre><code class="language-java">polyglot.eval("ruby", "[3, 4, 5]").getArrayElement(1);
+polyglot.eval("ruby", "[3, 4, 5]").as(List.class).get(1);
+</code></pre>
+
+<h3 id="accessing-hashes">Accessing Hashes</h3>
+
+<p>JRuby’s hashes implement <code>Map&lt;Object, Object&gt;</code>, so you can cast to this
+interface to access them:</p>
+
+<pre><code class="language-java">((Map) scriptEngine.eval("{'a' =&gt; 3, 'b' =&gt; 4, 'c' =&gt; 5}")).get("b");
+((Map) scriptEngine.eval("{3 =&gt; 'a', 4 =&gt; 'b', 5 =&gt; 'c'}")).get(4);
+</code></pre>
+
+<p>In TruffleRuby there is currently no uniform way to access hashes or dictionary-like data structures.
+At the moment we recommend using a lambda accessor:</p>
+
+<pre><code class="language-java">Value hash = polyglot.eval("ruby", "{'a' =&gt; 3, 'b' =&gt; 4, 'c' =&gt; 5}");
+Value accessor = polyglot.eval("ruby", "-&gt; hash, key { hash[key] }");
+accessor.execute(hash, "b");
+</code></pre>
+
+<h3 id="implementing-interfaces">Implementing Interfaces</h3>
+
+<p>You may want to implement a Java interface using a Ruby object (example copied from the JRuby wiki):</p>
+
+<pre><code class="language-java">interface FluidForce {
+  double getFluidForce(double a, double b, double depth);
+}
+</code></pre>
+
+<pre><code class="language-ruby">class EthylAlcoholFluidForce
+  def getFluidForce(x, y, depth)
+    area = Math::PI * x * y
+    49.4 * area * depth
+  end
+end
+
+EthylAlcoholFluidForce.new
+</code></pre>
+
+<pre><code>String RUBY_SOURCE = "class EthylAlcoholFluidForce\n  def getFluidForce...";
+</code></pre>
+
+<p>In JSR 223 you can use <code>getInterface(object, Interface.class)</code>.
+In JRuby Embed you can use <code>getInstance(object, Interface.class)</code>.
+In direct embedding you can use <code>toJava(Interface.class)</code>.
+BSF does not appear to support implementing interfaces:</p>
+
+<pre><code class="language-java">FluidForce fluidForce = ((Invocable) scriptEngine).getInterface(scriptEngine.eval(RUBY_SOURCE), FluidForce.class);
+FluidForce fluidForce = container.getInstance(container.runScriptlet(RUBY_SOURCE), FluidForce.class);
+FluidForce fluidForce = ruby.evalScriptlet(RUBY_SOURCE).toJava(FluidForce.class);
+fluidForce.getFluidForce(2.0, 3.0, 6.0);
+</code></pre>
+
+<p>In TruffleRuby you can get an interface implemented by your Ruby object by using <code>as(Interface.class)</code>:</p>
+
+<pre><code class="language-java">FluidForce fluidForce = polyglot.eval("ruby", RUBY_SOURCE).as(FluidForce.class);
+fluidForce.getFluidForce(2.0, 3.0, 6.0);
+</code></pre>
+
+<p>JRuby allows the name of the Ruby method to be <code>get_fluid_force</code>, using Ruby conventions, instead of <code>getFluidForce</code>, using Java conventions.
+TruffleRuby does not support this at the moment.</p>
+
+<h3 id="implementing-lambdas">Implementing Lambdas</h3>
+
+<p>As far as we know, JSR 223, BSF, JRuby Embed, and direct embedding do not have a convenient way to get a Java lambda from a Ruby lambda.</p>
+
+<p>In TruffleRuby you can get a Java lambda (really an implementation of a functional interface) from a Ruby lambda by using
+<code>as(FunctionalInterface.class)</code>:</p>
+
+<pre><code class="language-java">BiFunction&lt;Integer, Integer, Integer&gt; adder = polyglot.eval("ruby", "-&gt; a, b { a + b }").as(BiFunction.class);
+adder.apply(14, 2).intValue();
+</code></pre>
+
+<h3 id="parse-once-run-many-times">Parse Once Run Many Times</h3>
+
+<p>Some of the JRuby embedding APIs allow a script to be compiled once and then eval’d several times:</p>
+
+<pre><code class="language-java">CompiledScript compiled = ((Compilable) scriptEngine).compile("puts 'hello'");
+compiled.eval();
+</code></pre>
+
+<p>In TruffleRuby you can simply return a lambda from parsing and execute this many times.
+It will be subject to optimization like any other Ruby code:</p>
+
+<pre><code class="language-java">Value parsedOnce = polyglot.eval("ruby", "-&gt; { run many times }");
+parsedOnce.execute();
+</code></pre>
+
+<h2 id="using-java-from-ruby">Using Java from Ruby</h2>
+
+<p>TruffleRuby provides its own scheme for Java interoperability that is consistent for use from any GraalVM language, to any other GraalVM language.
+This is not compatible with existing JRuby-Java interoperability, so you will need to migrate.</p>
+
+<p>Polyglot programming in general is <a href="/jdk23/reference-manual/ruby/Polyglot/">documented elsewhere</a> - this section describes it relative to JRuby.</p>
+
+<p>This example is from the JRuby wiki:</p>
+
+<pre><code class="language-ruby">require 'java'
+
+# With the 'require' above, you now can refer to things that are part of the
+# standard Java platform via their full paths.
+frame = javax.swing.JFrame.new("Window") # Creating a Java JFrame
+label = javax.swing.JLabel.new("Hello World")
+
+# You can transparently call Java methods on Java objects, just as if they were defined in Ruby.
+frame.add(label)  # Invoking the Java method 'add'.
+frame.setDefaultCloseOperation(javax.swing.WindowConstants::EXIT_ON_CLOSE)
+frame.pack
+frame.setVisible(true)
+sleep
+</code></pre>
+
+<p>In TruffleRuby we would write that this way instead:</p>
+
+<pre><code class="language-ruby">Java.import 'javax.swing.JFrame'
+Java.import 'javax.swing.JLabel'
+Java.import 'javax.swing.WindowConstants'
+
+frame = JFrame.new("Window")
+label = JLabel.new("Hello World")
+
+frame.add(label)
+frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+frame.pack
+frame.setVisible(true)
+sleep
+</code></pre>
+
+<p>Instead of using Ruby metaprogramming to simulate a Java package name, we explicitly import classes.
+<code>Java.import</code> is similar to JRuby’s <code>java_import</code>, and does <code>ClassName = Java.type('package.ClassName')</code>.</p>
+
+<p>Constants are read by reading properties of the class rather than using Ruby notation.</p>
+
+<h3 id="require-java">Require Java</h3>
+
+<p>Do not <code>require 'java'</code> in TruffleRuby. However, you do need to run in <code>--jvm</code> mode.
+This is not available in the Native Standalone.</p>
+
+<h3 id="referring-to-classes">Referring to Classes</h3>
+
+<p>In JRuby, Java classes can either be referenced in the <code>Java</code> module, such as <code>Java::ComFoo::Bar</code>, or if they have a common TLD they can be referenced as <code>com.foo.Bar</code>. <code>java_import com.foo.Bar</code> will define <code>Bar</code> as a top-level constant.</p>
+
+<p>In TruffleRuby, Java classes are referred to using either <code>Java.type('com.foo.Bar')</code>, which you would then normally assign to a constant, or you can use <code>Java.import 'com.foo.Bar'</code> to have <code>Bar</code> defined in the enclosing module.</p>
+
+<h3 id="wildcard-package-imports">Wildcard Package Imports</h3>
+
+<p>JRuby lets you <code>include_package 'com.foo'</code> which will make all classes in that package available as constants in the current scope.</p>
+
+<p>In TruffleRuby you refer to classes explicitly.</p>
+
+<h3 id="calling-methods-and-creating-instances">Calling Methods and Creating Instances</h3>
+
+<p>In both JRuby and TruffleRuby you call Java methods as you would a Ruby method.</p>
+
+<p>JRuby will rewrite method names such as <code>my_method</code> to the Java convention of <code>myMethod</code>, and convert <code>getFoo</code> to <code>foo</code>, and <code>setFoo</code> to <code>foo=</code>.
+TruffleRuby does not perform these conversions.</p>
+
+<h3 id="calling-overloaded-method">Calling Overloaded Method</h3>
+
+<p>When multiple overloads are possible, it needs to be selected explicitly.
+For instance <code>java.util.concurrent.ExecutorService</code> has both <code>submit(Runnable)</code> and <code>submit(Callable&lt;T&gt; task)</code>.
+Calling submit without specifying which one shows the possible overloads:</p>
+<pre><code>$ ruby -e 'Java.type("java.util.concurrent.Executors").newFixedThreadPool(1).submit {}'
+-e:1:in `main': Multiple applicable overloads found for method name submit (candidates: [
+  Method[public java.util.concurrent.Future java.util.concurrent.AbstractExecutorService.submit(java.util.concurrent.Callable)],
+  Method[public java.util.concurrent.Future java.util.concurrent.AbstractExecutorService.submit(java.lang.Runnable)]],
+  arguments: [RubyProc@4893b344 (RubyProc)]) (TypeError)
+</code></pre>
+
+<p>You can select a specific overload using:</p>
+<pre><code class="language-ruby">executor = Java.type("java.util.concurrent.Executors").newFixedThreadPool(1)
+executor['submit(java.lang.Runnable)'].call(-&gt; { 1 })
+# or
+executor.send("submit(java.lang.Runnable)") { 1 }
+</code></pre>
+
+<h3 id="referring-to-constants">Referring to Constants</h3>
+
+<p>In JRuby, Java constants are modelled as Ruby constants, <code>MyClass::FOO</code>.
+In TruffleRuby you use the read notation to read them as a property, <code>MyClass.FOO</code> or <code>MyClass[:FOO]</code>.</p>
+
+<h3 id="using-classes-from-jar-files">Using Classes from JAR files</h3>
+
+<p>In JRuby you can add classes and JARs to the classpath using <code>require</code>.
+In TruffleRuby at the moment you use the <code>-classpath</code> JVM flag as normal.</p>
+
+<h3 id="additional-java-specific-methods">Additional Java-Specific Methods</h3>
+
+<p>JRuby defines these methods on Java objects; use these equivalents instead.</p>
+
+<p><code>java_class</code> - use <code>class</code>.</p>
+
+<p><code>java_kind_of?</code> - use <code>is_a?</code></p>
+
+<p><code>java_object</code> - not supported.</p>
+
+<p><code>java_send</code> - use <code>__send__</code>.</p>
+
+<p><code>java_method</code> - not supported.</p>
+
+<p><code>java_alias</code> - not supported.</p>
+
+<h3 id="creating-java-arrays">Creating Java Arrays</h3>
+
+<p>In JRuby you use <code>Java::byte[1024].new</code>.</p>
+
+<p>In TruffleRuby you would use <code>Java.type('byte[]').new(1024)</code>.</p>
+
+<h3 id="implementing-java-interfaces">Implementing Java Interfaces</h3>
+
+<p>JRuby has several ways to implement an interface.
+For example, to add an action listener to a Swing button we could do any of the following three things:</p>
+
+<pre><code class="language-ruby">class ClickAction
+  include java.awt.event.ActionListener
+
+  def actionPerformed(event)
+   javax.swing.JOptionPane.showMessageDialog nil, 'hello'
+  end
+end
+
+button.addActionListener ClickAction.new
+</code></pre>
+
+<pre><code class="language-ruby">button.addActionListener do |event|
+  javax.swing.JOptionPane.showMessageDialog nil, 'hello'
+end
+</code></pre>
+
+<pre><code class="language-ruby">button.addActionListener -&gt; event {
+  javax.swing.JOptionPane.showMessageDialog nil, 'hello'
+}
+</code></pre>
+
+<p>In TruffleRuby we’d always use the last option to generate an interface:</p>
+
+<pre><code class="language-ruby">button.addActionListener -&gt; event {
+  JOptionPane.showMessageDialog nil, 'hello'
+}
+</code></pre>
+
+<h3 id="generating-java-classes-at-runtime">Generating Java Classes at Runtime</h3>
+
+<p>JRuby supports converting a Ruby class to a concrete Java class using <code>become_java!</code>.</p>
+
+<p>TruffleRuby does not support this.
+We recommend using a proper Java interface as your interface between Java and Ruby.</p>
+
+<h3 id="reopening-java-classes">Reopening Java Classes</h3>
+
+<p>Java classes cannot be reopened in TruffleRuby.</p>
+
+<h3 id="subclassing-java-classes">Subclassing Java Classes</h3>
+
+<p>Java classes cannot be subclassed in TruffleRuby. Use composition or interfaces instead.</p>
+
+<h2 id="extending-truffleruby-using-java">Extending TruffleRuby Using Java</h2>
+
+<p>JRuby supports extensions written in Java. These extensions are written against an informal interface that is simply the entire internals of JRuby, similar to how the MRI C extension interface works.</p>
+
+<p>TruffleRuby does not support writing these kind of Java extensions at the moment.
+We recommend using Java interop as described above.</p>
+
+<h2 id="tooling">Tooling</h2>
+
+<h3 id="standalone-classes-and-jars">Standalone Classes and JARs</h3>
+
+<p>JRuby supports compiling to standalone source classes and compiled JARs from Ruby using <code>jrubyc</code>.</p>
+
+<p>TruffleRuby does not support compiling Ruby code to Java. We recommend using the Polyglot API as your entry point from Java to Ruby.</p>
+
+<h3 id="warbler">Warbler</h3>
+
+<p>JRuby supports building WAR files for loading into enterprise Java web servers.</p>
+
+<p>TruffleRuby does not support this at the moment.</p>
+
+<h3 id="visualvm">VisualVM</h3>
+
+<p>VisualVM works for TruffleRuby as for JRuby.</p>
+
+<p>Additionally, VisualVM understands Ruby objects, rather than Java objects, when you use the heap dump tool.</p>
+
+      </div>
+  </div>
+</div>
+
+</div>
+
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

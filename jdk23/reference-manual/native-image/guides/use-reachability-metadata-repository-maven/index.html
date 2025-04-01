@@ -1,0 +1,352 @@
+<h1 id="include-reachability-metadata-using-the-native-image-maven-plugin">Include Reachability Metadata Using the Native Image Maven Plugin</h1>
+
+<p>You can build a native executable from a Java application with <strong>Maven</strong>. 
+For that, use the GraalVM Native Image Maven plugin provided as part of the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Build Tools project</a>.</p>
+
+<p>A “real-world” Java application likely requires some Java reflection objects, or it calls some native code, or accesses resources on the class path - dynamic features that the <code>native-image</code> tool must be aware of at build time, and provided in the form of <a href="/jdk23/reference-manual/native-image/metadata/">metadata</a>. 
+(Native Image loads classes dynamically at build time, and not at run time.)</p>
+
+<p>Depending on your application dependencies, there are three ways to provide the metadata:</p>
+
+<ol>
+  <li><a href="#build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Using the GraalVM Reachability Metadata Repository</a></li>
+  <li><a href="#build-a-native-executable-with-the-tracing-agent">Using the Tracing Agent</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin-quickstart.html#build-a-native-executable-with-resources-autodetection">Autodetecting</a> (if the required resources are directly available on the class path, in the <em>src/main/resources/</em> directory)</li>
+</ol>
+
+<p>This guide demonstrates how to build a native executable using the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a>, and with the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#agent-support">Tracing Agent</a>.
+The goal of this guide is to illustrate the difference between the two approaches, and demonstrate how the use of reachability metadata can simplify your development tasks.</p>
+
+<p>We recommend that you follow the instructions and create the application step-by-step. 
+Alternatively, you can go right to the <a href="https://github.com/graalvm/native-build-tools/tree/master/samples/metadata-repo-integration">completed example</a>.</p>
+
+<h2 id="prepare-a-demo-application">Prepare a Demo Application</h2>
+
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<ol>
+  <li>
+    <p>Create a new Java project with <strong>Maven</strong> in your favorite IDE or from the command line, called “H2Example”, in the <code>org.graalvm.example</code> package.</p>
+  </li>
+  <li>Open the main class file, <em>src/main/java/org/graalvm/example/H2Example.java</em>, and replace its contents with the following:
+    <pre><code class="language-java"> package org.graalvm.example;
+
+ import java.sql.Connection;
+ import java.sql.DriverManager;
+ import java.sql.PreparedStatement;
+ import java.sql.ResultSet;
+ import java.sql.SQLException;
+ import java.util.ArrayList;
+ import java.util.Comparator;
+ import java.util.HashSet;
+ import java.util.List;
+ import java.util.Set;
+
+ public class H2Example {
+
+     public static final String JDBC_CONNECTION_URL = "jdbc:h2:./data/test";
+
+     public static void main(String[] args) throws Exception {
+         withConnection(JDBC_CONNECTION_URL, connection -&gt; {
+             connection.prepareStatement("DROP TABLE IF EXISTS customers").execute();
+             connection.commit();
+         });
+
+         Set&lt;String&gt; customers = Set.of("Lord Archimonde", "Arthur", "Gilbert", "Grug");
+
+         System.out.println("=== Inserting the following customers in the database: ");
+         printCustomers(customers);
+
+         withConnection(JDBC_CONNECTION_URL, connection -&gt; {
+             connection.prepareStatement("CREATE TABLE customers(id INTEGER AUTO_INCREMENT, name VARCHAR)").execute();
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO customers(name) VALUES (?)");
+             for (String customer : customers) {
+                 statement.setString(1, customer);
+                 statement.executeUpdate();
+             }
+             connection.commit();
+         });
+
+         System.out.println("");
+         System.out.println("=== Reading customers from the database.");
+         System.out.println("");
+
+         Set&lt;String&gt; savedCustomers = new HashSet&lt;&gt;();
+         withConnection(JDBC_CONNECTION_URL, connection -&gt; {
+             try (ResultSet resultSet = connection.prepareStatement("SELECT * FROM customers").executeQuery()) {
+                 while (resultSet.next()) {
+                     savedCustomers.add(resultSet.getObject(2, String.class));
+                 }
+             }
+         });
+
+         System.out.println("=== Customers in the database: ");
+         printCustomers(savedCustomers);
+     }
+
+     private static void printCustomers(Set&lt;String&gt; customers) {
+         List&lt;String&gt; customerList = new ArrayList&lt;&gt;(customers);
+         customerList.sort(Comparator.naturalOrder());
+         int i = 0;
+         for (String customer : customerList) {
+             System.out.println((i + 1) + ". " + customer);
+             i++;
+         }
+     }
+
+     private static void withConnection(String url, ConnectionCallback callback) throws SQLException {
+         try (Connection connection = DriverManager.getConnection(url)) {
+             connection.setAutoCommit(false);
+             callback.run(connection);
+         }
+     }
+
+     private interface ConnectionCallback {
+         void run(Connection connection) throws SQLException;
+     }
+ }
+</code></pre>
+  </li>
+  <li>Open the project configuration file, <em>pom.xml</em>, and replace its contents with the following:
+    <pre><code class="language-xml"> &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+ &lt;project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd"&gt;
+     &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+
+     &lt;groupId&gt;org.graalvm.buildtools.examples&lt;/groupId&gt;
+     &lt;artifactId&gt;maven&lt;/artifactId&gt;
+     &lt;version&gt;1.0.0-SNAPSHOT&lt;/version&gt;
+
+     &lt;properties&gt;
+         &lt;h2.version&gt;2.2.220&lt;/h2.version&gt;
+         &lt;maven.compiler.source&gt;21&lt;/maven.compiler.source&gt;
+         &lt;maven.compiler.target&gt;21&lt;/maven.compiler.target&gt;
+         &lt;native.maven.plugin.version&gt;0.10.3&lt;/native.maven.plugin.version&gt;
+         &lt;mainClass&gt;org.graalvm.example.H2Example&lt;/mainClass&gt;
+         &lt;imageName&gt;h2example&lt;/imageName&gt;
+     &lt;/properties&gt;
+
+     &lt;dependencies&gt;
+         &lt;!-- 1. H2 Database dependency --&gt;
+         &lt;dependency&gt;
+             &lt;groupId&gt;com.h2database&lt;/groupId&gt;
+             &lt;artifactId&gt;h2&lt;/artifactId&gt;
+             &lt;version&gt;${h2.version}&lt;/version&gt;
+         &lt;/dependency&gt;
+     &lt;/dependencies&gt;
+     &lt;!-- 2. Native Image Maven plugin within a Maven profile --&gt;
+     &lt;profiles&gt;
+         &lt;profile&gt;
+             &lt;id&gt;native&lt;/id&gt;
+             &lt;build&gt;
+                 &lt;plugins&gt;
+                     &lt;plugin&gt;
+                         &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
+                         &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
+                         &lt;version&gt;0.10.3&lt;/version&gt;
+                         &lt;extensions&gt;true&lt;/extensions&gt;
+                         &lt;executions&gt;
+                             &lt;execution&gt;
+                                 &lt;id&gt;build-native&lt;/id&gt;
+                                 &lt;goals&gt;
+                                     &lt;goal&gt;compile-no-fork&lt;/goal&gt;
+                                 &lt;/goals&gt;
+                                 &lt;phase&gt;package&lt;/phase&gt;
+                             &lt;/execution&gt;
+                         &lt;/executions&gt;
+                         &lt;configuration&gt;
+                             &lt;buildArgs&gt;
+                                 &lt;!-- 3. Quick build mode --&gt;
+                                 &lt;buildArg&gt;-Ob&lt;/buildArg&gt;
+                             &lt;/buildArgs&gt;
+                         &lt;/configuration&gt;
+                     &lt;/plugin&gt;
+                 &lt;/plugins&gt;
+             &lt;/build&gt;
+         &lt;/profile&gt;
+     &lt;/profiles&gt;
+     &lt;build&gt;
+         &lt;finalName&gt;${project.artifactId}&lt;/finalName&gt;
+         &lt;plugins&gt;
+             &lt;plugin&gt;
+                 &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                 &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+                 &lt;version&gt;3.0.0-M5&lt;/version&gt;
+             &lt;/plugin&gt;
+
+             &lt;plugin&gt;
+                 &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                 &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+                 &lt;version&gt;3.11.0&lt;/version&gt;
+             &lt;/plugin&gt;
+
+             &lt;plugin&gt;
+                 &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                 &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
+                 &lt;version&gt;3.3.0&lt;/version&gt;
+                 &lt;configuration&gt;
+                     &lt;archive&gt;
+                         &lt;manifest&gt;
+                             &lt;addClasspath&gt;true&lt;/addClasspath&gt;
+                             &lt;mainClass&gt;${mainClass}&lt;/mainClass&gt;
+                         &lt;/manifest&gt;
+                     &lt;/archive&gt;
+                 &lt;/configuration&gt;
+             &lt;/plugin&gt;
+
+             &lt;plugin&gt;
+                 &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+                 &lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
+                 &lt;version&gt;3.1.1&lt;/version&gt;
+                 &lt;executions&gt;
+                     &lt;execution&gt;
+                         &lt;id&gt;java&lt;/id&gt;
+                         &lt;goals&gt;
+                             &lt;goal&gt;java&lt;/goal&gt;
+                         &lt;/goals&gt;
+                         &lt;configuration&gt;
+                             &lt;mainClass&gt;${mainClass}&lt;/mainClass&gt;
+                         &lt;/configuration&gt;
+                     &lt;/execution&gt;
+                     &lt;execution&gt;
+                         &lt;id&gt;native&lt;/id&gt;
+                         &lt;goals&gt;
+                             &lt;goal&gt;exec&lt;/goal&gt;
+                         &lt;/goals&gt;
+                         &lt;configuration&gt;
+                             &lt;executable&gt;${project.build.directory}/${imageName}&lt;/executable&gt;
+                             &lt;workingDirectory&gt;${project.build.directory}&lt;/workingDirectory&gt;
+                         &lt;/configuration&gt;
+                     &lt;/execution&gt;
+                 &lt;/executions&gt;
+             &lt;/plugin&gt;
+         &lt;/plugins&gt;
+     &lt;/build&gt;
+
+ &lt;/project&gt;
+</code></pre>
+    <p><strong>1</strong> Add a dependency on the <a href="https://www.h2database.com/html/main.html">H2 Database</a>, an open source SQL database for Java. The application interacts with this database through the JDBC driver.</p>
+
+    <p><strong>2</strong> Enable the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Native Image Maven plugin</a> within a Maven profile, attached to the <code>package</code> phase. You are going to build a native executable using a Maven profile. A Maven profile allows you to decide whether to just build a JAR file, or a native executable. The plugin discovers which JAR files it needs to pass to <code>native-image</code> and what the executable main class should be.</p>
+
+    <p><strong>3</strong> You can pass parameters to the underlying <code>native-image</code> build tool using the <code>&lt;buildArgs&gt;</code> section. In individual <code>&lt;buildArg&gt;</code> tags you can pass parameters exactly the same way as you do on the command line. The <code>-Ob</code> option to enable the quick build mode (recommended during development only) is used as an example. Learn about other configuration options from the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#configuration-options">plugin’s documentation</a>.</p>
+  </li>
+  <li>(Optional) Build the application:
+    <pre><code> mvn -DskipTests clean package
+</code></pre>
+    <p>This generates an executable JAR file.</p>
+  </li>
+</ol>
+
+<h2 id="build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Build a Native Executable Using the GraalVM Reachability Metadata Repository</h2>
+
+<p><a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a> provides GraalVM configuration for libraries which do not support GraalVM Native Image by default.
+One of these is the <a href="https://www.h2database.com/html/main.html">H2 Database</a> this application depends on.</p>
+
+<p>The Native Image Maven plugin <strong>automatically downloads the metadata from the repository at build time</strong>.</p>
+
+<ol>
+  <li>Build a native image:
+    <pre><code class="language-shell"> mvn -DskipTests -Pnative package
+</code></pre>
+    <p>This generates an executable file for the platform in the <em>target/</em> directory, called <code>h2example</code>.
+ Notice the new directory <em>target/graalvm-reachability-metadata</em> where the metadata is pulled into.</p>
+  </li>
+  <li>Run the application from the native executable which should return a list of customers stored in the H2 Database:
+    <pre><code class="language-shell"> ./target/h2example 
+</code></pre>
+  </li>
+  <li>Run <code>mvn clean</code> to clean up the project and delete the metadata directory with its contents before you continue.</li>
+</ol>
+
+<h2 id="build-a-native-executable-with-the-tracing-agent">Build a Native Executable with the Tracing Agent</h2>
+
+<p>The second way to provide the medatata configuration for <code>native-image</code> is by injecting the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#agent-support">Tracing Agent</a> (later <em>the agent</em>) at compile time.
+The agent is disabled by default, but it can be enabled within your <em>pom.xml</em> file or via the command line.</p>
+
+<p>The agent can run in three modes:</p>
+<ul>
+  <li><strong>Standard</strong>: Collects metadata without conditions. This is recommended if you are building a native executable. (Default)</li>
+  <li><strong>Conditional</strong>: Collects metadata with conditions. This is recommended if you are creating conditional metadata for a native shared library intended for further use.</li>
+  <li><strong>Direct</strong>: For advanced users only. This mode allows directly controlling the command line passed to the agent.</li>
+</ul>
+
+<p>See below how to collect metadata with the Tracing Agent, and build a native executable applying the provided configuration.
+Before you continue, clean the project from the previous build: <code>mvn clean</code>.</p>
+
+<ol>
+  <li>Enable the agent by adding the following into the <code>&lt;configuration&gt;</code> element of the <code>native</code> profile:
+    <pre><code class="language-xml"> &lt;agent&gt;
+     &lt;enabled&gt;true&lt;/enabled&gt;
+ &lt;/agent&gt;
+</code></pre>
+    <p>The configuration block should resemble this:</p>
+    <pre><code class="language-xml"> &lt;configuration&gt;
+     &lt;agent&gt;
+         &lt;enabled&gt;true&lt;/enabled&gt;
+     &lt;/agent&gt;
+     &lt;buildArgs&gt;
+         &lt;buildArg&gt;-Ob&lt;/buildArg&gt;
+     &lt;/buildArgs&gt;
+ &lt;/configuration&gt;
+</code></pre>
+  </li>
+  <li>Executing your application with the agent is more involved and requires you to configure a separate MOJO execution which allows forking a Java process. 
+In the <code>native</code> Maven profile section, add the <code>exec-maven-plugin</code> plugin:
+    <pre><code class="language-xml"> &lt;plugin&gt;
+     &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+     &lt;artifactId&gt;exec-maven-plugin&lt;/artifactId&gt;
+     &lt;version&gt;3.1.1&lt;/version&gt;
+     &lt;executions&gt;
+         &lt;execution&gt;
+             &lt;id&gt;java-agent&lt;/id&gt;
+             &lt;goals&gt;
+                 &lt;goal&gt;exec&lt;/goal&gt;
+             &lt;/goals&gt;
+             &lt;phase&gt;test&lt;/phase&gt;
+             &lt;configuration&gt;
+                 &lt;executable&gt;java&lt;/executable&gt;
+                 &lt;workingDirectory&gt;${project.build.directory}&lt;/workingDirectory&gt;
+                 &lt;arguments&gt;
+                     &lt;argument&gt;-classpath&lt;/argument&gt;
+                     &lt;classpath/&gt;
+                     &lt;argument&gt;${mainClass}&lt;/argument&gt;
+                 &lt;/arguments&gt;
+             &lt;/configuration&gt;
+         &lt;/execution&gt;
+     &lt;/executions&gt;
+ &lt;/plugin&gt;
+</code></pre>
+  </li>
+  <li>Run your application with the agent on the JVM:
+    <pre><code class="language-shell"> mvn -Pnative -DskipTests -DskipNativeBuild=true package exec:exec@java-agent
+</code></pre>
+    <p>The agent captures and records calls to the H2 Database and all the dynamic features encountered during a test run into the <em>reachability-metadata.json</em> file in the <em>target/native/agent-output/main/</em> directory.</p>
+  </li>
+  <li>Build a native executable using configuration collected by the agent:
+    <pre><code class="language-shell"> mvn -Pnative -DskipTests package exec:exec@native
+</code></pre>
+    <p>It generates a native executable for the platform in the <em>target/</em> directory, called <em>h2example</em>.</p>
+  </li>
+  <li>Run the application from the native executable:
+    <pre><code class="language-shell"> ./target/h2example
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="summary">Summary</h3>
+
+<p>This guide demonstrated how to build a native executable using the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a> and with the Tracing Agent.
+The goal was to show the difference, and prove how using the reachability metadata can simplify the work.
+Using the GraalVM Reachability Metadata Repository enhances the usability of Native Image for Java applications depending on 3rd party libraries.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/#tracing-agent">Collect Metadata with the Tracing Agent</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/latest/index.html">Native Image Build Tools</a></li>
+</ul>

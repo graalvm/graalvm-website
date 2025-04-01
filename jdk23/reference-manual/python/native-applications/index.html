@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="native-executables-with-python">Native Executables with Python</h1>
+
+<p>GraalPy supports GraalVM Native Image to generate native binaries of Java applications that use GraalPy.</p>
+
+<h2 id="quickstart">Quickstart</h2>
+
+<p>If you started with the <a href="/jdk23/reference-manual/python/">Maven archetype</a>, the generated <em>pom.xml</em> makes it easy to generate a native executable using the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Maven plugin for Native Image building</a>.</p>
+
+<p>To build the application, run:</p>
+<pre><code class="language-bash">mvn -Pnative package
+</code></pre>
+<p>The command packages the project and creates a native executable.</p>
+
+<p>Take a look at the generated files <em>pom.xml</em> and <em>Main.java</em>.
+They are documented to explain how Python resources are included in the resulting binary.
+The generated project should be viewed as a starting point.
+It includes the entire Python standard library, so the Python code can invoke all of the standard library code.
+The resources can be manually pruned to reduce the included Python libraries to the necessary amount, reducing both the size of the package and the time to start up.
+This Java example demonstrates some useful default options for the Python context, but other settings may be desirable to further control what the Python code is allowed to do.</p>
+
+<h2 id="reducing-binary-size">Reducing Binary Size</h2>
+
+<p>Python is a large language.
+“Batteries included” has long been a core tenet of CPython.
+As a compatible replacement, GraalPy includes most of those “batteries” as well.
+This can result in significant increases in binary size when including GraalPy in a Java application.</p>
+
+<p>Only you as the developer know your specific embedding scenario.
+The defaults may include much more than needed for any specific application.
+An embedded Python-in-Java application usually has more limited use cases for the Python interpreter than the full GraalPy distribution, and often you can know ahead of time whether certain features are needed.
+Some features (for example, cryptographic algorithms or socket access) may even be undesirable to include in some cases.
+Thus, when embedding GraalPy in a Java application, the binary size can be reduced and security improved by excluding components of the Python language.</p>
+
+<h3 id="excluding-python-components">Excluding Python Components</h3>
+
+<p>GraalPy defines a few system properties that can be passed on the <code>native-image</code> command line to exclude aspects of the language.
+The options can, when taken together, reduce the size of the executable by around 20%.
+These are:</p>
+
+<ul>
+  <li><code>python.WithoutSSL=true</code> - This option removes the <code>ssl</code> module.
+If no secure network access or certificate checking is required, this removes Java’s SSL classes and the BouncyCastle library.</li>
+  <li><code>python.WithoutDigest=true</code> - This option removes the <code>_md5</code>, <code>_sha1</code>, <code>_sha256</code>, <code>_sha512</code>, <code>_sha3</code>, and <code>_hashlib</code> modules.
+This removes the direct usages of <code>java.security.MessageDigest</code> and <code>javax.crypto.Mac</code> from GraalPy.</li>
+  <li><code>python.WithoutPlatformAccess=true</code> - This removes the <code>signal</code> and <code>subprocess</code> modules, removes accesses to process properties such as the Unix UID and GID, or setting the Java default time zone.
+This has no significant impact on binary size, but if these are unwanted capabilities that are dynamically disabled with context options anyway, they can also be removed ahead of time.</li>
+  <li><code>python.WithoutCompressionLibraries=true</code> - This removes the <code>zlib</code>, <code>lzma</code>, <code>bzip2</code>, and <code>zipimporter</code> modules and related classes.
+These modules have both native and pure Java implementations (the former for performance, the latter for better sandboxing); however, if they are not needed, they can be removed entirely.</li>
+  <li><code>python.WithoutNativePosix=true</code> - The default <code>os</code> module backend is a pure Java implementation when GraalPy is embedded rather than run via its launcher.
+The native POSIX backend of GraalPy is recommended only for 100% compatibility with CPython’s POSIX interfaces, and if not used, can be removed from the build with this option.</li>
+  <li><code>python.WithoutJavaInet=true</code> - The Java implementation of Python’s <code>socket</code> module is based on Java’s networking classes.
+If network access is denied for an embedding scenario, this option can reduce the binary size further.</li>
+  <li><code>python.AutomaticAsyncActions=false</code> - Signal handling, Python weak reference callbacks, and cleaning up native resources is usually achieved automatically by spawning GraalPy daemon threads that submit safepoint actions to the Python main thread.
+This uses an <code>ExecutorService</code> with a thread pool.
+If you want to disallow such extra threads or avoid pulling in <code>ExecutorService</code> and related classes, then set this property to <code>false</code> and retrieve the <code>PollPythonAsyncActions</code> object from the context’s polyglot bindings.
+This object is executable and can be used to trigger Python asynchronous actions at the locations you desire.</li>
+  <li><code>python.WithoutJNI=true</code> - This option removes any code that uses JNI. As a consequence, you cannot use the HPy JNI backend and maybe other parts that rely on JNI.</li>
+</ul>
+
+<h3 id="removing-pre-initialized-python-heap">Removing Pre-initialized Python Heap</h3>
+
+<p>Another useful option to reduce the size of the native executable is to omit a pre-initialized Python context from the executable.
+By default, a default Python context is already pre-initialized and ready for immediate execution.
+This can lead to slightly improved startup, at the cost of including a few thousand Python objects in the binary.
+In embedded applications that use a custom polyglot engine to allow context sharing, the pre-initialized context cannot be used at all, and including those objects is wasted.
+The pre-initialized heap can be omitted by passing the following to the <code>native-image</code> command:</p>
+
+<pre><code class="language-bash">-Dimage-build-time.PreinitializeContexts=
+</code></pre>
+
+<h3 id="disabling-runtime-compilation-of-python-code">Disabling Runtime Compilation of Python Code</h3>
+
+<p>If binary size is significantly more important than execution speed (which may be the case if all Python scripts are expected to be short running, perform a lot of I/O, or scripts are rarely executed more than once), it may make sense to disable JIT compilation entirely.
+Be aware that this may significantly impact your Python performance, so be sure to test the runtime behavior of your actual use cases when choosing to use this option.
+This can be achieved by passing the following options:</p>
+
+<pre><code class="language-bash">-Dtruffle.TruffleRuntime=com.oracle.truffle.api.impl.DefaultTruffleRuntime \
+-Dpolyglot.engine.WarnInterpreterOnly=false
+</code></pre>
+
+<h3 id="summary">Summary</h3>
+
+<p>Combining all of these approaches can halve the size of the GraalPy binary.
+Every embedded application is different and the code pulled in by the rest of the Java code also matters, so combinations of these options should be tried to determine which effect they have in a specific instance.</p>
+
+<h2 id="shipping-python-packages">Shipping Python Packages</h2>
+
+<p>Our Maven archetype by default is set up to include all needed Python files in the native binary itself, so the image is self-contained.</p>
+
+<p>In custom embeddings, the Python standard library is copied next to the native image.
+When moving the native image, the standard library folder needs to be kept next to it.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

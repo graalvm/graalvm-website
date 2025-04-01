@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="jipher-jce-with-native-image">Jipher JCE with Native Image</h1>
+
+<p>Jipher JCE is an Oracle-developed <a href="/jdk23/reference-manual/native-image/dynamic-features/JCASecurityServices/">Java Cryptography Architecture (JCA)</a> provider that packages a preconfigured and FIPS validated version of OpenSSL 3.0. 
+The Jipher provider supports algorithms which are allowed by <a href="https://en.wikipedia.org/wiki/FIPS_140">FIPS</a>, including the OpenSSL 3.0’s FIPS provider. 
+Jipher provides competitive performance compared to Bouncy Castle or the default JDK providers.
+It is recommended to enable Jipher with Native Image in contexts where only FIPS-allowed algorithms should be used. 
+Note that some algorithms are allowed by FIPS for specific use cases only. As a result, some algorithms provided by Jipher might not be allowed by FIPS for all purposes.</p>
+
+<blockquote>
+  <p>Note: Jipher is not available in GraalVM Community Edition. It is supported on Linux and macOS (macOS 10.15 and higher) on both AMD64 and AArch64 architectures.</p>
+</blockquote>
+
+<p>Jipher JAR files are included in the Oracle GraalVM core package at: <em>lib/jipher/jipher-jce.jar</em> and <em>lib/jipher/jipher-pki.jar</em>.
+To enable Jipher, pass these JAR files on the application class path.</p>
+
+<p>This page describes how to use Jipher with GraalVM Native Image.</p>
+
+<h2 id="build-a-native-executable-with-jipher">Build a Native Executable with Jipher</h2>
+
+<p>JCA algorithms rely on reflection. 
+To include all required code paths in the native executable during ahead-of-time compilation, the <code>native-image</code> tool needs to be made aware of any dynamically accessed Java code at run time, via reflection, as well as the native code which may be invoked. (Learn more <a href="/jdk23/reference-manual/native-image/basics/#static-analysis">here</a>).
+This can be done by providing the JSON-based <a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/">metadata collected by the agent</a>. 
+Any dynamically-accessed JCA services through Jipher are automatically registered by the agent too.</p>
+
+<p>The steps below show how to embedded Jipher in a native executable, using a simple Java application that does some RSA based signature creation and validation.</p>
+
+<ol>
+  <li>
+    <p>Save the following code into the file named <em>JipherExample.java</em>:</p>
+
+    <pre><code class="language-java"> import java.security.*;
+ import java.util.*;
+ import com.oracle.jipher.provider.*;
+
+ class JipherExample {
+     public static void main(String[] args) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+         Provider jipher = new JipherJCE();
+         Security.insertProviderAt(jipher, 1);
+
+         byte[] data = new byte[1024];
+         new Random().nextBytes(data);
+
+         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", jipher);
+         keyGen.initialize(4096);
+         KeyPair keypair = keyGen.generateKeyPair();
+            
+         Signature signer = Signature.getInstance("SHA512withRSA", jipher);
+         signer.initSign(keypair.getPrivate());
+         signer.update(data);
+         byte[] signature = signer.sign();
+            
+         Signature verifier = Signature.getInstance("SHA512withRSA", jipher);
+         verifier.initVerify(keypair.getPublic());
+         verifier.update(data);
+         boolean isValid = verifier.verify(signature);
+         assert(isValid);
+     }
+ }
+</code></pre>
+  </li>
+  <li>
+    <p>Compile the application with Jipher JAR files on the class path:</p>
+
+    <pre><code class="language-shell"> javac -cp $GRAALVM_HOME/lib/jipher/jipher-jce.jar:$GRAALVM_HOME/lib/jipher/jipher-pki.jar JipherExample.java
+</code></pre>
+  </li>
+  <li>
+    <p>Run the application on the JVM with the agent enabled. The Tracing Agent captures and writes down all the dynamic features encountered during a test run into multiple <em>*-config.json</em> files.</p>
+
+    <pre><code class="language-shell"> java -cp $GRAALVM_HOME/lib/jipher/jipher-jce.jar:$GRAALVM_HOME/lib/jipher/jipher-pki.jar:. -agentlib:native-image-agent=config-output-dir=&lt;path&gt; JipherExample
+</code></pre>
+    <p>Where <code>&lt;path&gt;</code> should point to the directory in which to store the configuration files.
+ It is recommended that the output directory is <code>/META-INF/native-image/</code> (if you build with Maven or Gradle, then <code>/resources/META-INF/native-image/</code>). 
+ Later, when building a native executable, the <code>native-image</code> builder will pick up the files from that location automatically.</p>
+
+    <p>For this Java application, the agent creates the <em>reachability-metadata.json</em> file with the following contents:</p>
+    <pre><code class="language-json"> {
+   "reflection":[
+     {
+       "type":"com.oracle.jipher.internal.spi.KeyPairGen$Rsa",
+       "methods":[{"name":"&lt;init&gt;","parameterTypes":[] }]
+     },
+     {
+       "type":"com.oracle.jipher.internal.spi.RsaDigestSig$Sha512WithRsa",
+       "methods":[{"name":"&lt;init&gt;","parameterTypes":[] }]
+     }
+   ],
+   "resources":[
+     {"glob":"libs/linux_x64/fips.so.crc32"},
+     {"glob":"libs/linux_x64/fips.so"},
+     {"glob":"libs/linux_x64/libjipher.so.crc32"},
+     {"glob":"libs/linux_x64/libjipher.so"},
+     {"glob":"libs/linux_x64/openssl.cnf.crc32"},
+     {"glob":"libs/linux_x64/openssl.cnf"},
+     {"glob":"libs"}
+   ],
+   "jni":[
+     {"type":"[B"},
+     {"type":"[[B"},
+     {"type":"com.oracle.jipher.internal.openssl.JniOpenSsl"},
+     {"type":"java.lang.Boolean","methods":[{"name":"getBoolean","parameterTypes":["java.lang.String"] }]}
+   ]
+ }
+</code></pre>
+  </li>
+  <li>
+    <p>For the agent to discover all possible calls to Jipher, re-run the application with the agent on the JVM (you can re-run the agent as many times as needed). This will regenerate the entire configuration suite including any negative test cases (to allow for exception classes to be captured). For the subsequent runs, use this command:</p>
+
+    <pre><code class="language-shell"> java -agentlib:native-image-agent=config-merge-dir=&lt;path&gt; JipherExample
+</code></pre>
+    <p>The <code>config-merge-dir</code> command will merge the new configuration with configuration from previous test runs.</p>
+  </li>
+  <li>
+    <p>Build a native executable with the provided configuration:</p>
+
+    <pre><code class="language-shell"> native-image JipherExample
+</code></pre>
+    <p>If the configuration files have been placed in a different directory than <code>/META-INF/native-image/</code>, pass this flag <code>-H:ConfigurationFileDirectories=&lt;path&gt;</code> at build time to inform the <code>native-image</code> tool of a new location:</p>
+
+    <pre><code class="language-shell"> native-image -H:ConfigurationFileDirectories=&lt;path&gt; JipherExample
+</code></pre>
+  </li>
+  <li>
+    <p>Run the native executable:</p>
+    <pre><code class="language-shell"> ./jipherexample
+</code></pre>
+  </li>
+</ol>
+
+<p>When Jipher <strong>is not</strong> embedded in a native executable, but is instead being loaded by the JVM, it extracts the native libraries and the <em>openssl.cnf</em> file embedded in the JAR to the filesystem and then dynamically loads them into the JVM process. 
+When Jipher <strong>is</strong> embedded in a native executable, it continues to extract the native libraries and the <em>openssl.cnf</em> file to the filesystem and dynamically load them into the native process.
+Jipher is recommended for GraalVM Native Image when only FIPS-allowed algorithm should be used. Learn more about JCA services support in Native Image <a href="/jdk23/reference-manual/native-image/dynamic-features/JCASecurityServices/">here</a>.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/security-guide/native-image/">Native Image Security Aspects</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/dynamic-features/JCASecurityServices/">JCA Security Services in Native Image</a></li>
+  <li><a href="https://csrc.nist.gov/CSRC/media/projects/cryptographic-module-validation-program/documents/security-policies/140sp4506.pdf">OpenSSL FIPS Provider Security Policy</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

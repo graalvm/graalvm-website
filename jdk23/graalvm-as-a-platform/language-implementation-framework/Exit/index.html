@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="context-exit">Context Exit</h1>
+
+<p>Different Truffle (guest) languages may use different mechanisms for exiting. This is not optimal as a Truffle language has no way to detect and handle an exit triggered by a different language.</p>
+
+<p>As of 22.0 Truffle has support for polyglot context hard explicit exit triggered by guest languages using <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleContext.html#closeExited-com.oracle.truffle.api.nodes.Node-int-">TruffleContext.closeExited(Node,int)</a>.
+It provides a unified way for languages to trigger the exit of the underlying polyglot context. When triggered, all initialized
+guest languages are first notified using <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#exitContext-C-com.oracle.truffle.api.TruffleLanguage.ExitMode-int">TruffleLanguage.exitContext(C,ExitMode,int)</a>, then all context threads are stopped, and finally, the context is closed.
+The hard explicit exit is simply referred to as “hard exit”.</p>
+
+<p>The hard exit is only one of the three types of exit in Truffle. There are the following types of exit.</p>
+
+<ul>
+  <li>The new hard exit introduced above
+    <ul>
+      <li>Hard exit notifications are executed with <code>ExitMode.HARD</code> as the second parameter of <code>TruffleLanguage.exitContext(C,ExitMode,int)</code>.</li>
+    </ul>
+  </li>
+  <li>Implicit “natural exit”
+    <ul>
+      <li>Occurs during normal context close.</li>
+      <li>The newly introduced exit notifications are executed for the natural exit as well, but threads are not forced to stop after the natural exit notifications, and so context threads that are still running can block the natural exit.</li>
+      <li>Natural exit notifications are executed with <code>ExitMode.NATURAL</code> as the second parameter of <code>TruffleLanguage.exitContext(C,ExitMode,int)</code>.</li>
+    </ul>
+  </li>
+  <li>“Soft exit”
+    <ul>
+      <li>Explicit exit triggered by throwing a Truffle exception of the exception type <code>ExceptionType.EXIT</code>.</li>
+      <li>The exception is not automatically thrown in other threads by Truffle and it does not trigger exit notifications or context close on its own.</li>
+      <li>The context is still fully usable after a soft exit and the soft exit can be followed by either the natural or the hard exit.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>For completeness, a polyglot context can be also closed by cancelling it using <code>Context.close(true)</code>, <code>TruffleContext.closeCancelled(Node,String)</code>, or <code>TruffleContext.closeResourceExhausted(Node,String)</code>.
+The cancel operation leads to immediate stopping of all context threads and closing the context without any exit notifications.</p>
+
+<h2 id="soft-exit">Soft exit</h2>
+
+<p>The soft exit is triggered by throwing a Truffle exception of the exception type <code>ExceptionType.EXIT</code> - soft exit exception. The exception is not automatically thrown in other threads by Truffle and it does not trigger exit notifications or context close on its own.
+If not caught by languages, the soft exit exception eventually causes the embedder thread to throw a <code>PolyglotException</code> to the host with <code>PolyglotException.isExit() == true</code> and <code>PolyglotException.getExitStatus()</code> equal to the value specified by the soft exit exception.</p>
+
+<p>The context is still fully usable after a soft exit, but the embedder should close the context when it sees the <code>PolyglotException</code> with <code>PolyglotException.isExit() == true</code>, in which case the soft exit is followed by the natural exit.</p>
+
+<h2 id="natural-exit">Natural Exit</h2>
+
+<p><img src="./exitschema.png" alt="Natural exit schema" title="Natural exit schema" /></p>
+
+<p>The natural exit occurs during a normal context close triggered by <code>Context.close()</code> or <code>TruffleContext.close()</code>. The natural exit illustrated in the figure above consists of the following steps:</p>
+
+<ol>
+  <li>
+    <p>The natural exit is triggered by <code>Context.close()</code> or <code>TruffleContext.close()</code>.</p>
+  </li>
+  <li>Exit notifications for all initialized languages are executed - <code>TruffleLanguage.exitContext(C,ExitMode,int)</code>, where <code>ExitMode.NATURAL</code> is used as the <code>ExitMode</code> parameter.
+    <ul>
+      <li>Guest code runs normally during exit notifications.</li>
+    </ul>
+  </li>
+  <li>All initialized languages are finalized.
+    <ul>
+      <li><code>TruffleLanguage.finalizeContext(C)</code> is called for all initalized languages.</li>
+      <li>Guest code runs normally during finalization.</li>
+    </ul>
+  </li>
+  <li>All languages are disposed.
+    <ul>
+      <li><code>TruffleLanguage.disposeContext(C)</code> is called for all languages.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="hard-exit">Hard Exit</h2>
+
+<p><img src="./hardexitschema.png" alt="Hard exit schema" title="Hard exit schema" /></p>
+
+<p>This section describes the hard exit process in detail. The hard exit for a polyglot context can be customized by <code>Context.Builder.useSystemExit(boolean)</code>. Therefore,
+the following description is divided into two subsections. One for the case when
+system exit is not enabled (<code>Context.Builder.useSystemExit(false)</code> - the default) and one for the case when system exit
+is enabled (<code>Context.Builder#useSystemExit(true)</code>). The illustration of the exit process is depicted in the figure above. The figure also relates the exit process to the context cancelling process.
+The red color of some of the boxes indicates that the context is invalid at that point and no guest code can be run. More precisely, the first Truffle safepoint will throw either a special <code>ThreadDeath</code> exit exception or
+a special <code>ThreadDeath</code> cancel exception depending on whether the hard exit or the cancel operation is in progress.</p>
+
+<h3 id="behavior-if-usesystemexit-is-disabled-default">Behavior if useSystemExit is disabled (default)</h3>
+
+<ol>
+  <li>
+    <p>The exit is triggered by <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleContext.html#closeExited-com.oracle.truffle.api.nodes.Node-int-">TruffleContext.closeExited(Node,int)</a>.</p>
+  </li>
+  <li>Exit notifications for all initialized languages are executed - <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#exitContext-C-com.oracle.truffle.api.TruffleLanguage.ExitMode-int">TruffleLanguage.exitContext(C,ExitMode,int)</a>, where <code>ExitMode.HARD</code> is used as the <code>ExitMode</code> parameter.
+    <ul>
+      <li>Guest code runs normally during exit notifications.</li>
+      <li>If the context is not cancelled during exit notifications (during step 2a) and reaches step 2b, the exit process proceeds with the next step. Otherwise, the exit notifications are interrupted and the context is immediately cancelled.</li>
+    </ul>
+  </li>
+  <li>All context threads are forced to stop by throwing a special <code>ThreadDeath</code> exit exception from Truffle safepoints.
+    <ul>
+      <li>To exit threads reliably, languages need to ensure that <code>ThreadDeath</code> is always immediately rethrown and guest language exception handlers and finally blocks are not run.</li>
+      <li>The embedder threads eventually throw a <code>PolyglotException</code> to the host with <code>PolyglotException.isExit() == true</code> and <code>PolyglotException.getExitStatus()</code>
+being equal to the exit code originally specified as the second parameter to the first call to<code>TruffleContext.closeExited(Node,int)</code>.</li>
+      <li>Note that from step 3 the exit process is similar to the cancelling process as indicated by the figure, but the cancelling process uses a special <code>ThreadDeath</code> cancel exception
+and the <code>PolyglotException</code> thrown to the host has <code>PolyglotException.isCancelled() == true</code> instead of <code>PolyglotException.isExit() == true</code>.</li>
+    </ul>
+  </li>
+  <li>All initialized languages are finalized.
+    <ul>
+      <li><code>TruffleLanguage.finalizeContext(C)</code> is called for all initalized languages.</li>
+      <li>Running any guest code in <code>TruffleLanguage.finalizeContext(C)</code> will throw the special <code>ThreadDeath</code> exit exception from the first Truffle safepoint.</li>
+      <li>Languages should skip any finalization that would require running guest code. A language can find out if it can run guest code in <code>TruffleLanguage.finalizeContext(C)</code> by checking if <code>TruffleLanguage.exitContext(C,ExitMode,int)</code> was previously called with ExitMode.NATURAL,
+or by checking that <code>TruffleContext.isClosed()</code> returns <code>false</code>.</li>
+    </ul>
+  </li>
+  <li>All languages are disposed.
+    <ul>
+      <li><code>TruffleLanguage.disposeContext(C)</code> is called for all languages.</li>
+    </ul>
+  </li>
+  <li>The context is closed.</li>
+</ol>
+
+<h3 id="behavior-if-usesystemexit-is-enabled">Behavior if useSystemExit is enabled</h3>
+
+<ol>
+  <li>The exit is triggered by <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleContext.html#closeExited-com.oracle.truffle.api.nodes.Node-int-">TruffleContext.closeExited(Node,int)</a>.
+    <ul>
+      <li>Same as with system exit disabled.</li>
+    </ul>
+  </li>
+  <li>Exit notifications for all initialized languages are executed - <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html#exitContext-C-com.oracle.truffle.api.TruffleLanguage.ExitMode-int">TruffleLanguage.exitContext(C,ExitMode,int)</a>, where <code>ExitMode.HARD</code> is used as the <code>ExitMode</code> parameter.
+    <ul>
+      <li>Same as with system exit disabled.</li>
+    </ul>
+  </li>
+  <li><code>System.exit(int)</code> is called to terminate the whole host application providing the fastest exit possible.
+    <ul>
+      <li>The exit code passed to <code>System.exit(int)</code>
+is the one originally specified as the second parameter to the first call to<code>TruffleContext.closeExited(Node,int)</code>.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="example-usage">Example Usage</h2>
+
+<p>The <a href="https://github.com/graalvm/simplelanguage">SimpleLanguage</a> demonstrates the usage of the hard context exit. The following aspects are demonstrated.</p>
+
+<ul>
+  <li><a href="https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/builtins/SLExitBuiltin.java">SLExitBuiltin</a> demonstrates triggering the context exit.</li>
+  <li><a href="https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/builtins/SLRegisterShutdownHookBuiltin.java">SLRegisterShutdownHookBuiltin</a> demonstrates registration of shutdown hooks that are executed during the exit notification defined in <a href="https://github.com/graalvm/simplelanguage/blob/master/language/src/main/java/com/oracle/truffle/sl/SLLanguage.java">SLLanguage</a>.</li>
+  <li><a href="https://github.com/graalvm/simplelanguage/blob/master/language/src/test/java/com/oracle/truffle/sl/test/SLExitTest.java">SLExitTest</a> demonstrates the usage of the builtins defined above.</li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>
