@@ -457,10 +457,6 @@ if (safVideo && defVideo) {
       ['ruby', ['truffleruby']],
       ['truffleruby', ['ruby']],
 
-      // Synonyms for FastR related terms.
-      ['r', ['fastr']],
-      ['fastr', ['r']],
-
       // Synonyms for Sulong related terms.
       ['llvm', ['sulong']],
       ['sulong', ['llvm']]
@@ -640,9 +636,9 @@ $(document).ready(function() {
   if (version === "latest") {
     version = "GraalVM for JDK 24 (Latest)";
   } else if (version === "jdk25") {
-    version = "GraalVM for JDK 25 (Early Access)"; 
+    version = "GraalVM for JDK 25 (Early Access)";
   } else if (version === "dev") {
-    version = "Dev Build";  
+    version = "Dev Build";
   } else if (version.indexOf("jdk") === 0) {
     version = `GraalVM for JDK ${version.substr(3)}`;
   } else {
