@@ -590,16 +590,16 @@ It is a full distribution and supersedes the previous release of GraalVM Communi
 Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included).
 To distinguish between the GraalVM editions, the GraalVM Community Edition version has the suffix <code>-community</code> in the name, for example:  <code>graaljs-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
 To distinguish between the runtime mode, a JVM standalone type has the <code>-jvm</code> suffix in a name.
-Standalone distributions are available on GitHub, in corresponding language repositories. 
+Standalone distributions are available on GitHub, in corresponding language repositories.
 Learn more <a href="https://medium.com/p/ee01177dd12d">here</a>.</li>
 </ul>
 
 <h3 id="removed-functionality">Removed Functionality</h3>
 
 <ul>
-  <li>Removed GraalVM Updater, <code>gu</code>, used to extend GraalVM installations with GraalVM language runtimes and other components by modifying the installation directory. 
+  <li>Removed GraalVM Updater, <code>gu</code>, used to extend GraalVM installations with GraalVM language runtimes and other components by modifying the installation directory.
 As part of the <a href="https://www.graalvm.org/2022/openjdk-announcement/">alignment with OpenJDK</a>, modifying JDK installations is not common.
-To continue using the GraalVM language runtime(s) and other components, use language standalones or specify them as Maven or Gradle dependencies in your project. 
+To continue using the GraalVM language runtime(s) and other components, use language standalones or specify them as Maven or Gradle dependencies in your project.
 For more information, see <a href="#polyglot-embedding">Polyglot Embedding updates</a> and the <a href="https://github.com/oracle/graal/issues/6855">GitHub issue #6855</a>.</li>
   <li>Removed the option <code>--language:&lt;language&gt;</code> (to enable a specific language runtime at build time) and some macro options. <a href="#polyglot-embedding">See below</a> for more details.</li>
 </ul>
@@ -607,20 +607,20 @@ For more information, see <a href="#polyglot-embedding">Polyglot Embedding updat
 <h3 id="java-and-compiler">Java and Compiler</h3>
 
 <ul>
-  <li>Implemented initial optimization of <a href="https://openjdk.org/jeps/338">Java Vector API (JEP 338)</a> operations. 
-Load, store, basic arithmetic, reduce, compare, and blend operations are transformed to efficient machine instructions where possible. 
+  <li>Implemented initial optimization of <a href="https://openjdk.org/jeps/338">Java Vector API (JEP 338)</a> operations.
+Load, store, basic arithmetic, reduce, compare, and blend operations are transformed to efficient machine instructions where possible.
 It is enabled by default and can be disabled with <code>-Dgraal.OptimizeVectorAPI=false</code>.
 This optimization is not available in GraalVM Community Edition and not yet available in GraalVM Native Image.
-Coverage of more operations and Native Image support are planned for the future. 
+Coverage of more operations and Native Image support are planned for the future.
 This optimization is experimental.</li>
-  <li>Implemented all intrinsics prior to JDK 21 on both AMD64 and AArch64 architectures for the Graal compiler. 
-We have also ported various HotSpot assembly stubs into Java, including all of the SHA message digest stubs and part of the <code>BigInteger</code> arithmetic computation stubs. 
+  <li>Implemented all intrinsics prior to JDK 21 on both AMD64 and AArch64 architectures for the Graal compiler.
+We have also ported various HotSpot assembly stubs into Java, including all of the SHA message digest stubs and part of the <code>BigInteger</code> arithmetic computation stubs.
 This allows Native Image to benefit from these high performance assembly codes.</li>
   <li>Users can enable backward-edge CFI in the Graal compiler by setting the <code>-XX:UseBranchProtectionHotSpot</code> option.
 Whether the user provides standard or PAC-RET protection, the Graal compiler will automatically enable backward-edge CFI when running on the AArch64 architecture.
-Before a function returns, the Graal compiler issues an authentication instruction that checks the integrity of the signed return address. 
-If this integrity check fails, the authentication instruction stamps the higher bits of the corrupted address reserved for the pointer authentication code (PAC) to invalidate the pointer. 
-When the function returns to the corrupted pointer, then the OS will raise a SIGSEGV signal, since the corrupted pointer now refers to an invalid (for example, unmapped) address. 
+Before a function returns, the Graal compiler issues an authentication instruction that checks the integrity of the signed return address.
+If this integrity check fails, the authentication instruction stamps the higher bits of the corrupted address reserved for the pointer authentication code (PAC) to invalidate the pointer.
+When the function returns to the corrupted pointer, then the OS will raise a SIGSEGV signal, since the corrupted pointer now refers to an invalid (for example, unmapped) address.
 Even if an adversary has full control over the stored return address, the authentication instruction takes away control by resetting whatever the adversary provides to a random point high up in the process address space.
 Learn more about <code>UseBranchProtection</code> <a href="https://blogs.oracle.com/javamagazine/post/java-19-enhancements-fixes-deprecations">here</a>.</li>
   <li>The following JDK 21 features are not available:
@@ -635,7 +635,7 @@ Learn more about <code>UseBranchProtection</code> <a href="https://blogs.oracle.
 <h4 id="new-features">New Features</h4>
 <ul>
   <li>Users can now use G1 Garbage Collector on the Linux AArch64 architecture to build efficient native executables with large heaps and minimal pause times (not available in GraalVM Community Edition).
-Previously, it was only available for Linux AMD64. 
+Previously, it was only available for Linux AMD64.
 To enable it, pass the option <code>--gc=G1</code> to the <code>native-image</code> builder.
 Learn more about <a href="/latest/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Memory Management in Native Image</a>.</li>
   <li>Introduced a new class initialization approach that will become the default in the future: all classes are now allowed to be used and initialized at build time, regardless of the class initialization configuration. For classes that are configured as <code>--initialize-at-run-time</code> this means that they will appear as uninitialized again at run time. To enable the new approach, pass the <code>--strict-image-heap</code> flag to Native Image. For more information and implementation details, take a look at the <a href="https://github.com/oracle/graal/pull/4684">proposal #4684</a>. Note that there is a known issue when a build that does not satisfy the new policy would fail with the following error: <code>Boolean option value can be only + or -</code>. This will be resolved in a patch release on October 24, 2023 and we will share more details on the new policy and best practices in the upcoming blog post.</li>
@@ -646,7 +646,7 @@ As a result, the compilation time when building with the default <code>-O2</code
 Also, the <code>--pgo</code> option automatically enables <code>-O3</code>.</li>
   <li>Added experimental support for foreign down calls (<a href="https://openjdk.org/jeps/424">OpenJDK project Panama</a>) in Native Image. Please test it and provide feedback. Support for upcalls is planned for the future.</li>
   <li>
-    <p>Added the option <code>--parallelism</code> to control how many threads are used by the Native Image build process. The minimal number is 2. This option is useful for build environments with constrained resources. 
+    <p>Added the option <code>--parallelism</code> to control how many threads are used by the Native Image build process. The minimal number is 2. This option is useful for build environments with constrained resources.
 Also, starting from this release, the build output will print out the memory and thread limits of the build process, for example:</p>
 
     <pre><code class="language-bash">  Build resources:
@@ -654,11 +654,11 @@ Also, starting from this release, the build output will print out the memory and
   - 16 thread(s) (100.0% of 16 available processor(s), determined at start)
 </code></pre>
   </li>
-  <li>Added the option <code>--color[=WHEN]</code> to color the build output. Replace <code>WHEN</code> with <code>always</code>, <code>never</code>, or <code>auto</code>. 
+  <li>Added the option <code>--color[=WHEN]</code> to color the build output. Replace <code>WHEN</code> with <code>always</code>, <code>never</code>, or <code>auto</code>.
 This API option supersedes the experimental option <code>-H:+BuildOutputColorful</code>.</li>
   <li>Introduced a new option <code>-H:±UnlockExperimentalVMOptions</code> to explicitly unlock access to experimental options, the majority of hosted options (starting with <code>-H:</code>), in Native Image.
-If access is not explicitly requested, an attempt to use any experimental option will fail the build with an actionable error message in this release. 
-Also, to help users understand which dependencies requested these options, active experimental options will be listed as part of the build output alongside their origin. 
+If access is not explicitly requested, an attempt to use any experimental option will fail the build with an actionable error message in this release.
+Also, to help users understand which dependencies requested these options, active experimental options will be listed as part of the build output alongside their origin.
 In the next release, this warning will be turned into a build failure.
 Meanwhile, the community is encouraged to open issues if certain experimental options should be promoted to public API and marked as stable.
 For more information, see <a href="https://github.com/oracle/graal/issues/7105">GitHub issue #7105</a>.</li>
@@ -704,7 +704,7 @@ If you previously used the GraalVM SDK for Native Image via:</p>
 <p>Now you use:</p>
 <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.sdk&lt;/groupId&gt;
-    &lt;artifactId&gt;nativeimage&lt;/artifactId&gt; 
+    &lt;artifactId&gt;nativeimage&lt;/artifactId&gt;
     &lt;version&gt;23.1.0&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre>
@@ -723,11 +723,11 @@ If you previously used the GraalVM SDK for Native Image via:</p>
 
 <ul>
   <li>Turned all GraalVM languages artifacts into standard Maven dependencies for polyglot embedders (see <a href="https://github.com/oracle/graal/issues/6852">#6852</a>).
-Previously, to use a GraalVM language in embeddings, you had to install it using the GraalVM Updater tool (e.g., <code>gu install python</code>). 
+Previously, to use a GraalVM language in embeddings, you had to install it using the GraalVM Updater tool (e.g., <code>gu install python</code>).
 To enable a language now, language artifacts now need to be on the Java module or class path.</li>
   <li>The use of the <code>graalvm-sdk</code> module is now deprecated; use the <code>org.graalvm.polyglot:polyglot</code> artifact instead.
-The <code>org.graalvm.polyglot</code> module is no longer contained by default in the GraalVM JDK. 
-To enable a language embedding in Java, specify the language as a dependency. 
+The <code>org.graalvm.polyglot</code> module is no longer contained by default in the GraalVM JDK.
+To enable a language embedding in Java, specify the language as a dependency.
 If you need the Truffle tools for your polyglot application, enable them through a dependency too.
 Below is an example of the Maven configuration:
     <pre><code class="language-xml">  &lt;dependency&gt;
@@ -738,7 +738,7 @@ Below is an example of the Maven configuration:
   &lt;dependency&gt;
       &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
       &lt;!-- Select the language --&gt;
-      &lt;artifactId&gt;js|python|ruby|wasm|llvm|java&lt;/artifactId&gt; 
+      &lt;artifactId&gt;js|python|ruby|wasm|llvm|java&lt;/artifactId&gt;
       &lt;version&gt;23.1.0&lt;/version&gt;
       &lt;type&gt;pom&lt;/type&gt;
   &lt;/dependency&gt;
@@ -769,15 +769,15 @@ Below is an example of the Maven configuration:
 <h3 id="javascript-and-nodejs">JavaScript and Node.js</h3>
 
 <ul>
-  <li>Released the JavaScript (GraalJS) and Node.js runtimes as standalone distributions. 
+  <li>Released the JavaScript (GraalJS) and Node.js runtimes as standalone distributions.
 Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included).
-To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name: <code>graaljs-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>, <code>graalnodejs-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>, 
+To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name: <code>graaljs-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>, <code>graalnodejs-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>,
 A standalone that comes with a JVM has a <code>-jvm</code> suffix in a name.
 Standalone distributions are <a href="https://github.com/oracle/graaljs/releases/">available on GitHub</a>.</li>
-  <li>The <code>ScriptEngine</code> implementation for running JavaScript is no longer shipped with GraalVM. Migrate your setup to explicitly depend on the <code>ScriptEngine</code> module and add it to the module path. 
+  <li>The <code>ScriptEngine</code> implementation for running JavaScript is no longer shipped with GraalVM. Migrate your setup to explicitly depend on the <code>ScriptEngine</code> module and add it to the module path.
 See <a href="https://github.com/oracle/graaljs/blob/master/docs/user/ScriptEngine.md">ScriptEngine documentation</a> for details.</li>
-  <li>To enable the JavaScript runtime, you no longer install it with <code>gu install js</code> (since GraalVM Updater is removed), but add it as a Maven dependency (see below), or explicitly put the JAR on the module path. 
-The Maven dependency for embedding JavaScript into Java were also updated. 
+  <li>To enable the JavaScript runtime, you no longer install it with <code>gu install js</code> (since GraalVM Updater is removed), but add it as a Maven dependency (see below), or explicitly put the JAR on the module path.
+The Maven dependency for embedding JavaScript into Java were also updated.
 Below is the Maven configuration for a JavaScript embedding:
     <pre><code class="language-xml">  &lt;dependency&gt;
       &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
@@ -809,7 +809,7 @@ Below is the Maven configuration for a JavaScript embedding:
 <h3 id="java-on-truffle">Java on Truffle</h3>
 
 <ul>
-  <li>Java on Truffle (Espresso) is no longed shipped with GraalVM, but as a separate standalone distribution and a Maven artifact. 
+  <li>Java on Truffle (Espresso) is no longed shipped with GraalVM, but as a separate standalone distribution and a Maven artifact.
 Two standalone options are available: Oracle GraalVM and GraalVM Community Edition with a native launcher included.
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>espresso-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
@@ -840,7 +840,7 @@ Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-buil
 
 <ul>
   <li>
-    <p>Released the Python runtime (GraalPy) as a standalone distribution and a Maven artifact (see below). 
+    <p>Released the Python runtime (GraalPy) as a standalone distribution and a Maven artifact (see below).
 Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included).
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>graalpy-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
@@ -887,12 +887,12 @@ See the <a href="https://www.graalvm.org/python/docs/">GraalPy Getting Started</
 <h3 id="webassembly">WebAssembly</h3>
 
 <ul>
-  <li>Released the GraalVM WebAssembly runtime as a standalone distribution. 
+  <li>Released the GraalVM WebAssembly runtime as a standalone distribution.
 Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included).
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>wasm-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
 A standalone that comes with a JVM has the <code>-jvm</code> suffix in a name.
-See the <a href="/latest/reference-manual/wasm/">WebAssembly Getting Started</a>.
+See the <a href="https://github.com/oracle/graal/blob/master/wasm/README.md">WebAssembly Getting Started</a>.
 Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-builds/releases/">available on GitHub</a>.</li>
   <li>Implemented the <a href="https://github.com/WebAssembly/extended-const">extended const expressions</a> proposal. The feature can be enabled with the option <code>--wasm.ExtendedConstExpressions=true</code>.</li>
   <li>Added the option to enable multiple memories within a Wasm module: <code>--wasm.MultiMemory=true</code>.</li>
@@ -901,8 +901,8 @@ Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-buil
 <h3 id="llvm">LLVM</h3>
 
 <ul>
-  <li>The GraalVM LLVM runtime is no longed shipped with GraalVM, but as a separate standalone distribution. 
-It contains the LLVM toolchain by default. 
+  <li>The GraalVM LLVM runtime is no longed shipped with GraalVM, but as a separate standalone distribution.
+It contains the LLVM toolchain by default.
 Two standalone language runtime options are available for both Oracle GraalVM and GraalVM Community Edition: a Native Image compiled native launcher or a JVM-based runtime (included).
 To distinguish between them, the GraalVM Community Edition version has the suffix <code>-community</code> in the name:
 <code>llvm-community-&lt;version&gt;-&lt;os&gt;-&lt;arch&gt;.tar.gz.</code>
@@ -916,10 +916,10 @@ Standalone distributions are <a href="https://github.com/graalvm/graalvm-ce-buil
 <h3 id="truffle-language-and-tool-implementations">Truffle Language and Tool Implementations</h3>
 
 <ul>
-  <li>Truffle language and tools implementations are isolated from the embedder using the Java module-based isolation. 
+  <li>Truffle language and tools implementations are isolated from the embedder using the Java module-based isolation.
 This means that they were migrated to Java modules to prevent accidental use of internal APIs.
 See the details of Truffle languages and instruments required modularization in <a href="https://github.com/oracle/graal/blob/master/truffle/docs/ModuleMigration.md">this document</a>.</li>
-  <li>Implemented the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/InternalResource.html">Internal Resource API</a> for Truffle languages and instruments to be able to lazily unpack and consume resources from the application module path, necessary for execution. 
+  <li>Implemented the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/InternalResource.html">Internal Resource API</a> for Truffle languages and instruments to be able to lazily unpack and consume resources from the application module path, necessary for execution.
 This API replaces the concept of “language homes”.
 For a language or instrument that requires additional files to execute, it needs to follow these steps:
     <ul>
@@ -928,9 +928,9 @@ For a language or instrument that requires additional files to execute, it needs
       <li>Call the <code>Env#getInternalResource</code> method when a language or instrument needs the bundled resource files. This method ensures that the requested <code>InternalResource</code> is unpacked and provides a directory containing the unpacked files. Since unpacking internal resources can be an expensive operation, the implementation ensures that internal resources are cached.</li>
     </ul>
   </li>
-  <li>Truffle languages or instruments are now loaded from the application module path, unlike before when they were provided using <code>-Dtruffle.class.path.append</code> on a GraalVM JDK. 
+  <li>Truffle languages or instruments are now loaded from the application module path, unlike before when they were provided using <code>-Dtruffle.class.path.append</code> on a GraalVM JDK.
 The Truffle class path is deprecated and should no longer be used.
-Languages now need to be capable of running as named modules, so the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/ModuleMigration.md">language needs to be migrated</a>. 
+Languages now need to be capable of running as named modules, so the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/ModuleMigration.md">language needs to be migrated</a>.
 Languages can still be loaded from the class path, but Truffle internally loads them in its own classloader and module layer, so they are required to become modules.</li>
   <li>Improved <a href="https://github.com/oracle/graal/blob/master/docs/tools/ideal-graph-visualizer.md">Ideal Graph Visualizer</a> dumping experience:
     <ul>
