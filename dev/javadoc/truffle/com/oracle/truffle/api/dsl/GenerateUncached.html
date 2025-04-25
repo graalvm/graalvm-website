@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>55b63ebd44cb61e2df31e73acf699de16e29e98a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.0.0-dev</b><br>40812b3cc68a2d0c72a6142aa91d7d852f5e4de9</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -82,25 +82,25 @@ accessible using a static method called <code>getUncached()</code> on the genera
 GenerateUncached is inherited to subclasses if <a href="#inherit()"><code>inherit()</code></a> is set to <code>true</code>
 (default <code>false</code>).
 <p>
-The generated code for the uncached version is based on the specialization closure. The
-specialization closure only includes specializations that were are not replaced by others. This,
-for example, automatically excludes inline caches from the closure. Uses of the <a href="Cached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Cached</code></a>
-annotation will automatically use <a href="Cached.html#uncached()">getUncached</a> instead of a cached
-version to initialize the cache.
-<p>
 A node subclass must fullfill the following requirements in order to be uncachable:
 <ul>
 <li>At least one specialization and one execute method must be specified.
 <li>The node has no instance fields.
 <li>All <a href="Cached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Cached</code></a> parameters provide valid <a href="Cached.html#uncached()">uncached</a>
 initializers.
-<li>All specializations of the closure must not use <a href="Specialization.html#rewriteOn()">rewriteOn</a> attribute.
 <li>All guards/cache/limit expressions must not bind the node receiver.
 </ul>
 If any of these requirements are violated then an error will be shown. If node uses the
 <a href="NodeChild.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>NodeChild</code></a> or <a href="NodeField.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>NodeField</code></a> annotations then they will return constant
 <code>null</code> or the primitive equivalent for the uncached node.
 <p>
+* By default every specialization is included for <a href="GenerateUncached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>GenerateUncached</code></a>, except
+specializations that require a <a href="Specialization.html#limit()"><code>limit</code></a> and are
+<a href="Specialization.html#replaces()"><code>replaced</code></a>, those are excluded by default. By setting
+<a href="Specialization.html#excludeForUncached()"><code>Specialization.excludeForUncached()</code></a> explicitly the default behavior can be overridden,
+e.g. to include or exclude a specialization for uncached.
+<p>
+
 <b>Example:</b>
 
 <pre>
@@ -109,7 +109,7 @@ abstract static class UncachableNode extends Node {
 
     abstract Object execute(Object arg);
 
-    &#64;Specialization(guards = "v == cachedV")
+    &#64;Specialization(guards = "v == cachedV", limit = "3")
     static Object doCached(int v, &#64;Cached("v") int cachedV) {
         // do cached
     }
@@ -133,14 +133,18 @@ Object execute(Object arg0Value) {
     }
     throw new UnsupportedSpecializationException(this, new Node[]{null}, arg0Value);
 }
-</pre></div>
+</pre>
+
+Note that the <code>doCached</code> specialization is removed from the uncached version by
+default. This behavior can be customized by setting <a href="Specialization.html#excludeForUncached()"><code>Specialization.excludeForUncached()</code></a>.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>19.0</dd>
 <dt>See Also:</dt>
 <dd>
-<ul class="tag-list">
+<ul class="tag-list-long">
 <li><a href="Cached.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Cached</code></a></li>
+<li><a href="Specialization.html#excludeForUncached()"><code>Specialization.excludeForUncached()</code></a></li>
 </ul>
 </dd>
 </dl>
