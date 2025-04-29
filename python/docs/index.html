@@ -107,7 +107,7 @@
     <main class="page-content" aria-label="Content">
       <article id="docs-page">
   <div class="row">
-    <div class="col-sm-3 docsimpro col-bg sidebar-container">
+    <div class="col-sm-3 docsimpro col-bg">
       <div class="sidebar-wrap">
         <div class="sidebar sidestyle">
           <div class="toc-container">
@@ -117,7 +117,7 @@
         </div>
       </div>
     </div>
-    <div class="col-sm-9 docsmod content-container">
+    <div class="col-sm-9 docsmod">
       <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
         <h2 id="getting-started-with-graalpy-on-the-jvm"><a href="#getting-started-with-graalpy-on-the-jvm" class="anchor-link">Getting Started with GraalPy on the JVM</a></h2>
 
@@ -1062,7 +1062,6 @@ If network access is denied for an embedding scenario, this option can reduce th
 This uses an <code>ExecutorService</code> with a thread pool.
 If you want to disallow such extra threads or avoid pulling in <code>ExecutorService</code> and related classes, then set this property to <code>false</code> and retrieve the <code>PollPythonAsyncActions</code> object from the context’s polyglot bindings.
 This object is executable and can be used to trigger Python asynchronous actions at the locations you desire.</li>
-  <li><code>python.WithoutJNI=true</code> - This option removes any code that uses JNI. As a consequence, you cannot use the HPy JNI backend and maybe other parts that rely on JNI.</li>
 </ul>
 
 <h4 id="removing-pre-initialized-python-heap"><a href="#removing-pre-initialized-python-heap" class="anchor-link">Removing Pre-initialized Python Heap</a></h4>
@@ -2117,29 +2116,34 @@ Any manual change will be overridden by the plugin during the build.</p>
 Whether deployed in a virtual filesystem or an external directory, its contents are managed by the plugin based on the Python packages
 specified in the plugin configuration.</p>
 
-<h3 id="python-dependency-management"><a href="#python-dependency-management" class="anchor-link">Python Dependency Management</a></h3>
+<h3 id="python-dependency-management-for-reproducible-builds"><a href="#python-dependency-management-for-reproducible-builds" class="anchor-link">Python Dependency Management for Reproducible Builds</a></h3>
 
-<p>The list of third-party Python packages to be downloaded and installed can be specified in Maven or Gradle plugin configuration. Unfortunately,
-Python does not enforce strict versioning of dependencies, which can result in problems if a third-party package or one of its transitive
-dependencies is unexpectedly updated to a newer version, leading to unforeseen behavior.</p>
-
-<p>It is regarded as good practice to always specify a Python package with its exact version. In simpler scenarios, where only a few packages 
-are required, specifying the exact version of each package in the plugin configuration, 
-along with their transitive dependencies, might be sufficient. However, this method is often impractical,
-as manually managing the entire dependency tree can quickly become overwhelming.</p>
+<p>In Python ecosystem, it is common that packages specify their dependencies as ranges rather than a fixed version.
+For example, package A depends on package B of any version higher or equal to 2.0.0 (denoted as <code>B&gt;=2.0.0</code>).
+Installation of package A today may pull package <code>B==2.0.0</code>. Tomorrow package B releases new version <code>2.0.1</code>
+and a clean build of a project depending on A will pull new version of B, which may not be compatible
+with GraalPy or may introduce (unintentional) breaking changes.</p>
 
 <h4 id="locking-dependencies"><a href="#locking-dependencies" class="anchor-link">Locking Dependencies</a></h4>
 
-<p>For these cases, we <strong>highly recommend locking</strong> all Python dependencies whenever there is a change 
-in the list of required packages for a project. The GraalPy plugins provide an action to do so, 
-and as a result, a GraalPy lock file will be created, listing all required Python packages with their specific versions 
-based on the packages defined in the plugin configuration and their dependencies. Subsequent GraalPy plugin executions 
-will then use this file exclusively to install all packages with guaranteed versions.</p>
+<p>We <strong>highly recommend locking</strong> all Python dependencies whenever there is a change in the list of required packages
+for a project. Locking the dependencies means explicitly invoking a Maven goal or Gradle task that generates file
+<code>graalpy.lock</code> that captures versions of all Python package dependencies: those specified explicitly in
+<code>pom.xml</code> or <code>build.gradle</code> and all their transitive dependencies.</p>
 
-<p>The default location of the lock file is in the project root, and since it serves as input for generating resources, 
-it should be stored alongside other project files in a version control system.</p>
+<p>The <code>graalpy.lock</code> file should be commited to version control system (e.g., git). Once the <code>graalpy.lock</code> file exists,
+the package installation during Maven or Gradle build installs the exact same versions as captured in <code>graalpy.lock</code>.</p>
 
-<p>For information on the specific Maven or Gradle lock packages actions, please refer to the plugin descriptions below in this document.</p>
+<p>When the set of explicit dependencies in <code>pom.xml</code> or <code>build.gradle</code> changes and does not match what is in
+<code>graalpy.lock</code> anymore, the build will fail and the user will be asked to explicitly regenerate the <code>graalpy.lock</code> file.</p>
+
+<p>Note that unless specific version of a package is desired, we recommend to specify explicit dependencies in
+<code>pom.xml</code> or <code>build.gradle</code> without version quantifier. For some well known packages, GraalPy automatically
+installs the version that is known to be compatible with GraalPy. However, once installed, the versions should be
+locked to ensure reproducible builds.</p>
+
+<p>For information on the specific Maven or Gradle lock packages actions, please refer to the
+Locking Python Packages subsections below.</p>
 
 <h3 id="graalpy-maven-plugin"><a href="#graalpy-maven-plugin" class="anchor-link">GraalPy Maven Plugin</a></h3>
 
@@ -2168,14 +2172,6 @@ The Python packages and their versions are specified as if used with <code>pip</
 <span class="nt">&lt;/configuration&gt;</span>
 </code></pre></div>    </div>
   </li>
-  <li>The <strong>graalPyLockFile</strong> element can specify an alternative path to a GraalPy lock file. 
-Default value is <code>${basedir}/graalpy.lock</code>.
-    <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;configuration&gt;</span>
-    <span class="nt">&lt;graalPyLockFile&gt;</span>${basedir}/graalpy.lock<span class="nt">&lt;/graalPyLockFile&gt;</span>
-    ...
-<span class="nt">&lt;/configuration&gt;</span>
-</code></pre></div>    </div>
-  </li>
   <li>The <strong>resourceDirectory</strong> element can specify the relative <a href="#java-resource-path">Java resource path</a>.
 Remember to use <code>VirtualFileSystem$Builder#resourceDirectory</code> when configuring the <code>VirtualFileSystem</code> in Java.
     <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;resourceDirectory&gt;</span>GRAALPY-VFS/${project.groupId}/${project.artifactId}<span class="nt">&lt;/resourceDirectory&gt;</span>
@@ -2197,9 +2193,21 @@ Remember to use the appropriate <code>GraalPyResources</code> API to create the 
 </code></pre></div></div>
 <p><em>Note that the action will override the existing lock file.</em></p>
 
-<p>For more information on managing Python packages, please refer to the descriptions of 
-the <code>graalPyLockFile</code> and <code>packages</code> fields in the <a href="#maven-plugin-configuration">plugin configuration</a>, as well as the <a href="#python-dependency-management">Python Dependency Management</a> section 
-above in this document.</p>
+<p>For a high level description of this feature, please refer to the
+<a href="#pythop-dependency-management-for-reproducible-builds">Python Dependency Management for Reproducible Builds</a> section
+in this document.</p>
+
+<ul>
+  <li>The <strong>graalPyLockFile</strong> element can change the default path to the GraalPy lock file. Default value is <code>${basedir}/graalpy.lock</code>.
+The <strong>graalPyLockFile</strong> element by itself will not trigger the locking. The locking must be done by explicitly executing the
+<code>org.graalvm.python:graalpy-maven-plugin:lock-packages</code> goal.
+    <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;graalPyLockFile&gt;</span>${basedir}/graalpy.lock<span class="nt">&lt;/graalPyLockFile&gt;</span>
+    ...
+<span class="nt">&lt;/configuration&gt;</span>
+</code></pre></div>    </div>
+  </li>
+</ul>
 
 <h3 id="graalpy-gradle-plugin"><a href="#graalpy-gradle-plugin" class="anchor-link">GraalPy Gradle Plugin</a></h3>
 
@@ -2225,14 +2233,6 @@ The <strong>version</strong> property defines which version of GraalPy to use.</
 The Python packages and their versions are specified as if used with <code>pip</code>.
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalPy <span class="o">{</span>
   packages <span class="o">=</span> <span class="o">[</span><span class="s2">"termcolor==2.2"</span><span class="o">]</span>
-  ...
-<span class="o">}</span>
-</code></pre></div>    </div>
-  </li>
-  <li>The <strong>graalPyLockFile</strong> element can specify an alternative path to a GraalPy lock file.
-Default value is <code>$rootDir/graalpy.lock</code>.
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalPy <span class="o">{</span>
-  graalPyLockFile <span class="o">=</span> file<span class="o">(</span><span class="s2">"</span><span class="nv">$rootDir</span><span class="s2">/graalpy.lock"</span><span class="o">)</span>
   ...
 <span class="o">}</span>
 </code></pre></div>    </div>
@@ -2265,9 +2265,20 @@ dependency <code>org.graalvm.python:python</code> to the community build: <code>
   </li>
 </ul>
 
-<p>For more information on managing Python packages, please refer to the descriptions of
-the <code>graalPyLockFile</code> and <code>packages</code> fields in the <a href="#gradle-plugin-configuration">plugin configuration</a>, as well as the <a href="#python-dependency-management">Python Dependency Management</a> sections
+<p>For a high level description of this feature, please refer to the
+<a href="#pythop-dependency-management-for-reproducible-builds">Python Dependency Management for Reproducible Builds</a> section
 in this document.</p>
+
+<ul>
+  <li>The <strong>graalPyLockFile</strong> element can change the default path to the GraalPy lock file. Default value is <code>${basedir}/graalpy.lock</code>.
+The <strong>graalPyLockFile</strong> element by itself will not trigger the locking. The locking must be done by explicitly executing the
+<code>graalPyLockPackages</code> task.
+```
+graalPy {
+  graalPyLockFile = file(“$rootDir/graalpy.lock”)
+  …
+}</li>
+</ul>
 
 <h3 id="related-documentation"><a href="#related-documentation" class="anchor-link">Related Documentation</a></h3>
 
@@ -2933,7 +2944,7 @@ You need to add either <code>org.graalvm.polyglot:python</code> or <code>org.gra
           <ul class="footer-list">
             <li class="footer-list__item"><a target="_blank" href="https://github.com/oracle/graalpython/issues">File an issue</a></li>
             <li class="footer-list__item"><a target="_blank" href="https://www.graalvm.org/slack-invitation/">GraalVM Slack</a></li>
-            <li class="footer-list__item"><a target="_blank" href="https://github.com/oracle/graalpython/blob/master/LICENSE.txt">License</a></li>
+            <li class="footer-list__item"><a target="_blank" href="https://github.com/oracle/graalpython">License</a></li>
           </ul>
         </div>
       </div>

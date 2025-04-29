@@ -352,16 +352,21 @@ async function copyCode(event) {
   }, 1000)
 }
 
-//Removing logo on the home screen while browser window reducing
-window.addEventListener("resize", function() {
+function updateImageDisplay() {
+  var image = document.querySelector(".hi__image");
+  if (!image) return;
+
   if (window.innerWidth < 991) {
-    var image = document.querySelector(".hi__image");
-    if (image) image.style.display = "none";
+    image.style.display = "none";
   } else {
-    var image = document.querySelector(".hi__image");
-    if (image) image.style.display = "block";
+    image.style.display = "flex";
   }
-});
+}
+
+updateImageDisplay();
+
+window.addEventListener("resize", updateImageDisplay);
+
 
 document.addEventListener("DOMContentLoaded", function() {
   var isDocsPage = document.getElementById('docs-page');
