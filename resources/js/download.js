@@ -6,12 +6,27 @@ $(window).on("load", async function () {
   $("body").removeClass("preload");
   await detectPlatform();
   installTabSwitcher();
+
+  $("#selector-platform").on("change", function () {
+    const selected = $(this).val();
+    if (platforms[selected]) {
+      currentPlatform = selected;
+      changeVersion(currentMajorJavaVersion, selected);
+    }
+  });
+
   changeVersion(currentMajorJavaVersion, currentPlatform);
 });
 
 async function detectPlatform() {
   const detectedPlatform = `${getOS()}-${await getCPUArchitecture()}`;
-  currentPlatform = platforms[detectedPlatform] ? detectedPlatform : currentPlatform;
+  if (platforms[detectedPlatform]) {
+    currentPlatform = detectedPlatform;
+  } else {
+    currentPlatform = "empty-choice";
+  }
+
+  updateDownloadButton(currentMajorJavaVersion);
 }
 
 function installTabSwitcher() {
@@ -109,15 +124,28 @@ curl https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-
 curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`);
 }
 
+
 function updateDownloadButton(majorJavaVersion) {
   $("#selector-java-version").html(`Java ${majorJavaVersion}`);
   $("#selector-platform").html(platforms[currentPlatform]);
-  if (currentDownloadLink) {
-    $("#download-main-btn").attr("href", currentDownloadLink).removeClass("download-inactive").removeClass("btn-secondary");
+
+  const isValid = currentPlatform !== "empty-choice";
+
+  if (isValid) {
+    const fileExtension = currentPlatform.indexOf("windows") === 0 ? "zip" : "tar.gz";
+    currentDownloadLink = `https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${currentPlatform}_bin.${fileExtension}`;
+
+    $("#download-main-btn")
+      .attr("href", currentDownloadLink)
+      .removeClass("download-inactive btn-secondary");
   } else {
-    $("#download-main-btn").attr("href", "#").addClass("download-inactive").addClass("btn-secondary");
+    currentDownloadLink = null;
+    $("#download-main-btn")
+      .attr("href", "#")
+      .addClass("download-inactive btn-secondary");
   }
 }
+
 
 function toggleJDK17Banner(majorJavaVersion) {
   const banner = document.getElementById("jdk17-banner");
@@ -170,10 +198,9 @@ function changeVersion(majorJavaVersion, platform) {
 
 function downloadGraalVMJDK() {
   if (!currentDownloadLink) {
-    return; // Nothing selected, do not do anything
+    return;
   }
 
-  // Open download link
   window.open(currentDownloadLink, "_blank");
 
   // Redirect to success page
