@@ -451,25 +451,6 @@ $(document).ready(function(){
         
       
     
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="">
-            
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-  
-
   
 
   
@@ -691,8 +672,7 @@ The <em>reachability-metadata.json</em> configuration contains a single object w
 <pre><code class="language-json">{
   "reflection":[],
   "resources":[],
-  "bundles":[],
-  "jni":[]
+  "bundles":[]
 }
 </code></pre>
 
@@ -984,11 +964,13 @@ To build a native binary for a Java application that uses JNI to access Java val
 </code></pre>
 <p>looks up the <code>jni.accessed.Type</code> class, which can then be used to instantiate <code>jni.accessed.Type</code>, invoke its methods or access its fields.</p>
 
-<p>The metadata entry for the above call can <em>only</em> be provided via <em>reachability-metadata.json</em>. Specify the <code>type</code> entry in the <code>jni</code> field:</p>
+<p>The metadata entry for the above call can <em>only</em> be provided via <em>reachability-metadata.json</em>. Specify
+the <code>jniAccessible</code> field in the <code>type</code> entry in the <code>reflection</code> section:</p>
 <pre><code class="language-json">{
-  "jni":[
+  "reflection": [
     {
-      "type": "jni.accessed.Type"
+      "type": "jni.accessed.Type",
+      "jniAccessibleType": true
     }
   ]
 }
@@ -999,12 +981,14 @@ To build a native binary for a Java application that uses JNI to access Java val
 <p>To access field values, we need to provide field names:</p>
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
+  "jniAccessible": true,
   "fields": [{"name": "value"}]
 }
 </code></pre>
 <p>To access all fields one can use the following attributes:</p>
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
+  "jniAccessible": true,
   "allDeclaredFields": true,
   "allPublicFields": true
 }
@@ -1014,6 +998,7 @@ To build a native binary for a Java application that uses JNI to access Java val
 <p>To call Java methods from JNI, we must provide metadata for the method signatures:</p>
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
+  "jniAccessible": true,
   "methods": [
     {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]},
     {"name": "&lt;methodName2&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]}
@@ -1023,6 +1008,7 @@ To build a native binary for a Java application that uses JNI to access Java val
 <p>As a convenience, one can allow method invocation for groups of methods by adding the following:</p>
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
+  "jniAccessible": true,
   "allDeclaredConstructors": true,
   "allPublicConstructors": true,
   "allDeclaredMethods": true,
@@ -1032,7 +1018,8 @@ To build a native binary for a Java application that uses JNI to access Java val
 <p><code>allDeclaredConstructors</code> and <code>allDeclaredMethods</code> allow calls invocations of methods declared on a given type.
 <code>allPublicConstructors</code> and <code>allPublicMethods</code> allow invocations of all public methods defined on a type and all of its supertypes.</p>
 
-<p>To allocate objects of a type with <code>AllocObject</code>, the metadata must be stored in the <code>reflection</code> section:</p>
+<p>To allocate objects of a type with <code>AllocObject</code>, the <code>unsafeAllocated</code> field must be set, but the <code>jniAccessible</code> field
+is not required:</p>
 <pre><code class="language-json">{
   "reflection": [
     {
