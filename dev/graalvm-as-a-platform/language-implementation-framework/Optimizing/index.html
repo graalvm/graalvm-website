@@ -1323,6 +1323,77 @@ That id can be searched via <code>id=NUMBER</code> in IGV’s <code>Search in No
 then selecting <code>Open Search for node NUMBER in Node Searches window</code>,
 and then clicking the <code>Search in following phases</code> button.</p>
     
+      <h2 id="automatic-detection-of-deoptimization-cycles">
+        
+        
+          Automatic Detection of Deoptimization Cycles <a href="#automatic-detection-of-deoptimization-cycles" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Since the version 25, Truffle has an automatic deoptimization cycle detection feature. This feature is available and enabled by default when running optimized on JDK 25 and later.
+Whenever a deoptimization cycle is detected, the compilation fails with a permanent bailout that contains the Java stacktrace of the location, if available.</p>
+
+<p>Compilation failures are not printed by default. One way of printing compilation failures is to set the option <code>engine.CompilationFailureAction</code> to <code>Print</code>. To also print an approximated stack trace of the deoptimization location, <code>compiler.NodeSourcePositions</code> has to be enabled.</p>
+
+<p>Deoptimization cycle detection can be completely disabled by setting <code>compiler.DeoptCycleDetectionThreshold</code> to <code>-1</code>.</p>
+
+<p><strong>Example:</strong></p>
+
+<p>The following is a simple program that causes a deoptimization cycle.</p>
+<pre><code class="language-java">public class DeoptCycleDetectionTest {
+    static class InvalidArgumentProfilingNode extends RootNode {
+        @CompilerDirectives.CompilationFinal
+        boolean cachedValue;
+
+        protected InvalidArgumentProfilingNode() {
+            super(null);
+        }
+
+        @Override
+        public Object execute(VirtualFrame frame) {
+            boolean arg = (boolean) frame.getArguments()[0];
+            if (this.cachedValue != arg) {
+                // Bug: repeated non-stabilizing deoptimization
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                this.cachedValue = arg;
+            }
+            return this.cachedValue;
+        }
+    }
+
+    public static void main(String[] args) {
+        try (Context context = Context.create()) {
+            context.enter();
+            CallTarget callTarget = new InvalidArgumentProfilingNode().getCallTarget();
+            for (int i = 0; i &lt; Integer.MAX_VALUE; i++) {
+                callTarget.call(i % 2 == 0);
+            }
+        }
+    }
+}
+</code></pre>
+<p>In general, when no new code to compile is introduced, Truffle compilations should eventually stabilize and no new compilations/deoptimizations should be produced. However, the above root node
+<code>InvalidArgumentProfilingNode</code> contains a bug which causes a deoptimization cycle. When the root node is executed repeatedly and the argument keeps changing, the number of deoptimizations/recompilations is unlimited.
+The following command executes the program with the default deoptimization cycle detection and a deopt stacktrace printing for any detected repeated deoptimization.</p>
+<pre><code class="language-commandline">java -Dpolyglot.engine.AllowExperimentalOptions=true -Dpolyglot.compiler.NodeSourcePositions=true -Dpolyglot.engine.CompilationFailureAction=Print DeoptCycleDetectionTest
+</code></pre>
+<p>The expected output is</p>
+<pre><code>[engine] opt fail     DeoptCycleDetectionTest.InvalidArgumentProfilingNode@761490b0|AST      1
+jdk.graal.compiler.code.SourceStackTraceBailoutException$1:jdk.graal.compiler.code.SourceStackTraceBailoutException:jdk.graal.compiler.core.common.PermanentBailoutException:jdk.graal.compiler.core.common.GraalBailoutException:jdk.vm.ci.code.BailoutException:java.lang.RuntimeException:java.lang.Exception:
+jdk.graal.compiler.code.SourceStackTraceBailoutException$1: Deopt taken too many times: 270|Deopt. This could indicate a deopt cycle, which typically hints at a bug in the language implementation or Truffle.
+	at DeoptCycleDetectionTest$InvalidArgumentProfilingNode.execute(DeoptCycleDetectionTest.java:19)
+	at com.oracle.truffle.runtime.OptimizedCallTarget.executeRootNode(OptimizedCallTarget.java:823)
+	at com.oracle.truffle.runtime.OptimizedCallTarget.profiledPERoot(OptimizedCallTarget.java:747)
+</code></pre>
+<p>This tells us that a deopt cycle was detected and the stacktrace points to the if condition testing the argument as the location of the repeated deopt. The information about the precise location of the <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code> is lost, but the compiler knows one branch of the if statement leads to the repeated deopt that causes the deopt cycle and so the if condition is determined as the location of the deopt. If the compilation was dumped, the appropriate compilation graph would show the deoptimization node with id <code>270</code> is in the <code>false</code> branch of the if statement:</p>
+
+<p><img src="./deoptcycle.png" alt="Deoptimization Cycle location" title="Deoptimization cycle location" /></p>
+
+<p>The sensitivity of the deoptimization cycle detection can be fine-tuned by the options <code>compiler.DeoptCycleDetectionThreshold</code> and <code>compiler.DeoptCycleDetectionAllowedRepeats</code>.</p>
+
+<p>After the number of successful compilations of a call target reaches <code>compiler.DeoptCycleDetectionThreshold</code>, the subsequent Truffle compilations of the call target execute an extra deoptimization cycle detection phase that adds information to the compilation framework which allows it to later detect that the exactly same compiled code was deoptimized at the exatly same location repeatedly. If that happens the compilation fails with a permanent bailout. If <code>compiler.DeoptCycleDetectionAllowedRepeats</code> is set to a higher value than the default <code>0</code>, the compilation will only fail after the same deopt is repeated more times than the allowed count.</p>
+    
       <h2 id="debugging-invalidations">
         
         
