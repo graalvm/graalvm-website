@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="truffle-dsl-node-object-inlining">Truffle DSL Node Object Inlining</h1>
+
+<p>In 23.0, we have introduced a new annotation called <code>@GenerateInline</code>. This annotation instructs the Truffle DSL annotation processor to generate an inlinable version of a node. This works analogously to <code>@GenerateCached</code> and <code>@GenerateUncached</code>, which generate a cached or uncached node version.
+By default, the DSL does not generate an inlined version of a node.
+Node inlining provides a simple way to reduce the memory footprint of nodes but often also improves interpreter execution speed.</p>
+
+<h3 id="basic-usage">Basic Usage</h3>
+
+<p>Let us assume we have a node with specializations that computes the sum of the absolute value of two values.
+For simplicity, we will only look at the <code>long</code> typed specializations in this example.</p>
+
+<p>A runnable but slightly more advanced version of this example can be found in the Truffle unit tests.</p>
+<ul>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample1_1.java">NodeInliningExample1_1.java</a> shows an example without any inlining.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample1_2.java">NodeInliningExample1_2.java</a> shows an example without partial inlining.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample1_3.java">NodeInliningExample1_3.java</a> shows an example with full inlining.</li>
+</ul>
+
+<p>Consider the following examples that specify two regular nodes it specializations. One node computes the sum of two values, and one computes the absolute number of a number. The <code>AbsNode</code> is then reused in the <code>AddAbsNode</code> to share the implementation.</p>
+
+<pre><code class="language-java">public abstract class AddAbsNode extends Node {
+
+    abstract long execute(Object left, Object right);
+
+    @Specialization
+    long add(long left, long right,
+                    @Cached AbsNode leftAbs,
+                    @Cached AbsNode rightAbs) {
+        return leftAbs.execute(left) + rightAbs.execute(right);
+    }
+    // ...
+}
+
+public abstract class AbsNode extends Node {
+
+    abstract long execute(long value);
+
+    @Specialization(guards = "v &gt;= 0")
+    long doInt(long v) {
+        return v;
+    }
+
+    @Specialization(guards = "v &lt; 0")
+    long doLong(long v) {
+        return -v;
+    }
+}
+</code></pre>
+
+<p>The compressed memory footprint for <code>AbsNode</code> and <code>AddAbsNode</code> after one execution are computed as follows:</p>
+
+<pre><code>AbsNodeGen = object header
+   + Node field for Node.parent
+   + int field for state
+
+AddAbsNodeGen = object header
+   + Node field for Node.parent
+   + int  field for state
+   + Node field for @Cached AbsNode leftAbs
+   + Node field for @Cached AbsNode rightAbs
+
+Footprint = headerCount * 12 + pointerCount * 4 + primitiveByteSize
+Footprint = 3 * 12 + 5 * 4 + 12 = 68 bytes
+</code></pre>
+
+<p>Therefore, we use <code>68</code> bytes to represent a single operation with nodes.</p>
+
+<p>With 23.0, the Truffle DSL annotation processor will produce the following warning for the <code>AbsNode</code> class:</p>
+
+<pre><code>This node is a candidate for node object inlining. The memory footprint is estimated to be reduced from 20 to 1 byte(s). Add @GenerateInline(true) to enable object inlining for this node or @GenerateInline(false) to disable this warning. Also, consider disabling cached node generation with @GenerateCached(false) if all usages will be inlined. This warning may be suppressed using @SuppressWarnings("truffle-inlining").
+</code></pre>
+
+<p>Following the recommendation of this warning, we modify our example as follows by adding the <code>@GenerateInline</code> annotation:</p>
+
+<pre><code class="language-java">@GenerateInline
+public abstract class AbsNode extends Node {
+
+    abstract long execute(long value);
+
+    @Specialization(guards = "v &gt;= 0")
+    long doInt(long v) {
+        return v;
+    }
+
+    @Specialization(guards = "v &lt; 0")
+    long doLong(long v) {
+        return -v;
+    }
+
+}
+</code></pre>
+
+<p>Now the DSL reports a compile error for <code>AbsNode</code>:</p>
+
+<pre><code>Error generating code for @GenerateInline: Found non-final execute method without a node parameter execute(long). Inlinable nodes
+ must use the Node type as the first parameter after the optional frame for all non-final execute methods. A valid signature for an
+ inlinable node is execute([VirtualFrame frame, ] Node node, ...).
+</code></pre>
+
+<p>For inlinable nodes, we must pass a node parameter to the execute method as the first parameter.
+This is necessary as inlined nodes become singletons and no longer have their own state, but instead, it is passed as a parameter to the execute method.</p>
+
+<p>Again, we follow the error and modify our example as follows:</p>
+
+<pre><code class="language-java">@GenerateInline
+public abstract class AbsNode extends Node {
+
+    abstract long execute(Node node, long value);
+
+    @Specialization(guards = "v &gt;= 0")
+    static long doInt(long v) {
+        return v;
+    }
+
+    @Specialization(guards = "v &lt; 0")
+    static long doLong(long v) {
+        return -v;
+    }
+
+}
+</code></pre>
+
+<p>Note that the node parameter is optional for specialization methods, but they are typically needed if transitively inlined nodes are used.</p>
+
+<p>Next, we also need to modify <code>AddAbsNode</code> to pass <code>this</code> as a node parameter to the new execute signature:</p>
+
+<pre><code class="language-java">public abstract static class AddAbsNode extends Node {
+
+    abstract long execute(long left, long right);
+
+    @Specialization
+    long add(long left, long right,
+                    @Cached AbsNode leftAbs,
+                    @Cached AbsNode rightAbs) {
+        return leftAbs.execute(this, left) + rightAbs.execute(this, right);
+    }
+    // ...
+}
+</code></pre>
+
+<p>The DSL now produces a warning for each of the <code>@Cached AbsNode</code> parameters:</p>
+
+<pre><code>The cached type 'AbsNode' supports object-inlining. The footprint is estimated to be reduced from 36 to 1 byte(s). Set @Cached(..., inline=true|false) to determine whether object-inlining should be performed. Alternatively, @GenerateCached(alwaysInlineCached=true) can be used to enable inlining for an entire class or in combination with the inherit option for a hierarchy of node classes. This warning may be suppressed using @SuppressWarnings("truffle-inlining").
+</code></pre>
+
+<p>We follow the recommendation in this message and enable object inlining:</p>
+
+<pre><code class="language-java">public abstract static class AddAbsNode extends Node {
+
+    abstract long execute(long left, long right);
+
+    @Specialization
+    long add(long left, long right,
+                    @Cached(inline = true) AbsNode leftAbs,
+                    @Cached(inline = true) AbsNode rightAbs) {
+        return leftAbs.execute(this, left) + rightAbs.execute(this, right);
+    }
+    // ...
+}
+</code></pre>
+
+<p>Now we have achieved object-inlining of <code>AbsNode</code> into  <code>AddAbsNode</code>.
+The new memory footprint computes as follows:</p>
+
+<pre><code>AddAbsNodeGen = object header
+   + Node field for Node.parent
+   + int  field for state
+
+Footprint = headerCount * 12 + pointerCount * 4 + primitiveByteSize
+Footprint = 1 * 12 + 1 * 4 + 4 = 20 bytes
+</code></pre>
+
+<p>The footprint has gone down from <code>68</code> bytes to only <code>20</code> bytes for each instance of <code>AddAbsNodeGen</code>.</p>
+
+<p>But we are still going. Since all cached nodes are inlined we can also make the <code>AddAbsNode</code> inlinable for its usages.
+The DSL helps us again by detecting such cases and prints a warning for <code>AddAbsNode</code> now:</p>
+
+<pre><code>This node is a candidate for node object inlining. The memory footprint is estimated to be reduced from 20 to 1 byte(s). Add @GenerateInline(true) to enable object inlining for this node or @GenerateInline(false) to disable this warning. Also consider disabling cached node generation with @GenerateCached(false) if all usages will be inlined. This warning may be suppressed using @SuppressWarnings("truffle-inlining").
+</code></pre>
+
+<p>Again, we follow the guide and add a <code>@GenerateInline</code> annotation to <code>AddAbsNode</code>. Just like before, we also add a <code>Node</code> parameter to the execute method:</p>
+
+<pre><code class="language-java">@GenerateInline
+public abstract static class AddAbsNode extends Node {
+
+    abstract long execute(Node node, long left, long right);
+
+    @Specialization
+    static long add(Node node, long left, long right,
+                    @Cached AbsNode leftAbs,
+                    @Cached AbsNode rightAbs) {
+        return leftAbs.execute(node, left) + rightAbs.execute(node, right);
+    }
+    // ...
+}
+</code></pre>
+
+<p>We also need to use the <code>Node</code> parameter in the specialization method and pass it on to the child nodes.
+Again, we want all specializations to be <code>static</code> to avoid accidentally passing <code>this</code>.
+In addition, the DSL complained about the <code>inline=true</code> attribute, which is now always implied as the parent node uses the <code>@GenerateInline</code> annotation.</p>
+
+<p>To measure the overhead of our new inlinable <code>AddAbsNode</code> node, we declare a new operation called <code>Add4AbsNode</code> that adds four numbers using our <code>AddAbsNode</code> operation:</p>
+
+<pre><code class="language-java">@GenerateCached(alwaysInlineCached = true)
+public abstract static class Add4AbsNode extends Node {
+
+    abstract long execute(long v0, long v1, long v2, long v3);
+
+    @Specialization
+    long doInt(long v0, long v1, long v2, long v3,
+                    @Cached AddAbsNode add0,
+                    @Cached AddAbsNode add1,
+                    @Cached AddAbsNode add2) {
+        long v;
+        v = add0.execute(this, v0, v1);
+        v = add1.execute(this, v, v2);
+        v = add2.execute(this, v, v3);
+        return v;
+    }
+
+}
+</code></pre>
+
+<p>This time, instead of specifying <code>@Cached(inline=true)</code>, we auto-enable inlining wherever possible using <code>@GenerateCached(alwaysInlineCached = true)</code>.
+Depending on the use case, it can hinder readability to repeat individual inlining commands for every cached node.</p>
+
+<p>Computing the overhead now becomes more tricky. We need to understand how many state bits each node requires to keep track of active specializations.
+That computation is generally implementation specific and subject to change. However, a good rule of thumb is that the DSL requires one bit per declared specialization.
+Implicit casts, replace rules, <code>@Fallback</code> and specializations with multiple instances may further increase the number of required state bits.</p>
+
+<p>For this example, each <code>AddAbsNode</code> requires 5 bits. 2 bits for each of the <code>AbsNode</code> usages and one bit for the <code>AddAbsNode</code> specializations.
+The <code>Add4AbsNode</code> uses three instances of <code>AddAbsNode</code>, has one specialization, and therefore needs <code>3 * 5 + 1</code> state bits in total.
+Since the number of bits is below 32, we can assume that we need a single <code>int</code> field in the generated code.
+The memory footprint of an executed <code>Add4AbsNode</code> is therefore computed as follows:</p>
+
+<pre><code>Footprint = 1 * 12 + 1 * 4 + 4 = 20 bytes
+</code></pre>
+
+<p>As you can see, this is the same memory footprint a single <code>AddAbsNode</code> had.
+If we use the same formula to compute the memory footprint of an <code>Add4AbsNode</code> without any object inlining</p>
+
+<pre><code>Footprint = 1 * 12 + 4 * 4 + 4 + 3 * 68 = 236 bytes
+</code></pre>
+
+<p>We have reduced the overhead from <code>236</code> bytes to <code>20</code> bytes.</p>
+
+<p>In addition to the memory footprint advantages, interpreter-only execution may be faster, as we save the reads for the node fields and benefit from better CPU cache locality due to smaller memory consumption.
+After compilation using partial evaluation, both cached and uncached versions are expected to perform the same.</p>
+
+<p>There is a last thing we should do. Since our <code>AddAbsNode</code> and <code>AbsNode</code> are no longer used in their cached version, we can turn off cached generation using <code>@GenerateCached(false)</code> to save Java code footprint.
+After doing this we can omit the <code>alwaysInlineCached</code> property in the <code>@GenerateCached</code> annotation as nodes are automatically inlined if only an inlined version is available.</p>
+
+<p>This is the final example:</p>
+
+<pre><code class="language-java">@GenerateInline
+@GenerateCached(false)
+public abstract static class AbsNode extends Node {
+
+    abstract long execute(Node node, long value);
+
+    @Specialization(guards = "v &gt;= 0")
+    static long doInt(long v) {
+        return v;
+    }
+
+    @Specialization(guards = "v &lt; 0")
+    static long doLong(long v) {
+        return -v;
+    }
+
+}
+
+@GenerateInline
+@GenerateCached(false)
+public abstract static class AddAbsNode extends Node {
+
+    abstract long execute(Node node, long left, long right);
+
+    @Specialization
+    static long add(Node node, long left, long right,
+                    @Cached AbsNode leftAbs,
+                    @Cached AbsNode rightAbs) {
+        return leftAbs.execute(node, left) + rightAbs.execute(node, right);
+    }
+    // ...
+}
+
+@GenerateCached(alwaysInlineCached = true)
+@GenerateInline(false)
+public abstract static class Add4AbsNode extends Node {
+
+    abstract long execute(long v0, long v1, long v2, long v3);
+
+    @Specialization
+    long doInt(long v0, long v1, long v2, long v3,
+                    @Cached AddAbsNode add0,
+                    @Cached AddAbsNode add1,
+                    @Cached AddAbsNode add2) {
+        long v;
+        v = add0.execute(this, v0, v1);
+        v = add1.execute(this, v, v2);
+        v = add2.execute(this, v, v3);
+        return v;
+    }
+}
+</code></pre>
+
+<p>Note that the DSL again informed us that <code>Add4AbsNode</code> could use <code>@GenerateInline</code> by emitting the following warning:</p>
+
+<pre><code>This node is a candidate for node object inlining. The memory footprint is estimated to be reduced from 20 to 2 byte(s). Add @GenerateInline(true) to enable object inlining for this node or @GenerateInline(false) to disable this warning. Also consider disabling cached node generation with @GenerateCached(false) if all usages will be inlined. This warning may be suppressed using @SuppressWarnings("truffle-inlining").
+</code></pre>
+
+<p>This time we suppressed the warning by explicitly specifying <code>@GenerateInline(false)</code>.</p>
+
+<h3 id="advanced-inline-cache-usage">Advanced Inline Cache Usage</h3>
+
+<p>The following example explains how specialization unrolling and new inlinable cache classes can be helpful in reducing the memory footprint of nodes with specializations that have multiple instances.</p>
+
+<p>Examples:</p>
+<ul>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample2_1.java">NodeInliningExample2_1.java</a> shows an example without any inlining.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample2_2.java">NodeInliningExample2_2.java</a> shows an example without partial inlining.</li>
+  <li><a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningExample2_3.java">NodeInliningExample2_3.java</a> shows an example with full inlining.</li>
+</ul>
+
+<h3 id="passing-along-nodes-correctly">Passing along Nodes correctly</h3>
+
+<p>The usage of inlined nodes requires to access and pass the correct node to execute methods of the respective inlined nodes.
+It is a common mistake to pass the wrong node to execute methods.
+Typically such mistakes fail with an error at runtime, but the DSL also emits warnings and errors depending on the situation at compile time.</p>
+
+<p><em>Inlined Nodes</em></p>
+
+<p>For inlined nodes that use themselves inlined nodes it is sufficient to pass a long the <code>Node</code> dynamic parameter.
+For example. in the previous section we used <code>AddAbsNode</code> with a similar pattern:</p>
+
+<pre><code class="language-java">@GenerateInline
+@GenerateCached(false)
+public abstract static class AddAbsNode extends Node {
+
+    abstract long execute(Node node, long left, long right);
+
+    @Specialization
+    static long add(Node node, long left, long right,
+                    @Cached AbsNode leftAbs,
+                    @Cached AbsNode rightAbs) {
+        return leftAbs.execute(node, left) + rightAbs.execute(node, right);
+    }
+    // ...
+}
+</code></pre>
+
+<p><em>Cached Nodes with Multiple Instances</em></p>
+
+<p>For nodes with specializations that may have multiple instances a <code>@Bind("this") Node node</code> parameter must be used to access the inline target node.
+This is simliar to the <code>SumArrayNode</code> node in the advanced usage example.</p>
+
+<pre><code class="language-java">@ImportStatic(AbstractArray.class)
+public abstract static class SumArrayNode extends Node {
+
+    abstract int execute(Object v0);
+
+    @Specialization(guards = {"kind != null", "kind.type == array.getClass()"}, limit = "2", unroll = 2)
+    static int doDefault(Object array,
+                    @Bind("this") Node node,
+                    @Cached("resolve(array)") ArrayKind kind,
+                    @Cached GetStoreNode getStore) {
+        Object castStore = kind.type.cast(array);
+        int[] store = getStore.execute(node, castStore);
+        int sum = 0;
+        for (int element : store) {
+            sum += element;
+            TruffleSafepoint.poll(node);
+        }
+        return sum;
+    }
+
+    static Class&lt;?&gt; getCachedClass(Object array) {
+        if (array instanceof AbstractArray) {
+            return array.getClass();
+        }
+        return null;
+    }
+}
+</code></pre>
+
+<p><em>Exported Library Messages</em></p>
+
+<p>For exported library messages the <code>this</code> keyword is already reserved for the receiver value, so <code>$node</code> can be used instead.</p>
+
+<p>For example:</p>
+
+<pre><code class="language-java">    @ExportLibrary(ExampleArithmeticLibrary.class)
+    static class ExampleNumber {
+
+        final long value;
+
+        /* ... */
+
+        @ExportMessage
+        final long abs(@Bind("$node") Node node,
+                       @Cached InlinedConditionProfile profile) {
+            if (profile.profile(node, this.value &gt;= 0)) {
+                return  this.value;
+            } else {
+                return  -this.value;
+            }
+        }
+
+    }
+</code></pre>
+
+<h3 id="limitations">Limitations</h3>
+
+<p>Node object inlining supports arbitrary deep nestings. However, there are some limitations to using <code>@GenerateInline</code>.</p>
+
+<ul>
+  <li>There must not be any instance fields on the node class or a parent class.</li>
+  <li>The node must not use <code>@NodeField</code> or <code>@NodeChild</code>.</li>
+  <li>The usage of inlined nodes must not be recursive.</li>
+</ul>
+
+<h3 id="manually-implementing-inlinable-nodes-and-profiles">Manually implementing Inlinable Nodes and Profiles</h3>
+
+<p>Nodes or profiles that can be inlined in the DSL can also be implemented manually.
+The class must implement a static method called <code>inline</code>.
+For example, most inlinable Truffle profiles use custom inlining.
+Extra care must be taken when implementing such inlinable classes and if possible, a DSL generated node should be used instead.
+See <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.profiles/src/com/oracle/truffle/api/profiles/InlinedBranchProfile.java">InlinedBranchProfile</a> or <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.profiles/src/com/oracle/truffle/api/profiles/InlinedIntValueProfile.java">InlinedIntValueProfile</a> class as an example on how to implement the inline method.</p>
+
+<h3 id="api-compatibility-for-inlinable-nodes">API Compatibility for Inlinable Nodes</h3>
+
+<p>The <code>TruffleString</code> API extensively uses DSL nodes like in the above example.
+However, allowing nodes to be inlined makes every change to the specializations of that node an incompatible API change.
+This is because the signature of the static <code>inline</code> method changes depending on the required state bits of the specializations.</p>
+
+<p>In order to support inlining across stable API boundaries, it is recommended to manually specify an inline method that forwards to the generated inline method.</p>
+
+<p>As an example, consider the following node:</p>
+
+<pre><code>@GenerateInline
+@GenerateUncached
+@GeneratePackagePrivate
+public abstract static class APINode extends Node {
+
+    abstract long execute(Node node, long value);
+
+    @Specialization(guards = "v &gt;= 0")
+    static long doInt(long v) {
+        return v;
+    }
+
+    @Specialization(guards = "v &lt; 0")
+    static long doLong(long v) {
+        return -v;
+    }
+
+    public static APINode inline(@RequiredField(value = StateField.class, bits = 32) InlineContext context) {
+        return APINodeGen.inline(context);
+    }
+
+    public static APINode create() {
+        return APINodeGen.create();
+    }
+
+    public static APINode getUncached() {
+        return APINodeGen.getUncached();
+    }
+}
+</code></pre>
+
+<p>We use <code>@GeneratePackagePrivate</code> in order not to expose any generated code as public.
+We specify a manual <code>inline</code> method that specifies the required bits for this node.
+If the specializations of a node require more bits or more additional fields other than specified, then the annotation processor fails with an error.
+If the node requires fewer bits, then this does not cause any compiler error.
+This allows API to use node inlining across stable API boundaries as long as the reserved field capacity is not exceeded.</p>
+
+<p>A change is compatible if:</p>
+<ul>
+  <li>There was previously no <code>inline</code> method for this node before.</li>
+  <li>If the required bit space is reduced and all other fields are changed.</li>
+</ul>
+
+<p>A change is incompatible if:</p>
+<ul>
+  <li>A new <code>@RequiredField</code> annotation to an existing <code>inline</code> method was added or removed.</li>
+  <li>The required bits were increased.</li>
+</ul>
+
+<p>The DSL validates whether the required fields are matching to the state specification of the parent node and emits a warning if it is not compatible to the node specification.</p>
+
+<h3 id="lazy-initialized-nodes-with-dsl-inlining">Lazy Initialized Nodes with DSL Inlining</h3>
+
+<p><em>Full source code of the example: <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.api.dsl.test/src/com/oracle/truffle/api/dsl/test/examples/NodeInliningAndLazyInitExample.java">NodeInliningAndLazyInitExample.java</a>.</em></p>
+
+<p>DSL inlining can be used to provide lazy initialization for otherwise cached node that is only used in code blocks that
+are protected by conditions that trigger rarely. Consider this example:</p>
+<pre><code class="language-java">@GenerateInline(false)
+@GenerateUncached
+public abstract static class RaiseErrorNode extends Node {
+    abstract void execute(Object type, String message);
+
+    // ...
+}
+
+@GenerateInline(false)
+@GenerateUncached(false)
+public abstract static class LazyInitExampleBefore extends Node {
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value,
+              @Cached RaiseErrorNode raiseError) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            raiseError.execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p><code>RaiseErrorNode</code> is always instantiated even-though we do not need it if <code>doSomeWork</code> always returns
+non <code>null</code> result at runtime. Before DSL inlining, this issue was usually solved by lazy-initialized
+<code>@Child</code> node:</p>
+<pre><code class="language-java">@GenerateInline(false)
+@GenerateUncached(false)
+public abstract static class LazyInitExampleBefore2 extends Node {
+    @Child RaiseErrorNode raiseError;
+
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            if (raiseError == null) {
+                CompilerDirectives.transferToInterpreterAndInvalidate();
+                raiseError = insert(RaiseErrorNodeGen.create());
+            }
+            raiseError.execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p>However <code>@Child</code> nodes have some drawbacks. Most notably, the <code>@Specialization</code> cannot be <code>static</code> and we
+cannot generate uncached variant of the node.</p>
+
+<p>With DSL inlining, one should either make the <code>RaiseErrorNode</code> inlineable if beneficial, or if it is a node that:</p>
+
+<ul>
+  <li>has a lot of specializations with multiple instances, or</li>
+  <li>cannot currently be inlined, or</li>
+  <li>has a lot of cached fields that cannot be inlined</li>
+</ul>
+
+<p>then one can create an inlinable wrapper node that initializes the <code>RaiseErrorNode</code> on demand:</p>
+<pre><code class="language-java">@GenerateInline
+@GenerateUncached
+@GenerateCached(false)
+public abstract static class LazyRaiseNode extends Node {
+    public final RaiseErrorNode get(Node node) {
+        return execute(node);
+    }
+
+    abstract RaiseErrorNode execute(Node node);
+
+    @Specialization
+    static RaiseErrorNode doIt(@Cached(inline = false) RaiseErrorNode node) {
+        return node;
+    }
+}
+
+@GenerateInline(false)
+@GenerateUncached
+public abstract static class LazyInitExample extends Node {
+    abstract void execute(Object value);
+
+    @Specialization
+    void doIt(Object value,
+              @Cached LazyRaiseNode raiseError) {
+        Object result = doSomeWork(value);
+        if (result == null) {
+            raiseError.get(this).execute(value, "Error: doSomeWork returned null");
+        }
+    }
+}
+</code></pre>
+<p>Unless <code>LazyRaiseNode.execute</code> gets called, the cost of the wrapper is single reference field
+and one bit from the bitset of <code>LazyInitExample</code> node. Except for the extra bit, it is the same as
+with the lazy initialized <code>@Child</code> node field.</p>
+
+<p>Note that, at the moment, the lazy initialization pattern cannot be fully inlined by
+<a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">host inlining</a>,
+and it is therefore not recommended to be used on interpreter hot code-paths.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

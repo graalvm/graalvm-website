@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="frequently-asked-questions">Frequently Asked Questions</h1>
+
+<p>Below are the most frequently asked questions and answers about JavaScript running on GraalVM.</p>
+
+<h2 id="compatibility">Compatibility</h2>
+
+<h3 id="is-graaljs-compatible-with-the-javascript-language">Is GraalJS compatible with the JavaScript language?</h3>
+<p>GraalJS is compatible with the ECMAScript 2024 specification and is further developed alongside the 2025 draft specification.
+The compatibility of GraalJS is verified by external sources, such as the <a href="https://kangax.github.io/compat-table/es6/">Kangax ECMAScript compatibility table</a>.</p>
+
+<p>GraalJS is tested against a set of test engines, such as the official test suite of ECMAScript, <a href="https://github.com/tc39/test262">test262</a>, as well as tests published by V8 and Nashorn, Node.js unit tests, and GraalJS’s own unit tests.</p>
+
+<p>For reference documentation describing the JavaScript APIs that GraalVM supports, see <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/JavaScriptCompatibility.md">GRAAL.JS-API</a>.</p>
+
+<h3 id="my-application-used-to-run-on-nashorn-why-does-it-not-work-on-graaljs">My application used to run on Nashorn, why does it not work on GraalJS?</h3>
+<p>Reason:</p>
+<ul>
+  <li>GraalJS tries to be compatible with the ECMAScript specification, as well as competing engines (including Nashorn). In some cases, this is a contradicting requirement; in these cases, ECMAScript is given precedence. Also, there are cases where GraalJS does not exactly replicate Nashorn features intentionally, for example, for security reasons.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>Enable GraalJS’s Nashorn compatibility mode to add features not enabled by default—this should resolve most cases. However, note that this can have negative effects on application security! See the <a href="/jdk23/reference-manual/js/NashornMigrationGuide/">Nashorn Migration Guide</a> for details.</li>
+</ul>
+
+<p>Specific applications:</p>
+<ul>
+  <li>For JSR 223 ScriptEngine, you might want to set the system property <code>polyglot.js.nashorn-compat</code> to <code>true</code> in order to use the Nashorn compatibility mode.</li>
+  <li>For <code>ant</code>, use the <code>ANT_OPTS</code> environment variable (<code>ANT_OPTS="-Dpolyglot.js.nashorn-compat=true"</code>) when using GraalJS via ScriptEngine.</li>
+</ul>
+
+<h3 id="why-are-built-in-functions-such-as-arraymap-or-fnapply-not-available-on-non-javascript-objects-such-as-proxyarrays-from-java">Why are built-in functions such as <code>array.map()</code> or <code>fn.apply()</code> not available on non-JavaScript objects such as <code>ProxyArray</code>s from Java?</h3>
+
+<p>Reason:</p>
+<ul>
+  <li>Java objects provided to JavaScript are treated as closely as possible to their JavaScript counterparts. For example, Java arrays provided to JavaScript are treated like JavaScript <em>Array exotic objects</em> (JavaScript arrays) whenever possible; the same is true for <em>functions</em>. One obvious difference is that such object’s prototype is <code>null</code>. This means that while you can, for example, read the <code>length</code> or read and write the values of a Java array in JavaScript code, you cannot call <code>sort()</code> on it, as the <code>Array.prototype</code> is not provided by default.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>While the objects do not have the methods of the prototype assigned, you can explicitly call them, for example, <code>Array.prototype.call.sort(myArray)</code>.</li>
+  <li>We offer the option <code>js.foreign-object-prototype</code>. When enabled, objects on the JavaScript side get the most applicable prototype set (such as <code>Array.prototype</code>, <code>Function.prototype</code>, <code>Object.prototype</code>) and can thus behave more similarly to native JavaScript objects of the respective type. Normal JavaScript precedence rules apply here, for example, an object’s own properties (of the Java object in that case) take precedence over and hide properties from the prototype.</li>
+</ul>
+
+<p>Note that while the JavaScript built-in functions, for example, from <code>Array.prototype</code> can be called on the respective Java types, those functions expect JavaScript semantics.
+This means that operations might fail (typically with a <code>TypeError</code>: <code>Message not supported</code>) when an operation is not supported in Java.
+Consider <code>Array.prototype.push</code> as an example: arrays can grow in size in JavaScript, whereas they are fixed-size in Java, thus pushing a value is semantically not possible and will fail.
+In such cases, you can wrap the Java object and handle that case explicitly.
+Use the interfaces <code>ProxyObject</code> and <code>ProxyArray</code> for that purpose.</p>
+
+<h3 id="how-can-i-verify-graaljs-works-on-my-application">How can I verify GraalJS works on my application?</h3>
+
+<p>If your module ships with tests, execute them with GraalJS. Of course, this will only test your application, not its dependencies.
+You can use the <a href="https://www.graalvm.org/compatibility/">GraalVM Language Compatibility</a> tool to discover if the module you are interested in is tested on GraalJS, and whether its tests pass successfully.
+Additionally, you can upload your <em>package-lock.json</em> or <em>package.json</em> file into that tool and it will analyze all your dependencies.</p>
+
+<h2 id="performance">Performance</h2>
+
+<h3 id="why-is-my-application-slower-on-graaljs-than-on-another-engine">Why is my application slower on GraalJS than on another engine?</h3>
+<p>Reason:</p>
+<ul>
+  <li>Ensure your benchmark considers warmup. During the first few iterations, GraalJS may be slower than other engines, but after sufficient warmup, this difference should level out.</li>
+  <li>GraalJS is shipped in two different standalones: Native (default) and JVM (with a <code>-jvm</code> infix). The default <em>Native</em> mode offers faster startup and lower latency, but it might exhibit slower peak performance (lower throughput) once the application is warmed up. In <em>JVM</em> mode, your application might need hundreds of milliseconds more to start, but typically exhibits better peak performance.</li>
+  <li>Repeated execution of code via newly created <code>org.graalvm.polyglot.Context</code> is slow, despite the same code being executed every time.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>Use proper warmup in your benchmark, and disregard the first few iterations where the application still warms up.</li>
+  <li>When embedding GraalJS in a Java application, ensure you’re running on a GraalVM JDK for best performance.</li>
+  <li>Use a JVM standalone for slower startup, but higher peak performance.</li>
+  <li>Double check you have no options set that might lower your performance, for example, <code>-ea</code>/<code>-esa</code>.</li>
+  <li>When running code via <code>org.graalvm.polyglot.Context</code>, make sure that one <code>org.graalvm.polyglot.Engine</code> object is shared and passed to each newly created <code>Context</code>. Use <code>org.graalvm.polyglot.Source</code> objects and cache them when possible. Then, GraalVM shares existing compiled code across the Contexts, leading to improved performance. See <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a> for more details and an example.</li>
+  <li>Try to reduce the problem to its root cause and <a href="https://github.com/graalvm/graaljs/issues">file an issue</a> so the GraalVM team can have a look.</li>
+</ul>
+
+<h3 id="how-can-i-achieve-the-best-peak-performance">How can I achieve the best peak performance?</h3>
+<p>Here are a few tips you can follow to analyze and improve peak performance:</p>
+
+<ul>
+  <li>When measuring, ensure you have given the Graal compiler enough time to compile all hot methods before starting to measure peak performance. A useful command line option for that is <code>--engine.TraceCompilation=true</code>—this outputs a message whenever a (JavaScript) method is compiled. Do not begin your measurement until this message becomes less frequent.</li>
+  <li>Compare the performance between Native Image and JVM mode if possible. Depending on the characteristics of your application, one or the other might show better peak performance.</li>
+  <li>The Polyglot API comes with several tools and options to inspect the performance of your application:
+    <ul>
+      <li><code>--cpusampler</code> and <code>--cputracer</code> will print a list of the hottest methods when the application is terminated. Use that list to figure out where most time is spent in your application.</li>
+      <li><code>--experimental-options --memtracer</code> can help you understand the memory allocations of your application. Refer to <a href="/jdk23/tools/profiling/">Profiling Command Line Tool</a> for more detail.</li>
+    </ul>
+  </li>
+</ul>
+
+<h3 id="what-is-the-difference-between-running-graaljs-in-native-image-compared-to-the-jvm">What is the difference between running GraalJS in Native Image compared to the JVM?</h3>
+<p>In essence, the GraalJS engine is a plain Java application.
+Running it on any JVM (JDK 21 or later) is possible, but, for a better result, it should be a GraalVM JDK, or a compatible Oracle JDK using the Graal compiler.
+This mode gives the JavaScript engine full access to Java at runtime, but also requires the JVM to first (just-in-time) compile the JavaScript engine when executed, just like any other Java application.</p>
+
+<p>Running in Native Image means that the JavaScript engine, including all its dependencies from, for example, the JDK, is precompiled into a native executable.
+This will tremendously reduce the startup of any JavaScript application, as GraalVM can immediately start to compile JavaScript code, without itself requiring to be compiled first.
+This mode, however, will only give GraalVM access to Java classes known at the time of image creation.
+Most significantly, this means that the JavaScript-to-Java interoperability features are not available in this mode, as they would require dynamic class loading and execution of arbitrary Java code at runtime.</p>
+
+<h2 id="errors">Errors</h2>
+
+<h3 id="typeerror-access-to-host-class-commyexamplemyclass-is-not-allowed-or-does-not-exist">TypeError: Access to host class com.myexample.MyClass is not allowed or does not exist</h3>
+<p>Reason:</p>
+<ul>
+  <li>You are trying to access a Java class that is unknown to the <code>js</code> process, or is not among the allowed classes that your code can access.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>Ensure there is no typo in the class name.</li>
+  <li>Ensure the class is on the class path. Use the <code>--vm.cp=&lt;classpath&gt;</code> option.</li>
+  <li>Ensure access to the class is permitted, by having a <code>@HostAccess.Export</code> annotation on your class and/or the <code>Context.Builder.allowHostAccess()</code> set to a permissive setting. See <a href="https://graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.html">org.graalvm.polyglot.Context</a>.</li>
+</ul>
+
+<h3 id="typeerror-unsupportedtypeexception">TypeError: UnsupportedTypeException</h3>
+<pre><code>TypeError: execute on JavaObject[Main$$Lambda$63/1898325501@1be2019a (Main$$Lambda$63/1898325501)] failed due to: UnsupportedTypeException
+</code></pre>
+
+<p>Reason:</p>
+<ul>
+  <li>GraalJS in some cases does not allow concrete callback types when calling from JavaScript to Java. A Java function expecting, for example, a <code>Value</code> object, might fail with the quoted error message due to that.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>Change the signature in the Java callback method.</li>
+</ul>
+
+<p>Status:</p>
+<ul>
+  <li>This is a <a href="https://github.com/graalvm/graaljs/issues/120">known limitation</a> and should be resolved in future versions.</li>
+</ul>
+
+<p>Example:</p>
+<pre><code class="language-java">import java.util.function.Function;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.HostAccess;
+
+public class Minified {
+  public static void main(String ... args) {
+    //change signature to Function&lt;Object, String&gt; to make it work
+    Function&lt;Value, String&gt; javaCallback = (test) -&gt; {
+      return "passed";
+    };
+    try(Context ctx = Context.newBuilder()
+    .allowHostAccess(HostAccess.ALL)
+    .build()) {
+      Value jsFn = ctx.eval("js", "f =&gt; function() { return f(arguments); }");
+      Value javaFn = jsFn.execute(javaCallback);
+      System.out.println("finished: "+javaFn.execute());
+    }
+  }
+}
+</code></pre>
+
+<h3 id="typeerror-message-not-supported">TypeError: Message not supported</h3>
+<pre><code>TypeError: execute on JavaObject[Main$$Lambda$62/953082513@4c60d6e9 (Main$$Lambda$62/953082513)] failed due to: Message not supported.
+</code></pre>
+
+<p>Reason:</p>
+<ul>
+  <li>You are trying to execute an operation (a message) on a polyglot object that this object does not handle. For example, you are calling <code>Value.execute()</code> on a non-executable object.</li>
+  <li>A security setting (for example, <code>org.graalvm.polyglot.HostAccess</code>) might prevent the operation.</li>
+</ul>
+
+<p>Solution:</p>
+<ul>
+  <li>Ensure the object (type) in question does handle the respective message.</li>
+  <li>Specifically, ensure the JavaScript operation you try to execute on a Java type is possible semantically in Java. For example, while you can <code>push</code> a value to an array in JavaScript and thus automatically grow the array, arrays in Java are of fixed length and trying to push to a Java array will result in a <code>Message not supported</code> failure. You might want to wrap Java objects for such cases, for example, as a <code>ProxyArray</code>.</li>
+  <li>Ensure access to the class is permitted, by having a <code>@HostAccess.Export</code> annotation on your class and/or the <code>Context.Builder.allowHostAccess()</code> set to a permissive setting. See <a href="https://graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.html">org.graalvm.polyglot.Context</a>.</li>
+  <li>Are you trying to call a Java Lambda expression or Functional Interface? Annotating the proper method with a <code>@HostAccess.Export</code> annotation can be a pitfall. While you can annotate the method to which the functional interface refers, the interface itself (or the Lambda class created in the background) fails to be properly annotated and recognized as <em>exported</em>. See below for examples highlighting the problem and a working solution.</li>
+</ul>
+
+<p>An example that triggers a <code>Message not supported</code> error with certain <code>HostAccess</code> settings, e.g., <code>HostAccess.EXPLICIT</code>:</p>
+<pre><code class="language-java">{
+  ...
+  //a JS function expecting a function as argument
+  Value jsFn = ...;
+  //called with a functional interface as argument
+  jsFn.execute((Function&lt;Integer, Integer&gt;)this::javaFn);
+  ...
+}
+
+@Export
+public Object javaFn(Object x) { ... }
+
+@Export
+public Callable&lt;Integer&gt; lambda42 = () -&gt; 42;
+</code></pre>
+
+<p>In the example above, the method <code>javaFn</code> is seemingly annotated with <code>@Export</code>, but the functional interface passed to <code>jsFn</code> is <strong>not</strong>, as the functional interface behaves like a wrapper around <code>javaFn</code>, thus hiding the annotation.
+Neither is <code>lambda42</code> properly annotated—that pattern annotates the <em>field</em> <code>lambda42</code>, nor its executable function in the generated lambda class.</p>
+
+<p>In order to add the <code>@Export</code> annotation to a functional interface, use this pattern instead:</p>
+<pre><code class="language-java">import java.util.function.Function;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.HostAccess;
+
+public class FAQ {
+  public static void main(String[] args) {
+    try(Context ctx = Context.newBuilder()
+    .allowHostAccess(HostAccess.EXPLICIT)
+    .build()) {
+      Value jsFn = ctx.eval("js", "f =&gt; function() { return f(arguments); }");
+      Value javaFn = jsFn.execute(new MyExportedFunction());
+      System.out.println("finished: " + javaFn.execute());
+    }
+  }
+
+  @FunctionalInterface
+  public static class MyExportedFunction implements Function&lt;Object, String&gt; {
+    @Override
+    @HostAccess.Export
+    public String apply(Object s) {
+      return "passed";
+    }
+  };
+}
+</code></pre>
+
+<p>Another option is to allow access to <code>java.function.Function</code>’s <code>apply</code> method.
+However, note that this allows access to <em>ALL</em> instances of this interface—in most production environments, this will be too permissive and open potential security holes.</p>
+<pre><code class="language-java">HostAccess ha = HostAccess.newBuilder(HostAccess.EXPLICIT)
+  //warning: too permissive for use in production
+  .allowAccess(Function.class.getMethod("apply", Object.class))
+  .build();
+</code></pre>
+
+<h3 id="warning-implementation-does-not-support-runtime-compilation">Warning: Implementation does not support runtime compilation.</h3>
+
+<p>If you get the following warning, you are not running on GraalVM JDK, or a compatible Oracle JDK or OpenJDK using the Graal Compiler:</p>
+<pre><code>[engine] WARNING: The polyglot context is using an implementation that does not support runtime compilation.
+The guest application code will therefore be executed in interpreted mode only.
+Execution only in interpreted mode will strongly impair guest application performance.
+To disable this warning, use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
+</code></pre>
+
+<p>To resolve this, use <a href="https://www.graalvm.org/downloads/">GraalVM</a> or see how to <a href="/jdk23/reference-manual/js/RunOnJDK/">Run GraalJS on a Stock JDK guide</a> for instructions on how to set up the Graal compiler on a compatible Graal-enabled stock JDK.</p>
+
+<p>Nevertheless, if this is intentional, you can disable the warning and continue to run with degraded performance by setting the above mentioned option, either via the command line or using the <code>Context.Builder</code>, for example:</p>
+<pre><code class="language-java">try (Context ctx = Context.newBuilder("js")
+    .option("engine.WarnInterpreterOnly", "false")
+    .build()) {
+  ctx.eval("js", "console.log('Greetings!');");
+}
+</code></pre>
+<p>Note that when using an explicit polyglot engine, the option has to be set on the <code>Engine</code>, for example:</p>
+<pre><code class="language-java">try (Engine engine = Engine.newBuilder()
+    .option("engine.WarnInterpreterOnly", "false")
+    .build()) {
+  try (Context ctx = Context.newBuilder("js").engine(engine).build()) {
+    ctx.eval("js", "console.log('Greetings!');");
+  }
+}
+</code></pre>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="graaljs-compatibility">GraalJS Compatibility</h1>
+
+<p>GraalJS is an ECMAScript-compliant JavaScript language runtime.
+This document explains the public API it presents for user applications written in JavaScript.</p>
+
+<ul>
+  <li><a href="#ecmascript-language-compliance">ECMAScript Language Compliance</a></li>
+  <li><a href="#compatibility-extensions">Compatibility Extensions</a></li>
+  <li><a href="#graalvm-javascript-extensions">GraalJS Extensions</a></li>
+</ul>
+
+<h2 id="ecmascript-language-compliance">ECMAScript Language Compliance</h2>
+
+<p>GraalJS implements the ECMAScript (ECMA-262) specification and is fully compatible with the <a href="https://262.ecma-international.org/">ECMAScript 2024 specification</a> (sometimes referred to as the 15th edition).
+New features are frequently added to GraalVM when they are confirmed to be part of ECMAScript 2024, see the <a href="https://github.com/oracle/graaljs/blob/master/CHANGELOG.md">CHANGELOG.md</a> for details.
+Older versions starting from ECMAScript 5 can be enabled with a configuration option (by number: <code>--js.ecmascript-version=5</code> or by year: <code>--js.ecmascript-version=2024</code>).
+In a production environment, you might consider specifying a fixed ECMAScript version to be used, as future versions of GraalJS will use newer versions of the specification once available.</p>
+
+<p>GraalJS provides the following function objects in the global scope as specified by ECMAScript, representing the JavaScript core library:
+Array, ArrayBuffer, Boolean, DataView, Date, Error, Function, JSON, Map, Math, Number, Object, Promise, Proxy, Reflect, RegExp, Set, SharedArrayBuffer, String, Symbol, TypedArray, WeakMap, and WeakSet.</p>
+
+<p>Additional objects are available under options, for example, <code>--js.temporal</code>.
+Run <code>js --help</code> for the list of available options.</p>
+
+<p>Several of these function objects and some of their members are only available when a certain version of the specification is selected for execution.
+For a list of methods provided, inspect the ECMAScript specification.
+Extensions to the specification are specified below.</p>
+
+<h3 id="internationalization-api-ecma-402">Internationalization API (ECMA-402)</h3>
+
+<p>GraalJS comes with an implementation of the <a href="https://tc39.github.io/ecma402">ECMA-402 Internationalization API</a>, enabled by default (can be disabled using the following option: <code>--js.intl-402=false</code>).
+This includes the following extensions:</p>
+<ul>
+  <li><code>Intl.Collator</code></li>
+  <li><code>Intl.DateTimeFormat</code></li>
+  <li><code>Intl.DisplayNames</code></li>
+  <li><code>Intl.ListFormat</code></li>
+  <li><code>Intl.Locale</code></li>
+  <li><code>Intl.NumberFormat</code></li>
+  <li><code>Intl.PluralRules</code></li>
+  <li><code>Intl.RelativeTimeFormat</code></li>
+  <li><code>Intl.Segmenter</code></li>
+</ul>
+
+<p>The functionality of a few other built-ins, such as <code>toLocaleString</code>, is also updated according to the ECMA-402 specification.</p>
+
+<h3 id="javascript-modules">JavaScript Modules</h3>
+
+<p>GraalJS supports modules as defined by ECMAScript 6 and later.
+Be aware that the support for this feature continues to increase. 
+Be sure to use the latest ECMAScript version for the all the latest features.</p>
+
+<p>When loading modules via a polyglot <code>Source</code>, you can use the unofficial <code>application/javascript+module</code> MIME type to specify that you are loading a module.
+When loading with JavaScript code from a file, make sure the module is loaded from a file with the <em>.mjs</em> extension.
+Loading with the <code>import</code> keyword is not limited by that, and can <code>import</code> from a file of any extension.</p>
+
+<h2 id="compatibility-extensions">Compatibility Extensions</h2>
+
+<p>The following objects and methods are available in GraalJS for compatibility with other JavaScript engines.
+Note that the behavior of such methods might not strictly match the semantics of those methods in all existing engines.</p>
+
+<h3 id="language-features">Language Features</h3>
+
+<h4 id="conditional-catch-clauses">Conditional Catch Clauses</h4>
+
+<p>GraalJS supports conditional catch clauses if the <code>js.syntax-extensions</code> option is enabled:</p>
+<pre><code class="language-js">try {
+    myMethod(); // can throw
+} catch (e if e instanceof TypeError) {
+    print("TypeError caught");
+} catch (e) {
+    print("another Error caught");
+}
+</code></pre>
+
+<h3 id="global-properties">Global Properties</h3>
+
+<h4 id="loadsource"><code>load(source)</code></h4>
+<ul>
+  <li>loads (parses and executes) the specified JavaScript source code</li>
+</ul>
+
+<p>Source can be of type:</p>
+<ul>
+  <li>a String: the path of the source file or a URL to execute.</li>
+  <li><code>java.lang.URL</code>: the URL is queried for the source code to execute if the <code>js.load-from-url</code> option is set to <code>true</code>.</li>
+  <li><code>java.io.File</code>: the file is read for the source code to execute.</li>
+  <li>a JavaScript object: the object is queried for a <code>name</code> and a <code>script</code> property, which represent the source name and code, respectively.</li>
+  <li>all other types: the source is converted to a String.</li>
+</ul>
+
+<p><code>load</code> is available by default and can be deactivated by setting the <code>js.load</code> option to <code>false</code>.</p>
+
+<h4 id="printarg-and-printerrarg"><code>print(...arg)</code> and <code>printErr(...arg)</code></h4>
+
+<ul>
+  <li>prints the arguments on the console (<code>stdout</code> and <code>stderr</code>, respectively)</li>
+  <li>provides a best-effort human readable output</li>
+</ul>
+
+<p><code>print</code> and <code>printErr</code> are available by default and can be deactivated by setting the <code>js.print</code> option to <code>false</code>.</p>
+
+<h4 id="methods-of-the-console-global-object">Methods of the <code>console</code> Global Object</h4>
+
+<p>A global <code>console</code> object is provided that offers several methods for debugging purposes.
+These methods strive to provide similar functionality as provided in other engines, but do not guarantee identical results.</p>
+
+<p>Note that those methods behave differently when GraalJS is executed in Node.js mode (for example, the <code>node</code> executable is started instead of <code>js</code>).
+Node.js provides its own implementation that is used instead.</p>
+<ul>
+  <li><code>console.log</code>, <code>console.info</code>, and <code>console.debug</code>: an alias for <code>print(...arg)</code></li>
+  <li><code>console.error</code>, and <code>console.warn</code>: similar to <code>print</code>, but using the error IO stream</li>
+  <li><code>console.assert(check, message)</code>: prints <code>message</code> when <code>check</code> is falsy</li>
+  <li><code>console.clear</code>: clears the console window if possible</li>
+  <li><code>console.count()</code>, and <code>console.countReset()</code>: counts and prints how many times it has been called, or resets this counter</li>
+  <li><code>console.group</code>, and <code>console.groupEnd</code>: increases or decreases the indentation for succeeding outputs to the console</li>
+  <li><code>console.time()</code>, <code>console.timeLog()</code>, and <code>console.timeEnd()</code>: starts a timer, prints the duration the timer has been active, or prints the duration and stops the timer, respectively</li>
+</ul>
+
+<p>The <code>console</code> object is available by default and can be deactivated by setting the option <code>js.console</code> to <code>false</code>.</p>
+
+<h3 id="additional-global-functions-in-the-js-shell">Additional Global Functions in the <code>js</code> Shell</h3>
+
+<h4 id="quitstatus"><code>quit(status)</code></h4>
+
+<ul>
+  <li>exits the engine and returns the specified status code</li>
+</ul>
+
+<h4 id="readfile"><code>read(file)</code></h4>
+
+<ul>
+  <li>reads the content of <code>file</code></li>
+</ul>
+
+<p>The result is returned as a String.</p>
+
+<p>The argument <code>file</code> can be of type:</p>
+<ul>
+  <li><code>java.io.File</code>: the file is used directly.</li>
+  <li>all other types: <code>file</code> is converted to a String and interpreted as a file name.</li>
+</ul>
+
+<h4 id="readbufferfile"><code>readbuffer(file)</code></h4>
+
+<ul>
+  <li>reads the content of <code>file</code> similar to the <code>read</code> function</li>
+</ul>
+
+<p>The result is returned as a JavaScript <code>ArrayBuffer</code> object.</p>
+
+<h4 id="readline"><code>readline()</code></h4>
+
+<ul>
+  <li>reads one line of input from the input stream</li>
+</ul>
+
+<p>The result is returned as a String.</p>
+
+<h3 id="object">Object</h3>
+
+<h4 id="objectprototype__definegetter__prop-func"><code>Object.prototype.__defineGetter__(prop, func)</code></h4>
+
+<ul>
+  <li>defines the <code>prop</code> property of <code>this</code> to be the getter function <code>func</code></li>
+</ul>
+
+<p>This functionality is deprecated in most JavaScript engines.
+In recent ECMAScript versions, getters and setters are natively supported by the language.</p>
+
+<h4 id="objectprototype__definesetter__prop-func"><code>Object.prototype.__defineSetter__(prop, func)</code></h4>
+
+<ul>
+  <li>defines the <code>prop</code> property of <code>this</code> to be the setter function <code>func</code></li>
+</ul>
+
+<p>This functionality is deprecated in most JavaScript engines.
+In recent ECMAScript versions, getters and setters are natively supported by the language.</p>
+
+<h4 id="objectprototype__lookupgetter__prop"><code>Object.prototype.__lookupGetter__(prop)</code></h4>
+
+<ul>
+  <li>returns the getter function for property <code>prop</code> of the object as set by <code>__defineGetter__</code></li>
+</ul>
+
+<p>This functionality is deprecated in most JavaScript engines.
+In recent ECMAScript versions, getters and setters are natively supported by the language.</p>
+
+<h4 id="objectprototype__lookupsetter__prop"><code>Object.prototype.__lookupSetter__(prop)</code></h4>
+
+<ul>
+  <li>returns the setter function for property <code>prop</code> of the object as set by <code>__defineSetter__</code></li>
+</ul>
+
+<p>This functionality is deprecated in most JavaScript engines.
+In recent ECMAScript versions, getters and setters are natively supported by the language.</p>
+
+<h3 id="nashorn-scripting-mode">Nashorn Scripting Mode</h3>
+
+<p>GraalJS provides a scripting mode compatible with the one provided by the Nashorn engine.
+It is enabled with the <code>js.scripting</code> option. Make sure to have <code>--experimental-options</code> set:</p>
+<pre><code class="language-shell">js --experimental-options --js.scripting=true
+</code></pre>
+
+<p>In scripting mode, several properties and functions are added to the global object, including <a href="#readfile">readFully</a>, <a href="#readline">readLine</a>, <code>$ARG</code>, <code>$ENV</code>, and <code>$EXEC</code>.</p>
+
+<p>There are migration guides available for code previously targeted to the <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/NashornMigrationGuide.md">Nashorn</a> or <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/RhinoMigrationGuide.md">Rhino</a> engines.</p>
+
+<h2 id="graaljs-extensions">GraalJS Extensions</h2>
+
+<h3 id="graal-object">Graal Object</h3>
+
+<p>The <code>Graal</code> object is provided as a property of the global object.
+It provides Graal-specific information.
+The existence of the property can be used to identify whether GraalJS is the current language engine:</p>
+<pre><code class="language-js">if (typeof Graal != 'undefined') {
+    print(Graal.versionECMAScript);
+    print(Graal.versionGraalVM);
+    print(Graal.isGraalRuntime());
+}
+</code></pre>
+
+<p>The Graal object is available in GraalJS by default, unless deactivated by an option (<code>js.graal-builtin=false</code>).</p>
+
+<h4 id="graalversionecmascript"><code>Graal.versionECMAScript</code></h4>
+
+<ul>
+  <li>provides the version number (year value) of the GraalJS ECMAScript compatibility mode</li>
+</ul>
+
+<h4 id="graalversiongraalvm"><code>Graal.versionGraalVM</code></h4>
+
+<ul>
+  <li>provides the version of GraalVM, if the current engine is executed on GraalVM</li>
+</ul>
+
+<h4 id="graalisgraalruntime"><code>Graal.isGraalRuntime()</code></h4>
+
+<ul>
+  <li>indicates if GraalJS is executed on a GraalVM-enabled runtime</li>
+  <li>If <code>true</code>, hot code is compiled by the Graal compiler, resulting in high peak performance.</li>
+  <li>If <code>false</code>, GraalJS will not be optimized by the Graal Compiler, typically resulting in lower performance.</li>
+</ul>
+
+<h3 id="graalsetunhandledpromiserejectionhandlerhandler"><code>Graal.setUnhandledPromiseRejectionHandler(handler)</code></h3>
+
+<ul>
+  <li>provides the unhandled promise rejection handler when using option (<code>js.unhandled-rejections=handler</code>).</li>
+  <li>the handler is called with two arguments: (rejectionReason, unhandledPromise).</li>
+  <li><code>Graal.setUnhandledPromiseRejectionHandler</code> can be called with <code>null</code>, <code>undefined</code>, or empty arguments to clear the handler.</li>
+</ul>
+
+<h3 id="java">Java</h3>
+
+<p>The <code>Java</code> object is only available when <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostClassLookup-java.util.function.Predicate-">host class lookup</a> is allowed.
+To access Java host classes and its members, they first need to be allowed by the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html">host access policy</a>, and when running from a native executable, be registered for <a href="https://www.graalvm.org/latest/reference-manual/native-image/dynamic-features/Reflection/">runtime reflection</a>.</p>
+
+<p>Note that some functions require the Nashorn compatibility mode to be set (<code>--js.nashorn-compat=true</code>).</p>
+
+<h4 id="javatypeclassname"><code>Java.type(className)</code></h4>
+
+<p><code>Java.type</code> loads the specified Java class and returns a constructible object that has the static members (for example, methods and fields) of the class and can be used with the <code>new</code> keyword to construct new instances:</p>
+<pre><code class="language-js">var BigDecimal = Java.type('java.math.BigDecimal');
+var point1 = new BigDecimal("0.1");
+var two = BigDecimal.TWO;
+console.log(point1.multiply(two).toString());
+</code></pre>
+
+<p>Note that when used directly with the <code>new</code> operator, <code>Java.type(...)</code> needs to be enclosed in parentheses:</p>
+<pre><code class="language-js">console.log(new (Java.type('java.math.BigDecimal'))("1.1").pow(15));
+</code></pre>
+
+<h4 id="javafromjavadata"><code>Java.from(javaData)</code></h4>
+
+<p><code>Java.from</code> creates a shallow copy of the Java data structure (Array, List) as a JavaScript array.</p>
+
+<p>In many cases, this is not necessary; you can typically use the Java data structure directly from JavaScript.</p>
+
+<h4 id="javatojsdata-javatype"><code>Java.to(jsData, javaType)</code></h4>
+
+<p><code>Java.to</code> converts the argument to the Java type.</p>
+
+<p>The source object <code>jsData</code> is expected to be a JavaScript array, or an array-like object with a <code>length</code> property.
+The target <code>javaType</code> can either be a String (for example, an <code>"int[]"</code>) or a type object (such as <code>Java.type("int[]")</code>).
+Valid target types are Java arrays.
+When the target type is omitted, it defaults to <code>Object[]</code>.</p>
+<pre><code class="language-js">var jsArray = ["a", "b", "c"];
+var stringArrayType = Java.type("java.lang.String[]");
+var javaArray = Java.to(jsArray, stringArrayType);
+assertEquals('class java.lang.String[]', String(javaArray.getClass()));
+var javaArray = Java.to(jsArray);
+assertEquals('class java.lang.Object[]', String(javaArray.getClass()));
+</code></pre>
+
+<p>The conversion methods as defined by ECMAScript (for example, <code>ToString</code> and <code>ToDouble</code>) are executed when a JavaScript value has to be converted to a Java type.
+Lossy conversion is disallowed and results in a <code>TypeError</code>.</p>
+
+<h4 id="javaisjavaobjectobj"><code>Java.isJavaObject(obj)</code></h4>
+
+<ul>
+  <li>returns <code>true</code> if <code>obj</code> is a Java host object</li>
+  <li>returns <code>false</code> for native JavaScript objects, as well as for objects of other polyglot languages</li>
+</ul>
+
+<h4 id="javaistypeobj"><code>Java.isType(obj)</code></h4>
+
+<ul>
+  <li>returns <code>true</code> if <code>obj</code> is an object representing the constructor and static members of a Java class, as obtained by <code>Java.type()</code> or package objects.</li>
+  <li>returns <code>false</code> for all other arguments</li>
+</ul>
+
+<h4 id="javatypenameobj"><code>Java.typeName(obj)</code></h4>
+
+<ul>
+  <li>returns the Java <code>Class</code> name of <code>obj</code> when <code>obj</code> represents a Java type (<code>isType(obj) === true</code>) or Java <code>Class</code> instance</li>
+  <li>returns <code>undefined</code> otherwise</li>
+</ul>
+
+<h4 id="javaisjavafunctionfn"><code>Java.isJavaFunction(fn)</code></h4>
+
+<ul>
+  <li>returns whether <code>fn</code> is an object of the Java language that represents a Java function</li>
+  <li>returns <code>false</code> for all other types, including native JavaScript function, and functions of other polyglot languages</li>
+</ul>
+
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
+
+<h4 id="javaisscriptobjectobj"><code>Java.isScriptObject(obj)</code></h4>
+
+<ul>
+  <li>returns whether <code>obj</code> is an object of the JavaScript language</li>
+  <li>returns <code>false</code> for all other types, including objects of Java and other polyglot languages</li>
+</ul>
+
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
+
+<h4 id="javaisscriptfunctionfn"><code>Java.isScriptFunction(fn)</code></h4>
+
+<ul>
+  <li>returns whether <code>fn</code> is a JavaScript function</li>
+  <li>returns <code>false</code> for all other types, including Java function, and functions of other polyglot languages</li>
+</ul>
+
+<blockquote>
+  <p>This function is only available in Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
+</blockquote>
+
+<h4 id="javaaddtoclasspathlocation"><code>Java.addToClasspath(location)</code></h4>
+
+<ul>
+  <li>adds the specified location (a <code>.jar</code> file or directory path string) to Java’s classpath</li>
+</ul>
+
+<h3 id="polyglot">Polyglot</h3>
+
+<p>The functions of the <code>Polyglot</code> object allow to interact with values from other polyglot languages.</p>
+
+<p>The <code>Polyglot</code> object is available by default, unless deactivated by setting the <code>js.polyglot-builtin</code> option to <code>false</code>.</p>
+
+<h4 id="polyglotexportkey-value"><code>Polyglot.export(key, value)</code></h4>
+
+<ul>
+  <li>exports the JavaScript <code>value</code> under the name <code>key</code> (a string) to the polyglot bindings:
+    <pre><code class="language-js">function helloWorld() { print("Hello, JavaScript world"); }
+Polyglot.export("helloJSWorld", helloWorld);
+</code></pre>
+  </li>
+</ul>
+
+<p>If the polyglot bindings already had a value identified by <code>key</code>, it is overwritten with the new value.
+The <code>value</code> may be any valid Polyglot value.</p>
+
+<ul>
+  <li>throws a <code>TypeError</code> if <code>key</code> is not a String or is missing</li>
+</ul>
+
+<h4 id="polyglotimportkey"><code>Polyglot.import(key)</code></h4>
+
+<ul>
+  <li>imports the value identified by <code>key</code> (a string) from the polyglot bindings and returns it:
+    <pre><code class="language-js">var rubyHelloWorld = Polyglot.import("helloRubyWorld");
+rubyHelloWorld();
+</code></pre>
+  </li>
+</ul>
+
+<p>If no language has exported a value identified by <code>key</code>, <code>undefined</code> is returned.</p>
+
+<ul>
+  <li>throws a <code>TypeError</code> if <code>key</code> is not a string or missing</li>
+</ul>
+
+<h4 id="polyglotevallanguageid-sourcecode"><code>Polyglot.eval(languageId, sourceCode)</code></h4>
+
+<ul>
+  <li>parses and evaluates the <code>sourceCode</code> with the interpreter identified by <code>languageId</code></li>
+</ul>
+
+<p>The value of <code>sourceCode</code> is expected to be a String (or convertible to one).</p>
+
+<ul>
+  <li>returns the evaluation result, depending on the <code>sourceCode</code> and/or the semantics of the language evaluated:
+    <pre><code class="language-js">var pyArray = Polyglot.eval('python', 'import random; [random.uniform(0.0, 1.0) for _ in range(1000)]');
+</code></pre>
+  </li>
+</ul>
+
+<p>Exceptions can occur when an invalid <code>languageId</code> is passed, when the <code>sourceCode</code> cannot be evaluated by the language, or when the executed program throws one.</p>
+
+<h4 id="polyglotevalfilelanguageid-sourcefilename"><code>Polyglot.evalFile(languageId, sourceFileName)</code></h4>
+
+<ul>
+  <li>parses the file <code>sourceFileName</code> with the interpreter identified by <code>languageId</code></li>
+</ul>
+
+<p>The value of <code>sourceFileName</code> is expected to be a String (or convertible to one), representing a file reachable by the current path.</p>
+
+<ul>
+  <li>returns an executable object, typically a function:
+    <pre><code class="language-js">var rFunc = Polyglot.evalFile('R', 'myExample.r');
+var result = rFunc();
+</code></pre>
+  </li>
+</ul>
+
+<p>Exceptions can occur when an invalid <code>languageId</code> is passed, when the file identified by <code>sourceFileName</code> cannot be found, or when the language throws an exception during parsing (parse time errors, for example, syntax errors).
+Exceptions thrown by the evaluated program are only thrown once the resulting function is evaluated.</p>
+
+<p>The <code>Polyglot.evalFile</code> function is available by default when the <code>Polyglot</code> builtin is available, unless deactivated by setting the <code>js.polyglot-evalfile</code> option to <code>false</code>.
+It is also available when <code>js.debug-builtin</code> is activated.</p>
+
+<h3 id="debug">Debug</h3>
+
+<ul>
+  <li>requires starting the engine with the <code>js.debug-builtin</code> option</li>
+</ul>
+
+<p><code>Debug</code> is a GraalJS specific function object that provides functionality for debugging JavaScript code and the JavaScript engine.
+This API might change without notice. Do not use for production purposes.</p>
+
+<h3 id="global-functions">Global Functions</h3>
+
+<h4 id="printerrarg"><code>printErr(...arg)</code></h4>
+
+<ul>
+  <li>behaves identically to <code>print</code></li>
+</ul>
+
+<p>The only difference is that the error stream is used to print to, instead of the default output stream.</p>
+
+<h4 id="loadwithnewglobalsource-arguments"><code>loadWithNewGlobal(source, arguments)</code></h4>
+
+<ul>
+  <li>behaves similarly to <code>load</code> function</li>
+</ul>
+
+<p>The relevant difference is that the code is evaluated in a new global scope (Realm, as defined by ECMAScript).</p>
+
+<p>Source can be of type:</p>
+
+<ul>
+  <li><code>java.lang.URL</code>: the URL is queried for the source code to execute.</li>
+  <li>a JavaScript object: the object is queried for a <code>name</code> and a <code>script</code> property.</li>
+  <li>all other types: the source is converted to a String.</li>
+</ul>
+
+<p>The value of <code>arguments</code> is provided to the loaded code upon execution.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/js/JavaInteroperability/">Java Interoperability</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

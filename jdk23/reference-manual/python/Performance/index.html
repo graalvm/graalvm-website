@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="python-performance">Python Performance</h1>
+
+<h2 id="execution-performance">Execution Performance</h2>
+
+<p>GraalPy uses the state-of-the-art just-in-time (JIT) compiler of GraalVM.
+When JIT compiled, GraalPy runs Python code ~4x faster than CPython on the official <a href="https://pyperformance.readthedocs.io/">Python Performance Benchmark Suite</a>.
+<img src="/jdk23/docs/reference-manual/python/assets/performance.svg" alt="" /></p>
+
+<p>These benchmarks can be run by installing the <code>pyperformance</code> package and calling <code>pyperformance run</code> on each of CPython and GraalPy.
+To get the Jython numbers we adapted the harness and benchmarks because of missing Python 3 support in Jython.
+The speedup was then calculated by taking the pair-wise intersection of working benchmarks and calculating the geomean.</p>
+
+<p>Without a JIT compiler, GraalPy currently executes pure Python code around ~4x slower than CPython.
+This means that very short running scripts or scripts running without the Graal compiler on Oracle JDK or OpenJDK are expected to be slower.</p>
+
+<p>Many Python packages from the machine learning or data science ecosystems contain C extension code.
+This code benefits little from GraalPy’s JIT compilation and suffers from having to emulate CPython implementation details on GraalPy.
+When many C extensions are involved, performance can vary a lot depending on the specific interactions of native and Python code.</p>
+
+<h2 id="code-loading-performance-and-footprint">Code Loading Performance and Footprint</h2>
+
+<p>It takes time to parse Python code so when using GraalPy to embed another language in Python, observe the general advice for embedding Graal languages related to <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#code-caching-across-multiple-contexts">code caching</a>.
+Furthermore, some Python libraries require loading a large amount of code on startup before they can do any work.
+Due to the design of the Python language, incremental parsing is not possible and for some scripts, the parser may represent a significant fraction of runtime and memory.
+To mitigate this, GraalPy can cache the bytecode generated during parsing in <em>.pyc</em> files, if appropriate file system access is configured.</p>
+
+<h3 id="creating-and-managing-pyc-files">Creating and Managing <em>.pyc</em> Files</h3>
+
+<p>GraalPy automatically creates a <em>.pyc</em> file when there is an invalid or absent <em>.pyc</em> file that matches a corresponding <em>.py</em> file.</p>
+
+<p>When GraalPy imports a Python source file (module) during an execution for the first time, it automatically creates a corresponding <em>.pyc</em> file.
+If GraalPy imports the same module again, then it uses the existing <em>.pyc</em> file.
+That means that there are no <em>.pyc</em> files for source files that were not yet executed (imported).
+GraalPy creates <em>.pyc</em> files entirely through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>, so that a Java application with embedded Python code can manage file system access.</p>
+
+<blockquote>
+  <p>Note: GraalPy never deletes a <em>.pyc</em> file.</p>
+</blockquote>
+
+<p>Every time GraalPy subsequently executes a script, it reuses the existing <em>.pyc</em> file, or creates a new one.
+GraalPy recreates a <em>.pyc</em> file if the timestamp or hashcode of the original source file is changed.
+GraalPy generates the hashcode based only on the Python source file by calling <code>source.hashCode()</code>, which is the JDK hash code over the array of source file bytes, calculated with <code>java.util.Arrays.hashCode(byte[])</code>.</p>
+
+<p>GraalPy also recreates <em>.pyc</em> files if a magic number in the Python parser is changed.
+The magic number is hard-coded in the source of Python and can not be changed by the user (unless of course that user has access to the bytecode of Python).</p>
+
+<p>The developers of GraalPy change the magic number when the bytecode format changes.
+This is an implementation detail, so the magic number does not have to correspond to the version of GraalPy (as in CPython).
+The magic number of <code>pyc</code> is a function of the actual Python runtime Java code that is running. Changes to the magic number are communicated in the release notes so that developers or system administrators can delete old <em>.pyc</em> files when upgrading.</p>
+
+<p>Note that if you use <em>.pyc</em> files, you must allow write-access to GraalPy at least when switching versions or modifying the original source code file.
+Otherwise, the regeneration of source code files will fail and every import will have the overhead of accessing each old <em>.pyc</em> file, parsing the code, serializing it, and trying (and failing) to write out a new <em>.pyc</em> file.</p>
+
+<p>GraalPy creates the following directory structure for <em>.pyc</em> files:</p>
+<pre><code class="language-bash">top_directory/
+  __pycache__/
+    sourceA.graalpy.pyc
+    sourceB.graalpy.pyc
+  sourceA.py
+  sourceB.py
+  sub_directory/
+    __pycache__/
+      sourceX.graalpy.pyc
+    sourceX.py
+</code></pre>
+
+<p>By default, GraalPy creates the <em>__pycache__</em> directory on the same directory level as a source code file and in this directory all <em>.pyc</em> files from the same directory are stored.
+This directory may store <em>.pyc</em> files created with different versions of Python (including, for example, CPython), so the user may see files ending in <em>.cpython3-6.pyc</em>, for example.</p>
+
+<p><em>.pyc</em> files are largely managed automatically by GraalPy in a manner compatible with CPython. GraalPy provides options similar to CPython to specify the location of t_.pyc_ files, and if they should be written at all, and both of these options can be changed by guest code.</p>
+
+<p>The creation of <em>.pyc</em> files can be controlled in the <a href="https://docs.python.org/3/using/cmdline.html">same way as CPython</a>:</p>
+
+<ul>
+  <li>The GraalPy launcher (<code>graalpy</code>) reads the <code>PYTHONDONTWRITEBYTECODE</code>
+environment variable. If this is set to a non-empty string, Python will not
+try to create a <em>.pyc</em> file when importing a module.</li>
+  <li>The launcher command line option <code>-B</code>, if given, has the same effect as the
+above.</li>
+  <li>Guest language code can change the attribute <code>dont_write_bytecode</code> of the
+<code>sys</code> built-in module at runtime to change the behavior for subsequent
+imports.</li>
+  <li>The GraalPy launcher reads the <code>PYTHONPYCACHEPREFIX</code> environment variable. If set,
+it creates the <em>__pycache__</em> directory at the path specified by the
+prefix, and creates a mirror of the directory structure of the source tree 
+on-demand to store the <em>.pyc</em> files.</li>
+  <li>A guest language code can change the attribute <code>pycache_prefix</code> of the <code>sys</code>
+module at runtime to change the location for subsequent imports.</li>
+</ul>
+
+<p>Because the developer cannot use environment variables or CPython options to
+communicate these options to GraalPy, these options are made available as language options:</p>
+
+<ul>
+  <li><code>python.DontWriteBytecodeFlag</code> - equivalent to <code>-B</code> or <code>PYTHONDONTWRITEBYTECODE</code></li>
+  <li><code>python.PyCachePrefix</code> - equivalent to <code>PYTHONPYCACHEPREFIX</code></li>
+</ul>
+
+<p>Note that a Python context will not enable writing <em>.pyc</em> files by default.
+The GraalPy launcher enables it by default, but if this is desired in the embedding use case, care should be taken to ensure that the <em>__pycache__</em> location is properly managed and the files in that location are secured against manipulation in the same way as the source code files (<em>.py</em>) from which they were derived.</p>
+
+<p>Note also that to upgrade the application sources to Oracle GraalPy, old <em>.pyc</em>
+files must be removed by the developer as required.</p>
+
+<h3 id="security-considerations">Security Considerations</h3>
+
+<p>GraalPy performs all file operations (obtaining the data, timestamps, and writing <em>.pyc</em> files)
+via the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/io/FileSystem.html">FileSystem API</a>. Developers can modify all of these operations by means of custom (for example, read-only) <code>FileSystem</code> implementations.
+The developer can also effectively disable the creation of <em>.pyc</em> files by disabling I/O permissions for GraalPy.</p>
+
+<p>If <em>.pyc</em> files are not readable, their location is not writable.
+If the <em>.pyc</em> files’ serialization data or magic numbers are corrupted in any way, the deserialization fails and GraalPy parses the <em>.py</em> source code file again.
+This comes with a minor performance hit <em>only</em> for the parsing of modules, which should not be significant for most applications (provided the application performs actual work in addition to loading Python code).</p>
+
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

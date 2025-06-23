@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="native-image-build-configuration">Native Image Build Configuration</h1>
+
+<p>Native Image supports a wide range of options to configure the <code>native-image</code> builder.</p>
+
+<h3 id="table-of-contents">Table of Contents</h3>
+
+<ul>
+  <li><a href="#embed-a-configuration-file">Embed a Configuration File</a></li>
+  <li><a href="#configuration-file-format">Configuration File Format</a></li>
+  <li><a href="#order-of-arguments-evaluation">Order of Arguments Evaluation</a></li>
+  <li><a href="#memory-configuration-for-native-image-build">Memory Configuration for Native Image Build</a></li>
+  <li><a href="#specify-types-required-to-be-defined-at-build-time">Specify Types Required to Be Defined at Build Time</a></li>
+</ul>
+
+<h2 id="embed-a-configuration-file">Embed a Configuration File</h2>
+
+<p>We recommend that you provide the configuration for the <code>native-image</code> builder by embedding a <em>native-image.properties</em> file into a project JAR file.
+The <code>native-image</code> builder will also automatically pick up all configuration options provided in the <em>META-INF/native-image/</em> directory (or any of its subdirectories) and use it to construct <code>native-image</code> command-line options.</p>
+
+<p>To avoid a situation when constituent parts of a project are built with overlapping configurations, we recommended you use subdirectories within <em>META-INF/native-image</em>: a JAR file built from multiple maven projects cannot suffer from overlapping <code>native-image</code> configurations.
+For example:</p>
+<ul>
+  <li><em>foo.jar</em> has its configurations in <em>META-INF/native-image/foo_groupID/foo_artifactID</em></li>
+  <li><em>bar.jar</em> has its configurations in <em>META-INF/native-image/bar_groupID/bar_artifactID</em></li>
+</ul>
+
+<p>The JAR file that contains <code>foo</code> and <code>bar</code> will then contain both configurations without conflict.
+Therefore the recommended layout to store configuration data in JAR files is as follows:</p>
+<pre><code>META-INF/
+└── native-image
+    └── groupID
+        └── artifactID
+            └── native-image.properties
+</code></pre>
+
+<p>Note that the use of <code>${.}</code> in a <em>native-image.properties</em> file expands to the resource location that contains that exact configuration file.
+This can be useful if the <em>native-image.properties</em> file refers to resources within its subdirectory, for example, <code>-H:ResourceConfigurationResources=${.}/custom_resources.json</code>.
+Always make sure you use the option variants that take resources, that is, use <code>-H:ResourceConfigurationResources</code> instead of <code>-H:ResourceConfigurationFiles</code>.
+Other options that work in this context are:</p>
+<ul>
+  <li><code>-H:DynamicProxyConfigurationResources</code></li>
+  <li><code>-H:JNIConfigurationResources</code></li>
+  <li><code>-H:ReflectionConfigurationResources</code></li>
+  <li><code>-H:ResourceConfigurationResources</code></li>
+  <li><code>-H:SerializationConfigurationResources</code></li>
+</ul>
+
+<p>By having such a composable <em>native-image.properties</em> file, building a native executable does not require any additional option on the command line.
+It is sufficient to run the following command:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/native-image -jar target/&lt;name&gt;.jar
+</code></pre>
+
+<p>To identify which configuration is applied when building a native executable, use <code>native-image --verbose</code>.
+This shows from where <code>native-image</code> picks up the configurations to construct the final composite configuration command-line options for the native image builder.</p>
+<pre><code class="language-shell">native-image --verbose -jar build/basic-app-0.1-all.jar
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/common/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/buffer/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/transport/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/handler/native-image.properties
+Apply jar:file://~/build/basic-app-0.1-all.jar!/META-INF/native-image/io.netty/codec-http/native-image.properties
+...
+Executing [
+    &lt;composite configuration command line options for the image builder&gt;
+]
+</code></pre>
+
+<p>Typical examples of configurations that use a configuration from <em>META-INF/native-image</em> can be found in <a href="https://github.com/graalvm/graalvm-demos/tree/master/archive/class-initialization-examples">Native Image configuration examples</a>.</p>
+
+<h2 id="configuration-file-format">Configuration File Format</h2>
+
+<p>A <em>native-image.properties</em> file is a Java properties file that specifies configurations for <code>native-image</code>. 
+The following properties are supported.</p>
+
+<p><strong>Args</strong></p>
+
+<p>Use this property if your project requires custom <code>native-image</code> command-line options to build correctly.
+For example, the <code>native-image-configure-examples/configure-at-runtime-example</code> contains <code>Args = --initialize-at-build-time=com.fasterxml.jackson.annotation.JsonProperty$Access</code> in its <em>native-image.properties</em> file to ensure the class <code>com.fasterxml.jackson.annotation.JsonProperty$Access</code> is initialized at executable build time.</p>
+
+<p><strong>JavaArgs</strong></p>
+
+<p>Sometimes it can be necessary to provide custom options to the JVM that runs the <code>native-image</code> builder.
+Use the <code>JavaArgs</code> property in this case.</p>
+
+<p><strong>ImageName</strong></p>
+
+<p>This property specifies a user-defined name for the executable.
+If <code>ImageName</code> is not used, a name is automatically chosen:
+    * <code>native-image -jar &lt;name.jar&gt;</code> has a default executable name <code>&lt;name&gt;</code>
+    * <code>native-image -cp ... fully.qualified.MainClass</code> has a default executable name <code>fully.qualified.mainclass</code></p>
+
+<p>Note that using <code>ImageName</code> does not prevent you from overriding the name via the command line.
+For example, if <code>foo.bar</code> contains <code>ImageName=foo_app</code>:
+    * <code>native-image -jar foo.bar</code> generates the executable <code>foo_app</code> but
+    * <code>native-image -jar foo.bar application</code> generates the executable <code>application</code></p>
+
+<h3 id="changing-the-default-configuration-directory">Changing the Default Configuration Directory</h3>
+
+<p>Native Image by default stores configuration information in the user’s home directory: <em>$HOME/.native-image/</em>.
+To change this default, set the environment variable <code>NATIVE_IMAGE_USER_HOME</code> to a different location. For example:</p>
+<pre><code class="language-shell">export NATIVE_IMAGE_USER_HOME= $HOME/.local/share/native-image
+</code></pre>
+
+<h2 id="order-of-arguments-evaluation">Order of Arguments Evaluation</h2>
+<p>The options passed to <code>native-image</code> are evaluated from left to right.
+This also extends to options that are passed indirectly via configuration files in the <em>META-INF/native-image</em> directory.
+Consider the example where there is a JAR file that includes <em>native-image.properties</em> containing <code>Args = -H:Optimize=0</code>.
+You can override the setting that is contained in the JAR file by using the <code>-H:Optimize=2</code> option after <code>-cp &lt;jar-file&gt;</code>.</p>
+
+<h2 id="memory-configuration-for-native-image-build">Memory Configuration for Native Image Build</h2>
+
+<p>The <code>native-image</code> builder runs on a JVM and uses the memory management of the underlying platform.
+The usual Java command-line options for garbage collection apply to the <code>native-image</code> builder.</p>
+
+<p>During the creation of a native executable, the representation of the whole application is created to determine which classes and methods will be used at runtime.
+It is a computationally intensive process that uses the following default values for memory usage:</p>
+<pre><code>-Xss10M \
+-XX:MaxRAMPercentage=&lt;percentage based on available memory&gt; \
+-XX:GCTimeRatio=19 \
+-XX:+ExitOnOutOfMemoryError \
+</code></pre>
+<p>These defaults can be changed by passing <code>-J + &lt;jvm option for memory&gt;</code> to the <code>native-image</code> tool.</p>
+
+<p>The <code>-XX:MaxRAMPercentage</code> value determines the maximum heap size of the builder and is computed based on available memory of the system.
+It maxes out at 32GB by default and can be overwritten with, for example, <code>-J-XX:MaxRAMPercentage=90.0</code> for 90% of physical memory or <code>-Xmx4g</code> for 4GB.
+<code>-XX:GCTimeRatio=19</code> increases the goal of the total time for garbage collection to 5%, which is more throughput-oriented and reduces peak RSS.
+The build process also exits on the first <code>OutOfMemoryError</code> (<code>-XX:+ExitOnOutOfMemoryError</code>) to provide faster feedback in environments under a lot of memory pressure.</p>
+
+<p>By default, the <code>native-image</code> tool uses up to 32 threads (but not more than the number of processors available). For custom values, use the <code>--parallelism=...</code> option.</p>
+
+<p>For other related options available to the <code>native-image</code> tool, see the output from the command <code>native-image --expert-options-all</code>.</p>
+
+<h2 id="specify-types-required-to-be-defined-at-build-time">Specify Types Required to Be Defined at Build Time</h2>
+
+<p>A well-structured library or application should handle linking of Java types (ensuring all reachable Java types are fully defined at build time) when building a native binary by itself.
+The default behavior is to throw linking errors, if they occur, at runtime. 
+However, you can prevent unwanted linking errors by specifying which classes are required to be fully linked at build time.
+For that, use the <code>--link-at-build-time</code> option. 
+If the option is used in the right context (see below), you can specify required classes to link at build time without explicitly listing classes and packages.
+It is designed in a way that libraries can only configure their own classes, to avoid any side effects on other libraries.
+You can pass the option to the <code>native-image</code> tool on the command line, embed it in a <em>native-image.properties</em> file on the module path or the class path.</p>
+
+<p>Depending on how and where the option is used it behaves differently:</p>
+
+<ul>
+  <li>If you use <code>--link-at-build-time</code> without arguments, all classes in the scope are required to be fully defined. If used without arguments on command line, all classes will be treated as “link-at-build-time” classes. If used without arguments embedded in a <em>native-image.properties</em> file on the module path, all classes of the module will be treated as “link-at-build-time” classes. If you use <code>--link-at-build-time</code> embedded in a <em>native-image.properties</em> file on the class path, the following error will be thrown:
+    <pre><code>  Error: Using '--link-at-build-time' without args only allowed on module path. 'META-INF/native-image/org.mylibrary/native-image.properties' in 'file:///home/test/myapp/MyLibrary.jar' not part of module path.
+</code></pre>
+  </li>
+  <li>If you use the  <code>--link-at-build-time</code> option with arguments, for example, <code>--link-at-build-time=foo.bar.Foobar,demo.myLibrary.Name,...</code>, the arguments should be fully qualified class names or package names. When used on the module path or class path (embedded in <code>native-image.properties</code> files), only classes and packages defined in the same JAR file can be specified. Packages for libraries used on the class path need to be listed explicitly. To make this process easy, use the <code>@&lt;prop-values-file&gt;</code> syntax to generate a package list (or a class list) in a separate file automatically.</li>
+</ul>
+
+<p>Another handy option is <code>--link-at-build-time-paths</code> which allows to specify which classes are required to be fully defined at build time by other means.
+This variant requires arguments that are of the same type as the arguments passed via <code>-p</code> (<code>--module-path</code>) or <code>-cp</code> (<code>--class-path</code>):</p>
+
+<pre><code class="language-shell">--link-at-build-time-paths &lt;class search path of directories and ZIP/JAR files&gt;
+</code></pre>
+
+<p>The given entries are searched and all classes inside are registered as <code>--link-at-build-time</code> classes.
+This option is only allowed to be used on command line.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">Class Initialization in Native Image</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/basics/">Native Image Basics</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/overview/Options/">Native Image Build Options</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/overview/Build-Overview/">Native Image Build Overview</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

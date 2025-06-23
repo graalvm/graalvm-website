@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="interoperability">Interoperability</h1>
+
+<p>GraalVM supports several other programming languages including JavaScript, Python, Ruby, and R.
+While GraalVM’s implementation of <code>lli</code> is designed to run LLVM bitcode, it also provides the API for programming language interoperability that lets you execute code from any other GraalVM-supported language.</p>
+
+<p>Dynamic languages like JavaScript usually access object members by name.
+Since normally names are not preserved in LLVM bitcode, it must be compiled with debug information enabled (the LLVM toolchain shipped with GraalVM will automatically enable debugging information).</p>
+
+<p>The following example demonstrates how you can use the API for interoperability with other programming languages.</p>
+
+<p>Define a C struct for points and implement allocation functions in a file named <em>cpart.c</em>:</p>
+
+<pre><code class="language-c">// cpart.c
+#include &lt;graalvm/llvm/polyglot.h&gt;
+
+#include &lt;stdlib.h&gt;
+#include &lt;stdio.h&gt;
+
+struct Point {
+    double x;
+    double y;
+};
+
+POLYGLOT_DECLARE_STRUCT(Point)
+
+void *allocNativePoint() {
+    struct Point *ret = malloc(sizeof(*ret));
+    return polyglot_from_Point(ret);
+}
+
+void *allocNativePointArray(int length) {
+    struct Point *ret = calloc(length, sizeof(*ret));
+    return polyglot_from_Point_array(ret, length);
+}
+
+void freeNativePoint(struct Point *p) {
+    free(p);
+}
+
+void printPoint(struct Point *p) {
+    printf("Point&lt;%f,%f&gt;\n", p-&gt;x, p-&gt;y);
+}
+</code></pre>
+
+<p>Make sure <code>LLVM_TOOLCHAIN</code> resolves to the GraalVM LLVM toolchain (<code>lli --print-toolchain-path</code>), and then compile <em>cpart.c</em>  (the graalvm-llvm library defines the Polyglot API functions used in the example):</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang -shared cpart.c -lgraalvm-llvm -o cpart.so
+</code></pre>
+
+<p>You can then access this C/C++ code from other languages. For example, save this JavaScript code in the <em>jspart.js</em> file:</p>
+<pre><code class="language-js">// Load and parse the LLVM bitcode into GraalVM
+var cpart = Polyglot.evalFile("llvm" ,"cpart.so");
+
+// Allocate a light-weight C struct
+var point = cpart.allocNativePoint();
+
+// Access it as if it was a JS object
+point.x = 5;
+point.y = 7;
+
+// Pass it back to a native function
+cpart.printPoint(point);
+
+// Allocate an array of structs
+var pointArray = cpart.allocNativePointArray(15);
+
+// Access this array like it was a JS array
+for (var i = 0; i &lt; pointArray.length; i++) {
+    var p = pointArray[i];
+    p.x = i;
+    p.y = 2*i;
+}
+
+cpart.printPoint(pointArray[3]);
+
+// Additionally, pass a JS object to a native function
+cpart.printPoint({x: 17, y: 42});
+
+// Free the unmanaged data objects
+cpart.freeNativePoint(point);
+cpart.freeNativePoint(pointArray);
+</code></pre>
+
+<p>Finally, run this JavaScript file:</p>
+<pre><code class="language-shell">js --polyglot jspart.js
+Point&lt;5.000000,7.000000&gt;
+Point&lt;3.000000,6.000000&gt;
+Point&lt;17.000000,42.000000&gt;
+</code></pre>
+
+<h2 id="polyglot-c-api">Polyglot C API</h2>
+
+<p>There are also lower level API functions for directly accessing polyglot values from C.
+See the <a href="/jdk23/reference-manual/polyglot-programming/">Polyglot Programming</a> reference and the comments in <code>polyglot.h</code> for more details.</p>
+
+<p>For example, this program allocates and accesses a Java array from C:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;graalvm/llvm/polyglot.h&gt;
+
+int main() {
+    void *arrayType = polyglot_java_type("int[]");
+    void *array = polyglot_new_instance(arrayType, 4);
+    polyglot_set_array_element(array, 2, 24);
+    int element = polyglot_as_i32(polyglot_get_array_element(array, 2));
+    printf("%d\n", element);
+    return element;
+}
+</code></pre>
+
+<p>Compile it to LLVM bitcode:</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang polyglot.c -lgraalvm-llvm -o polyglot
+</code></pre>
+
+<p>Then run it:</p>
+<pre><code class="language-shell">lli polyglot
+24
+</code></pre>
+
+<h2 id="embedding-in-java">Embedding in Java</h2>
+
+<p>You can embed LLVM bitcode in a Java host application.</p>
+
+<p>For example, write a Java class <code>Polyglot.java</code> that embeds LLVM bitcode to run the previous example:</p>
+<pre><code class="language-java">import java.io.*;
+import org.graalvm.polyglot.*;
+
+class Polyglot {
+    public static void main(String[] args) throws IOException {
+        Context polyglot = Context.newBuilder().
+        		               allowAllAccess(true).build();
+        File file = new File("polyglot");
+        Source source = Source.newBuilder("llvm", file).build();
+        Value cpart = polyglot.eval(source);
+        cpart.execute();
+    }
+}
+</code></pre>
+
+<p>Compile it and run:</p>
+<pre><code class="language-shell">javac Polyglot.java
+java Polyglot
+24
+</code></pre>
+
+<p>See the <a href="/jdk23/reference-manual/embed-languages/">Embedding Languages</a> reference for more information.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

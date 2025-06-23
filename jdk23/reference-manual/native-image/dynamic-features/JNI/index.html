@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="java-native-interface-jni-in-native-image">Java Native Interface (JNI) in Native Image</h1>
+
+<p>Java Native Interface (JNI) is a native API that enables Java code to interact with native code and vice versa.
+This page gives an overview of the JNI implementation in Native Image.</p>
+
+<p>JNI support is enabled by default and built into Native Image. 
+Individual classes, methods, and fields that should be accessible via JNI must be specified at image build time in a configuration file (read below).</p>
+
+<p>Java code can load native code from a shared object with <code>System.loadLibrary()</code>.
+Alternatively, native code can load the JVM’s native library and attach to its Java environment using the Invocation API.
+The Native Image JNI implementation supports both approaches.</p>
+
+<h3 id="table-of-contents">Table of Contents</h3>
+
+<ul>
+  <li><a href="#loading-native-libraries">Loading Native Libraries</a></li>
+  <li><a href="#reflection-metadata">Reflection Metadata</a></li>
+  <li><a href="#object-handles">Object Handles</a></li>
+  <li><a href="#java-to-native-method-calls">Java-to-Native Method Calls</a></li>
+  <li><a href="#native-to-java-method-calls">Native-to-Java Method Calls</a></li>
+  <li><a href="#jni-functions">JNI Functions</a></li>
+  <li><a href="#object-creation">Object Creation</a></li>
+  <li><a href="#field-accesses">Field Accesses</a></li>
+  <li><a href="#exceptions">Exceptions</a></li>
+  <li><a href="#monitors">Monitors</a></li>
+</ul>
+
+<h2 id="loading-native-libraries">Loading Native Libraries</h2>
+
+<p>When loading native libraries using <code>System.loadLibrary()</code> (and related APIs), the native image will search the directory containing the native image before searching the Java library path. 
+So as long as the native libraries to be loaded are in the same directory as the native image, no other settings should be necessary.</p>
+
+<h2 id="reflection-metadata">Reflection Metadata</h2>
+
+<p>JNI supports looking up classes by their names, and looking up methods and fields by their names and signatures.
+This requires keeping the necessary metadata for these lookups around.
+The <code>native-image</code> builder must know beforehand which items will be looked up in case they might not be reachable otherwise and therefore would not be included in a native image.
+Moreover, <code>native-image</code> must generate wrapper code ahead-of-time for any method that can be called via JNI.
+Therefore, specifying a concise list of items that need to be accessible via JNI guarantees their availability and allows for a smaller footprint.
+Such a list should be specified in the <a href="/jdk23/reference-manual/native-image/metadata/#java-native-interface"><em>reachability-metadata.json</em> file</a>.</p>
+
+<p>The JNI configuration can be collected automatically using the <a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Tracing Agent</a> from the GraalVM JDK. 
+The agent tracks all usages of dynamic features during application execution on a regular Java VM. 
+When the application completes and the JVM exits, the agent writes configuration to JSON files in the specified output directory.
+If you move the generated configuration files from that output directory to <em>META-INF/native-image/</em> on the class path, they are then automatically used at build time. 
+The <code>native-image</code> builder searches for <em>META-INF/native-image/</em> and its subdirectories for file named <em>reachability-metadata.json</em>, or legacy files such as <em>reflect-config.json</em> and others.</p>
+
+<p>Alternatively, a custom <code>Feature</code> implementation can register program elements before and during the analysis phase of the image build using the <code>JNIRuntimeAccess</code> class. For example:</p>
+<pre><code class="language-java">class JNIRegistrationFeature implements Feature {
+  public void beforeAnalysis(BeforeAnalysisAccess access) {
+    try {
+      JNIRuntimeAccess.register(String.class);
+      JNIRuntimeAccess.register(String.class.getDeclaredField("value"));
+      JNIRuntimeAccess.register(String.class.getDeclaredField("hash"));
+      JNIRuntimeAccess.register(String.class.getDeclaredConstructor(char[].class));
+      JNIRuntimeAccess.register(String.class.getDeclaredMethod("charAt", int.class));
+      JNIRuntimeAccess.register(String.class.getDeclaredMethod("format", String.class, Object[].class));
+      JNIRuntimeAccess.register(String.CaseInsensitiveComparator.class);
+      JNIRuntimeAccess.register(String.CaseInsensitiveComparator.class.getDeclaredMethod("compare", String.class, String.class));
+    } catch (NoSuchMethodException | NoSuchFieldException e) { ... }
+  }
+}
+</code></pre>
+<p>To activate the custom feature, pass <code>--features=&lt;fully qualified name of JNIRegistrationFeature class&gt;</code> to the <code>native-image</code> builder.
+<a href="/jdk23/reference-manual/native-image/overview/BuildConfiguration/#embed-a-configuration-file">Native Image Build Configuration</a> explains how this can be automated with a <code>native-image.properties</code> file in <code>META-INF/native-image</code>.</p>
+
+<h3 id="javalangreflect-support">java.lang.reflect Support</h3>
+
+<p>The JNI functions <code>FromReflectedMethod</code> and <code>ToReflectedMethod</code> can be used to obtain the corresponding <code>jmethodID</code> to a <code>java.lang.reflect.Method</code>, or to a <code>java.lang.reflect.Constructor</code> object, and vice versa.
+The functions <code>FromReflectedField</code> and <code>ToReflectedField</code> convert between <code>jfieldID</code> and <code>java.lang.reflect.Field</code>.
+In order to use these functions, <a href="/jdk23/reference-manual/native-image/metadata/#reflection">reflection support</a> must be enabled and the methods and fields in question must be included in the reflection metadata.</p>
+
+<h2 id="object-handles">Object Handles</h2>
+
+<p>JNI does not permit direct access to Java objects.
+Instead, JNI provides word-sized object handles that can be passed to JNI functions to access objects indirectly.
+Local handles are only valid for the duration of a native call and only in the caller’s thread, while global handles are valid across threads and remain valid until they are destroyed explicitly.
+The handle 0 represents <code>NULL</code>.</p>
+
+<p>Native Image implements local handles with a thread-local, growing array of referenced objects, where the index in the array is the handle value.
+A “finger” points to where the next handle will be allocated.
+Native calls can be nested, so before a native method is invoked, the call stub pushes the current finger on a stack, and after it returns, it restores the old finger from the stack and nullifies all object references from the call in the array.</p>
+
+<p>Global handles are implemented using a variable number of object arrays in which referenced objects are inserted and nullified using atomic operations.
+A global handle’s value is a negative integer that is determined from the index of the containing array and the index within the array.
+Therefore, the JNI code can distinguish local and global handles by only looking at their sign.
+The analysis is not obstructed by object handles because it can observe the entire flow of object references and the handles that are passed to native code are only numeric values.</p>
+
+<h2 id="java-to-native-method-calls">Java-to-Native Method Calls</h2>
+
+<p>Methods declared with the <code>native</code> keyword have a JNI-compliant implementation in native code, but can be called like any other Java method. For example:</p>
+
+<pre><code class="language-c">// Java declaration
+native int[] sort0(int[] array);
+// native declaration with JNI name mangling
+jintArray JNICALL Java_org_example_sorter_IntSorter_sort0(JNIEnv *env, jobject this, jintArray array)
+</code></pre>
+
+<p>When the image build encounters a method that is declared native, it generates a graph with a wrapper that performs the transition to native code and back, adds the <code>JNIEnv*</code> and <code>this</code> arguments, boxes any object arguments in handles, and in case of an object return type, unboxes the returned handle.</p>
+
+<p>The actual native call target address can only be determined at run time.
+Therefore, the <code>native-image</code> builder also creates an extra linkage object in the reflection metadata of native-declared methods.
+When a native method is called, the call wrapper looks up the matching symbol in all loaded libraries and stores the resolved address in the linkage object for future calls.
+Alternatively, instead of requiring symbols that conform to JNI name mangling scheme, Native Image also supports the <code>RegisterNatives</code> JNI function to explicitly provide code addresses for native methods.</p>
+
+<h2 id="native-to-java-method-calls">Native-to-Java Method Calls</h2>
+
+<p>Native code can invoke Java methods by first obtaining a <code>jmethodID</code> for the target method, and then using one of the <code>Call&lt;Type&gt;Method</code>, <code>CallStatic&lt;Type&gt;Method</code> or <code>CallNonvirtual&lt;Type&gt;Method</code> functions for the invocation.
+Each of these <code>Call...</code> functions is also available in a <code>Call...MethodA</code> and a <code>Call...MethodV</code> variant, which take arguments as an array or as a <code>va_list</code> instead of variadic arguments. For example:</p>
+
+<pre><code class="language-c">jmethodID intcomparator_compare_method = (*env)-&gt;GetMethodID(env, intcomparator_class, "compare", "(II)I");
+jint result = (*env)-&gt;CallIntMethod(env, this, intcomparator_compare_method, a, b);
+</code></pre>
+
+<p>The <code>native-image</code> builder generates call wrappers for each method that can be called via JNI according to the provided JNI configuration.
+The call wrappers conform to the signature of the JNI <code>Call...</code> functions that are appropriate for the method.
+The wrappers perform the transition to Java code and back, adapt the argument list to the target Java method’s signature, unbox any passed object handles, and if necessary, box the return type in an object handle.</p>
+
+<p>Each method that can be called via JNI has a reflection metadata object.
+The address of this object is used as the method’s <code>jmethodID</code>.
+The metadata object contains the addresses of all of the method’s generated call wrappers.
+Because each call wrapper conforms precisely to the corresponding <code>Call...</code> function signature, the <code>Call...</code> functions themselves are nothing more than an unconditional jump to the appropriate call wrapper based on the passed <code>jmethodID</code>.
+As another optimization, the call wrappers are able to efficiently restore the current thread’s Java context from the <code>JNIEnv*</code> argument.</p>
+
+<h2 id="jni-functions">JNI Functions</h2>
+
+<p>JNI provides a set of functions that native code can use to interact with Java code.
+Native Image implements these functions using <code>@CEntryPoint</code>, for example:</p>
+<pre><code class="language-c">@CEntryPoint(...) private static void DeleteGlobalRef(JNIEnvironment env, JNIObjectHandle globalRef) { /* setup; */ JNIGlobalHandles.singleton().delete(globalRef); }
+</code></pre>
+<p>JNI specifies that these functions are provided via function pointers in a C struct that is accessible via the <code>JNIEnv*</code> argument.
+The automatic initialization of this struct is prepared during the image build.</p>
+
+<h2 id="object-creation">Object Creation</h2>
+
+<p>JNI provides two ways of creating Java objects, either by calling <code>AllocObject</code> to allocate memory and then using <code>CallVoidMethod</code> to invoke the constructor, or by using <code>NewObject</code> to create and initialize the object in a single step (or variants <code>NewObjectA</code> or <code>NewObjectV</code>). For example:</p>
+<pre><code class="language-c">jclass calendarClass = (*env)-&gt;FindClass(env, "java/util/GregorianCalendar");
+jmethodID ctor = (*env)-&gt;GetMethodID(env, calendarClass, "&lt;init&gt;", "(IIIIII)V");
+jobject firstObject = (*env)-&gt;AllocObject(env, calendarClass);
+(*env)-&gt;CallVoidMethod(env, obj, ctor, year, month, dayOfMonth, hourOfDay, minute, second);
+jobject secondObject = (*env)-&gt;NewObject(env, calendarClass, ctor, year, month, dayOfMonth, hourOfDay, minute, second);
+</code></pre>
+<p>Native Image supports both approaches.
+The constructor must be included in the JNI configuration with a method name of <code>&lt;init&gt;</code>.
+Instead of generating additional call wrappers for <code>NewObject</code>, the regular <code>CallVoidMethod</code> wrapper is reused and detects when it is called via <code>NewObject</code> because it is passed the <code>Class</code> object of the target class.
+In that case, the call wrapper allocates a new instance before invoking the actual constructor.</p>
+
+<h2 id="field-accesses">Field Accesses</h2>
+
+<p>Native code can access a Java field by obtaining its <code>jfieldID</code> and then using one of the <code>Get&lt;Type&gt;Field</code>, <code>Set&lt;Type&gt;Field</code>, <code>GetStatic&lt;Type&gt;Field</code> or <code>SetStatic&lt;Type&gt;Field</code> functions. For example:</p>
+<pre><code class="language-c">jfieldID intsorter_comparator_field = (*env)-&gt;GetFieldID(env, intsorter_class, "comparator", "Lorg/example/sorter/IntComparator;");
+jobject value = (*env)-&gt;GetObjectField(env, self, intsorter_comparator_field);
+</code></pre>
+
+<p>For a field that is accessible via JNI, its offset within an object (or within the static field area) is stored in the reflection metadata and is used as its <code>jfieldID</code>.
+The <code>native-image</code> builder generates accessor methods for fields of all primitive types and for object fields.
+These accessor methods perform the transition to Java code and back, and use unsafe loads or stores to directly manipulate the field value.
+Because the analysis cannot observe assignments of object fields via JNI, it assumes that any subtype of the field’s declared type can occur in a field that is accessible via JNI.</p>
+
+<p>JNI also permits writing fields that are declared <code>final</code>, which must be enabled for individual fields with an <code>allowWrite</code> property in the configuration file.
+However, code accessing final fields might not observe changes of final field values in the same way as for non-final fields because of optimizations.</p>
+
+<h2 id="exceptions">Exceptions</h2>
+
+<p>JNI specifies that exceptions in Java code that are the result of a call from native code must be caught and retained.
+In Native Image, this is done in the native-to-Java call wrappers and in the implementation of JNI functions.
+Native code can then query and clear a pending exception with the <code>ExceptionCheck</code>, <code>ExceptionOccurred</code>, <code>ExceptionDescribe</code>, and <code>ExceptionClear</code> functions.
+Native code can also throw exceptions with <code>Throw</code>, <code>ThrowNew</code>, or <code>FatalError</code>.
+When an exception remains unhandled in native code or the native code itself throws an exception, the Java-to-native call wrapper rethrows that exception upon reentering Java code.</p>
+
+<h2 id="monitors">Monitors</h2>
+
+<p>JNI declares the functions <code>MonitorEnter</code> and <code>MonitorExit</code> to acquire and release the intrinsic lock of an object.
+Native Image provides implementations of these functions.
+However, the <code>native-image</code> builder directly assigns intrinsic locks only to objects of classes which the analysis can observe as being used in Java <code>synchronized</code> statements and with <code>wait()</code>, <code>notify()</code> and <code>notifyAll()</code>.
+For other objects, synchronization falls back on a slower mechanism which uses a map to store lock associations, which itself needs synchronization.
+For that reason, it can be beneficial to wrap synchronization in Java code.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/native-code-interoperability/">Interoperability with Native Code</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/native-code-interoperability/JNIInvocationAPI/">JNI Invocation API</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/#java-native-interface">Reachability Metadata: Java Native Interface</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collect Metadata with the Tracing Agent</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

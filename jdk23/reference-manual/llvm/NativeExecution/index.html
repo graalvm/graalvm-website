@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="interaction-of-graalvm-with-native-code">Interaction of GraalVM with Native Code</h1>
+
+<p>The GraalVM LLVM runtime allows users to run code written in languages that traditionally compile directly to native code.
+These languages typically do not require any managed runtime or VM to run.
+Therefore, special care is needed to consider the interaction of this code with the <a href="#">managed runtime of GraalVM</a>, in particular if the code is using certain low-level features.</p>
+
+<h2 id="limited-access-to-low-level-system-calls">Limited Access to Low-level System Calls</h2>
+
+<ul>
+  <li>Signal handling is performed based on the following assumptions:
+    <ul>
+      <li>The managed runtime assumes that it has full control of handling all signals.</li>
+      <li>Installed signal handlers might behave differently than on native execution.</li>
+    </ul>
+  </li>
+  <li>Process control and threading is done based on the following aspects:
+    <ul>
+      <li>GraalVM assumes it has full control over threading.</li>
+      <li>Multithreading is supported via the <code>pthreads</code> library (for example, <code>pthread_create</code>).</li>
+      <li>Directly using process related syscalls such as <code>clone</code>, <code>fork</code>, <code>vfork</code>, etc. is not supported.</li>
+      <li>The <code>exec</code> function family is not supported.</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="memory-layout">Memory Layout</h2>
+
+<p>The memory and stack layout of processes running on GraalVM is different than with direct native execution.
+In particular, no assumptions are possible about the relative positions of globals, stack variables and so on.</p>
+
+<p>Walking the stack is only possible using the GraalVM APIs.
+There is a strict separation between code and data.
+Self-modifying code will not work.
+Reads, writes and pointer arithmetic on pointers to code are not supported.</p>
+
+<h2 id="interaction-with-system-libraries-in-native-mode">Interaction with System Libraries in Native Mode</h2>
+
+<p>In the native execution mode (the default mode), code running on the GraalVM LLVM runtime can do calls to real native libraries (for example, system libraries).
+These calls behave similar to JNI calls in Java: they temporarily leave the managed execution environment.</p>
+
+<p>Since the code executed in these libraries is not under the control of GraalVM, that code can essentially do anything.
+In particular, no multicontext isolation applies, and GraalVM APIs like the virtual filesystem are bypassed.</p>
+
+<p>Note that this applies in particular to most of the standard C library.</p>
+
+<h2 id="managed-execution-mode">Managed Execution Mode</h2>
+
+<p>The managed mode (enabled with the <code>--llvm.managed</code> option) is a special execution mode where the LLVM runtime runs purely in managed mode, similar to all other GraalVM supported languages.</p>
+
+<blockquote>
+  <p>Note: The managed mode is only available in Oracle GraalVM.</p>
+</blockquote>
+
+<p>In this mode, by design, it is not allowed to call native code and access native memory.
+All memory is managed by the garbage collector, and all code that should be run needs to be compiled to bitcode.</p>
+
+<p>Pointer arithmetic is only possible to the extent allowed by the C standard.
+In particular, overflows are prevented, and it is not possible to access different allocations via out-of-bounds access.
+All such invalid accesses result in runtime exceptions rather than in undefined behavior.</p>
+
+<p>In managed mode, GraalVM simulates a virtual Linux/AMD64 operating system, with <a href="https://www.musl-libc.org/">musl libc</a> and <a href="https://libcxx.llvm.org/">libc++</a> as the C/C++ standard libraries.
+All code needs to be compiled for that system, and can then be used to run on any architecture or operating system supported by GraalVM.
+Syscalls are virtualized and routed through appropriate GraalVM APIs.</p>
+
+<h2 id="polyglot-interaction-between-native-code-and-managed-languages">Polyglot Interaction Between Native Code and Managed Languages</h2>
+
+<p>When using polyglot interoperability between LLVM languages (for example, C/C++) and managed languages (such as JavaScript, Python, or Ruby), some care must be taken with the manual memory management.
+Note that this section only applies to the native mode of execution (the default).
+In managed mode (enabled with the <code>--llvm.managed</code> option and only available in Oracle GraalVM), the LLVM runtime itself behaves like a managed language, and the polyglot interaction is the same as between other managed languages.</p>
+
+<ul>
+  <li>Garbage collection policies to be considered:
+    <ul>
+      <li>Pointers to objects of managed languages are managed by a garbage collector, therefore they do not need to be freed manually.</li>
+      <li>On the other hand, pointers to allocations from the LLVM code (for example, <code>malloc</code>) are not under control of the garbage collector, so they need to be deallocated manually.</li>
+    </ul>
+  </li>
+  <li>Unmanaged heap policies to be considered:
+    <ul>
+      <li>Native memory (for example, <code>malloc</code>, data sections, thread locals) is not under the control of a garbage collector.</li>
+      <li>Pointers to foreign objects controlled by the garbage collector can not be stored in native memory directly.</li>
+      <li>There are handle functions available to work around this limitation (see <code>graalvm/llvm/handles.h</code>).</li>
+    </ul>
+  </li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>
