@@ -565,7 +565,7 @@ For example:</p>
 To access polyglot classes from the class path, you must also specify the <code>--add-modules=org.graalvm.polyglot</code> JVM option.
 If you are using <a href="#build-native-executables-from-polyglot-applications">GraalVM Native Image</a>, polyglot modules on the class path will be automatically upgraded to the module path.</p>
 
-<p>While we do support creating single uber JAR files from polyglot libraries, for example, using the Maven Assembly plugin, but we do not recommend it.
+<p>While we do support <a href="#uber-jar-file-creation">creating single uber JAR files</a> from polyglot libraries, for example, using the Maven Assembly plugin, we do not recommend it.
 Also note that uber JAR files are not supported when creating native binaries with GraalVM Native Image.</p>
     
       <h2 id="compile-and-run-a-polyglot-application">
@@ -2827,6 +2827,146 @@ public class ExecutionListenerTest {
   <li>The <code>listener.close()</code> closes a listener earlier, however execution listeners are automatically closed with the engine.</li>
 </ul>
     
+      <h2 id="uber-jar-file-creation">
+        
+        
+          Uber JAR File Creation <a href="#uber-jar-file-creation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Uber JARs are JAR files that bundle all dependencies into a single archive for easier distribution.
+However, creating an Uber JAR is not recommended for Graal languages because it breaks module descriptors, file integrity metadata, and JAR signature information.
+Uber JARs are only supported on HotSpot and are not supported for native image generation, as the Native Image tool requires intact Java module descriptors.</p>
+
+<p>If you must use Uber JARs, use the minimal configuration below and verify that it is still up to date whenever you upgrade.</p>
+
+<p>You can find a working example of valid Maven Shade and Assembly plugin configurations in the <a href="https://github.com/graalvm/polyglot-embedding-demo?tab=readme-ov-file#maven-usage">polyglot embedding example</a>.
+See the <code>shade</code> and <code>assembly</code> profiles in <a href="https://github.com/graalvm/polyglot-embedding-demo/blob/main/pom.xml#L384"><em>pom.xml</em></a>.</p>
+    
+      <h3 id="maven-shade-plugin">
+        
+        
+          Maven Shade Plugin <a href="#maven-shade-plugin" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>If you intend to use the Maven Shade plugin, include at least the following transformers and filter configuration:</p>
+
+<pre><code class="language-xml">&lt;profile&gt;
+    &lt;id&gt;shade&lt;/id&gt;
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.5.1&lt;/version&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;shade&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+                &lt;configuration&gt;
+                    &lt;transformers&gt;
+                        &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/&gt;
+                        &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"&gt;
+                            &lt;mainClass&gt;org.example.embedding.Main&lt;/mainClass&gt;
+                            &lt;manifestEntries&gt;
+                                &lt;Multi-Release&gt;true&lt;/Multi-Release&gt;
+                            &lt;/manifestEntries&gt;
+                        &lt;/transformer&gt;
+                    &lt;/transformers&gt;
+                    &lt;filters&gt;
+                    	  &lt;!-- Filters JAR signature files --&gt;
+                        &lt;filter&gt;
+                            &lt;artifact&gt;*:*:*:*&lt;/artifact&gt;
+                            &lt;excludes&gt;
+                                &lt;exclude&gt;META-INF/*.SF&lt;/exclude&gt;
+                                &lt;exclude&gt;META-INF/*.DSA&lt;/exclude&gt;
+                                &lt;exclude&gt;META-INF/*.RSA&lt;/exclude&gt;
+                            &lt;/excludes&gt;
+                        &lt;/filter&gt;
+                    &lt;/filters&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/profile&gt;
+</code></pre>
+    
+      <h3 id="maven-assembly-plugin">
+        
+        
+          Maven Assembly plugin <a href="#maven-assembly-plugin" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>If you are using the Maven Assembly plugin, you may apply the following configuration:</p>
+
+<pre><code class="language-xml">&lt;profile&gt;
+    &lt;id&gt;assembly&lt;/id&gt;
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.6.0&lt;/version&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;single&lt;/goal&gt;
+                        &lt;/goals&gt;
+                        &lt;configuration&gt;
+                            &lt;archive&gt;
+                                &lt;manifest&gt;
+                                    &lt;mainClass&gt;org.example.embedding.Main&lt;/mainClass&gt;
+                                &lt;/manifest&gt;
+                                &lt;manifestEntries&gt;
+                                    &lt;Multi-Release&gt;true&lt;/Multi-Release&gt;
+                                &lt;/manifestEntries&gt;
+                            &lt;/archive&gt;
+                            &lt;descriptors&gt;
+                                &lt;descriptor&gt;assembly.xml&lt;/descriptor&gt;
+                            &lt;/descriptors&gt;
+                        &lt;/configuration&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/profile&gt;
+</code></pre>
+<p>with the corresponding <code>assembly.xml</code>:</p>
+
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd"&gt;
+    &lt;id&gt;jar-with-dependencies&lt;/id&gt;
+    &lt;formats&gt;
+        &lt;format&gt;jar&lt;/format&gt;
+    &lt;/formats&gt;
+    &lt;includeBaseDirectory&gt;false&lt;/includeBaseDirectory&gt;
+    &lt;dependencySets&gt;
+        &lt;dependencySet&gt;
+            &lt;outputDirectory&gt;/&lt;/outputDirectory&gt;
+            &lt;useProjectArtifact&gt;true&lt;/useProjectArtifact&gt;
+            &lt;unpack&gt;true&lt;/unpack&gt;
+            &lt;scope&gt;runtime&lt;/scope&gt;
+        &lt;/dependencySet&gt;
+    &lt;/dependencySets&gt;
+    &lt;containerDescriptorHandlers&gt;
+        &lt;containerDescriptorHandler&gt;
+            &lt;handlerName&gt;metaInf-services&lt;/handlerName&gt;
+        &lt;/containerDescriptorHandler&gt;
+    &lt;/containerDescriptorHandlers&gt;
+&lt;/assembly
+</code></pre>
+    
       <h2 id="compatibility-with-jsr-223-scriptengine">
         
         
@@ -3502,19 +3642,9 @@ public final class CHANGE_NAME_EngineFactory implements ScriptEngineFactory {
           </a>
         </div>
         <div class="wider-logo">
-          <a href="https://twitter.com/graalvm" target="_blank" title="twitter social media link">
-            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              xmlns="http://www.w3.org/2000/svg" alt="twitter social media icon">
-              <g clip-path="url(#clip0)">
-                <path
-                  d="M23.4561 4.44249C23.0791 4.60972 22.6915 4.75085 22.2954 4.86543C22.7643 4.33511 23.1218 3.71111 23.3401 3.02827C23.389 2.87522 23.3383 2.70768 23.2125 2.60758C23.0869 2.5074 22.9123 2.4954 22.7739 2.57739C21.9328 3.07627 21.0253 3.4348 20.0737 3.64446C19.1152 2.70784 17.8133 2.1748 16.4674 2.1748C13.6265 2.1748 11.3152 4.486 11.3152 7.32683C11.3152 7.55057 11.3294 7.77307 11.3574 7.99248C7.83215 7.68295 4.55475 5.95023 2.30417 3.18954C2.22397 3.09114 2.1004 3.03811 1.9739 3.04825C1.84732 3.05816 1.73359 3.12954 1.66964 3.23924C1.21318 4.02249 0.971862 4.91831 0.971862 5.82977C0.971862 7.07119 1.41509 8.24904 2.19803 9.1694C1.95996 9.08695 1.72895 8.98391 1.50846 8.86151C1.39008 8.79563 1.24562 8.79663 1.12802 8.86406C1.01034 8.9315 0.936558 9.05552 0.933462 9.19108C0.93292 9.21392 0.93292 9.23676 0.93292 9.25991C0.93292 11.1129 1.93024 12.7812 3.45501 13.6905C3.32402 13.6775 3.1931 13.6585 3.06304 13.6336C2.92895 13.608 2.79106 13.655 2.70064 13.7573C2.61006 13.8595 2.58009 14.0019 2.62182 14.132C3.18621 15.894 4.63929 17.1901 6.39594 17.5853C4.93898 18.4978 3.27284 18.9758 1.52378 18.9758C1.15883 18.9758 0.791784 18.9544 0.432558 18.9118C0.254107 18.8906 0.0834745 18.996 0.0227003 19.1657C-0.0380739 19.3355 0.026339 19.5248 0.178158 19.6221C2.4251 21.0628 5.02322 21.8243 7.69148 21.8243C12.9369 21.8243 16.2184 19.3507 18.0474 17.2757C20.3282 14.6882 21.6362 11.2634 21.6362 7.87952C21.6362 7.73815 21.6341 7.59539 21.6297 7.4531C22.5296 6.77514 23.3043 5.95465 23.9348 5.0116C24.0305 4.86838 24.0201 4.67909 23.9092 4.54724C23.7984 4.41532 23.6138 4.37266 23.4561 4.44249Z"
-                  fill="#171F26" />
-              </g>
-              <defs>
-                <clipPath id="clip0">
-                  <rect width="24" height="24" fill="white" />
-                </clipPath>
-              </defs>
+          <a href="https://x.com/graalvm" target="_blank" title="x social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg" alt="X social media icon">
+              <path d="M714.2 507.9L1167 0H1060.1L661.8 460.4L343.9 0H0L475.4 690.3L0 1227H106.9L531.8 738.5L875.6 1227H1219.5L714.2 507.9ZM582.6 675.5L537.9 611.2L144.6 80.6H288.5L598.8 530.5L643.5 594.8L1048.5 1146.4H904.6L582.6 675.5Z" fill="#171F26"/>
             </svg>
           </a>
         </div>
