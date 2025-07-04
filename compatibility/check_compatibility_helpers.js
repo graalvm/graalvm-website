@@ -90,8 +90,6 @@ class Utilities {
     static pretty_name(language) {
         switch(language) {
             case 'js': return 'GraalVM JavaScript';
-            case 'r': return 'GraalVM R';
-            case 'ruby': return 'GraalVM Ruby';
             case 'python': return 'GraalVM Python';
         }
     }
