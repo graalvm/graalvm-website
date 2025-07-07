@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="basic-usage-of-profile-guided-optimization">Basic Usage of Profile-Guided Optimization</h1>
+
+<p>To explain the usage of PGO in the context of GraalVM Native Image, let’s consider the “Game Of Life” example application.
+It is an implementation of <a href="https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life">Conway’s Game of Life simulation</a> on a 4000 by 4000 grid.
+The application takes as input a file specifying the initial state of the world, a file path to output the final state, and an integer declaring how many iterations of the simulation to run.
+Note that this is a not-illustrative-of-the-real-world application, but it should serve well as an example.</p>
+
+<p>Below is the source code of the application, modified from <a href="https://www.geeksforgeeks.org/program-for-conways-game-of-life/">this resource</a>.</p>
+
+<pre><code class="language-java">import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+public class GameOfLife {
+
+    private static final int M = 4000;
+    private static final int N = 4000;
+
+    public static void main(String[] args) {
+        new GameOfLife().run(args);
+    }
+
+    private void run(String[] args) {
+        if (args.length &lt; 3) {
+            System.err.println("Too few arguments, need input file, output file and number of generations");
+            System.exit(1);
+        }
+
+        String input = args[0];
+        String output = args[1];
+        int generations = Integer.parseInt(args[2]);
+
+        int[][] grid = loadGrid(input);
+        for (int i = 1; i &lt;= generations; i++) {
+            grid = nextGeneration(grid);
+        }
+        saveGrid(grid, output);
+    }
+
+    static int[][] nextGeneration(int[][] grid) {
+        int[][] future = new int[M][N];
+        for (int l = 0; l &lt; M; l++) {
+            for (int m = 0; m &lt; N; m++) {
+                applyRules(grid, future, l, m, getAliveNeighbours(grid, l, m));
+            }
+        }
+        return future;
+    }
+
+    private static void applyRules(int[][] grid, int[][] future, int l, int m, int aliveNeighbours) {
+        if ((grid[l][m] == 1) &amp;&amp; (aliveNeighbours &lt; 2)) {
+            // Cell is lonely and dies
+            future[l][m] = 0;
+        } else if ((grid[l][m] == 1) &amp;&amp; (aliveNeighbours &gt; 3)) {
+            // Cell dies due to over population
+            future[l][m] = 0;
+        } else if ((grid[l][m] == 0) &amp;&amp; (aliveNeighbours == 3)) {
+            // A new cell is born
+            future[l][m] = 1;
+        } else {
+            // Remains the same
+            future[l][m] = grid[l][m];
+        }
+    }
+
+    private static int getAliveNeighbours(int[][] grid, int l, int m) {
+        int aliveNeighbours = 0;
+        for (int i = -1; i &lt;= 1; i++) {
+            for (int j = -1; j &lt;= 1; j++) {
+                if ((l + i &gt;= 0 &amp;&amp; l + i &lt; M) &amp;&amp; (m + j &gt;= 0 &amp;&amp; m + j &lt; N)) {
+                    aliveNeighbours += grid[l + i][m + j];
+                }
+            }
+        }
+        // The cell needs to be subtracted from its neighbors as it was counted before
+        aliveNeighbours -= grid[l][m];
+        return aliveNeighbours;
+    }
+
+    private static void saveGrid(int[][] grid, String output) {
+        try (FileWriter myWriter = new FileWriter(output)) {
+            for (int i = 0; i &lt; M; i++) {
+                for (int j = 0; j &lt; N; j++) {
+                    if (grid[i][j] == 0)
+                        myWriter.write(".");
+                    else
+                        myWriter.write("*");
+                }
+                myWriter.write(System.lineSeparator());
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException();
+        }
+    }
+
+    private static int[][] loadGrid(String input) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(input))) {
+            int[][] grid = new int[M][N];
+            for (int i = 0; i &lt; M; i++) {
+                String line = reader.readLine();
+                for (int j = 0; j &lt; N; j++) {
+                    if (line.charAt(j) == '*') {
+                        grid[i][j] = 1;
+                    } else {
+                        grid[i][j] = 0;
+                    }
+                }
+            }
+            return grid;
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}
+</code></pre>
+
+<p>Application performance is measured in terms of elapsed time.
+The assumption is that applying better optimizations to the application results in the application taking less time to complete a workload.
+To see the difference in performance, you can run the application in two different ways: first, without PGO and then with PGO.</p>
+
+<h2 id="building-the-application">Building the Application</h2>
+
+<p>The prerequisite is to install Oracle GraalVM. The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<blockquote>
+  <p>Note: PGO is not available in GraalVM Community Edition.</p>
+</blockquote>
+
+<p>The first step is to compile <em>GameOfLife.java</em> to a class file:</p>
+<pre><code class="language-bash">javac GameOfLife.java
+</code></pre>
+
+<p>Next, build a native image of the application, specifying a unique name with the <code>-o</code> option:</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-default
+</code></pre>
+
+<p>Now you can move on to building a PGO-enabled native image. 
+For that, you first need to build an “instrumented binary” that will produce a profile for the runtime behavior of the application by adding the <code>--pgo-instrumented</code> option and specifying a different name, as follows:</p>
+<pre><code class="language-bash">native-image  --pgo-instrument -cp . GameOfLife -o gameoflife-instrumented
+</code></pre>
+
+<p>Now run that instrumented binary to gather profiles. 
+By default, just before exiting, it generates a file with the default name <em>default.iprof</em> in the current working directory, but you can specify a different name and path for the profile by passing the <code>-XX:ProfilesDumpFile</code> option when running the instrumented binary.
+You should also provide the standard expected inputs to the application: the initial state of the world (<em>input.txt</em>), a file to which the application will print the final state of the world (<em>output.txt</em>), and the desired number of iterations you want (in this case <code>10</code>).</p>
+<pre><code class="language-bash">./gameoflife-instrumented -XX:ProfilesDumpFile=gameoflife.iprof input.txt output.txt 10
+</code></pre>
+
+<p>Having a runtime profile of the application contained in the <em>gameoflife.iprof file</em>,  you can finally build an optimized native executable by using the <code>--pgo</code> option and providing the gathered profile as shown below.</p>
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-pgo --pgo=gameoflife.iprof
+</code></pre>
+
+<p>With all this in place, you can move on to the evaluating the runtime performance of the application running in the different modes.</p>
+
+<h2 id="evaluating-performance">Evaluating Performance</h2>
+
+<p>To evaluate the performance, run both native executables of the application with the same inputs.
+You can measure the elapsed time of the executable via the <code>time</code> command with a custom output format (<code>--format=&gt;&gt; Elapsed: %es</code>).</p>
+
+<blockquote>
+  <p>Note: The CPU clock is fixed to 2.5GHz during all the measurements to minimize noise and improve reproducibility.</p>
+</blockquote>
+
+<h3 id="running-with-a-single-iteration">Running with a Single Iteration</h3>
+
+<p>Run the application as shown below, so that it iterates only once:</p>
+<pre><code class="language-bash">time  ./gameoflife-default input.txt output.txt 1
+    &gt;&gt; Elapsed: 1.67s
+
+time  ./gameoflife-pgo input.txt output.txt 1
+    &gt;&gt; Elapsed: 0.97s
+</code></pre>
+
+<p>Looking at the elapsed time, you can see that running the PGO-optimized native executable is substantially faster in terms of percentage.
+With that in mind, the half a second of difference does not have a huge impact for a single run of this application,
+but if this was a serverless application that executes frequently, then the cumulative performance gain would start to add up.</p>
+
+<h3 id="run-with-100-iterations">Run with 100 Iterations</h3>
+
+<p>Now move on to running the application with 100 iterations. 
+Same as before, the executed commands and the time output is shown below:</p>
+<pre><code class="language-bash">time  ./gameoflife-default input.txt output.txt 100
+    &gt;&gt; Elapsed: 24.02s
+
+time  ./gameoflife-pgo input.txt output.txt 100
+    &gt;&gt; Elapsed: 13.25s
+</code></pre>
+
+<p>In both evaluation runs, the PGO-optimized native executable significantly outperforms the default native build.
+The amount of improvement that PGO provides in this case is not representative of the PGO gains for real world applications, since this application is small and does exactly one thing so the profiles provided are based on the exact same workload that is being measured.
+However, it illustrates the general point: Profile-Guided Optimization enables an AOT compiler to perform similar optimizations as a JIT compiler.</p>
+
+<h2 id="executable-size">Executable Size</h2>
+
+<p>Another advantage of using PGO with GraalVM Native Image is the size of the native executable. 
+To measure the size of the files, you can use the Linux <code>du</code> command as shown below.</p>
+<pre><code class="language-bash">du -hs gameoflife-default
+    7.9M    gameoflife-default
+
+du -hs gameoflife-pgo
+    6.7M    gameoflife-pgo
+</code></pre>
+
+<p>As you can see, the PGO-optimized native executable is approximately 15% smaller than the default native build.</p>
+
+<p>This is because the profiles provided for the optimizing build allow the compiler to differentiate between which code is important for performance
+(“hot code”), and which is not important (“cold code”, such as error handling).
+With this differentiation available, the compiler can decide to focus more heavily on optimizing the hot code and less, or not at all, on the cold code.
+This is a similar approach to what a JVM does - identifies the hot parts of the code at run time and compile those parts at run time.
+The main difference is that  Native Image PGO does the profiling and the optimizing ahead-of-time.</p>
+
+<h3 id="further-reading">Further Reading</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">Inspecting a Profile in a Build Report</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">Optimize a Native Executable with Profile-Guided Optimization</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

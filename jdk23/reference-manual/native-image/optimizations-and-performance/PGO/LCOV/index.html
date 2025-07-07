@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="making-sense-of-pgo-reports-using-lcov">Making Sense of PGO Reports Using LCOV</h1>
+
+<p>Here you will learn how to analyze PGO profiles with the aid of LCOV-based tooling.</p>
+
+<p>Profile-Guided Optimization (PGO) help you maximize the performance of your native application.
+As part of the PGO process, you create an instrumented binary and run a workload on it to generate
+a PGO profile file that you can then feed back into the build process to generate an optimized binary
+of your application.
+Typically, there’s no need for you to understand the contents of such a PGO profile.
+In some cases, however, you may want to understand what has been recorded as part of a profile,
+especially when there is a problem with the performance of your optimized binary.
+GraalVM Native Image can export profiling information in an additional file in the <a href="https://github.com/linux-test-project/lcov">LCOV format</a>.
+You can open and visualize such a file in any IDE or tool that supports the LCOV format.
+This allows you to see what methods of your code are called and how often.</p>
+
+<p>The Graal compiler spends more time optimizing <em>hot methods</em>, methods that are called many times, than
+<em>cold methods</em>, methods that are only called a few times or not at all.
+Therefore, you can use the additional LCOV export to check what methods have actually been called as
+part of the workload that ran on an instrumented binary.
+This also means that the PGO profile contains appropriate profiling information for the methods.
+Besides, the coverage visualization helps you identify the hot methods of your application, again for
+the workload that ran on the instrumented binary.
+If you want to maximize performance, these are typically the methods you want to take a closer look at.
+On the contrary, methods that are not covered at all are potential candidates for cleanups, which in
+turn can speed up the build time.</p>
+
+<h2 id="creating-coverage-report">Creating Coverage Report</h2>
+
+<p>To create a coverage report, you first need to pass the <code>-H:+ProfilingLCOV</code> experimental option along
+with the <code>--pgo-instrument</code> option when building an instrumented binary.
+For example:</p>
+
+<pre><code class="language-bash">native-image -cp . GameOfLife -o gameoflife-instrumented --pgo-instrument -H:+UnlockExperimentalVMOptions -H:+ProfilingLCOV -H:-UnlockExperimentalVMOptions
+</code></pre>
+
+<p>The report, in the form of a <code>.info</code> trace file, is then generated along with the profile after
+running the instrumented application.
+In the similar fashion to profiling, one can additionally customize the destination of the generated
+info file via the <code>-XX:ProfilesLCOVTraceFile</code> option.
+For example:</p>
+
+<pre><code class="language-bash">./gameoflife-instrumented -XX:ProfilesLCOVTraceFile=gameoflife-coverage.info
+</code></pre>
+
+<p>The generated LCOV trace file provides the coverage information at method-level, i.e., whether a
+particular method got executed (and how many times) or not.
+This information can be easily summarised using the <code>lcov</code> command (see
+<a href="https://linux.die.net/man/1/lcov">the official LCOV man page</a>).
+For example:</p>
+
+<pre><code class="language-bash">lcov --summary gameoflife-coverage.info
+</code></pre>
+
+<p>This outputs the short summary in the format:</p>
+
+<pre><code>Summary coverage rate:
+  lines......: 17.3% (24873 of 144172 lines)
+  functions..: 15.6% (2390 of 15285 functions)
+  branches...: no data found
+</code></pre>
+
+<p>Additionally, to visualize the data, one can use the <a href="https://linux.die.net/man/1/genhtml"><code>genhtml</code> utility</a>
+for creating HTML reports from LCOV data, or use any third-party LCOV data visualizer (e.g., the
+<a href="https://github.com/eugenezinovyev/lcov-viewer">LCOV viewer project</a>).</p>
+
+<p>To show which methods are instrumented (found) and which are executed (hit), the <code>genhtml</code> additionally
+utilises source files (which can also be omitted if unavailable using the <code>--synthesize-missing</code> option).
+Also, the <code>--source-directory</code> option is useful in the case when the source files are located in a
+specific directory.
+For example:</p>
+
+<pre><code class="language-bash">genhtml --source-directory *absolute-path-to-sources* gameoflife-coverage.info
+</code></pre>
+
+<p>See below an example source file view from the report for the <code>gameoflife-coverage.info</code> trace file
+generated by the former command:</p>
+
+<p><img src="/jdk23/docs/reference-manual/native-image/images/pgo-lcov-genhtml-report-source-view.png" alt="LCOV Genhtml Report - Source View" /></p>
+
+<p>More over, the <code>functions</code> view lists all the methods found in the particular source file along with
+their execution counts:</p>
+
+<p><img src="/jdk23/docs/reference-manual/native-image/images/pgo-lcov-genhtml-report-functions-view.png" alt="LCOV Genhtml Report - Functions View" /></p>
+
+<h3 id="further-reading">Further Reading</h3>
+
+<ul>
+  <li><a href="/jdk23/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">Inspecting a Profile in a Build Report</a></li>
+  <li><a href="/jdk23/reference-manual/native-image/optimizations-and-performance/PGO/faq/">Frequently Asked Questions</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

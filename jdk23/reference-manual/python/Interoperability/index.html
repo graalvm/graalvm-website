@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="interoperability">Interoperability</h1>
+
+<p>Besides being primarily recommended to use in your Java application, GraalPy can interoperate with other Graal languages (languages implemented on the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>).
+This means that you can use the objects and functions provided by those other languages directly from your Python scripts.</p>
+
+<h2 id="interacting-with-java-from-python-scripts">Interacting with Java from Python scripts</h2>
+
+<p>Java is the host language of the JVM and runs the GraalPy interpreter itself.
+To interoperate with Java from Python scripts, use the <code>java</code> module:</p>
+<pre><code class="language-python">import java
+BigInteger = java.type("java.math.BigInteger")
+myBigInt = BigInteger.valueOf(42)
+# a public Java methods can just be called
+myBigInt.shiftLeft(128) # returns a &lt;JavaObject[java.math.BigInteger] at ...&gt;
+# Java method names that are keywords in Python must be accessed using `getattr`
+getattr(myBigInt, "not")() # returns a &lt;JavaObject[java.math.BigInteger] at ...&gt;
+byteArray = myBigInt.toByteArray()
+# Java arrays can act like Python lists
+assert len(byteArray) == 1 and byteArray[0] == 42
+</code></pre>
+
+<aside>
+  <p>For plain Python users, the <code>java</code> module is only available when running on the JVM distribution.</p>
+</aside>
+
+<p>To import packages from the <code>java</code> namespace, you can also use the conventional Python import syntax:</p>
+<pre><code class="language-python">import java.util.ArrayList
+from java.util import ArrayList
+assert java.util.ArrayList == ArrayList
+
+al = ArrayList()
+al.add(1)
+al.add(12)
+assert list(al) == [1, 12]
+</code></pre>
+
+<p>In addition to the <code>type</code> built-in method, the <code>java</code> module exposes the following methods:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Built-in</th>
+      <th>Specification</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>instanceof(obj, class)</code></td>
+      <td>returns <code>True</code> if <code>obj</code> is an instance of <code>class</code> (<code>class</code> must be a foreign object class)</td>
+    </tr>
+    <tr>
+      <td><code>is_function(obj)</code></td>
+      <td>returns <code>True</code> if <code>obj</code> is a Java host language function wrapped using interop</td>
+    </tr>
+    <tr>
+      <td><code>is_object(obj)</code></td>
+      <td>returns <code>True</code> if <code>obj</code> if the argument is Java host language object wrapped using interop</td>
+    </tr>
+    <tr>
+      <td><code>is_symbol(obj)</code></td>
+      <td>returns <code>True</code> if <code>obj</code> if the argument is a Java host symbol, representing the constructor and static members of a Java class, as obtained by <code>java.type</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<pre><code class="language-python">ArrayList = java.type('java.util.ArrayList')
+my_list = ArrayList()
+assert java.is_symbol(ArrayList)
+assert not java.is_symbol(my_list)
+assert java.is_object(ArrayList)
+assert java.is_function(my_list.add)
+assert java.instanceof(my_list, ArrayList)
+</code></pre>
+
+<p>See <a href="/jdk23/reference-manual/polyglot-programming/">Polyglot Programming</a> and <a href="/jdk23/reference-manual/embed-languages/">Embed Languages</a> for more information about interoperability with other programming languages.</p>
+
+<h2 id="interacting-with-other-dynamic-languages-from-python-scripts">Interacting with other dynamic languages from Python scripts</h2>
+
+<p>More general, non-JVM specific interactions with other languages from Python scripts are achieved via the <em>polyglot</em> API.
+This includes all interactions with dynamic languages supported via the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>, including JavaScript and Ruby.</p>
+
+<h3 id="installing-other-dynamic-languages">Installing other dynamic languages</h3>
+
+<p>Other languages can be included by using their respective Maven dependencies in the same manner as GraalPy.
+For example, if you have already configured a Maven project with GraalPy, add the following dependency to gain access to JavaScript:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js&lt;/artifactId&gt;
+    &lt;version&gt;24.1.0&lt;/version&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<aside>
+  <p>For Python developers, other languages are only available for the GraalPy JVM distributions after using the <code>libexec/graalpy-polyglot-get</code> command from the distribution’s root directory.
+To install JavaScript, for example:</p>
+  <pre><code class="language-shell">libexec/graalpy-polyglot-get js
+</code></pre>
+</aside>
+
+<h3 id="examples">Examples</h3>
+
+<ol>
+  <li>Import the <code>polyglot</code> module to interact with other languages:
+    <pre><code class="language-python">import polyglot
+</code></pre>
+  </li>
+  <li>Evaluate inlined code in another language:
+    <pre><code class="language-python">assert polyglot.eval(string="1 + 1", language="js") == 2
+</code></pre>
+  </li>
+  <li>Evaluate code from a file:
+    <pre><code class="language-python">with open("./my_js_file.js", "w") as f:
+    f.write("Polyglot.export('JSMath', Math)")
+polyglot.eval(path="./my_js_file.js", language="js")
+</code></pre>
+  </li>
+  <li>Import a glocal value from the polyglot scope:
+    <pre><code class="language-python">Math = polyglot.import_value("JSMath")
+</code></pre>
+
+    <p>This global value should then work as expected:</p>
+    <ul>
+      <li>Accessing attributes reads from the <em>polyglot members</em> namespace:
+        <pre><code class="language-python">assert Math.E == 2.718281828459045
+</code></pre>
+      </li>
+      <li>Calling a method on the result attempts to do a straight <code>invoke</code> and falls back to reading the member and trying to execute it.
+        <pre><code class="language-python">assert Math.toString() == "[object Math]"
+</code></pre>
+      </li>
+      <li>Accessing items is supported both with strings and numbers.
+        <pre><code class="language-python">assert Math["PI"] == 3.141592653589793
+</code></pre>
+      </li>
+    </ul>
+  </li>
+  <li>Use the JavaScript regular expression engine to match Python strings:
+    <pre><code class="language-python">js_re = polyglot.eval(string="RegExp()", language="js")
+
+pattern = js_re.compile(".*(?:we have (?:a )?matching strings?(?:[!\\?] )?)(.*)")
+
+if pattern.exec("This string does not match"): raise SystemError("that shouldn't happen")
+
+md = pattern.exec("Look, we have matching strings! This string was matched by Graal.js")
+
+assert "Graal.js" in md[1]
+</code></pre>
+
+    <p>This program matches Python strings using the JavaScript regular expression object. Python reads the captured group from the JavaScript result and checks for a substring in it.</p>
+  </li>
+</ol>
+
+<h2 id="exporting-python-objects-to-other-languages">Exporting Python Objects to other Languages</h2>
+
+<p>The <code>polyglot</code> module can be used to expose Python objects to JVM languages and other Graal languages (languages implemented on the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>).</p>
+
+<ol>
+  <li>You can export some object from Python to other languages so they can import it:
+    <pre><code class="language-python">import ssl
+polyglot.export_value(value=ssl, name="python_ssl")
+</code></pre>
+
+    <p>Then use it in (for example) from JavaScript code:</p>
+    <pre><code class="language-js">Polyglot.import('python_ssl).get_server_certificate(["oracle.com", 443])
+</code></pre>
+  </li>
+  <li>You can decorate a Python function to export it by name:
+    <pre><code class="language-python">@polyglot.export_value
+def python_method():
+    return "Hello from Python!"
+</code></pre>
+
+    <p>Then use it (for example) from Java code:</p>
+    <pre><code class="language-java">import org.graalvm.polyglot.*;
+
+class Main {
+    public static void main(String[] args) {
+        try (var context = Context.create()) {
+            context.eval(Source.newBuilder("python", "file:///python_script.py").build());
+
+            String result = context.
+                getPolyglotBindings().
+                getMember("python_method").
+                execute().
+                asString();
+            assert result.equals("Hello from Python!");
+        }
+    }
+ }
+</code></pre>
+  </li>
+</ol>
+
+<h2 id="mapping-types-between-python-and-other-languages">Mapping Types between Python and Other Languages</h2>
+
+<p>The interop protocol defines different “types” which can overlap in all kinds of ways and have restrictions on how they can interact with Python.</p>
+
+<h3 id="interop-types-to-python">Interop Types to Python</h3>
+
+<p>Most importantly and upfront: all foreign objects passed into Python have the Python type <code>foreign</code>.
+There is no emulation of (for example) objects that are of interop type “boolean” to have the Python type <code>bool</code>.
+This is because interop types can overlap in ways that the Python built-in types cannot, and we have yet to define which type should take precedence and such situations.
+We do expect to change this in the future, however.
+For now, the <code>foreign</code> type defines all of the Python special methods for type conversion that are used throughout the interpreter (methods such as <code>__add__</code>, <code>__int__</code>, <code>__str__</code>, <code>__getitem__</code>, and so on)
+and these try to “do the right thing” based on the interop type (or raise an exception).</p>
+
+<p>Types not listed in the table below have no special interpretation in Python.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Interop Type</th>
+      <th style="text-align: left">Python Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left"><code>null</code> is like <code>None</code>. Important to know: interop <code>null</code> values are all identical to <code>None</code>. JavaScript defines two “null-like” values; <code>undefined</code> and <code>null</code>, which are <em>not</em> identical, but when passed to Python, they are treated so.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left"><code>boolean</code> behaves like Python booleans, including the fact that in Python, all booleans are also integers (1 and 0 for true and false, respectively).</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>number</code></td>
+      <td style="text-align: left"><code>number</code> Behaves like Python numbers. Python only has one integer and one floating point type, but ranges are imported in some places such as typed arrays.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>string</code></td>
+      <td style="text-align: left">Behaves in the same way as a Python string.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>buffer</code></td>
+      <td style="text-align: left">Buffers are also a concept in Python’s native API (albeit slightly different). Interop buffers are treated in the same was as Python buffers in some places (such as <code>memoryview</code>) to avoid copies of data.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>array</code></td>
+      <td style="text-align: left">An <code>array</code> can be used with subscript access in the same way as Python lists, with integers and slices as indices.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>hash</code></td>
+      <td style="text-align: left">A <code>hash</code> can be used with subscript access in the same way as Python dictionaries, with any “hashable” object as a key. “Hashable” follows Python semantics: generally every interop type with an identity is deemed “hashable”. Note that if an interop object is of type <code>Array</code> <strong>and</strong> <code>Hash</code>, the behavior of subscript access is undefined.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>members</code></td>
+      <td style="text-align: left">An object of type <code>members</code> can be read using conventional Python <code>.</code> notation or <code>getattr</code> and related functions.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterable</code></td>
+      <td style="text-align: left">An <code>iterable</code> is treated in the same way as any Python object with an <code>__iter__</code> method. That is, it can be used in a loop and other places that accept Python iterables.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterator</code></td>
+      <td style="text-align: left">An <code>iterator</code> is treated in the same way as any Python object with a <code>__next__</code> method.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>exception</code></td>
+      <td style="text-align: left">An <code>exception</code> can be caught in a generic <code>except</code> clause.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>MetaObject</code></td>
+      <td style="text-align: left">Meta objects can be used in subtype and <code>isinstance</code> checks.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>executable</code></td>
+      <td style="text-align: left">An <code>executable</code> object can be executed as a function, but never with keyword arguments.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>instantiable</code></td>
+      <td style="text-align: left">An <code>instantiable</code> object can be called just like a Python type, but never with keyword arguments.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="python-to-interop-types">Python to Interop Types</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Interop Type</th>
+      <th style="text-align: left">Python Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left">Only <code>None</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left">Only subtypes of Python <code>bool</code>. Note that in contrast to Python semantics, Python <code>bool</code> is <em>never</em> also an interop number.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>number</code></td>
+      <td style="text-align: left">Only subtypes of <code>int</code> and <code>float</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>string</code></td>
+      <td style="text-align: left">Only subtypes of <code>str</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>array</code></td>
+      <td style="text-align: left">Any object with <code>__getitem__</code> and <code>__len__</code> methods, but not if it also has <code>keys</code>, <code>values</code>, and <code>items</code> methods (in the same way that <code>dict</code> does.)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>hash</code></td>
+      <td style="text-align: left">Only subtypes of <code>dict</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>members</code></td>
+      <td style="text-align: left">Any Python object. Note that the rules for readable/writable are a bit ad-hoc, since checking that is not part of the Python MOP.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterable</code></td>
+      <td style="text-align: left">Any Python object that has <code>__iter__</code> or a <code>__getitem__</code> methods.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>iterator</code></td>
+      <td style="text-align: left">Any Python object with a <code>__next__</code> method.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>exception</code></td>
+      <td style="text-align: left">Any Python <code>BaseException</code> subtype.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>MetaObject</code></td>
+      <td style="text-align: left">Any Python <code>type</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>executable</code></td>
+      <td style="text-align: left">Any Python object  with a <code>__call__</code> method.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>instantiable</code></td>
+      <td style="text-align: left">Any Python <code>type</code>.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2 id="the-interoperability-extension-api">The Interoperability Extension API</h2>
+
+<p>It is possible to extend the interoperability protocol directly from Python via a simple API defined in the <code>polyglot</code> module. 
+The purpose of this API is to enable custom / user defined types to take part in the interop ecosystem. 
+This is particularly useful for external types which are not compatible by default with the interop protocol. 
+An example in this sense are the <code>numpy</code> numeric types (for example, <code>numpy.int32</code>) which are not supported by default by the interop protocol.</p>
+
+<h3 id="the-api">The API</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Function</th>
+      <th style="text-align: left">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">register_interop_behavior</td>
+      <td style="text-align: left">Takes the receiver <strong>type</strong> as first argument. The remainder keyword arguments correspond to the respective interop messages. Not All interop messages are supported.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">get_registered_interop_behavior</td>
+      <td style="text-align: left">Takes the receiver <strong>type</strong> as first argument. Returns the list of extended interop messages for the given type.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">@interop_behavior</td>
+      <td style="text-align: left">Class decorator, takes the receiver <strong>type</strong> as only argument. The interop messages are extended via <strong>static</strong> methods defined in the decorated class (supplier).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h4 id="supported-messages">Supported messages</h4>
+
+<p>The majority (with some exceptions) of the interop messages are supported by the interop behavior extension API, as shown in the table below.<br />
+The naming convention for the <code>register_interop_behavior</code> keyword arguments follows the <em>snake_case</em> naming convention, i.e. the interop <code>fitsInLong</code> message 
+becomes <code>fits_in_long</code> and so on. Each message can be extended with a <strong>pure python function</strong> (default keyword arguments, free vars and cell vars are not allowed) or a <strong>boolean constant</strong>. 
+The table below describes the supported interop messages:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Message</th>
+      <th style="text-align: left">Extension argument name</th>
+      <th>Expected return type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">isBoolean</td>
+      <td style="text-align: left">is_boolean</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isDate</td>
+      <td style="text-align: left">is_date</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isDuration</td>
+      <td style="text-align: left">is_duration</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isIterator</td>
+      <td style="text-align: left">is_iterator</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isNumber</td>
+      <td style="text-align: left">is_number</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isString</td>
+      <td style="text-align: left">is_string</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isTime</td>
+      <td style="text-align: left">is_time</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isTimeZone</td>
+      <td style="text-align: left">is_time_zone</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isExecutable</td>
+      <td style="text-align: left">is_executable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInBigInteger</td>
+      <td style="text-align: left">fits_in_big_integer</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInByte</td>
+      <td style="text-align: left">fits_in_byte</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInDouble</td>
+      <td style="text-align: left">fits_in_double</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInFloat</td>
+      <td style="text-align: left">fits_in_float</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInInt</td>
+      <td style="text-align: left">fits_in_int</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInLong</td>
+      <td style="text-align: left">fits_in_long</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">fitsInShort</td>
+      <td style="text-align: left">fits_in_short</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asBigInteger</td>
+      <td style="text-align: left">as_big_integer</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asBoolean</td>
+      <td style="text-align: left">as_boolean</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asByte</td>
+      <td style="text-align: left">as_byte</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDate</td>
+      <td style="text-align: left">as_date</td>
+      <td>3-tuple with the following elements: (<code>year</code>: int, <code>month</code>: int, <code>day</code>: int)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDouble</td>
+      <td style="text-align: left">as_double</td>
+      <td>float</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asDuration</td>
+      <td style="text-align: left">as_duration</td>
+      <td>2-tuple with the following elements: (<code>seconds</code>: long, <code>nano_adjustment</code>: long)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asFloat</td>
+      <td style="text-align: left">as_float</td>
+      <td>float</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asInt</td>
+      <td style="text-align: left">as_int</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asLong</td>
+      <td style="text-align: left">as_long</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asShort</td>
+      <td style="text-align: left">as_short</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asString</td>
+      <td style="text-align: left">as_string</td>
+      <td>str</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asTime</td>
+      <td style="text-align: left">as_time</td>
+      <td>4-tuple with the following elements:  (<code>hour</code>: int, <code>minute</code>: int, <code>second</code>: int, <code>microsecond</code>: int)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">asTimeZone</td>
+      <td style="text-align: left">as_time_zone</td>
+      <td>a string (the timezone) or int (utc delta in seconds)</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">execute</td>
+      <td style="text-align: left">execute</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">readArrayElement</td>
+      <td style="text-align: left">read_array_element</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getArraySize</td>
+      <td style="text-align: left">get_array_size</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasArrayElements</td>
+      <td style="text-align: left">has_array_elements</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementReadable</td>
+      <td style="text-align: left">is_array_element_readable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementModifiable</td>
+      <td style="text-align: left">is_array_element_modifiable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementInsertable</td>
+      <td style="text-align: left">is_array_element_insertable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isArrayElementRemovable</td>
+      <td style="text-align: left">is_array_element_removable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">removeArrayElement</td>
+      <td style="text-align: left">remove_array_element</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">writeArrayElement</td>
+      <td style="text-align: left">write_array_element</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasIterator</td>
+      <td style="text-align: left">has_iterator</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasIteratorNextElement</td>
+      <td style="text-align: left">has_iterator_next_element</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getIterator</td>
+      <td style="text-align: left">get_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getIteratorNextElement</td>
+      <td style="text-align: left">get_iterator_next_element</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">hasHashEntries</td>
+      <td style="text-align: left">has_hash_entries</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashEntriesIterator</td>
+      <td style="text-align: left">get_hash_entries_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashKeysIterator</td>
+      <td style="text-align: left">get_hash_keys_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashSize</td>
+      <td style="text-align: left">get_hash_size</td>
+      <td>int</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">getHashValuesIterator</td>
+      <td style="text-align: left">get_hash_values_iterator</td>
+      <td>a python iterator</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryReadable</td>
+      <td style="text-align: left">is_hash_entry_readable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryModifiable</td>
+      <td style="text-align: left">is_hash_entry_modifiable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryInsertable</td>
+      <td style="text-align: left">is_hash_entry_insertable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">isHashEntryRemovable</td>
+      <td style="text-align: left">is_hash_entry_removable</td>
+      <td>bool</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">readHashValue</td>
+      <td style="text-align: left">read_hash_value</td>
+      <td>object</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">writeHashEntry</td>
+      <td style="text-align: left">write_hash_entry</td>
+      <td>NoneType</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">removeHashEntry</td>
+      <td style="text-align: left">remove_hash_entry</td>
+      <td>NoneType</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="usage-example">Usage Example</h3>
+
+<p>A simple <code>register_interop_behavior</code> API is available to register interop behaviors for existing types:</p>
+
+<pre><code class="language-python">import polyglot
+import numpy
+
+polyglot.register_interop_behavior(numpy.int32,
+    is_number=True,
+    fitsInByte=lambda v: -128 &lt;= v &lt; 128,
+    fitsInShort=lambda v: -0x8000 &lt;= v &lt; 0x8000
+    fitsInInt=True,
+    fitsInLong=True,
+    fitsInBigInteger=True,
+    asByte=int,
+    asShort=int,
+    asInt=int,
+    asLong=int,
+    asBigInteger=int,
+)
+</code></pre>
+
+<p>The <code>@interop_behavior</code> decorator may be more convenient when declaring more behaviors.
+Interop message extension is achieved via <strong>static</strong> methods of the decorated class.
+The names of the static methods are identical to the keyword names expected by <code>register_interop_behavior</code>.</p>
+
+<pre><code class="language-python">from polyglot import interop_behavior
+import numpy
+
+@interop_behavior(numpy.float64)
+class Int8InteropBehaviorSupplier:
+    @staticmethod
+    def is_number(_): 
+        return True
+
+    @staticmethod
+    def fitsInDouble(_):
+        return True
+
+    @staticmethod
+    def asDouble(v):
+        return float(v)
+</code></pre>
+
+<p>Both classes can then behave as expected when embedded:</p>
+<pre><code class="language-java">import java.nio.file.Files;
+import java.nio.file.Path;
+import org.graalvm.polyglot.Context;
+
+class Main {
+    public static void main(String[] args) {
+        try (var context = Context.create()) {
+            context.eval("python", Files.readString(Path.of("path/to/interop/behavior/script.py")));
+            assert context.eval("python", "numpy.float64(12)").asDouble() == 12.0;
+            assert context.eval("python", "numpy.int32(12)").asByte() == 12;
+        }
+    }
+}
+</code></pre>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

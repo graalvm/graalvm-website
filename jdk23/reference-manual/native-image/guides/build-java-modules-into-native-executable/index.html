@@ -1,0 +1,71 @@
+<h1 id="build-java-modules-into-a-native-executable">Build Java Modules into a Native Executable</h1>
+
+<p>GraalVM Native Image supports the <a href="https://www.oracle.com/uk/corporate/features/understanding-java-9-modules.html">Java Platform Module System</a>, introduced in Java 9, which means you can convert a modularized Java application into a native executable.</p>
+
+<p>The <code>native-image</code> tool accepts the module-related options such as <code>--module</code> (<code>-m</code>), <code>--module-path</code> (<code>-p</code>), <code>--add-opens</code>, <code>--add-exports</code> (same as for the <code>java</code> launcher). 
+When such a module-related option is used, the <code>native-image</code> tool itself is used as a module too.</p>
+
+<p>In addition to supporting <code>--add-reads</code> and <code>--add-modules</code>, all module related options are considered prior to scanning the module path. 
+This helps prevent class loading errors and allow for better module introspection at runtime.</p>
+
+<p>The command to build a native executable from a Java module is:</p>
+<pre><code class="language-shell">native-image [options] --module &lt;module&gt;[/&lt;mainclass&gt;] [options]
+</code></pre>
+
+<h2 id="run-a-demo">Run a Demo</h2>
+
+<p>Follow the steps below to build a modular Java application into a native executable.
+For the demo, you will use a simple HelloWorld Java module gathered with Maven:</p>
+
+<pre><code>├── hello
+│   └── Main.java
+│       &gt; package hello;
+│       &gt; 
+│       &gt; public class Main {
+│       &gt;     public static void main(String[] args) {
+│       &gt;         System.out.println("Hello from Java Module: "
+│       &gt;             + Main.class.getModule().getName());
+│       &gt;     }
+│       &gt; }
+│
+└── module-info.java
+    &gt; module HelloModule {
+    &gt;     exports hello;
+    &gt; }
+</code></pre>
+
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<ol>
+  <li>Download or clone the demos repository and navigate to the directory <em>native-image/build-java-modules/</em>:
+    <pre><code class="language-bash"> git clone https://github.com/graalvm/graalvm-demos
+</code></pre>
+    <pre><code class="language-bash"> cd graalvm-demos/native-image/build-java-modules
+</code></pre>
+  </li>
+  <li>Compile and package the project with Maven:
+    <pre><code class="language-bash"> mvn clean package
+</code></pre>
+  </li>
+  <li>Test running it on the GraalVM JDK:
+    <pre><code class="language-bash"> java --module-path target/HelloModule-1.0-SNAPSHOT.jar --module HelloModule
+</code></pre>
+  </li>
+  <li>Now build this module into a native executable:
+    <pre><code class="language-bash"> native-image --module-path target/HelloModule-1.0-SNAPSHOT.jar --module HelloModule
+</code></pre>
+
+    <p>It builds the modular Java application into a native executable called <em>hellomodule</em> in the project root directory that you can run:</p>
+    <pre><code class="language-bash"> ./hellomodule
+</code></pre>
+  </li>
+</ol>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li>Learn more how you can <a href="/jdk23/reference-manual/native-image/metadata/#resources-in-java-modules">access resources for a Java module at runtime</a>.</li>
+</ul>

@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="modern-python-for-the-jvm">Modern Python for the JVM</h1>
+
+<p>For Python version 2 (now EOL), Jython is the <em>de facto</em> means of interfacing Python and Java.
+Most existing Jython code that uses Java integration will be based on a stable Jython release—however, these are only available in Python 2.x versions.
+GraalPy, in contrast, is compatible with Python 3.x and does not provide full compatibility with earlier 2.x versions of Jython.</p>
+
+<p>To migrate code from Python 2 to Python 3, follow <a href="https://docs.python.org/3/howto/pyporting.html">the official guide from the Python community</a>.
+Once your Jython code is compatible with Python 3, follow this guide to iron out other differences between GraalPy and Jython.</p>
+
+<p>GraalPy’s first-class support for <a href="/jdk23/reference-manual/python/Interoperability/">Java interoperability</a> makes using Java libraries from Python as easy as possible, with special affordances for Java code beyond the generic interoperability support for other Graal languages (languages implemented on the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>).</p>
+
+<p>Not all features of Jython are supported on GraalPy.
+Some are supported, but disabled by default due to their negative impact on runtime performance.
+During migration, you can enable these features using a command line option: <code>--python.EmulateJython</code>.
+We recommend to move away from these features, however, to achieve optimal performance.</p>
+
+<h2 id="migrating-jython-scripts">Migrating Jython Scripts</h2>
+
+<blockquote>
+  <p>To move plain Jython scripts from Jython to GraalPy, use a GraalPy JVM-based runtime.
+(For more information, see available <a href="/jdk23/reference-manual/python/Python-Runtime/">GraalPy Distributions</a>).</p>
+</blockquote>
+
+<h3 id="importing-a-java-package">Importing a Java Package</h3>
+
+<p>There are certain features of Jython’s Java integration that are enabled by default on GraalPy.
+Here is an example:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; import java.awt as awt
+&gt;&gt;&gt; win = awt.Frame()
+&gt;&gt;&gt; win.setSize(200, 200)
+&gt;&gt;&gt; win.setTitle("Hello from Python!")
+&gt;&gt;&gt; win.getSize().toString()
+'java.awt.Dimension[width=200,height=200]'
+&gt;&gt;&gt; win.show()
+</code></pre>
+
+<p>This example produces the same result when run on both Jython and GraalPy.
+However, when the example is run on GraalPy, only packages that are in the <code>java</code> namespace can be imported directly.
+To import classes from packages outside the <code>java</code> namespace, use the <code>--python.EmulateJython</code> option.</p>
+
+<blockquote>
+  <p>Note: When embedding GraalPy in a modularized application, you may have to
+add exports for the required modules according to JSR 376.</p>
+</blockquote>
+
+<p>Additionally, it is not possible to import Java packages as Python modules in all circumstances.
+For example, this will work:</p>
+
+<pre><code class="language-python">import java.lang as lang
+</code></pre>
+
+<p>But, this will not work:</p>
+
+<pre><code class="language-python">import javax.swing as swing
+from javax.swing import *
+</code></pre>
+
+<p>Instead, import one of the classes directly:</p>
+
+<pre><code class="language-python">import javax.swing.Window as Window
+</code></pre>
+
+<h3 id="basic-object-usage">Basic Object Usage</h3>
+
+<p>Constructing and working with Java objects and classes is achieved with conventional
+Python syntax.
+The methods of a Java object can also be retrieved and referenced as first class objects (bound to their instance), in the same way as Python methods. For example:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; from java.util import Random
+&gt;&gt;&gt; rg = Random(99)
+&gt;&gt;&gt; rg.nextInt()
+1491444859
+&gt;&gt;&gt; boundNextInt = rg.nextInt
+&gt;&gt;&gt; boundNextInt()
+1672896916
+</code></pre>
+
+<h3 id="java-to-python-types-automatic-conversion">Java-to-Python Types: Automatic Conversion</h3>
+
+<p>Method overloads are resolved by matching the Python arguments in a best-effort manner to the available parameter types.
+This approach is also taken when converting data.
+The goal here is to make using Java from Python as smooth as possible.
+The matching approach taken by GraalPy is similar to Jython, but GraalPy uses a more dynamic approach to matching—Python types emulating <code>int</code> or <code>float</code> are also converted to the appropriate Java types.
+This enables you, for example, to use a Pandas frame as <code>double[][]</code> or NumPy array elements as <code>int[]</code> when the elements fit into those Java primitive types.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Java type</th>
+      <th style="text-align: left">Python type</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code>null</code></td>
+      <td style="text-align: left"><code>None</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>boolean</code></td>
+      <td style="text-align: left"><code>bool</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code></td>
+      <td style="text-align: left"><code>int</code>, any object that has an <code>__int__</code> method</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>float</code></td>
+      <td style="text-align: left"><code>float</code>, any object that has a <code>__float__</code> method</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>char</code></td>
+      <td style="text-align: left"><code>str</code> of length 1</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>java.lang.String</code></td>
+      <td style="text-align: left"><code>str</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>byte[]</code></td>
+      <td style="text-align: left"><code>bytes</code>, <code>bytearray</code>, wrapped Java <code>array</code>, Python list with only the appropriate types</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Java arrays</td>
+      <td style="text-align: left">Wrapped Java <code>array</code> or Python <code>list</code> with only the appropriate types</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Java objects</td>
+      <td style="text-align: left">Wrapped Java object of the appropriate type</td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code>java.lang.Object</code></td>
+      <td style="text-align: left">Any object</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="special-jython-module-jarray">Special Jython Module: <code>jarray</code></h3>
+
+<p>GraalPy implements the <code>jarray</code> module (to create primitive Java arrays) for compatibility.
+For example:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; import jarray
+&gt;&gt;&gt; jarray.array([1,2,3], 'i')
+</code></pre>
+
+<p>Note that its usage is equivalent to constructing the array type using the <code>java.type</code> function and then populating the array, as follows:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; import java
+&gt;&gt;&gt; java.type("int[]")(10)
+</code></pre>
+
+<p>The code that creates a Java array can also use Python types.
+However, implicitly, this may produce a copy of the array data, which can be deceptive when using a Java array as an output parameter:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; i = java.io.ByteArrayInputStream(b"foobar")
+&gt;&gt;&gt; buf = [0, 0, 0]
+&gt;&gt;&gt; i.read(buf) # buf is automatically converted to a byte[] array
+3
+&gt;&gt;&gt; buf
+[0, 0, 0] # the converted byte[] array is lost
+&gt;&gt;&gt; jbuf = java.type("byte[]")(3)
+&gt;&gt;&gt; i.read(jbuf)
+3
+&gt;&gt;&gt; jbuf
+[98, 97, 122]
+</code></pre>
+
+<h3 id="exceptions-from-java">Exceptions from Java</h3>
+
+<p>To catch Java exceptions, use the <code>--python.EmulateJython</code> option.</p>
+
+<blockquote>
+  <p>Note: Catching a Java exception incurs a performance penalty.</p>
+</blockquote>
+
+<p>For example:</p>
+
+<pre><code class="language-python">&gt;&gt;&gt; import java
+&gt;&gt;&gt; v = java.util.Vector()
+&gt;&gt;&gt; try:
+...    x = v.elementAt(7)
+... except java.lang.ArrayIndexOutOfBoundsException as e:
+...    print(e.getMessage())
+...
+7 &gt;= 0
+</code></pre>
+
+<h3 id="java-collections">Java Collections</h3>
+
+<ul>
+  <li>
+    <p>Java arrays and collections that implement the <code>java.util.Collection</code> interface can be accessed using the <code>[]</code> syntax. 
+An empty collection is considered <code>false</code> in boolean conversions. 
+The length of a collection is exposed by the <code>len</code> built-in function.
+For example:</p>
+
+    <pre><code class="language-python">  &gt;&gt;&gt; from java.util import ArrayList
+  &gt;&gt;&gt; l = ArrayList()
+  &gt;&gt;&gt; l.add("foo")
+  True
+  &gt;&gt;&gt; l.add("baz")
+  True
+  &gt;&gt;&gt; l[0]
+  'foo'
+  &gt;&gt;&gt; l[1] = "bar"
+  &gt;&gt;&gt; del l[1]
+  &gt;&gt;&gt; len(l)
+  1
+  &gt;&gt;&gt; bool(l)
+  True
+  &gt;&gt;&gt; del l[0]
+  &gt;&gt;&gt; bool(l)
+  False
+</code></pre>
+  </li>
+  <li>
+    <p>Java iterables that implement the <code>java.lang.Iterable</code> interface can be iterated over using a <code>for</code> loop or the <code>iter</code> built-in function and are accepted by all built-ins that expect an iterable. 
+For example:</p>
+
+    <pre><code class="language-python">  &gt;&gt;&gt; [x for x in l]
+  ['foo', 'bar']
+  &gt;&gt;&gt; i = iter(l)
+  &gt;&gt;&gt; next(i)
+  'foo'
+  &gt;&gt;&gt; next(i)
+  'bar'
+  &gt;&gt;&gt; next(i)
+  Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  StopIteration
+  &gt;&gt;&gt; set(l)
+  {'foo', 'bar'}
+</code></pre>
+  </li>
+  <li>
+    <p>An iterator can be iterated as well. For example:</p>
+
+    <pre><code class="language-python">  &gt;&gt;&gt; from java.util import ArrayList
+  &gt;&gt;&gt; l = ArrayList()
+  &gt;&gt;&gt; l.add("foo")
+  True
+  &gt;&gt;&gt; i = l.iterator()  # Calls the Java iterator methods
+  &gt;&gt;&gt; next(i)
+  'foo'
+</code></pre>
+  </li>
+  <li>
+    <p>Mapped collections that implement the <code>java.util.Map</code> interface can be accessed using the <code>[]</code> notation.
+An empty map is considered <code>false</code> in boolean conversions. Iteration of a map yields its keys, consistent with <code>dict</code>.
+For example:</p>
+
+    <pre><code class="language-python">  &gt;&gt;&gt; from java.util import HashMap
+  &gt;&gt;&gt; m = HashMap()
+  &gt;&gt;&gt; m['foo'] = 5
+  &gt;&gt;&gt; m['foo']
+  5
+  &gt;&gt;&gt; m['bar']
+  Traceback (most recent call last):
+  File "&lt;stdin&gt;", line 1, in &lt;module&gt;
+  KeyError: bar
+  &gt;&gt;&gt; [k for k in m]
+  ['foo']
+  &gt;&gt;&gt; bool(m)
+  True
+  &gt;&gt;&gt; del m['foo']
+  &gt;&gt;&gt; bool(m)
+  False
+</code></pre>
+  </li>
+</ul>
+
+<h3 id="inheritance-from-java">Inheritance from Java</h3>
+
+<p>Inheriting from a Java class (or implementing a Java interface) is supported with some syntactical differences from Jython. 
+To create a class that inherits from a Java class (or implements a Java interface), use the conventional Python <code>class</code> statement: declared methods
+override (implement) superclass (interface) methods when their names match. 
+To call the a superclass method, use the special attribute <code>self.__super__</code>. 
+The created object does not behave like a Python object but instead in the same way as a foreign Java object.
+Its Python-level members can be accessed using its <code>this</code> attribute. For example:</p>
+
+<pre><code class="language-python">import atexit
+from java.util.logging import Logger, Handler
+
+
+class MyHandler(Handler):
+    def __init__(self):
+        self.logged = []
+
+    def publish(self, record):
+        self.logged.append(record)
+
+
+logger = Logger.getLogger("mylog")
+logger.setUseParentHandlers(False)
+handler = MyHandler()
+logger.addHandler(handler)
+# Make sure the handler is not used after the Python context has been closed
+atexit.register(lambda: logger.removeHandler(handler))
+
+logger.info("Hi")
+logger.warning("Bye")
+
+# The python attributes/methods of the object are accessed through 'this' attribute
+for record in handler.this.logged:
+    print(f'Python captured message "{record.getMessage()}" at level {record.getLevel().getName()}')
+</code></pre>
+
+<h2 id="embedding-python-into-java">Embedding Python into Java</h2>
+
+<p>The other way to use Jython was to embed it into a Java application. There were two options for such an embedding.</p>
+
+<ol>
+  <li>
+    <p>Use the <code>PythonInterpreter</code> object that Jython provides.
+Existing code using Jython in this manner depends directly on the Jython package (for example, in the Maven configuration), because the Java code has references to Jython internal classes.
+These classes do not exist in GraalVM, and no equivalent classes are exposed.
+To migrate from this usage, switch to the <a href="https://mvnrepository.com/artifact/org.graalvm.sdk/graal-sdk">GraalVM SDK</a>.
+Using this SDK, no APIs particular to Python are exposed, everything is achieved via the GraalVM API, with maximum configurability of the Python runtime.
+Refer to the <a href="/jdk23/reference-manual/python/">Getting Started</a> documentation for preparing a setup.</p>
+  </li>
+  <li>
+    <p>Embed Jython in Java via <a href="https://www.jcp.org/en/jsr/detail?id=223">JSR 223</a> by using the classes of the the <code>javax.script</code> package, and, in particular, via the <code>ScriptEngine</code> class.
+We do not recommend this approach, because the <code>ScriptEngine</code> APIs are not a clean fit for the options and capabilities of GraalPy.
+However, to migrate existing code, we provide an example ScriptEngine implementation that you can inline into your project.
+Refer to <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#compatibility-with-jsr-223-scriptengine">the reference manual for embedding</a> for details.</p>
+  </li>
+</ol>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

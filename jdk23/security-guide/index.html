@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="security-guide">Security Guide</h1>
+
+<p>This security guide provides information on the security model and features of GraalVM for developers and embedders who seek to build a secure application on top of it.
+It assumes that readers are familiar with the GraalVM architecture.
+This guide does not replace but rather supplements the Java security documentation such as the <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html">Secure Coding Guidelines for Java SE</a> with aspects unique to GraalVM.</p>
+
+<h2 id="security-model">Security Model</h2>
+
+<p>GraalVM is a shared runtime. It accepts instructions in a higher-level
+programming language (or an intermediate representation thereof) as input, which is executed later.
+Developers that implement security controls for their applications (such as access control) in code that is being run by GraalVM can rely on the correct execution of instructions.
+Incorrect execution of security-critical code running on top of GraalVM that allows to bypass such a security control is regarded a security vulnerability.</p>
+
+<p>Debug features should only be used in a trusted environment as they provide privileged access to an application, allowing to inspect and change its state and behavior.
+They may further open network sockets to allow debug clients to connect.</p>
+
+<p>Experimental features in GraalVM are not for production use and may have security limitations not covered in the Security Guide.</p>
+
+<p>GraalVM enables execution of untrusted code in an appropriately configured polyglot execution context (see <a href="/jdk23/security-guide/sandboxing/">Sandboxing</a>).</p>
+
+<p>We appreciate reports of bugs that break the security model via the process
+outlined in the <a href="https://www.oracle.com/corporate/security-practices/assurance/vulnerability/reporting.html">Reporting Vulnerabilities guide</a>.</p>
+
+<h2 id="graal-languages">Graal Languages</h2>
+
+<p>Every language runtime, generally available with a GraalVM release, provides a launcher, for example, an interactive shell.
+These launchers behave in the same way and come with the same security guarantees as their “original” counterparts.</p>
+
+<h3 id="sandboxing">Sandboxing</h3>
+
+<p>Sandboxing can establish a security boundary between privileged host code and unprivileged guest code, facilitated through the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a>.
+For further information please refer to the <a href="/jdk23/security-guide/sandboxing/">Sandboxing documentation</a>.</p>
+
+<h3 id="scriptengine-compatibility">ScriptEngine Compatibility</h3>
+
+<p>For reasons of backward compatibility, certain Polyglot languages also support the <a href="https://docs.oracle.com/javase/9/scripting/java-scripting-api.htm">Java Scripting API</a>.
+For example, this allows the GraalVM Javascript runtime to be used as a drop-in replacement for Nashorn.
+However, to maintain compatibility, the Nashorn GraalVM JavaScript ScriptEngine interface will create a context with all privileges granted to the script and should be used with extreme caution and only for trusted code.</p>
+
+<h3 id="managed-execution-of-native-code">Managed Execution of Native Code</h3>
+
+<p>Polyglot embedding also supports LLVM intermediate representation (IR) guest code.
+Several native system programming languages, above all C/C++, can be compiled to LLVM IR with the LLVM compiler toolchain.
+Typically, these languages are not memory-safe unless using managed execution and it must be remembered that violations of memory safety are a frequent cause of security vulnerabilities.</p>
+
+<p>In managed mode, all access to unmanaged code including the operating system is mediated by the language runtime. In particular this means that:</p>
+
+<ul>
+  <li>In regards to temporal and spatial memory safety, memory is allocated from the Java heap. This means that memory allocations are managed objects and all accesses are performed in a memory-safe manner (no arbitrary pointer arithmetic and no unchecked out-of-bounds accesses).</li>
+  <li>Regarding type safety, it is not possible to reinterpret a data pointer into a function pointer and execute arbitrary instructions (since these are distinct pointer types for LLVM runtime).</li>
+  <li>System calls are intercepted and routed to the corresponding Truffle APIs. For example, file IO is mapped to the Truffle <code>FileSystem</code> API.
+The set of currently supported system calls is very limited—only syscalls that can safely be mapped to the Truffle API level are available. Since LLVM Runtime in managed mode always runs bitcode compiled for Linux/x86, it only needs to implement system calls for this platform.</li>
+  <li>All dependent libraries are executed in managed mode as well, removing all references to natively executed system libraries. This includes libraries that are provided by the LLVM Runtime, such as <code>muslibc</code>.</li>
+</ul>
+
+<p>Managed mode can be selected when creating a context <code>(Context.create())</code> or when calling the <code>bin/lli</code> binary by specifying the <code>--llvm.managed</code> option. A “managed” context will adhere to any restrictions (for example, <code>allowIO</code>) passed during context creation and does not need the <code>allowNativeAccess</code> privilege.</p>
+
+<h2 id="native-image">Native Image</h2>
+
+<p>With GraalVM native image, an application’s state is captured after startup and all reachable code is compiled ahead of time to be bundled as a native executable.
+For further information please refer to the <a href="/jdk23/security-guide/native-image/">native image security guide</a>.</p>
+
+<h2 id="security-manager">Security Manager</h2>
+
+<p>Security manager has been deprecated in <a href="https://openjdk.java.net/jeps/411">JEP-411</a>.
+GraalVM does not support untrusted code execution in Java.</p>
+
+<h2 id="graalvm-community-edition-downgrade">GraalVM Community Edition Downgrade</h2>
+
+<p>Sandboxing is not available in GraalVM Community Edition.
+Managed execution of native code is not available with GraalVM Community Edition.</p>
+
+<p>When downgrading to GraalVM Community Edition, native code execution is only possible with the <code>allowNativeAccess</code> privilege.
+This also applies to languages implemented with Truffle that allow for native code extensions, such as Python and Ruby.</p>
+
+<h3 id="related-documentation">Related Documentation</h3>
+
+<ul>
+  <li><a href="/jdk23/security-guide/sandboxing/">Sandboxing</a></li>
+  <li><a href="/jdk23/security-guide/native-image/">Security Considerations in Native Image</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

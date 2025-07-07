@@ -1,0 +1,3270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="embedding-languages">Embedding Languages</h1>
+
+<ul>
+  <li><a href="#dependency-setup">Dependency Setup</a></li>
+  <li><a href="#compile-and-run-a-polyglot-application">Compile and Run a Polyglot Application</a></li>
+  <li><a href="#define-guest-language-functions-as-java-values">Define Guest Language Functions as Java Values</a></li>
+  <li><a href="#access-guest-languages-directly-from-java">Access Guest Languages Directly from Java</a></li>
+  <li><a href="#access-java-from-guest-languages">Access Java from Guest Languages</a></li>
+  <li><a href="#lookup-java-types-from-guest-languages">Lookup Java Types from Guest Languages</a></li>
+  <li><a href="#computed-arrays-using-polyglot-proxies">Computed Arrays Using Polyglot Proxies</a></li>
+  <li><a href="#host-access">Host Access</a></li>
+  <li><a href="#runtime-optimization-support">Runtime Optimization Support</a></li>
+  <li><a href="#build-native-executables-from-polyglot-applications">Build Native Executables from Polyglot Applications</a></li>
+  <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
+  <li><a href="#polyglot-isolates">Polyglot Isolates</a></li>
+  <li><a href="#embed-guest-languages-in-java">Embed Guest Languages in Java</a></li>
+  <li><a href="#build-a-shell-for-many-languages">Build a Shell for Many Languages</a></li>
+  <li><a href="#step-through-with-execution-listeners">Step Through with Execution Listeners</a></li>
+  <li><a href="#setting-the-heap-size">Setting the Heap Size</a></li>
+  <li><a href="#compatibility-with-jsr-223-scriptengine">Compatibility with JSR-223 ScriptEngine</a></li>
+</ul>
+
+<p>The <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">GraalVM Polyglot API</a> lets you embed and run code from guest languages in Java host applications.</p>
+
+<p>Throughout this section, you will learn how to create a host application in Java that runs on GraalVM and directly calls a guest language. 
+You can use the tabs beneath each code example to choose between JavaScript, R, Ruby, and Python.</p>
+
+<blockquote>
+  <p>Note: The usage description for polyglot embeddings was revised with GraalVM for JDK 21 and Polyglot API version 23.1.0. If you are still using Polyglot API version older than 23.1.0, ensure the correct version of the documentation is displayed. More information on the change can be found in the <a href="https://www.graalvm.org/release-notes/JDK_21/#graalvm-for-jdk-21">release notes</a>.</p>
+</blockquote>
+
+<h2 id="dependency-setup">Dependency Setup</h2>
+
+<p>Since Polyglot API version 23.1.0, all necessary artifacts can be downloaded directly from Maven Central.
+Artifacts relevant to embedders can be found in the Maven dependency group <a href="https://central.sonatype.com/namespace/org.graalvm.polyglot"><code>org.graalvm.polyglot</code></a>.
+See the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot embedding demonstration</a> on GitHub for a complete runnable example.</p>
+
+<p>Here is an example Maven dependency setup that you can put into your project:</p>
+<pre><code class="language-xml">&lt;dependency&gt; 
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt; 
+	&lt;artifactId&gt;polyglot&lt;/artifactId&gt; 
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt; 
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;!-- Select a language: js, ruby, python, java, llvm, wasm, languages--&gt;
+	&lt;artifactId&gt;js&lt;/artifactId&gt; 
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;!-- Add additional languages if needed --&gt;
+&lt;dependency&gt; 
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt; 
+    &lt;!-- Select a tool: profiler, inspect, coverage, dap, tools --&gt;
+	&lt;artifactId&gt;profiler&lt;/artifactId&gt; 
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<blockquote>
+  <p>The <code>pom</code> type is a requirement for language or tool dependencies.</p>
+</blockquote>
+
+<p>Language and tool dependencies use the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC)</a> license.
+To use community-licensed versions instead, add the <code>-community</code> suffix to each artifact (for example, <code>js-community</code>).
+To access <a href="#polyglot-isolates">polyglot isolate</a> artifacts, use the <code>-isolate</code> suffix instead (for example, <code>js-isolate</code>).</p>
+
+<p>The artifacts <code>languages</code> and <code>tools</code> include all available languages and tools as dependencies. 
+This artifact might grow or shrink between major releases.
+We recommend selecting only the needed language(s) for a production deployment.</p>
+
+<p>Additionally, your <em>module-info.java</em> file should require <code>org.graalvm.polyglot</code> when using Java modules:</p>
+<pre><code class="language-java">module com.mycompany.app {
+  requires org.graalvm.polyglot;
+}
+</code></pre>
+
+<p>Whether your configuration can run with a Truffle runtime optimization depends on the GraalVM JDK you use.
+For further details, refer to the <a href="#runtime-optimization-support">Runtime Compilation section</a>.</p>
+
+<p>We recommend configuring polyglot embeddings using modules and the module path whenever possible.
+Be aware that using <code>org.graalvm.polyglot</code> from the class path instead will enable access to unsafe APIs for all libraries on the class path.
+If the application is not yet modularized, hybrid use of the class path and module path is possible.
+For example:</p>
+<pre><code>$java -classpath=lib --module-path=lib/polyglot --add-modules=org.graalvm.polyglot ...
+</code></pre>
+<p>In this example, <code>lib/polyglot</code> directory should contain all polyglot and language JAR files.
+To access polyglot classes from the class path, you must also specify the <code>--add-modules=org.graalvm.polyglot</code> JVM option.
+If you are using <a href="#build-native-executables-from-polyglot-applications">GraalVM Native Image</a>, polyglot modules on the class path will be automatically upgraded to the module path.</p>
+
+<p>While we do support creating single uber JAR files from polyglot libraries, for example, using the Maven Assembly plugin, but we do not recommend it.
+Also note that uber JAR files are not supported when creating native binaries with GraalVM Native Image.</p>
+
+<h2 id="compile-and-run-a-polyglot-application">Compile and Run a Polyglot Application</h2>
+
+<p>GraalVM can run polyglot applications written in any language implemented with the <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a>.
+These languages are henceforth referenced as <strong>guest languages</strong>.</p>
+
+<p>Complete the steps in this section to create a sample polyglot application that runs on GraalVM and demonstrates programming language interoperability.</p>
+
+<ol>
+  <li>
+    <p>Create a new Java project using Maven.</p>
+  </li>
+  <li>Clone the <a href="https://github.com/graalvm/polyglot-embedding-demo/">polyglot-embedding-demo</a> repository:
+    <pre><code class="language-bash"> git clone https://github.com/graalvm/polyglot-embedding-demo.git
+</code></pre>
+  </li>
+  <li>
+    <p>Insert the example code into the <a href="https://github.com/graalvm/polyglot-embedding-demo/blob/main/src/main/java/org/example/embedding/Main.java">Main class</a>.</p>
+  </li>
+  <li>
+    <p>Update the Maven <a href="https://github.com/graalvm/polyglot-embedding-demo/blob/main/pom.xml">pom.xml</a> dependency configuration to include the languages to run as described in the <a href="#dependency-setup">previous section</a>.</p>
+  </li>
+  <li>
+    <p><a href="/jdk23/getting-started/">Download and install GraalVM</a> by setting the value of the <code>JAVA_HOME</code> environment variable to the location of a GraalVM JDK.</p>
+  </li>
+  <li>Run <code>mvn package exec:exec</code> to build and execute the sample code.</li>
+</ol>
+
+<p>You now have a polyglot application that consists of a Java host application and guest language code, running on GraalVM.
+You can use this application with other code examples to demonstrate more advanced capabilities of the GraalVM Polyglot API.</p>
+
+<h2 id="define-guest-language-functions-as-java-values">Define Guest Language Functions as Java Values</h2>
+
+<p>Polyglot applications let you take values from one programming language and use them with other languages.</p>
+
+<p>Use the code example in this section with your polyglot application to show how the Polyglot API can return JavaScript, Python, or Ruby functions as Java values.</p>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="Function_JS" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/function_js.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">function_js</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">function</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span> <span class="s">"x =&gt; x+1"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">function</span><span class="o">.</span><span class="na">canExecute</span><span class="o">();</span>
+    <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">function</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="mi">41</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Function_Python" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/function_python.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">function_python</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">function</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"lambda x: x + 1"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">function</span><span class="o">.</span><span class="na">canExecute</span><span class="o">();</span>
+    <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">function</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="mi">41</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+ <span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Function_Ruby" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/function_ruby.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">function_ruby</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">function</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"ruby"</span><span class="o">,</span> <span class="s">"proc { |x| x + 1 }"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">function</span><span class="o">.</span><span class="na">canExecute</span><span class="o">();</span>
+    <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="n">function</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="mi">41</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+ <span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#Function_JS">JavaScript</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Function_Python">Python</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Function_Ruby">Ruby</a></li>
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li><code>Value function</code> is a Java value that refers to a function.</li>
+  <li>The <code>eval</code> call parses the script and returns the guest language function.</li>
+  <li>The first assertion checks that the value returned by the code snippet can be executed.</li>
+  <li>The <code>execute</code> call executes the function with the argument <code>41</code>.</li>
+  <li>The <code>asInt</code> call converts the result to a Java <code>int</code>.</li>
+  <li>The second assertion verifies that the result was incremented by one as expected.</li>
+</ul>
+
+<h2 id="access-guest-languages-directly-from-java">Access Guest Languages Directly from Java</h2>
+
+<p>Polyglot applications can readily access most language types and are not limited to functions.
+Host languages, such as Java, can directly access guest language values embedded in the polyglot application.</p>
+
+<p>Use the code example in this section with your polyglot application to show how the Polyglot API can access objects, numbers, strings, and arrays.</p>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="Access_JS" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_js_from_java.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_js_from_java</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span> 
+                    <span class="s">"({ "</span>                   <span class="o">+</span>
+                        <span class="s">"id   : 42, "</span>       <span class="o">+</span>
+                        <span class="s">"text : '42', "</span>     <span class="o">+</span>
+                        <span class="s">"arr  : [1,42,3] "</span>  <span class="o">+</span>
+                    <span class="s">"})"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="na">hasMembers</span><span class="o">();</span>
+
+    <span class="kt">int</span> <span class="n">id</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"id"</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">id</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+
+    <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"text"</span><span class="o">).</span><span class="na">asString</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">text</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"42"</span><span class="o">);</span>
+
+    <span class="n">Value</span> <span class="n">array</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">hasArrayElements</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArraySize</span><span class="o">()</span> <span class="o">==</span> <span class="mi">3</span><span class="o">;</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArrayElement</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">asInt</span><span class="o">()</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Access_Python" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_python_from_java.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_python_from_java</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> 
+                    <span class="s">"type('obj', (object,), {"</span> <span class="o">+</span>
+                        <span class="s">"'id'  : 42, "</span>         <span class="o">+</span>
+                        <span class="s">"'text': '42', "</span>       <span class="o">+</span>
+                        <span class="s">"'arr' : [1,42,3]"</span>     <span class="o">+</span>
+                    <span class="s">"})()"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="na">hasMembers</span><span class="o">();</span>
+    
+    <span class="kt">int</span> <span class="n">id</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"id"</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">id</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+    
+    <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"text"</span><span class="o">).</span><span class="na">asString</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">text</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"42"</span><span class="o">);</span>
+    
+    <span class="n">Value</span> <span class="n">array</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">hasArrayElements</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArraySize</span><span class="o">()</span> <span class="o">==</span> <span class="mi">3</span><span class="o">;</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArrayElement</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">asInt</span><span class="o">()</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Access_Ruby" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_ruby_from_java.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_ruby_from_java</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">Value</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"ruby"</span><span class="o">,</span> 
+                    <span class="s">"o = Struct.new(:id, :text, :arr).new("</span> <span class="o">+</span>
+                        <span class="s">"42, "</span>       <span class="o">+</span>
+                        <span class="s">"'42', "</span>     <span class="o">+</span>
+                        <span class="s">"[1,42,3] "</span>  <span class="o">+</span>
+                    <span class="s">")"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">result</span><span class="o">.</span><span class="na">hasMembers</span><span class="o">();</span>
+    
+    <span class="kt">int</span> <span class="n">id</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"id"</span><span class="o">).</span><span class="na">asInt</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">id</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+    
+    <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"text"</span><span class="o">).</span><span class="na">asString</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">text</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"42"</span><span class="o">);</span>
+    
+    <span class="n">Value</span> <span class="n">array</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">);</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">hasArrayElements</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArraySize</span><span class="o">()</span> <span class="o">==</span> <span class="mi">3</span><span class="o">;</span>
+    <span class="k">assert</span> <span class="n">array</span><span class="o">.</span><span class="na">getArrayElement</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">asInt</span><span class="o">()</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#Access_JS">JavaScript</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Access_Python">Python</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Access_Ruby">Ruby</a></li>
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li><code>Value result</code> is an Object that contains three members: a number named <code>id</code>, a string named <code>text</code>, and an array named <code>arr</code>.</li>
+  <li>The first assertion verifies that the return value can contain members, which indicates that the value is an object-like structure.</li>
+  <li>The <code>id</code> variable is initialized by reading the member with the name <code>id</code> from the resulting object. The result is then converted to a Java <code>int</code> using <code>asInt()</code>.</li>
+  <li>The next assert verifies that result has a value of <code>42</code>.</li>
+  <li>The <code>text</code> variable is initialized using the value of the member <code>text</code>, which is also converted to a Java <code>String</code> using <code>asString()</code>.</li>
+  <li>The following assertion verifies the result value is equal to the Java <code>String</code> <code>"42"</code>.</li>
+  <li>Next the <code>arr</code> member that holds an array is read.</li>
+  <li>Arrays return <code>true</code> for <code>hasArrayElements</code>.</li>
+  <li>The next assertion verifies that the size of the array equals three. The Polyglot API supports big arrays, so the array length is of type <code>long</code>.</li>
+  <li>Finally we verify that the array element at index <code>1</code> equals <code>42</code>. Array indexing with polyglot values is always zero-based, even for languages where indices start with one.</li>
+</ul>
+
+<h2 id="access-java-from-guest-languages">Access Java from Guest Languages</h2>
+
+<p>Polyglot applications offer bi-directional access between guest languages and host languages.
+As a result, you can pass Java objects to guest languages.</p>
+
+<p>Since the Polyglot API is secure by default, access is limited in the default configuration.
+To permit guest languages to access any public method or field of a Java object, you have to explicitly specify <code>allowAllAccess(true)</code> when the context is built.
+In this mode, the guest language code can access any resource that is accessible to host Java code.</p>
+
+<p>Use the code example in this section with your polyglot application to show how guest languages can access primitive Java values, objects, arrays, and functional interfaces.</p>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="Access_Java_from_JS" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_java_from_js.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.Callable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_java_from_js</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyClass</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">int</span>               <span class="n">id</span>    <span class="o">=</span> <span class="mi">42</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">String</span>            <span class="n">text</span>  <span class="o">=</span> <span class="s">"42"</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kt">int</span><span class="o">[]</span>             <span class="n">arr</span>   <span class="o">=</span> <span class="k">new</span> <span class="kt">int</span><span class="o">[]{</span><span class="mi">1</span><span class="o">,</span> <span class="mi">42</span><span class="o">,</span> <span class="mi">3</span><span class="o">};</span>
+    <span class="kd">public</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">ret42</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                               <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                           <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"js"</span><span class="o">).</span><span class="na">putMember</span><span class="o">(</span><span class="s">"javaObj"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MyClass</span><span class="o">());</span>
+        <span class="kt">boolean</span> <span class="n">valid</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span>
+               <span class="s">"    javaObj.id         == 42"</span>          <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj.text       == '42'"</span>        <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj.arr[1]     == 42"</span>          <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj.ret42()    == 42"</span><span class="o">)</span>
+           <span class="o">.</span><span class="na">asBoolean</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">valid</span> <span class="o">==</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Access_Java_from_Python" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_java_from_python.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.Callable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_java_from_python</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyClass</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">int</span>               <span class="n">id</span>    <span class="o">=</span> <span class="mi">42</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">String</span>            <span class="n">text</span>  <span class="o">=</span> <span class="s">"42"</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kt">int</span><span class="o">[]</span>             <span class="n">arr</span>   <span class="o">=</span> <span class="k">new</span> <span class="kt">int</span><span class="o">[]{</span><span class="mi">1</span><span class="o">,</span> <span class="mi">42</span><span class="o">,</span> <span class="mi">3</span><span class="o">};</span>
+    <span class="kd">public</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">ret42</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                               <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                           <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getPolyglotBindings</span><span class="o">().</span><span class="na">putMember</span><span class="o">(</span><span class="s">"javaObj"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MyClass</span><span class="o">());</span>
+        <span class="kt">boolean</span> <span class="n">valid</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span>
+               <span class="s">"import polyglot \n"</span>                            <span class="o">+</span>
+               <span class="s">"javaObj =  polyglot.import_value('javaObj')\n"</span> <span class="o">+</span>
+               <span class="s">"javaObj.id                   == 42"</span>            <span class="o">+</span>
+               <span class="s">" and javaObj.text            == '42'"</span>          <span class="o">+</span>
+               <span class="s">" and javaObj.arr[1]          == 42"</span>            <span class="o">+</span>
+               <span class="s">" and javaObj.ret42() == 42"</span><span class="o">)</span>
+           <span class="o">.</span><span class="na">asBoolean</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">valid</span> <span class="o">==</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Access_Java_from_Ruby" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/access_java_from_ruby.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">java.util.concurrent.Callable</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">access_java_from_ruby</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">MyClass</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="kt">int</span>               <span class="n">id</span>    <span class="o">=</span> <span class="mi">42</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="n">String</span>            <span class="n">text</span>  <span class="o">=</span> <span class="s">"42"</span><span class="o">;</span>
+    <span class="kd">public</span> <span class="kt">int</span><span class="o">[]</span>             <span class="n">arr</span>   <span class="o">=</span> <span class="k">new</span> <span class="kt">int</span><span class="o">[]{</span><span class="mi">1</span><span class="o">,</span> <span class="mi">42</span><span class="o">,</span> <span class="mi">3</span><span class="o">};</span>
+    <span class="kd">public</span> <span class="n">Callable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">ret42</span> <span class="o">=</span> <span class="o">()</span> <span class="o">-&gt;</span> <span class="mi">42</span><span class="o">;</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                               <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                           <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getPolyglotBindings</span><span class="o">().</span><span class="na">putMember</span><span class="o">(</span><span class="s">"javaObj"</span><span class="o">,</span> <span class="k">new</span> <span class="n">MyClass</span><span class="o">());</span>
+        <span class="kt">boolean</span> <span class="n">valid</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"ruby"</span><span class="o">,</span>
+               <span class="s">"javaObj = Polyglot.import('javaObj')\n"</span> <span class="o">+</span>
+               <span class="s">"    javaObj[:id]         == 42"</span>         <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj[:text]       == '42'"</span>       <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj[:arr][1]     == 42"</span>         <span class="o">+</span>
+               <span class="s">" &amp;&amp; javaObj[:ret42].call == 42"</span><span class="o">)</span>
+           <span class="o">.</span><span class="na">asBoolean</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">valid</span> <span class="o">==</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+ 
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#Access_Java_from_JS">JavaScript</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Access_Java_from_Python">Python</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Access_Java_from_Ruby">Ruby</a></li>
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li>The Java class <code>MyClass</code> has four public fields <code>id</code>, <code>text</code>, <code>arr</code>, and
+<code>ret42</code>. The fields are initialized with <code>42</code>, <code>"42"</code>, <code>new int[]{1, 42, 3}</code>, and
+lambda <code>() -&gt; 42</code> that always returns an <code>int</code> value of <code>42</code>.</li>
+  <li>The Java class <code>MyClass</code> is instantiated and exported with the name <code>javaObj</code>
+into the polyglot scope, which allows the host and guest languages to exchange
+symbols.</li>
+  <li>A guest language script is evaluated that imports the <code>javaObj</code> symbol and
+assigns it to the local variable which is also named <code>javaObj</code>. To avoid
+conflicts with variables, every value in the polyglot scope must be explicitly
+imported and exported in the top-most scope of the language.</li>
+  <li>The next two lines verify the contents of the Java object by comparing it
+to the number <code>42</code> and the string <code>'42'</code>.</li>
+  <li>The third verification reads from the second array position and compares it
+to the number <code>42</code>. Whether arrays are accessed using 0-based or 1-based indices
+depends on the guest language. Independently of the language, the Java array
+stored in the <code>arr</code> field is always accessed using translated 0-based indices. For
+example, in the JavaScript and Ruby languages, the second
+array element is at index <code>1</code>. In all language examples, the Java array is read
+from using the same index <code>1</code>.</li>
+  <li>The last line invokes the Java lambda that is contained in the field <code>ret42</code>
+and compares the result to the number value <code>42</code>.</li>
+  <li>After the guest language script executes, validation takes place to ensure
+that the script returns a <code>boolean</code> value of <code>true</code> as a result.</li>
+</ul>
+
+<h2 id="lookup-java-types-from-guest-languages">Lookup Java Types from Guest Languages</h2>
+
+<p>In addition to passing Java objects to the guest language, it is possible to allow the lookup of Java types in the guest language.</p>
+
+<p>Use the code example in this section with your polyglot application to show how guest languages lookup Java types and instantiate them.</p>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="Lookup_Java_from_JS" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/lookup_java_from_js.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">lookup_java_from_js</span> <span class="o">{</span>
+
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                           <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                       <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">java</span><span class="o">.</span><span class="na">math</span><span class="o">.</span><span class="na">BigDecimal</span> <span class="n">v</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span>
+            <span class="s">"var BigDecimal = Java.type('java.math.BigDecimal');"</span> <span class="o">+</span>
+            <span class="s">"BigDecimal.valueOf(10).pow(20)"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">asHostObject</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="na">toString</span><span class="o">().</span><span class="na">equals</span><span class="o">(</span><span class="s">"100000000000000000000"</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Lookup_Java_from_Python" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/lookup_java_from_python.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">lookup_java_from_python</span> <span class="o">{</span>
+
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                           <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                       <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">java</span><span class="o">.</span><span class="na">math</span><span class="o">.</span><span class="na">BigDecimal</span> <span class="n">v</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span>
+            <span class="s">"import java\n"</span> <span class="o">+</span>
+            <span class="s">"BigDecimal = java.type('java.math.BigDecimal')\n"</span> <span class="o">+</span> 
+            <span class="s">"BigDecimal.valueOf(10).pow(20)"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">asHostObject</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="na">toString</span><span class="o">().</span><span class="na">equals</span><span class="o">(</span><span class="s">"100000000000000000000"</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Lookup_Java_from_Ruby" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/lookup_java_from_ruby.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">lookup_java_from_ruby</span> <span class="o">{</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                           <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                       <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+    <span class="n">java</span><span class="o">.</span><span class="na">math</span><span class="o">.</span><span class="na">BigDecimal</span> <span class="n">v</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"ruby"</span><span class="o">,</span>
+            <span class="s">"BigDecimal = Java.type('java.math.BigDecimal')\n"</span> <span class="o">+</span> 
+            <span class="s">"BigDecimal.valueOf(10).pow(20)"</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">asHostObject</span><span class="o">();</span>
+    <span class="k">assert</span> <span class="n">v</span><span class="o">.</span><span class="na">toString</span><span class="o">().</span><span class="na">equals</span><span class="o">(</span><span class="s">"100000000000000000000"</span><span class="o">);</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+<span class="o">}</span>
+ 
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#Lookup_Java_from_JS">JavaScript</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Lookup_Java_from_Python">Python</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Lookup_Java_from_Ruby">Ruby</a></li>
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li>A new context is created with all access enabled (<code>allowAllAccess(true)</code>).</li>
+  <li>A guest language script is evaluated.</li>
+  <li>The script looks up the Java type <code>java.math.BigDecimal</code> and stores it in a variable named <code>BigDecimal</code>.</li>
+  <li>The static method <code>BigDecimal.valueOf(long)</code> is invoked to create new
+<code>BigDecimal</code>s with value <code>10</code>. In addition to looking up static Java methods, it
+is also possible to directly instantiate the returned Java type., for example, in
+JavaScript using the <code>new</code> keyword.</li>
+  <li>The new decimal is used to invoke the <code>pow</code> instance method with <code>20</code> which calculates  <code>10^20</code>.</li>
+  <li>The result of the script is converted to a host object by calling <code>asHostObject()</code>. The return value is automatically cast to the <code>BigDecimal</code> type.</li>
+  <li>The result decimal string is asserted to equal to <code>"100000000000000000000"</code>.</li>
+</ul>
+
+<h2 id="computed-arrays-using-polyglot-proxies">Computed Arrays Using Polyglot Proxies</h2>
+
+<p>The Polyglot API includes polyglot proxy interfaces that let you customize Java interoperability by mimicking guest language types, such as objects, arrays, native objects, or primitives.</p>
+
+<p>Use the code example in this section with your polyglot application to see how you can implement arrays that compute their values lazily.</p>
+
+<blockquote>
+  <p>Note: The Polyglot API supports polyglot proxies either on the JVM or in Native Image.</p>
+</blockquote>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="Proxy_JS" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/proxy_js.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.proxy.*</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">proxy_js</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">static</span> <span class="kd">class</span> <span class="nc">ComputedArray</span> <span class="kd">implements</span> <span class="n">ProxyArray</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">get</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">index</span> <span class="o">*</span> <span class="mi">2</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">,</span> <span class="n">Value</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getSize</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">ComputedArray</span> <span class="n">arr</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ComputedArray</span><span class="o">();</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"js"</span><span class="o">).</span><span class="na">putMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">,</span> <span class="n">arr</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span>
+                    <span class="s">"arr[1] + arr[1000000000]"</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">asLong</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">2000000002L</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Proxy_Python" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/proxy_python.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Value</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.proxy.ProxyArray</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">proxy_python</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">static</span> <span class="kd">class</span> <span class="nc">ComputedArray</span> <span class="kd">implements</span> <span class="n">ProxyArray</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">get</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">index</span> <span class="o">*</span> <span class="mi">2</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">,</span> <span class="n">Value</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getSize</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                               <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                           <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">ComputedArray</span> <span class="n">arr</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ComputedArray</span><span class="o">();</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getPolyglotBindings</span><span class="o">().</span><span class="na">putMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">,</span> <span class="n">arr</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span>
+               <span class="s">"import polyglot\n"</span> <span class="o">+</span>
+               <span class="s">"arr = polyglot.import_value('arr') \n"</span> <span class="o">+</span>
+               <span class="s">"arr[1] + arr[1000000000]"</span><span class="o">)</span>
+           <span class="o">.</span><span class="na">asLong</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">2000000002L</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  <div id="Proxy_Ruby" class="tab-pane fade">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/proxy_ruby.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Value</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.proxy.ProxyArray</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">proxy_ruby</span> <span class="o">{</span>
+
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">static</span> <span class="kd">class</span> <span class="nc">ComputedArray</span> <span class="kd">implements</span> <span class="n">ProxyArray</span> <span class="o">{</span>
+    <span class="kd">public</span> <span class="n">Object</span> <span class="nf">get</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">index</span> <span class="o">*</span> <span class="mi">2</span><span class="o">;</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">set</span><span class="o">(</span><span class="kt">long</span> <span class="n">index</span><span class="o">,</span> <span class="n">Value</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nf">UnsupportedOperationException</span><span class="o">();</span>
+    <span class="o">}</span>
+    <span class="kd">public</span> <span class="kt">long</span> <span class="nf">getSize</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">Long</span><span class="o">.</span><span class="na">MAX_VALUE</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+                               <span class="o">.</span><span class="na">allowAllAccess</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+                           <span class="o">.</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">ComputedArray</span> <span class="n">arr</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ComputedArray</span><span class="o">();</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getPolyglotBindings</span><span class="o">().</span><span class="na">putMember</span><span class="o">(</span><span class="s">"arr"</span><span class="o">,</span> <span class="n">arr</span><span class="o">);</span>
+        <span class="kt">long</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"ruby"</span><span class="o">,</span>
+               <span class="s">"arr = Polyglot.import('arr') \n"</span> <span class="o">+</span>
+               <span class="s">"arr[1] + arr[1000000000]"</span><span class="o">)</span>
+           <span class="o">.</span><span class="na">asLong</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">2000000002L</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#Proxy_JS">JavaScript</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Proxy_Python">Python</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Proxy_Ruby">Ruby</a></li>
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li>The Java class <code>ComputedArray</code> implements the proxy interface <code>ProxyArray</code> so
+that guest languages treat instances of the Java class-like arrays.</li>
+  <li><code>ComputedArray</code> array overrides the method <code>get</code> and computes the value
+using an arithmetic expression.</li>
+  <li>The array proxy does not support write access. For this reason, it throws
+an <code>UnsupportedOperationException</code> in the implementation of <code>set</code>.</li>
+  <li>The implementation for <code>getSize</code> returns <code>Long.MAX_VALUE</code> for its length.</li>
+  <li>The main method creates a new polyglot execution context.</li>
+  <li>A new instance of the <code>ComputedArray</code> class is then exported using the name <code>arr</code>.</li>
+  <li>The guest language script imports the <code>arr</code> symbol, which returns the
+exported proxy.</li>
+  <li>The second element and the <code>1000000000</code>th element is accessed, summed up, and
+then returned. Note that array indices from 1-based languages are
+converted to 0-based indices for proxy arrays.</li>
+  <li>The result of the language script is returned as a long value and verified.</li>
+</ul>
+
+<p>For more information about the polyglot proxy interfaces, see the <a href="http://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API JavaDoc</a>.</p>
+
+<h2 id="host-access">Host Access</h2>
+
+<p>The Polyglot API by default restricts access to certain critical functionality, such as file I/O.
+These restrictions can be lifted entirely by setting <code>allowAllAccess</code> to <code>true</code>.</p>
+
+<blockquote>
+  <p>Note: The access restrictions are currently only supported with JavaScript.</p>
+</blockquote>
+
+<h3 id="controlling-access-to-host-functions">Controlling Access to Host Functions</h3>
+
+<p>It might be desirable to limit the access of guest applications to the host.
+For example, if a Java method is exposed that calls <code>System.exit</code>, then the guest application will be able to exit the host process.
+In order to avoid accidentally exposed methods, no host access is allowed by default and every public method or field needs to be annotated with <code>@HostAccess.Export</code> explicitly.</p>
+
+<div class="tabs-below">
+
+<div class="tab-content">
+  
+  <div id="ExplicitHostAccess_js" class="tab-pane fade in active">
+    
+<div class="snippet-container">
+  <div>
+    <span href="" class="copy-button" onclick="copySnippet(this);">
+      <img src="/jdk23/resources/img/copy.svg" title="Copy" />
+    </span>
+  </div>
+
+  <!--
+  java
+  embed/explicit_access_java_from_js.java
+  -->
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-java" data-lang="java">  <span class="c1">// COMPILE-CMD: javac {file}</span>
+<span class="c1">// RUN-CMD: java -ea {file}</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.HostAccess</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.PolyglotException</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">explicit_access_java_from_js</span> <span class="o">{</span>
+
+<span class="kd">static</span>
+<span class="c1">// BEGIN-SNIPPET</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Employee</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">name</span><span class="o">;</span>
+    <span class="n">Employee</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span><span class="k">this</span><span class="o">.</span><span class="na">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">;}</span>
+
+    <span class="nd">@HostAccess</span><span class="o">.</span><span class="na">Export</span>
+    <span class="kd">public</span> <span class="n">String</span> <span class="nf">getName</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">name</span><span class="o">;</span>
+    <span class="o">}</span>
+<span class="o">}</span><span class="c1">//END-SNIPPET</span>
+<span class="kd">static</span><span class="c1">//BEGIN-SNIPPET</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">Services</span> <span class="o">{</span>
+    <span class="nd">@HostAccess</span><span class="o">.</span><span class="na">Export</span>
+    <span class="kd">public</span> <span class="n">Employee</span> <span class="nf">createEmployee</span><span class="o">(</span><span class="n">String</span> <span class="n">name</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="k">new</span> <span class="nf">Employee</span><span class="o">(</span><span class="n">name</span><span class="o">);</span>
+    <span class="o">}</span>
+    
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">exitVM</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">System</span><span class="o">.</span><span class="na">exit</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">(</span><span class="n">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+        <span class="n">Services</span> <span class="n">services</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Services</span><span class="o">();</span>
+        <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"js"</span><span class="o">).</span><span class="na">putMember</span><span class="o">(</span><span class="s">"services"</span><span class="o">,</span> <span class="n">services</span><span class="o">);</span>
+        <span class="n">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span>
+                <span class="s">"let emp = services.createEmployee('John Doe');"</span> <span class="o">+</span> 
+                <span class="s">"emp.getName()"</span><span class="o">).</span><span class="na">asString</span><span class="o">();</span>
+        <span class="k">assert</span> <span class="n">name</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="s">"John Doe"</span><span class="o">);</span>
+        
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"js"</span><span class="o">,</span> <span class="s">"services.exitVM()"</span><span class="o">);</span>
+            <span class="k">assert</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">PolyglotException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">assert</span> <span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">().</span><span class="na">endsWith</span><span class="o">(</span>
+                    <span class="s">"Unknown identifier: exitVM"</span><span class="o">);</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+<span class="c1">// END-SNIPPET</span>
+<span class="o">}</span>
+
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  var dropMode = true;
+  function cleanWhitespace(element) {
+    textNodes = element.contents().filter(
+      function() { return (this.nodeType == 3 && /\s+\n\s+\n\s+/.test(this.nodeValue)); }
+    ).replaceWith("\n\n");
+    return element;
+  }
+  $(parent).find("figure > pre > code > span").each(function() {
+    var span = $(this);
+    if (dropMode) {
+      this.parentElement.removeChild(this);
+      if (span.text().includes(beginPattern)) {
+        dropMode = false;
+      }
+    } else {
+      if (span.text().includes(endPattern)) {
+        dropMode = true;
+      }
+      if (dropMode) {
+        this.parentElement.removeChild(this);
+      }
+    }
+  });
+  $(parent).find("figure > pre > code").each(function() {
+    $(this).html($(this).html().trim());
+    cleanWhitespace($(this));
+  });
+  </script>
+
+</div>
+
+  </div>
+  
+  
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li class="active"><a data-toggle="tab" href="#ExplicitHostAccess_js">JavaScript</a></li>
+  
+  
+  
+  
+  
+  
+</ul>
+
+</div>
+
+<p>In this code:</p>
+<ul>
+  <li>The class <code>Employee</code> is declared with a field <code>name</code> of type <code>String</code>. Access to the <code>getName</code> method is explicitly allowed by annotating the method with <code>@HostAccess.Export</code>.</li>
+  <li>The <code>Services</code> class exposes two methods, <code>createEmployee</code> and <code>exitVM</code>. The <code>createEmployee</code> method takes the name of the employee as an argument and creates a new <code>Employee</code> instance. The <code>createEmployee</code> method is annotated with <code>@HostAccess.Export</code> and therefore accessible to the guest application. The <code>exitVM</code> method is not explicitly exported and therefore not accessible.</li>
+  <li>The <code>main</code> method first creates a new polyglot context in the default configuration, disallowing host access except for methods annotated with <code>@HostAccess.Export</code>.</li>
+  <li>A new <code>Services</code> instance is created and put into the context as global variable <code>services</code>.</li>
+  <li>The first evaluated script creates a new employee using the services object and returns its name.</li>
+  <li>The returned name is asserted to equal the expected name <code>John Doe</code>.</li>
+  <li>A second script is evaluated that calls the <code>exitVM</code> method on the services object. This fails with a <code>PolyglotException</code> as the exitVM method is not exposed to the guest application.</li>
+</ul>
+
+<p>Host access is fully customizable by creating a custom <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html"><code>HostAccess</code></a> policy.</p>
+
+<h3 id="controlling-host-callback-parameter-scoping">Controlling Host Callback Parameter Scoping</h3>
+
+<p>By default, a <code>Value</code> lives as long as the corresponding <code>Context</code>.
+However, it may be desirable to change this default behavior and bind a value to a scope, such that when execution leaves the scope, the value is invalidated.
+An example for such a scope are guest-to-host callbacks, where a <code>Value</code> may be passed as a callback parameter.
+We have already seen above how passing callback parameters works with the default <code>HostAccess.EXPLICIT</code>:</p>
+
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+
+    @HostAccess.Export
+    public void callback(Value result) {
+        this.lastResult = result;
+    }
+
+    String getResult() {
+        return this.lastResult.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.EXPLICIT).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS');");
+        System.out.println(s.getResult());
+    }
+}
+</code></pre>
+
+<p>In this example, <code>lastResult</code> maintains a reference to the value from the guest that is stored on the host and remains accessible also after the scope of <code>callback()</code> has ended.</p>
+
+<p>However, this is not always desirable, as keeping the value alive may block resources unnecessarily or not reflect the behavior of ephemeral values correctly.
+For these cases, <code>HostAccess.SCOPED</code> can be used, which changes the default behavior for all callbacks, such that values that are passed as callback parameters are only valid for the duration of the callback.</p>
+
+<p>To make the above code work with <code>HostAccess.SCOPED</code>, individual values passed as a callback parameters can be pinned to extend their validity until after the callback returns:</p>
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+
+    @HostAccess.Export
+    void callback(Value result, Value notneeded) {
+        this.lastResult = result;
+        this.lastResult.pin();
+    }
+
+    String getResult() {
+        return this.lastResult.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.SCOPED).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS', 'foobar');");
+        System.out.println(services.getResult());
+    }
+}
+</code></pre>
+
+<p>Alternatively, the entire callback method can opt out from scoping if annotated with <code>@HostAccess.DisableMethodScope</code>, maintaining regular semantics for all parameters of the callback:</p>
+<pre><code class="language-java">public class Services {
+    Value lastResult;
+    Value metaInfo;
+
+    @HostAccess.Export
+    @HostAccess.DisableMethodScope
+    void callback(Value result, Value metaInfo) {
+        this.lastResult = result;
+        this.metaInfo = metaInfo;
+    }
+
+    String getResult() {
+        return this.lastResult.asString() + this.metaInfo.asString();
+    }
+}
+
+public static void main(String[] args) {
+    Services s = new Services()
+    try (Context context = Context.newBuilder().allowHostAccess(HostAccess.SCOPED).build()) {
+        context.getBindings("js").putMember("services", s);
+        context.eval("js", "services.callback('Hello from JS', 'foobar');");
+        System.out.println(services.getResult());
+    }
+}
+</code></pre>
+
+<h3 id="access-privilege-configuration">Access Privilege Configuration</h3>
+
+<p>It is possible to configure fine-grained access privileges for guest applications.
+The configuration can be provided using the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html"><code>Context.Builder</code></a> class when constructing a new context.
+The following access parameters may be configured:</p>
+
+<ul>
+  <li>Allow access to other languages using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowPolyglotAccess-org.graalvm.polyglot.PolyglotAccess-"><code>allowPolyglotAccess</code></a>.</li>
+  <li>Allow and customize access to host objects using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostAccess-org.graalvm.polyglot.HostAccess-"><code>allowHostAccess</code></a>.</li>
+  <li>Allow and customize host lookup to host types using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostClassLookup-java.util.function.Predicate-"><code>allowHostClassLookup</code></a>. Allows the guest application to look up the host application classes permitted by the lookup predicate. For example, a Javascript context can create a Java ArrayList, provided that ArrayList is allowlisted by the <code>classFilter</code> and access is permitted by the host access policy: <code>context.eval("js", "var array = Java.type('java.util.ArrayList')")</code></li>
+  <li>Allow host class loading using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowHostClassLoading-boolean-"><code>allowHostClassLoading</code></a>. Classes are only accessible if access to them is granted by the host access policy.</li>
+  <li>Allow the creation of threads using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowCreateThread-boolean-"><code>allowCreateThread</code></a>.</li>
+  <li>Allow access to native APIs using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowNativeAccess-boolean-"><code>allowNativeAccess</code></a>.</li>
+  <li>Allow access to IO using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#allowIO-boolean-"><code>allowIO</code></a> and proxy file accesses using <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html#fileSystem-org.graalvm.polyglot.io.FileSystem-"><code>fileSystem</code></a>.</li>
+</ul>
+
+<blockquote>
+  <p>Note: Granting access to class loading, native APIs, or host I/O effectively grants all access, as these privileges can be used to bypass other access restrictions.</p>
+</blockquote>
+
+<h2 id="runtime-optimization-support">Runtime Optimization Support</h2>
+
+<p>Polyglot Truffle runtimes can be used on several host virtual machines with varying support for runtime optimization.
+Runtime optimization of guest application code is crucial for the efficient execution of embedded guest applications.
+This table shows the level of optimizations the Java runtimes currently provide:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Java Runtime</th>
+      <th>Runtime Optimization Level</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Oracle GraalVM</td>
+      <td>Optimized with additional compiler passes</td>
+    </tr>
+    <tr>
+      <td>GraalVM Community Edition</td>
+      <td>Optimized</td>
+    </tr>
+    <tr>
+      <td>Oracle JDK</td>
+      <td>Optimized if enabled via experimental VM option</td>
+    </tr>
+    <tr>
+      <td>OpenJDK</td>
+      <td>Optimized if enabled via experimental VM option</td>
+    </tr>
+    <tr>
+      <td>JDK without JVMCI capability</td>
+      <td>No runtime optimizations (interpreter-only)</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="explanations">Explanations</h3>
+
+<ul>
+  <li><strong>Optimized:</strong> Executed guest application code can be compiled and executed as highly efficient machine code at run time.</li>
+  <li><strong>Optimized with additional compiler passes:</strong> Oracle GraalVM implements additional optimizations performed during runtime compilation. For example, it uses a more advanced inlining heuristic. This typically leads to better runtime performance and memory consumption.</li>
+  <li><strong>Optimized if enabled via experimental VM option:</strong> Optimization is not enabled by default and must be enabled using <code>-XX:+EnableJVMCI</code> virtual machine option. In addition, to support compilation, the Graal compiler must be downloaded as a JAR file and put on the <code>--upgrade-module-path</code>. In this mode, the compiler runs as a Java application and may negatively affect the execution performance of the host application.</li>
+  <li><strong>No runtime optimizations:</strong> With no runtime optimizations or if JVMCI is not enabled, the guest application code is executed in interpreter-only mode.</li>
+  <li><strong>JVMCI:</strong> Refers to the <a href="https://openjdk.org/jeps/243">Java-Level JVM Compiler Interface</a> supported by most Java runtimes.</li>
+</ul>
+
+<p>A project has been created to enable runtime optimization by default for Oracle JDK and OpenJDK.
+See <a href="https://openjdk.org/projects/galahad/">Project Galahad</a> for further details.</p>
+
+<h3 id="enable-optimization-on-openjdk-and-oracle-jdk">Enable Optimization on OpenJDK and Oracle JDK</h3>
+
+<p>When running on a JDK runtime optimization enabled by default, such as OpenJDK, you might see a warning like this:</p>
+
+<pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to machine code.
+Execution without runtime compilation will negatively impact the guest application performance.
+</code></pre>
+
+<p>This indicates that the guest application is executed with no runtime optimizations enabled.
+The warning can be suppressed by either suppressing using the <code>--engine.WarnInterpreterOnly=false</code> option or the <code>-Dpolyglot.engine.WarnInterpreterOnly=false</code> system property.
+In addition, the <code>compiler.jar</code> file and its dependencies must be downloaded from <a href="https://central.sonatype.com/artifact/org.graalvm.compiler/compiler/">Maven Central</a> and referred to use the option <code>--upgrade-module-path</code>. 
+Note that <code>compiler.jar</code> must <em>not</em> be put on the module or class path. 
+Refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot embedding demonstration</a> for an example configuration using Maven or Gradle.</p>
+
+<h3 id="switching-to-the-fallback-engine">Switching to the Fallback Engine</h3>
+
+<p>If the need arises, for example, running only trivial scripts or in the resource-constrained systems, you may want to switch to the fallback engine without runtime optimizations.
+Since Polyglot version 23.1, the fallback engine can be activated by removing the <code>truffle-runtime</code> and <code>truffle-enterprise</code> modules from the class or module path.</p>
+
+<p>This can be achieved with Maven like this:</p>
+
+<pre><code class="language-xml">&lt;dependencies&gt;
+  &lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js&lt;/artifactId&gt;
+    &lt;version&gt;$graalvm-version&lt;/version&gt;
+    &lt;exclusions&gt;
+      &lt;exclusion&gt;
+        &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
+        &lt;artifactId&gt;truffle-runtime&lt;/artifactId&gt;
+      &lt;/exclusion&gt;
+      &lt;exclusion&gt;
+        &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
+        &lt;artifactId&gt;truffle-enterprise&lt;/artifactId&gt;
+      &lt;/exclusion&gt;
+    &lt;/exclusions&gt;
+  &lt;/dependency&gt;
+&lt;/dependencies&gt;
+</code></pre>
+
+<p>The exclusion rule for <code>truffle-enterprise</code> is unnecessary if you only use <code>-community</code> dependencies.
+Since <code>truffle-enterprise</code> is excluded, the fallback engine does not support advanced extensions such as sandbox limits or polyglot isolates.
+It may be useful to double-check with <code>mvn dependency:tree</code> that the two dependencies are not included elsewhere.</p>
+
+<p>If the runtime was excluded successfully, you should see the following log message:</p>
+
+<pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
+Execution without runtime compilation will negatively impact the guest application performance.
+The following cause was found: No optimizing Truffle runtime found on the module or class path.
+For more information see: https://www.graalvm.org/latest/reference-manual/embed-languages/.
+To disable this warning use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
+</code></pre>
+
+<p>You can disable this message using the indicated options as an additional step.</p>
+
+<p>Removing these dependencies also automatically switches to the fallback engine in Native Image builds.</p>
+
+<h2 id="build-native-executables-from-polyglot-applications">Build Native Executables from Polyglot Applications</h2>
+
+<p>With Polyglot version 23.1 on GraalVM for JDK 21 and later, no special configuration is required to use <a href="/jdk23/reference-manual/native-image/">Native Image</a> to build images with embedded polyglot language runtimes.
+Like any other Java dependency, the polyglot language JAR files must be on the class or module path when building a native executable.
+We recommend to use the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Maven</a> or <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Gradle</a> Native Image plugins to configure your <code>native-image</code> builds.
+A sample Maven and Gradle configuration for Native Image can be found in the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot embedding demonstration repository</a>.</p>
+
+<p>Here is a Maven profile configuration example:</p>
+<pre><code class="language-xml">&lt;profiles&gt;
+    &lt;profile&gt;
+        &lt;id&gt;native&lt;/id&gt;
+        &lt;build&gt;
+            &lt;plugins&gt;
+                &lt;plugin&gt;
+                    &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
+                    &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
+                    &lt;version&gt;0.10.1&lt;/version&gt;
+                    &lt;extensions&gt;true&lt;/extensions&gt;
+                    &lt;executions&gt;
+                        &lt;execution&gt;
+                            &lt;id&gt;build-native&lt;/id&gt;
+                            &lt;goals&gt;
+                                &lt;goal&gt;compile-no-fork&lt;/goal&gt;
+                            &lt;/goals&gt;
+                            &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;/execution&gt;
+                    &lt;/executions&gt;
+                    &lt;configuration&gt;
+                        &lt;imageName&gt;${project.artifactId}&lt;/imageName&gt;
+                        &lt;mainClass&gt;org.example.embedding.Main&lt;/mainClass&gt;
+                        &lt;buildArgs&gt;
+                            &lt;buildArg&gt;--no-fallback&lt;/buildArg&gt;
+                            &lt;buildArg&gt;-J-Xmx20g&lt;/buildArg&gt;
+                        &lt;/buildArgs&gt;
+                    &lt;/configuration&gt;
+                &lt;/plugin&gt;
+            &lt;/plugins&gt;
+        &lt;/build&gt;
+    &lt;/profile&gt;
+&lt;/profiles&gt;
+</code></pre>
+
+<p>To build a native executable with the above configuration, run:</p>
+<pre><code>mvn -Pnative package
+</code></pre>
+
+<p>To build a native executable from a polyglot application, for example, a Java-host application embedding Python, a <code>./resources</code> directory containing all the required files is created by default.
+By default, the language runtime will look for the resources directory relative to the native executable or library image that was built.
+At run time, the lookup location may be customized using the <code>-Dpolyglot.engine.resourcePath=path/to/resources</code> option.
+To disable the resource creation, the <code>-H:-CopyLanguageResources</code> build-time option may be used.
+Note that some languages may not support running without a resources directory.</p>
+
+<p>With Polyglot version 23.1 the language home options like <code>-Dorg.graalvm.home</code> should no longer be used and were replaced with the resource directory option.
+The language home options remain functional for compatibility reasons but may be removed in future releases.</p>
+
+<h3 id="configuring-native-host-reflection">Configuring Native Host Reflection</h3>
+
+<p>Accessing host Java code from the guest application requires Java reflection in order to work.
+When reflection is used within a native executable, the <a href="/jdk23/reference-manual/native-image/metadata/#reflection">reflection configuration file</a> is required.</p>
+
+<p>For this example we use JavaScript to show host access with native executables.
+Copy the following code in a new file named <code>AccessJavaFromJS.java</code>.</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+import java.util.concurrent.*;
+
+public class AccessJavaFromJS {
+
+    public static class MyClass {
+        public int               id    = 42;
+        public String            text  = "42";
+        public int[]             arr   = new int[]{1, 42, 3};
+        public Callable&lt;Integer&gt; ret42 = () -&gt; 42;
+    }
+
+    public static void main(String[] args) {
+        try (Context context = Context.newBuilder()
+                                   .allowAllAccess(true)
+                               .build()) {
+            context.getBindings("js").putMember("javaObj", new MyClass());
+            boolean valid = context.eval("js",
+                   "    javaObj.id         == 42"          +
+                   " &amp;&amp; javaObj.text       == '42'"        +
+                   " &amp;&amp; javaObj.arr[1]     == 42"          +
+                   " &amp;&amp; javaObj.ret42()    == 42")
+               .asBoolean();
+            System.out.println("Valid " + valid);
+        }
+    }
+}
+</code></pre>
+
+<p>Copy the following code into <code>reachability-metadata.json</code>:</p>
+<pre><code class="language-json">{
+  "reflection": [
+     { "type": "AccessJavaFromJS$MyClass", "allPublicFields": true },
+     { "type": "java.util.concurrent.Callable", "allPublicMethods": true }
+  ]
+}
+</code></pre>
+
+<p>Now, you can add <code>reachability-metadata.json</code> to <code>META-INF/native-image/&lt;group-id&gt;/</code> of your project.</p>
+
+<h2 id="code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</h2>
+
+<p>The GraalVM Polyglot API allows code caching across multiple contexts.
+Code caching allows compiled code to be reused and allows sources to be parsed only once.
+Code caching can often reduce memory consumption and warm-up time of the application.</p>
+
+<p>By default, code is cached within a single context instance only.
+An explicit engine needs to be specified to enable code caching between multiple contexts.
+The engine is specified when creating the context using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html">context builder</a>.
+The engine instance determines the scope of code sharing.
+Code is only shared between contexts associated with one engine instance.</p>
+
+<p>All sources are cached by default.
+Caching may be disabled explicitly by setting <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.Builder.html#cached-boolean-">cached(boolean cached)</a> to <code>false</code>. Disabling caching may be useful in case the source is known to only be evaluated once.</p>
+
+<p>Consider the following code snippet as an example:</p>
+
+<pre><code class="language-java">public class Main {
+    public static void main(String[] args) {
+        try (Engine engine = Engine.create()) {
+            Source source = Source.create("js", "21 + 21");
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>In this code:</p>
+<ul>
+  <li><code>import org.graalvm.polyglot.*</code> imports the base API for the Polyglot API.</li>
+  <li><code>Engine.create()</code> creates a new engine instance with the default configuration.</li>
+  <li><code>Source.create()</code> creates a source object for the expression “21 + 21”. We use an explicit <code>Source</code> object to ensure the code cache does not get garbage collected between contexts.
+with “js” language, which is the language identifier for JavaScript.</li>
+  <li><code>Context.newBuilder().engine(engine).build()</code> builds a new context with
+an explicit engine assigned to it. All contexts associated with an engine share the code.</li>
+  <li><code>context.eval(source).asInt()</code> evaluates the source and returns the result as <code>Value</code> instance.</li>
+</ul>
+
+<p><strong><em>Important:</em></strong> To keep the code cache of a cached source alive between executing contexts, the application must ensure that the <code>Source</code> object is continually referenced.
+The polyglot runtime may collect cached code of sources no longer referenced with the next GC cycle.</p>
+
+<h3 id="managing-the-code-cache">Managing the Code Cache</h3>
+
+<p>The data for the code cache is stored as part of the <code>Engine</code> instance.
+There is never any code sharing happening between two separate engine instances.
+Hence, we recommend using a singleton <code>Engine</code> instance if a global code cache is needed.
+As opposed to contexts, engines can always be shared across multiple threads.
+Whether contexts can be shared across multiple threads depends on the language used.</p>
+
+<p>There is no explicit method to purge the code cache.
+We rely on the garbage collector to do this automatically with the next collection.
+The code cache of an engine is not collected as long as the engine is still strongly referenced and not closed.
+Also, the <code>Source</code> instance must be kept alive to ensure the associated code is not collected.
+If a source instance is no longer referenced, but the engine is still referenced, the code cache associated with a source object may be collected by the GC.
+We recommend, therefore, keeping a strong reference to the <code>Source</code> object as long as <code>Source</code> should remain cached.</p>
+
+<p>To summarize, the code cache can be controlled by keeping and maintaining strong references to the <code>Engine</code> and <code>Source</code> objects.</p>
+
+<h2 id="polyglot-isolates">Polyglot Isolates</h2>
+
+<p>On Oracle GraalVM, a Polyglot engine can be configured to run in a dedicated Native Image isolate.
+A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler.
+Polyglot isolates are useful for <a href="/jdk23/security-guide/sandboxing/">sandboxing</a>.
+Running languages in an isolate works with HotSpot and Native Image host virtual machines.</p>
+
+<p>Languages used as polyglot isolates can be downloaded from Maven Central using the <code>-isolate</code> suffix.
+For example, a dependency on isolated JavaScript can be configured by adding a Maven dependency like this:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
+    &lt;version&gt;24.0.0&lt;/version&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>Starting from the Polyglot API version 24.1.0, the polyglot engine supports polyglot isolates for individual platforms.
+To download a polyglot isolate for a specific platform, append the operating system and CPU architecture classifiers to the polyglot isolate Maven <code>artifactId</code>.
+For example, to configure a dependency on isolated Python for Linux amd64, add the following Maven dependencies:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;python-isolate-linux-amd64&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>Supported platform classifiers are:</p>
+<ul>
+  <li><code>linux-amd64</code></li>
+  <li><code>linux-aarch64</code></li>
+  <li><code>darwin-amd64</code></li>
+  <li><code>darwin-aarch64</code></li>
+  <li><code>windows-amd64</code></li>
+</ul>
+
+<p>For a complete Maven POM file that adds the polyglot isolate Native Image dependency for the current platform, refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demonstration</a> on GitHub.</p>
+
+<p>To enable isolate usage with the Polyglot API, the <code>--engine.SpawnIsolate=true</code> option must be passed to <code>Engine</code> or <code>Context</code> when constructed.
+The option <code>engine.SpawnIsolate</code> may not be available if used on any other JDK than Oracle GraalVM.</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolate {
+	public static void main(String[] args) {
+		try (Context context = Context.newBuilder("js")
+			  .allowHostAccess(HostAccess.SCOPED)
+			  .option("engine.SpawnIsolate", "true").build()) {
+			  
+			Value function = context.eval("js", "x =&gt; x+1");
+			assert function.canExecute();
+			int x = function.execute(41).asInt();
+			assert x == 42;
+		}
+	}
+}
+</code></pre>
+
+<p>Currently, the following languages are available as polyglot isolates:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Language</th>
+      <th>Available from</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JavaScript (<code>js-isolate</code>)</td>
+      <td>23.1</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>We plan to add support for more languages in future versions.</p>
+
+<p>In the previous example, we enable scoped references using <code>HostAccess.SCOPED</code>.
+This is necessary because the host GC and the guest GC are unaware of one another, so cyclic references between objects cannot be resolved automatically.
+We thus strongly recommend using <a href="#controlling-host-callback-parameter-scoping">scoped parameters for host callbacks</a> to avoid cyclic references altogether.</p>
+
+<p>Multiple contexts can be spawned in the same isolated engine by <a href="#code-caching-across-multiple-contexts">sharing engines</a>:</p>
+
+<pre><code class="language-java">public class PolyglotIsolateMultipleContexts {
+    public static void main(String[] args) {
+        try (Engine engine = Engine.newBuilder("js")
+                .option("engine.SpawnIsolate", "true").build()) {
+            Source source = Source.create("js", "21 + 21");
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+        }
+    }
+}
+</code></pre>
+
+<h3 id="passing-native-image-runtime-options">Passing Native Image Runtime Options</h3>
+
+<p>Engines running in an isolate can make use of <a href="/jdk23/reference-manual/native-image/overview/Options/">Native Image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
+For example, this can be used to limit the maximum heap memory used by an engine by setting the maximum heap size for the isolate via <code>--engine.IsolateOption.MaxHeapSize=128m</code>:</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolateMaxHeap {
+  public static void main(String[] args) {
+    try {
+      Context context = Context.newBuilder("js")
+        .allowHostAccess(HostAccess.SCOPED)
+        .option("engine.SpawnIsolate", "true")
+        .option("engine.IsolateOption.MaxHeapSize", "64m").build()
+      context.eval("js", "var a = [];while (true) {a.push('foobar');}");
+    } catch (PolyglotException ex) {
+      if (ex.isResourceExhausted()) {
+        System.out.println("Resource exhausted");
+      }
+    }
+  }
+}
+</code></pre>
+<p>Exceeding the maximum heap size will automatically close the context and raise a <code>PolyglotException</code>.</p>
+
+<h3 id="ensuring-host-callback-stack-headroom">Ensuring Host Callback Stack Headroom</h3>
+
+<p>With Polyglot Isolates, the <code>--engine.HostCallStackHeadRoom</code> ensures a minimum stack space available when performing a host callback.
+The host callback fails if the available stack size drops below the specified threshold.</p>
+
+<h3 id="memory-protection">Memory Protection</h3>
+
+<p>In Linux environments that support Memory Protection Keys, the <code>--engine.MemoryProtection=true</code> option can be used to isolate the heaps of Polyglot Isolates at the hardware level.
+If an engine is created with this option, a dedicated protection key will be allocated for the isolated engine’s heap.
+GraalVM only enables access to the engine’s heap when executing code of the Polyglot Isolate.</p>
+
+<h2 id="embed-a-guest-language-in-java">Embed a Guest Language in Java</h2>
+
+<p>The GraalVM Polyglot API can be used from within a guest language using Java interoperability.
+This can be useful if a script needs to run isolated from the parent context.
+In Java as a host language a call to <code>Context.eval(Source)</code> returns an instance of <code>Value</code>, but since we executing this code as part of a guest language we can use the language-specific interoperability API instead.
+It is therefore possible to use values returned by contexts created inside of a language, like regular values of the language.
+In the example below we can conveniently write <code>value.data</code> instead of <code>value.getMember("data")</code>.
+Please refer to the individual language documentation for details on how to interoperate with foreign values.
+More information on value sharing between multiple contexts can be found <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#allowValueSharing-boolean-">here</a>.</p>
+
+<p>Consider the following code snippet as an example:</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class Main {
+    public static void main(String[] args) {
+        try (Context outer = Context.newBuilder()
+                                   .allowAllAccess(true)
+                               .build()) {
+            outer.eval("js", "inner = Java.type('org.graalvm.polyglot.Context').create()");
+            outer.eval("js", "value = inner.eval('js', '({data:42})')");
+            int result = outer.eval("js", "value.data").asInt();
+            outer.eval("js", "inner.close()");
+
+            System.out.println("Valid " + (result == 42));
+        }
+    }
+}
+</code></pre>
+
+<p>In this code:</p>
+<ul>
+  <li><code>Context.newBuilder().allowAllAccess(true).build()</code> builds a new outer context with all privileges.</li>
+  <li><code>outer.eval</code> evaluates a JavaScript snippet in the outer context.</li>
+  <li><code>inner = Java.type('org.graalvm.polyglot.Context').create()</code> the first JS script line looks up the Java host type Context and creates a new inner context instance with no privileges (default).</li>
+  <li><code>inner.eval('js', '({data:42})');</code> evaluates the JavaScript code <code>({data:42})</code> in the inner context and returns stores the result.</li>
+  <li><code>"value.data"</code> this line reads the member <code>data</code> from the result of the inner context. Note that this result can only be read as long as the inner context is not yet closed.</li>
+  <li><code>context.eval("js", "c.close()")</code> this snippet closes the inner context. Inner contexts need to be closed manually and are not automatically closed with the parent context.</li>
+  <li>Finally the example is expected to print <code>Valid true</code> to the console.</li>
+</ul>
+
+<h2 id="build-a-shell-for-many-languages">Build a Shell for Many Languages</h2>
+
+<p>With just a few lines of code, the GraalVM Polyglot API lets you build applications that integrate with any guest language supported by GraalVM.</p>
+
+<p>This shell implementation is agnostic to any particular guest language.</p>
+
+<pre><code class="language-java">BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+PrintStream output = System.out;
+Context context = Context.newBuilder().allowAllAccess(true).build();
+Set&lt;String&gt; languages = context.getEngine().getLanguages().keySet();
+output.println("Shell for " + languages + ":");
+String language = languages.iterator().next();
+for (;;) {
+    try {
+        output.print(language + "&gt; ");
+        String line = input.readLine();
+        if (line == null) {
+            break;
+        } else if (languages.contains(line)) {
+            language = line;
+            continue;
+        }
+        Source source = Source.newBuilder(language, line, "&lt;shell&gt;")
+                        .interactive(true).buildLiteral();
+        context.eval(source);
+    } catch (PolyglotException t) {
+        if(t.isExit()) {
+            break;
+        }
+        t.printStackTrace();
+    }
+}
+</code></pre>
+
+<h2 id="step-through-with-execution-listeners">Step Through with Execution Listeners</h2>
+
+<p>The GraalVM Polyglot API allows users to instrument the execution of guest languages through the <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/management/ExecutionListener.html">ExecutionListener class</a>.
+For example, it lets you attach an execution listener that is invoked for every statement of the guest language program.
+Execution listeners are designed as simple API for polyglot embedders and may become handy in, for example, single-stepping through the program.</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.management.*;
+
+public class ExecutionListenerTest {
+    public static void main(String[] args) {
+        try (Context context = Context.create("js")) {
+            ExecutionListener listener = ExecutionListener.newBuilder()
+                      .onEnter((e) -&gt; System.out.println(
+                              e.getLocation().getCharacters()))
+                      .statements(true)
+                      .attach(context.getEngine());
+            context.eval("js", "for (var i = 0; i &lt; 2; i++);");
+            listener.close();
+        }
+    }
+}
+</code></pre>
+
+<p>In this code:</p>
+<ul>
+  <li>The <code>Context.create()</code> call creates a new context for the guest language.</li>
+  <li>Create an execution listener builder by invoking <code>ExecutionListeners.newBuilder()</code>.</li>
+  <li>Set <code>onEnter</code> event to notify when element’s execution is entered and consumed. At least one event consumer and one filtered source element needs to be enabled.</li>
+  <li>To complete the listener attachment, <code>attach()</code> needs to be invoked.</li>
+  <li>The <code>statements(true)</code> filters execution listeners to statements only.</li>
+  <li>The <code>context.eval()</code> call evaluates a specified snippet of guest language code.</li>
+  <li>The <code>listener.close()</code> closes a listener earlier, however execution listeners are automatically closed with the engine.</li>
+</ul>
+
+<h2 id="compatibility-with-jsr-223-scriptengine">Compatibility with JSR-223 ScriptEngine</h2>
+
+<!--
+
+IMPORTANT!!
+
+Whenever you change ANYTHING here, check if you need to reflect the changes
+back into our integration tests at:
+* tests/python/PythonEngineFactory.java
+* https://github.com/oracle/truffleruby/blob/master/src/test-embedding/java/org/truffleruby/test/embedding/TruffleRubyEngineFactory.java
+
+-->
+
+<p>The Truffle language implementation framework does not provide a JSR-223 ScriptEngine implementation.
+The Polyglot API provides more fine-grained control over Truffle features and we strongly encourage users to use the <code>org.graalvm.polyglot.Context</code> interface in order to control many of the settings directly and benefit from finer-grained security settings in GraalVM.</p>
+
+<p>However, to easily evaluate a Truffle language as a replacement for other scripting languages that are integrated using the ScriptEngine API, we provide a single file script engine below.
+This file can be dropped into a source tree and used directly to evaluate a Truffle language via the ScriptEngine APIs.
+There are only two lines to adapt to your project:</p>
+
+<pre><code class="language-java">public final class CHANGE_NAME_EngineFactory implements ScriptEngineFactory {
+    private static final String LANGUAGE_ID = "&lt;&lt;INSERT LANGUAGE ID HERE&gt;&gt;";
+</code></pre>
+
+<p>Rename the class as desired and change the <code>LANGUAGE_ID</code> to the desired Truffle language (for example, “python” for GraalPy or “ruby” for TruffleRuby). 
+To use it, include a <code>META-INF/services/javax.script.ScriptEngineFactory</code> file in your resources with the chosen class name.
+This will allow the default <code>javax.script.ScriptEngineManager</code> to discover the language automatically.
+Alternatively, the factory can be registered via <code>javax.script.ScriptEngineManager#registerEngineName</code> or instantiated and used directly.</p>
+
+<p>The best practice is to close the <code>ScriptEngine</code> when no longer used rather than relying on finalizers.
+To close it, use <code>((AutoCloseable) scriptEngine).close();</code> since <code>ScriptEngine</code> does not have a <code>close()</code> method.</p>
+
+<p>Note that <a href="https://www.graalvm.org/reference-manual/js/">GraalJS</a> provides <a href="https://www.graalvm.org/reference-manual/js/ScriptEngine/">a ScriptEngine implementation</a> for users migrating from the Nashorn JavaScript engine that was deprecated in JDK 11, so this method here is not needed.</p>
+
+<details>
+<summary>Expand to see the <code>ScriptEngineFactory</code> implementation for Truffle languages in a single file.</summary>
+
+<pre class="language-java"><code>
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.script.Bindings;
+import javax.script.Compilable;
+import javax.script.CompiledScript;
+import javax.script.Invocable;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptException;
+
+import org.graalvm.home.Version;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Engine;
+import org.graalvm.polyglot.Language;
+import org.graalvm.polyglot.PolyglotException;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.Value;
+
+public final class CHANGE_NAME_EngineFactory implements ScriptEngineFactory {
+    private static final String LANGUAGE_ID = "&lt;<INSERT LANGUAGE="" ID="" HERE="">&gt;";
+
+    /***********************************************************/
+    /* Everything below is generic and does not need to change */
+    /***********************************************************/
+
+    private final Engine polyglotEngine = Engine.newBuilder().build();
+    private final Language language = polyglotEngine.getLanguages().get(LANGUAGE_ID);
+
+    @Override
+    public String getEngineName() {
+        return language.getImplementationName();
+    }
+
+    @Override
+    public String getEngineVersion() {
+        return Version.getCurrent().toString();
+    }
+
+    @Override
+    public List<String> getExtensions() {
+        return List.of(LANGUAGE_ID);
+    }
+
+    @Override
+    public List<String> getMimeTypes() {
+        return List.copyOf(language.getMimeTypes());
+    }
+
+    @Override
+    public List<String> getNames() {
+        return List.of(language.getName(), LANGUAGE_ID, language.getImplementationName());
+    }
+
+    @Override
+    public String getLanguageName() {
+        return language.getName();
+    }
+
+    @Override
+    public String getLanguageVersion() {
+        return language.getVersion();
+    }
+
+    @Override
+    public Object getParameter(final String key) {
+        switch (key) {
+            case ScriptEngine.ENGINE:
+                return getEngineName();
+            case ScriptEngine.ENGINE_VERSION:
+                return getEngineVersion();
+            case ScriptEngine.LANGUAGE:
+                return getLanguageName();
+            case ScriptEngine.LANGUAGE_VERSION:
+                return getLanguageVersion();
+            case ScriptEngine.NAME:
+                return LANGUAGE_ID;
+        }
+        return null;
+    }
+
+    @Override
+    public String getMethodCallSyntax(final String obj, final String m, final String... args) {
+        throw new UnsupportedOperationException("Unimplemented method 'getMethodCallSyntax'");
+    }
+
+    @Override
+    public String getOutputStatement(final String toDisplay) {
+        throw new UnsupportedOperationException("Unimplemented method 'getOutputStatement'");
+    }
+
+    @Override
+    public String getProgram(final String... statements) {
+        throw new UnsupportedOperationException("Unimplemented method 'getProgram'");
+    }
+
+    @Override
+    public ScriptEngine getScriptEngine() {
+        return new PolyglotEngine(this);
+    }
+
+    private static final class PolyglotEngine implements ScriptEngine, Compilable, Invocable, AutoCloseable {
+        private final ScriptEngineFactory factory;
+        private PolyglotContext defaultContext;
+
+        PolyglotEngine(ScriptEngineFactory factory) {
+            this.factory = factory;
+            this.defaultContext = new PolyglotContext(factory);
+        }
+
+        @Override
+        public void close() {
+            defaultContext.getContext().close();
+        }
+
+        @Override
+        public CompiledScript compile(String script) throws ScriptException {
+            Source src = Source.create(LANGUAGE_ID, script);
+            try {
+                defaultContext.getContext().parse(src); // only for the side-effect of validating the source
+            } catch (PolyglotException e) {
+                throw new ScriptException(e);
+            }
+            return new PolyglotCompiledScript(src, this);
+        }
+
+        @Override
+        public CompiledScript compile(Reader script) throws ScriptException {
+            Source src;
+            try {
+                src = Source.newBuilder(LANGUAGE_ID, script, "sourcefromreader").build();
+                defaultContext.getContext().parse(src); // only for the side-effect of validating the source
+            } catch (PolyglotException | IOException e) {
+                throw new ScriptException(e);
+            }
+            return new PolyglotCompiledScript(src, this);
+        }
+
+        @Override
+        public Object eval(String script, ScriptContext context) throws ScriptException {
+            if (context instanceof PolyglotContext) {
+                PolyglotContext c = (PolyglotContext) context;
+                try {
+                    return c.getContext().eval(LANGUAGE_ID, script).as(Object.class);
+                } catch (PolyglotException e) {
+                    throw new ScriptException(e);
+                }
+            } else {
+                throw new ClassCastException("invalid context");
+            }
+        }
+
+        @Override
+        public Object eval(Reader reader, ScriptContext context) throws ScriptException {
+            Source src;
+            try {
+                src = Source.newBuilder(LANGUAGE_ID, reader, "sourcefromreader").build();
+            } catch (IOException e) {
+                throw new ScriptException(e);
+            }
+            if (context instanceof PolyglotContext) {
+                PolyglotContext c = (PolyglotContext) context;
+                try {
+                    return c.getContext().eval(src).as(Object.class);
+                } catch (PolyglotException e) {
+                    throw new ScriptException(e);
+                }
+            } else {
+                throw new ScriptException("invalid context");
+            }
+        }
+
+        @Override
+        public Object eval(String script) throws ScriptException {
+            return eval(script, defaultContext);
+        }
+
+        @Override
+        public Object eval(Reader reader) throws ScriptException {
+            return eval(reader, defaultContext);
+        }
+
+        @Override
+        public Object eval(String script, Bindings n) throws ScriptException {
+            throw new UnsupportedOperationException("Bindings for Polyglot language cannot be created explicitly");
+        }
+
+        @Override
+        public Object eval(Reader reader, Bindings n) throws ScriptException {
+            throw new UnsupportedOperationException("Bindings for Polyglot language cannot be created explicitly");
+        }
+
+        @Override
+        public void put(String key, Object value) {
+            defaultContext.getBindings(ScriptContext.ENGINE_SCOPE).put(key, value);
+        }
+
+        @Override
+        public Object get(String key) {
+            return defaultContext.getBindings(ScriptContext.ENGINE_SCOPE).get(key);
+        }
+
+        @Override
+        public Bindings getBindings(int scope) {
+            return defaultContext.getBindings(scope);
+        }
+
+        @Override
+        public void setBindings(Bindings bindings, int scope) {
+            defaultContext.setBindings(bindings, scope);
+        }
+
+        @Override
+        public Bindings createBindings() {
+            throw new UnsupportedOperationException("Bindings for Polyglot language cannot be created explicitly");
+        }
+
+        @Override
+        public ScriptContext getContext() {
+            return defaultContext;
+        }
+
+        @Override
+        public void setContext(ScriptContext context) {
+            throw new UnsupportedOperationException("The context of a Polyglot ScriptEngine cannot be modified.");
+        }
+
+        @Override
+        public ScriptEngineFactory getFactory() {
+            return factory;
+        }
+
+        @Override
+        public Object invokeMethod(Object thiz, String name, Object... args)
+                throws ScriptException, NoSuchMethodException {
+            try {
+                Value receiver = defaultContext.getContext().asValue(thiz);
+                if (receiver.canInvokeMember(name)) {
+                    return receiver.invokeMember(name, args).as(Object.class);
+                } else {
+                    throw new NoSuchMethodException(name);
+                }
+            } catch (PolyglotException e) {
+                throw new ScriptException(e);
+            }
+        }
+
+        @Override
+        public Object invokeFunction(String name, Object... args) throws ScriptException, NoSuchMethodException {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T getInterface(Class<T> interfaceClass) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public <T> T getInterface(Object thiz, Class<T> interfaceClass) {
+            return defaultContext.getContext().asValue(thiz).as(interfaceClass);
+        }
+    }
+
+    private static final class PolyglotContext implements ScriptContext {
+        private Context context;
+        private final ScriptEngineFactory factory;
+        private final PolyglotReader in;
+        private final PolyglotWriter out;
+        private final PolyglotWriter err;
+        private Bindings globalBindings;
+
+        PolyglotContext(ScriptEngineFactory factory) {
+            this.factory = factory;
+            this.in = new PolyglotReader(new InputStreamReader(System.in));
+            this.out = new PolyglotWriter(new OutputStreamWriter(System.out));
+            this.err = new PolyglotWriter(new OutputStreamWriter(System.err));
+        }
+
+        Context getContext() {
+            if (context == null) {
+                Context.Builder builder = Context.newBuilder(LANGUAGE_ID)
+                        .in(this.in)
+                        .out(this.out)
+                        .err(this.err)
+                        .allowAllAccess(true);
+                Bindings globalBindings = getBindings(ScriptContext.GLOBAL_SCOPE);
+                if (globalBindings != null) {
+                    for (Entry&lt;String, Object&gt; entry : globalBindings.entrySet()) {
+                        Object value = entry.getValue();
+                        if (value instanceof String) {
+                            builder.option(entry.getKey(), (String) value);
+                        }
+                    }
+                }
+                context = builder.build();
+            }
+            return context;
+        }
+
+        @Override
+        public void setBindings(Bindings bindings, int scope) {
+            if (scope == ScriptContext.GLOBAL_SCOPE) {
+                if (context == null) {
+                    globalBindings = bindings;
+                } else {
+                    throw new UnsupportedOperationException(
+                            "Global bindings for Polyglot language can only be set before the context is initialized.");
+                }
+            } else {
+                throw new UnsupportedOperationException("Bindings objects for Polyglot language is final.");
+            }
+        }
+
+        @Override
+        public Bindings getBindings(int scope) {
+            if (scope == ScriptContext.ENGINE_SCOPE) {
+                return new PolyglotBindings(getContext().getBindings(LANGUAGE_ID));
+            } else if (scope == ScriptContext.GLOBAL_SCOPE) {
+                return globalBindings;
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public void setAttribute(String name, Object value, int scope) {
+            if (scope == ScriptContext.ENGINE_SCOPE) {
+                getBindings(scope).put(name, value);
+            } else if (scope == ScriptContext.GLOBAL_SCOPE) {
+                if (context == null) {
+                    globalBindings.put(name, value);
+                } else {
+                    throw new IllegalStateException("Cannot modify global bindings after context creation.");
+                }
+            }
+        }
+
+        @Override
+        public Object getAttribute(String name, int scope) {
+            if (scope == ScriptContext.ENGINE_SCOPE) {
+                return getBindings(scope).get(name);
+            } else if (scope == ScriptContext.GLOBAL_SCOPE) {
+                return globalBindings.get(name);
+            }
+            return null;
+        }
+
+        @Override
+        public Object removeAttribute(String name, int scope) {
+            Object prev = getAttribute(name, scope);
+            if (prev != null) {
+                if (scope == ScriptContext.ENGINE_SCOPE) {
+                    getBindings(scope).remove(name);
+                } else if (scope == ScriptContext.GLOBAL_SCOPE) {
+                    if (context == null) {
+                        globalBindings.remove(name);
+                    } else {
+                        throw new IllegalStateException("Cannot modify global bindings after context creation.");
+                    }
+                }
+            }
+            return prev;
+        }
+
+        @Override
+        public Object getAttribute(String name) {
+            return getAttribute(name, ScriptContext.ENGINE_SCOPE);
+        }
+
+        @Override
+        public int getAttributesScope(String name) {
+            if (getAttribute(name, ScriptContext.ENGINE_SCOPE) != null) {
+                return ScriptContext.ENGINE_SCOPE;
+            } else if (getAttribute(name, ScriptContext.GLOBAL_SCOPE) != null) {
+                return ScriptContext.GLOBAL_SCOPE;
+            }
+            return -1;
+        }
+
+        @Override
+        public Writer getWriter() {
+            return this.out.writer;
+        }
+
+        @Override
+        public Writer getErrorWriter() {
+            return this.err.writer;
+        }
+
+        @Override
+        public void setWriter(Writer writer) {
+            this.out.writer = writer;
+        }
+
+        @Override
+        public void setErrorWriter(Writer writer) {
+            this.err.writer = writer;
+        }
+
+        @Override
+        public Reader getReader() {
+            return this.in.reader;
+        }
+
+        @Override
+        public void setReader(Reader reader) {
+            this.in.reader = reader;
+        }
+
+        @Override
+        public List<Integer> getScopes() {
+            return List.of(ScriptContext.ENGINE_SCOPE, ScriptContext.GLOBAL_SCOPE);
+        }
+
+        private static final class PolyglotReader extends InputStream {
+            private volatile Reader reader;
+
+            public PolyglotReader(InputStreamReader inputStreamReader) {
+                this.reader = inputStreamReader;
+            }
+
+            @Override
+            public int read() throws IOException {
+                return reader.read();
+            }
+        }
+
+        private static final class PolyglotWriter extends OutputStream {
+            private volatile Writer writer;
+
+            public PolyglotWriter(OutputStreamWriter outputStreamWriter) {
+                this.writer = outputStreamWriter;
+            }
+
+            @Override
+            public void write(int b) throws IOException {
+                writer.write(b);
+            }
+        }
+    }
+
+    private static final class PolyglotCompiledScript extends CompiledScript {
+        private final Source source;
+        private final ScriptEngine engine;
+
+        public PolyglotCompiledScript(Source src, ScriptEngine engine) {
+            this.source = src;
+            this.engine = engine;
+        }
+
+        @Override
+        public Object eval(ScriptContext context) throws ScriptException {
+            if (context instanceof PolyglotContext) {
+                return ((PolyglotContext) context).getContext().eval(source).as(Object.class);
+            }
+            throw new UnsupportedOperationException(
+                    "Polyglot CompiledScript instances can only be evaluated in Polyglot.");
+        }
+
+        @Override
+        public ScriptEngine getEngine() {
+            return engine;
+        }
+    }
+
+    private static final class PolyglotBindings implements Bindings {
+        private Value languageBindings;
+
+        PolyglotBindings(Value languageBindings) {
+            this.languageBindings = languageBindings;
+        }
+
+        @Override
+        public int size() {
+            return keySet().size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size() == 0;
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            for (String s : keySet()) {
+                if (get(s) == value) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public void clear() {
+            for (String s : keySet()) {
+                remove(s);
+            }
+        }
+
+        @Override
+        public Set<String> keySet() {
+            return languageBindings.getMemberKeys();
+        }
+
+        @Override
+        public Collection<object> values() {
+            List<object> values = new ArrayList&lt;&gt;();
+            for (String s : keySet()) {
+                values.add(get(s));
+            }
+            return values;
+        }
+
+        @Override
+        public Set&lt;Entry&lt;String, Object&gt;&gt; entrySet() {
+            Set&lt;Entry&lt;String, Object&gt;&gt; values = new HashSet&lt;&gt;();
+            for (String s : keySet()) {
+                values.add(new Entry&lt;String, Object&gt;() {
+                    @Override
+                    public String getKey() {
+                        return s;
+                    }
+
+                    @Override
+                    public Object getValue() {
+                        return get(s);
+                    }
+
+                    @Override
+                    public Object setValue(Object value) {
+                        return put(s, value);
+                    }
+                });
+            }
+            return values;
+        }
+
+        @Override
+        public Object put(String name, Object value) {
+            Object previous = get(name);
+            languageBindings.putMember(name, value);
+            return previous;
+        }
+
+        @Override
+        public void putAll(Map&lt;? extends String, ? extends Object&gt; toMerge) {
+            for (Entry&lt;? extends String, ? extends Object&gt; e : toMerge.entrySet()) {
+                put(e.getKey(), e.getValue());
+            }
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            if (key instanceof String) {
+                return languageBindings.hasMember((String) key);
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public Object get(Object key) {
+            if (key instanceof String) {
+                Value value = languageBindings.getMember((String) key);
+                if (value != null) {
+                    return value.as(Object.class);
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Object remove(Object key) {
+            Object prev = get(key);
+            if (prev != null) {
+                languageBindings.removeMember((String) key);
+                return prev;
+            } else {
+                return null;
+            }
+        }
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/details&gt;
+</object></object></String></Integer></T></T></T></T></String></String></String></INSERT></code></pre></details>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

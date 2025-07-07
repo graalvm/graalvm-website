@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="truffle-native-function-interface">Truffle Native Function Interface</h1>
+
+<p>Truffle includes a way to call native functions, called the Native Function Interface (NFI).
+It is implemented as an internal language on top of Truffle that language implementors can access via the standard polyglot eval interface and Truffle interoperability.
+NFI is intended to be used, for example, to implement a language’s FFI, or to call native runtime routines that are not available in Java.</p>
+
+<p>NFI uses <code>libffi</code>.
+On a standard JVM it calls it using JNI, and on GraalVM Native Image it uses system Java.
+In the future it may be optimised by the Graal Compiler in native executables so that native calls are made directly from the compiled code.</p>
+
+<h2 id="stability">Stability</h2>
+
+<p>The NFI is an internal language designed for language implementors.
+It is not considered stable and the interface and behavior may change without warning.
+It is not intended to be used directly by end-users.</p>
+
+<h2 id="basic-concepts">Basic Concepts</h2>
+
+<p>The NFI is accessed via the polyglot interface of whatever language you are using.
+This could be Java, or it could be a Truffle language.
+This lets you use the NFI from both your Java language implementation code, or from your guest language to reduce the amount of Java that you need to write.</p>
+
+<p>The entry point is the polyglot <code>eval</code> interface.
+This runs a special DSL, and returns Truffle interoperability objects which can then expose more methods.</p>
+
+<p>Below are some examples using Ruby’s polyglot interface, but any other JVM or a language implementation could be used instead.</p>
+
+<h2 id="basic-example">Basic Example</h2>
+
+<p>Here is a basic working example, before going into the details:</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load "libSDL2.dylib"')  # load a library
+symbol = library['SDL_GetRevisionNumber']               # load a symbol from the library
+signature = Polyglot.eval('nfi', '():UINT32')           # prepare a signature
+function = signature.bind(symbol)                       # bind the symbol to the signature to create a function
+puts function.call # =&gt; 12373                           # call the function
+</code></pre>
+
+<h2 id="loading-libaries">Loading libaries</h2>
+
+<p>To load a library, a script written in the ‘<code>nfi</code>’ language DSL is evaluated.
+It returns an object that represents the loaded library.</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', '...load command...')
+</code></pre>
+
+<p>The load command can be any of these forms:</p>
+
+<ul>
+  <li><code>default</code></li>
+  <li><code>load "filename"</code></li>
+  <li><code>load (flag | flag | ...) "filename"</code></li>
+</ul>
+
+<p>The <code>default</code> command returns a pseudo-library that contains all symbols already loaded in
+the process, equivalent to <code>RTLD_DEFAULT</code> in the Posix interface.</p>
+
+<p>The <code>load "filename"</code> command loads a library from a file.
+You are responsible for any cross-platform concerns about library naming conventions and load paths.</p>
+
+<p>The <code>load (flag | flag | ...) "filename"</code> command allows you to specify flags to load the library.
+For the default backend (backends will be described later), and when running on a Posix platform, the flags available are <code>RTLD_GLOBAL</code>, <code>RTLD_LOCAL</code>, <code>RTLD_LAZY</code>, and <code>RTLD_NOW</code>, which have the conventional Posix semantics.
+The default is <code>RTLD_NOW</code> if neither <code>RTLD_LAZY</code> nor <code>RTLD_NOW</code> were specified.</p>
+
+<h2 id="loading-symbols-from-libraries">Loading Symbols from Libraries</h2>
+
+<p>To load a symbol from a library, read the symbol as a property from the library object that was previously loaded.</p>
+
+<pre><code class="language-ruby">symbol = library['symbol_name']
+</code></pre>
+
+<h2 id="producing-native-function-objects-from-symbols">Producing Native Function Objects from Symbols</h2>
+
+<p>To get an executable object that you can call in order to invoke the native function, <em>bind</em> the symbol object that was previously loaded, by creating a signature object and calling the <code>bind</code> method on it.
+The signature object needs to match the native function’s actual type signature.</p>
+
+<pre><code class="language-ruby">signature = Polyglot.eval('nfi', '...signature...')
+function = signature.bind(symbol)
+</code></pre>
+
+<p>The format of the signature is <code>(arg, arg, ...) : return</code>, where <code>arg</code> and <code>return</code> are types.</p>
+
+<p>Types can be one of the simple types:</p>
+
+<ul>
+  <li><code>VOID</code></li>
+  <li><code>UINT8</code></li>
+  <li><code>SINT8</code></li>
+  <li><code>UINT16</code></li>
+  <li><code>SINT16</code></li>
+  <li><code>UINT32</code></li>
+  <li><code>SINT32</code></li>
+  <li><code>UINT64</code></li>
+  <li><code>SINT64</code></li>
+  <li><code>FLOAT</code></li>
+  <li><code>DOUBLE</code></li>
+  <li><code>POINTER</code></li>
+  <li><code>STRING</code></li>
+  <li><code>OBJECT</code></li>
+  <li><code>ENV</code></li>
+</ul>
+
+<p>Array types are formed by placing another type in square brackets.
+For example <code>[UINT8]</code>. These are C-style arrays.</p>
+
+<p>Function pointer types are formed by writing a nested signature.
+For example the signature of <code>qsort</code> would be <code>(POINTER, UINT64, UINT64, (POINTER, POINTER) : SINT32) : VOID</code>.</p>
+
+<p>For a function with a signature with variadic arguments, you specify <code>...</code> where the variadic arguments start, but then you must specify the actual types that you will be calling the function with.
+You may therefore need to bind the same symbol multiple times in order to call it with different types or a different number of arguments.
+For example, to call <code>printf</code> with <code>%d %f</code> you would use the type signature <code>(STRING, ...SINT32, DOUBLE) : SINT32</code>.</p>
+
+<p>Type expressions can be nested arbitrarily deep.</p>
+
+<p>Two additional special types, <code>ENV</code> and <code>OBJECT</code>, are described in the section on the native API, later in this document.</p>
+
+<p>Types can be written in any case.</p>
+
+<p>You are responsible for any mapping of types from a foreign language such as C into NFI types.</p>
+
+<h2 id="calling-native-function-objects">Calling Native Function Objects</h2>
+
+<p>To call a native function, execute it.</p>
+
+<pre><code class="language-ruby">return_value = function.call(...arguments...)
+</code></pre>
+
+<h2 id="calling-back-from-native-code-to-managed-functions">Calling back from Native Code to Managed Functions</h2>
+
+<p>Using nested signatures, a function call can get function pointers as arguments.
+The managed caller needs to pass a Polyglot executable object, that will be converted to a native function pointer.
+When calling this function pointer from the native side, the <code>execute</code> message is sent to the Polyglot object.</p>
+
+<pre><code class="language-C">void native_function(int32_t (*fn)(int32_t)) {
+  printf("%d\n", fn(15));
+}
+</code></pre>
+
+<pre><code class="language-ruby">signature = Polyglot.eval('nfi', '((SINT32):SINT32):VOID')
+native_function = signature.bind(library['native_function'])
+native_function.call(-&gt;(x) { x + 1 })
+</code></pre>
+
+<p>The arguments and return values of callback functions are converted the same as for regular function calls, with the conversion in the other direction, i.e., arguments are converted from native to managed, and return values are converted from managed to native.</p>
+
+<p>Callback function pointers can themselves have function pointer arguments.
+That works as you would expect: the function accepts a native function pointer as argument, and it is converted to a Truffle executable object.
+Sending the <code>execute</code> message to that object calls the native function pointer, same as calling a regular NFI function.</p>
+
+<p>Function pointer types are also supported as return types.</p>
+
+<h2 id="combined-loading-and-binding">Combined Loading and Binding</h2>
+
+<p>You can optionally combine loading a library with loading symbols and binding them.
+This is achieved with an extended <code>load</code> command, which then returns an object with the already bound functions as methods.</p>
+
+<p>These two examples are equivalent:</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load libSDL2.dylib')
+symbol = library['SDL_GetRevisionNumber']
+signature = Polyglot.eval('nfi', '():UINT32')
+function = signature.bind(symbol)
+puts function.call # =&gt; 12373
+</code></pre>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load libSDL2.dylib { SDL_GetRevisionNumber():UINT32; }')
+puts library.SDL_GetRevisionNumber # =&gt; 12373
+</code></pre>
+
+<p>The definitions in the curly braces <code>{}</code> can contain multiple function bindings, so that many functions can be loaded from a library at once.</p>
+
+<h2 id="backends">Backends</h2>
+
+<p>The load command can be prefixed by <code>with</code> in order to select a specific NFI backend.
+Multiple NFI backends are available.
+The default is called <code>native</code>, and will be used if there is no <code>with</code> prefix, or the selected backend is not available.</p>
+
+<p>Depending on the configuration of components you are running, available backends may include:</p>
+<ul>
+  <li><code>native</code></li>
+  <li><code>llvm</code>, which uses the GraalVM LLVM runtime to run the native code</li>
+  <li><code>panama</code></li>
+</ul>
+
+<h3 id="panama-backend">Panama backend</h3>
+
+<p>The Panama backend uses the Foreign Function and Memory APIs introduced by <a href="https://openjdk.org/projects/panama/">project Panama</a>. 
+This backend only supports a subset of all the types. Specifically, it does not support <code>STRING</code>, <code>OBJECT</code>, <code>ENV</code>, <code>FP80</code> or array types.
+Although less feature-complete, the backend is typically more performant.
+Currently, it is available starting from JDK 21 with the <code>--enable-preview</code> tag.</p>
+
+<h3 id="truffle-nfi-on-native-image">Truffle NFI on Native Image</h3>
+
+<p>To build a native image that contains the Truffle NFI, it is sufficient to use the <code>--language:nfi</code> argument, or specify <code>Requires = language:nfi</code> in <code>native-image.properties</code>.
+It is possible to select what implementation to use for the <code>native</code> backend using <code>--language:nfi=&lt;backend&gt;</code>.</p>
+
+<p>Note that the <code>--language:nfi=&lt;backend&gt;</code> argument must come before any other arguments that might pull in the NFI as dependency via <code>Requires = language:nfi</code>.
+The first instance of <code>language:nfi</code> wins and determines what backend will be built into the native image.</p>
+
+<p>Available arguments for <code>--language:nfi=&lt;backend&gt;</code> are:</p>
+<ul>
+  <li><code>libffi</code> (the default)</li>
+  <li><code>none</code></li>
+</ul>
+
+<p>Selecting the <code>none</code> native backend will effectively disable access to native functions using the Truffle NFI.
+This will break users of the NFI that rely on native access (e.g. the GraalVM LLVM Runtime, unless used with <code>--llvm.managed</code> on EE).</p>
+
+<h2 id="native-api">Native API</h2>
+
+<p>The NFI can be used with unmodified, already compiled native code, but it can also be used with a Truffle-specific API being used by the native code.</p>
+
+<p>The special type <code>ENV</code> adds an additional parameter <code>TruffleEnv *env</code> to the signature.
+An additional simple type <code>OBJECT</code> translates to an opaque <code>TruffleObject</code> type.</p>
+
+<p>The <code>trufflenfi.h</code> header file provides declarations for working with these types, that can then be used by the native code called through the NFI.
+See <code>trufflenfi.h</code> for more documentation on this API.</p>
+
+<h2 id="type-marshalling">Type Marshalling</h2>
+
+<p>This section describes in detail how argument values and return values are converted for all types in the function signature.</p>
+
+<p>The following table shows the possible types in NFI signatures with their corresponding C language types on the native side, and what polyglot values these arguments map to on the managed side:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>NFI type</th>
+      <th>C language type</th>
+      <th>Polyglot value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>VOID</code></td>
+      <td><code>void</code></td>
+      <td>Polyglot object with <code>isNull == true</code> (only valid as return type).</td>
+    </tr>
+    <tr>
+      <td><code>SINT8/16/32/64</code></td>
+      <td><code>int8/16/32/64_t</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsIn...</code> the corresponding integer type.</td>
+    </tr>
+    <tr>
+      <td><code>UINT8/16/32/64</code></td>
+      <td><code>uint8/16/32/64_t</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsIn...</code> the corresponding integer type.</td>
+    </tr>
+    <tr>
+      <td><code>FLOAT</code></td>
+      <td><code>float</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsInFloat</code>.</td>
+    </tr>
+    <tr>
+      <td><code>DOUBLE</code></td>
+      <td><code>double</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsInDouble</code>.</td>
+    </tr>
+    <tr>
+      <td><code>POINTER</code></td>
+      <td><code>void *</code></td>
+      <td>Polyglot object with <code>isPointer == true</code> or <code>isNull == true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>STRING</code></td>
+      <td><code>char *</code> (zero-terminated UTF-8 string)</td>
+      <td>Polyglot <code>isString</code>.</td>
+    </tr>
+    <tr>
+      <td><code>OBJECT</code></td>
+      <td><code>TruffleObject</code></td>
+      <td>Arbitrary object.</td>
+    </tr>
+    <tr>
+      <td><code>[type]</code></td>
+      <td><code>type *</code> (array of primitive)</td>
+      <td>Java host primitive array.</td>
+    </tr>
+    <tr>
+      <td><code>(args):ret</code></td>
+      <td><code>ret (*)(args)</code> (function pointer type)</td>
+      <td>Polyglot function with <code>isExecutable == true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>ENV</code></td>
+      <td><code>TruffleEnv *</code></td>
+      <td>nothing (injected argument)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The following sections describe the type conversions in detail.</p>
+
+<p>The type conversion behavior with function pointers can be slightly confusing, because the direction of the arguments is reversed.
+When in doubt, always try to figure out in which direction arguments or return values flow, from managed to native or from native to managed.</p>
+
+<h3 id="void"><code>VOID</code></h3>
+
+<p>This type is only allowed as return type, and is used to denote functions that do not return a value.</p>
+
+<p>Since in the Polyglot API, all executable objects have to return a value, a Polyglot object with <code>isNull == true</code> will be returned from native functions that have a <code>VOID</code> return type.</p>
+
+<p>The return value of managed callback functions with return type <code>VOID</code> will be ignored.</p>
+
+<h3 id="primitive-numbers">Primitive Numbers</h3>
+
+<p>The primitive number types are converted as you might expect.
+The argument needs to be a Polyglot number, and its value needs to fit in the value range of the specified numeric type.</p>
+
+<p>One thing to note is the handling of the unsigned integer types.
+Even though the Polyglot API does not specify separate messages for values fitting in unsigned types, the conversion is still using the unsigned value ranges.
+For example, the value <code>0xFF</code> passed from native to managed through a return value of type <code>SINT8</code> will result in a Polyglot number <code>-1</code>, which <code>fitsInByte</code>.
+But the same value returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em> <code>fitsInByte</code>.</p>
+
+<p>When passing numbers from managed code to native code, the signedness of the number is ignored, only the bits of the number are relevant.
+So for example, passing <code>-1</code> to an argument of type <code>UINT8</code> is allowed, and the result on the native side is <code>255</code>, since it has the same bits as <code>-1</code>.
+The other way round, passing <code>255</code> to an argument of type <code>SINT8</code> is also allowed, and the result on the native side is <code>-1</code>.</p>
+
+<p>Since in the current Polyglot API it is not possible to represent numbers outside of the signed 64-bit range, the <code>UINT64</code> type is currently handled with <em>signed</em> semantics.
+This is a known bug in the API, and will change in a future release.</p>
+
+<h3 id="pointer"><code>POINTER</code></h3>
+
+<p>This type is a generic pointer argument.
+On the native side, it does not matter what exact pointer type the argument is.</p>
+
+<p>A polyglot object passed to <code>POINTER</code> arguments will be converted to a native pointer if possible (using the <code>isPointer</code>, <code>asPointer</code> and <code>toNative</code> messages as necessary).
+An object with <code>isNull == true</code> will be passed as a native <code>NULL</code>.</p>
+
+<p><code>POINTER</code> return values will produce a polyglot object with <code>isPointer == true</code>.
+The native <code>NULL</code> pointer will additionally have <code>isNull == true</code>.</p>
+
+<h3 id="string"><code>STRING</code></h3>
+
+<p>This is a pointer type with special conversion semantics for strings.</p>
+
+<p>Polyglot strings passed from managed to native using the <code>STRING</code> type will be converted to a zero-terminated UTF-8 encoded string.
+For <code>STRING</code> arguments, the pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+The <code>STRING</code> values returned from managed function pointers to a native caller are also owned by the caller.
+They have to be freed with <code>free</code> after use.</p>
+
+<p>Polyglot pointer values or null values can also be passed to <code>STRING</code> arguments.
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid UTF-8 string.</p>
+
+<p>The <code>STRING</code> values passed from native functions to managed code behave like <code>POINTER</code> return values, but in addition they have <code>isString == true</code>.
+The user is responsible for the ownership of the pointer and it might be necessary to <code>free</code> the return value, depending on the semantics of the called native function.
+After freeing the returned pointer, the returned polyglot string is invalid and reading it results in undefined behavior.
+In that sense, the returned polyglot string is not a safe object, similar to a raw pointer.
+It is recommented that the user of the NFI copies the returned string before passing it along to untrusted managed code.</p>
+
+<h3 id="object"><code>OBJECT</code></h3>
+
+<p>This argument corresponds to the C type <code>TruffleObject</code>.
+This type is defined in <code>trufflenfi.h</code>, and is an opaque pointer type.
+A value of type <code>TruffleObject</code> represents a reference to an arbitrary managed object.</p>
+
+<p>Native code can do nothing with values of type <code>TruffleObject</code> except pass them back to managed code, either through return values or passing them to callback function pointers.</p>
+
+<p>The lifetime of <code>TruffleObject</code> references needs to be managed manually.
+See the documentation in <code>trufflenfi.h</code> for API functions to manage the lifetime of <code>TruffleObject</code> references.</p>
+
+<p>A <code>TruffleObject</code> passed as an argument is owned by the caller, and guaranteed to stay alive for the duration of the call.
+A <code>TruffleObject</code> reference returned from a callback function pointer is owned by the caller, and needs to be freed after use.
+Returning a <code>TruffleObject</code> from a native function does <em>not</em> transfer ownership (but there is an API function in <code>trufflenfi.h</code> to do that).</p>
+
+<h3 id="-native-primitive-arrays"><code>[...]</code> (Native Primitive Arrays)</h3>
+
+<p>This type is only allowed as an argument from managed code to a native function, and only arrays of primitive numeric types are supported.</p>
+
+<p>On the managed side, only Java host objects containing a Java primitive array are supported.
+On the native side, the type is a pointer to the contents of the array.
+It is the user’s responsibility to pass along the array length as a separate argument.</p>
+
+<p>The pointer is valid for the duration of the native call only.</p>
+
+<p>Modifications to the contents are propagated back to the Java array after returning from the call.
+The effects of concurrent access to the Java array during the native call are unspecified.</p>
+
+<h3 id="-function-pointer"><code>(...):...</code> (Function Pointer)</h3>
+
+<p>On the native side, a nested signature type corresponds to a function pointer with the given signature, calling back to managed code.</p>
+
+<p>Polyglot executable objects passed from managed to native using a function pointer type are converted to a function pointer that can be called by the native code.
+For function pointer arguments, the function pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+Function pointer return values are owned by the caller, and have to be freed manually.
+See <code>polyglot.h</code> for API functions to manage the lifetime of function pointer values.</p>
+
+<p>Polyglot pointer values or null values can also be passed to function pointer arguments.
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid function pointer.</p>
+
+<p>Function pointer return types are the same as regular <code>POINTER</code> return types, but in addition they are already <em>bound</em> to the given signature type.
+They support the <code>execute</code> message, and behave the same as regular NFI functions.</p>
+
+<h3 id="env"><code>ENV</code></h3>
+
+<p>This type is a special argument of type <code>TruffleEnv *</code>.
+It is only valid as argument type, not as a return type.
+It is an injected argument on the native side, there is no corresponding argument on the managed side.</p>
+
+<p>When used as argument type of a native function, the native function will get an environment pointer on this position.
+That environment pointer can be used to call API functions (see <code>trufflenfi.h</code>).
+The argument is injected, for example, if the signature is <code>(SINT32, ENV, SINT32):VOID</code>.
+This function object is expected to be called with two integer arguments, and the corresponding native function will be called with three arguments: first the first real argument, then the injected <code>ENV</code> argument, and then the second real argument.</p>
+
+<p>When the <code>ENV</code> type is used as an argument type for a function pointer parameter, that function pointer must be called with a valid NFI environment as an argument.
+If the caller already has an environment, threading it through to callback function pointers is more efficient than calling them without an <code>ENV</code> argument.</p>
+
+<h2 id="calling-convention">Calling Convention</h2>
+
+<p>Native functions must use the system’s standard ABI.
+There is currently no support for alternative ABIs.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>
