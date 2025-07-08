@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/index.html" class="link-back"><i>&#9664;</i>Table of Contents</a>
+
+      <h1 id="interoperability-with-java">Interoperability with Java</h1>
+
+<p>The GraalVM R runtime provides the built-in interoperability with Java.
+Java class objects can be obtained via <code>java.type(...)</code>.
+In order to run R with the Java interoperability features, the <code>R</code> or <code>Rscript</code> commands have to be started with the <code>--jvm</code> option.</p>
+<pre><code class="language-shell">R --jvm
+</code></pre>
+
+<p>Note: All of the following examples are meant to be executed in the R REPL; no additional Java dependencies are necessary.</p>
+
+<ul>
+  <li>The standard <code>new</code> function interprets String arguments as a Java class if such class exists.</li>
+  <li><code>new</code> also accepts Java types returned from <code>java.type</code>.</li>
+  <li>The fields and methods of Java objects can be accessed using the <code>$</code> operator.</li>
+  <li>Additionally, you can use <code>awt(...)</code> to open an R drawing device
+directly on a Java Graphics surface. For more details see <a href="#java-graphics-interoperability">Java Graphics Interoperability</a>.</li>
+</ul>
+
+<p>The following example creates a new Java <code>BufferedImage</code> object, plots random data to it using R’s <code>grid</code> package,
+and shows an image in a window using Java’s <code>AWT</code> framework.
+Note that you must start the R script with <code>--jvm</code> to have access to Java interoperability.</p>
+
+<pre><code class="language-R">library(grid)
+openJavaWindow &lt;- function () {
+   # create image and register graphics
+   imageClass &lt;- java.type('java.awt.image.BufferedImage')
+   image &lt;- new(imageClass, 450, 450, imageClass$TYPE_INT_RGB);
+   graphics &lt;- image$getGraphics()
+   graphics$setBackground(java.type('java.awt.Color')$white);
+   grDevices:::awt(image$getWidth(), image$getHeight(), graphics)
+
+   # draw image
+   grid.newpage()
+   pushViewport(plotViewport(margins = c(5.1, 4.1, 4.1, 2.1)))
+   grid.xaxis(); grid.yaxis()
+   grid.points(x = runif(10, 0, 1), y = runif(10, 0, 1),
+        size = unit(0.01, "npc"))
+
+   # open frame with image
+   imageIcon &lt;- new("javax.swing.ImageIcon", image)
+   label &lt;- new("javax.swing.JLabel", imageIcon)
+   panel &lt;- new("javax.swing.JPanel")
+   panel$add(label)
+   frame &lt;- new("javax.swing.JFrame")
+   frame$setMinimumSize(new("java.awt.Dimension",
+                image$getWidth(), image$getHeight()))
+   frame$add(panel)
+   frame$setVisible(T)
+   while (frame$isVisible()) Sys.sleep(1)
+}
+openJavaWindow()
+</code></pre>
+
+<p>GraalVM’s R runtime provides its own rJava-compatible replacement package available at <a href="https://github.com/oracle/fastr/tree/master/com.oracle.truffle.r.pkgs/rJava">GitHub</a>, which can be installed using:</p>
+<pre><code class="language-shell">R -e "install.fastr.packages('rJava')"
+</code></pre>
+
+<p>In order for third party Java libraries to be accessed, they have to be placed on R’s class path:</p>
+<pre><code class="language-shell">&gt; java.addToClasspath("/foo/bar.jar")
+&gt; java.addToClasspath(c("/foo/bar.jar", "/foo/bar2.jar"))
+</code></pre>
+
+<h2 id="getting-a-java-class">Getting a Java Class</h2>
+
+<p>The access to a Java type is achieved by providing a fully qualified class name to the <code>java.type</code> function:</p>
+<pre><code class="language-shell">&gt; calendarClass &lt;- java.type('java.util.GregorianCalendar')
+</code></pre>
+<p>The returned value is a polyglot object representing a Java type.</p>
+
+<p>The respective Java class is then available through the <code>class</code> property:</p>
+<pre><code class="language-shell">&gt; calendarClass$class
+</code></pre>
+
+<p>The same works also for static class members:</p>
+<pre><code class="language-shell">&gt; calendarClass$getInstance()
+</code></pre>
+
+<p>Every requested class has to be on the R classpath.
+The JDK classes, like <code>GregorianCalendar</code> used above, work out of the box.</p>
+
+<h2 id="creating-a-new-java-object">Creating a New Java Object</h2>
+
+<p>A new Java object can be created by providing a Java type to the <code>new</code> function:</p>
+<pre><code class="language-shell">&gt; calendar &lt;- new(calendarClass)
+</code></pre>
+
+<p>It is also possible to pass over additional constructor arguments:</p>
+<pre><code class="language-shell">&gt; calendar &lt;- new(calendarClass, year=2042L, moth=3L, day=1L)
+</code></pre>
+
+<p>Alternately, you can use just a class name:</p>
+<pre><code class="language-shell">calendar &lt;- new("java.util.GregorianCalendar")
+calendar &lt;- new("java.util.GregorianCalendar", year=2042L, moth=3L, day=1L)
+</code></pre>
+
+<h2 id="accessing-fields-and-methods">Accessing Fields and Methods</h2>
+
+<p>The access to static and instance fields and methods is provided by the <code>$</code> and <code>[</code> operators.</p>
+
+<p>To access Java fields:</p>
+<pre><code class="language-shell">&gt; calendarClass$SUNDAY
+&gt; calendarClass["SUNDAY"]
+</code></pre>
+
+<p>To invoke Java methods:</p>
+<pre><code class="language-shell">&gt; currentTime &lt;- calendar$getTime()
+&gt; currentTime["toString"]()
+&gt; calendar$setTime(currentTime)
+</code></pre>
+
+<p>Polyglot objects returned from a field or method, or created via <code>new</code>, are either automatically converted into corresponding R values or they live on as polyglot objects in the GraalVM R runtime.
+If necessary, they can be passed over to Java:</p>
+<pre><code class="language-shell">&gt; cet &lt;- java.type("java.util.TimeZone")$getTimeZone("CET")
+&gt; cetCalendar &lt;- new(calendarClass, cet)
+</code></pre>
+
+<h2 id="handling-of-java-primitives">Handling of Java Primitives</h2>
+
+<p>The returned Java primitives, primitive wrappers, and String instances are automatically converted into corresponding R values and map as follows:</p>
+
+<ul>
+  <li>R <code>integer</code> values map directly to Java <code>int</code>/<code>Integer</code></li>
+  <li>R <code>numeric</code> to Java <code>double</code>/<code>Double</code></li>
+  <li>R <code>logical</code> to Java <code>boolean</code>/<code>Boolean</code></li>
+  <li>R <code>character</code> to Java <code>String</code></li>
+  <li>If necessary R <code>integer</code> and <code>double</code> are converted to the expected Java type</li>
+</ul>
+
+<h2 id="inspecting-polyglot-objects">Inspecting Polyglot Objects</h2>
+
+<p>The <code>names</code> function can be used to obtain a list of instance and static members from a polyglot Java object or Java class:</p>
+<pre><code class="language-shell">&gt; names(calendar)
+&gt; names(calendarClass)
+</code></pre>
+
+<p>Code completion works as well:</p>
+<pre><code class="language-shell">&gt; calendar$a&lt;TAB&gt;
+</code></pre>
+
+<h2 id="working-with-java-arrays">Working with Java Arrays</h2>
+
+<p>The need for Java arrays appears when they have to be passed over to <code>java</code> as arguments.</p>
+
+<p>You can create an array by creating an array class and instantiating an array from it:</p>
+<pre><code class="language-shell">&gt; arrayClass &lt;- java.type('int[]')
+&gt; intArray &lt;- new(arrayClass, 3)
+</code></pre>
+
+<p>The component type names of primitive arrays are <code>boolean</code>, <code>byte</code>, <code>char</code>, <code>double</code>, <code>float</code>, <code>int</code>, <code>long</code>,
+and <code>short</code> – the same as in each particular primitive wrapper TYPE constant (see, e.g., <code>Integer.TYPE.getName()</code>).
+Note that it is possible to pass an R vector into a Java method in case the expected Java array is of a primitive component type or String.
+Then, the conversion happens automatically in the background.</p>
+<pre><code class="language-shell">&gt; integerArray &lt;- new(java.type('java.lang.Integer[]'), 3L)
+&gt; integer2DimArray &lt;- new('java.lang.Integer[][]', c(2L, 3L))
+&gt; stringArray &lt;- new(java.type('java.lang.String[]'), 3L)
+</code></pre>
+
+<p>The access to array elements is provided by the <code>[</code> operator:</p>
+<pre><code class="language-shell">&gt; stringArray[1] &lt;- 'a'
+&gt; string2DimArray[1,1] &lt;- 'a'
+&gt; element &lt;- stringArray[1]
+&gt; element &lt;- string2DimArray[1,1]
+</code></pre>
+
+<h2 id="converting-java-arrays-into-r-objects">Converting Java Arrays into R Objects</h2>
+
+<p>Unlike Java primitives or their wrappers, Java arrays are not automatically converted into an R vector.
+Nevertheless, when appropriate, they can be handled by R builtin functions the same way as native R objects:</p>
+<pre><code class="language-shell">&gt; sapply(intArray, function(e) { e })
+&gt; length(stringArray)
+&gt; length(string2DimArray[1])
+</code></pre>
+
+<h2 id="explicit-java-array-conversion">Explicit Java Array Conversion</h2>
+
+<p>A Java array conversion can be done explicitly by providing a Java array to the <code>as.vector</code> function:</p>
+<pre><code class="language-shell">&gt; intVec &lt;- as.vector(intArray)
+</code></pre>
+
+<p>Arrays having a Java primitive component type are converted into an R vector.
+Otherwise a list containing the array elements is created:</p>
+<pre><code class="language-shell">&gt; characterVector &lt;- as.character(intArray)
+&gt; logicalVector &lt;- as.logical(intArray)
+&gt; ...
+</code></pre>
+
+<h2 id="java-iterable-interface">Java Iterable Interface</h2>
+
+<p>When appropriate, Java objects implementing <code>java.lang.Iterable</code> are handled in the same way as Java arrays when passed as arguments to functions:</p>
+<pre><code class="language-shell">&gt; javaList &lt;- new(java.type('java.util.ArrayList'))
+&gt; javaList$add(0);
+&gt; javaList$add(1)
+&gt; length(javaList)
+&gt; as.integer(javaList)
+&gt; as.logical(javaList)
+</code></pre>
+
+<h2 id="compatibility-with-rjava">Compatibility with rJava</h2>
+
+<p>The GraalVM R runtime comes with an rJava compatibility layer based on the Java interoperability features.
+Most of the officially documented rJava functions are supported.
+For more information, see the <a href="https://cran.r-project.org/web/packages/rJava/index.html">rJava CRAN</a> documentation.</p>
+
+<ul>
+  <li>You can install the GraalVM R runtime’s <code>rJava</code> replacement using <code>install.packages("rJava")</code>.
+The <code>install.packages</code> function in R has special handling for some packages, including <code>rJava</code>, and it downloads rJava from the source repository on GitHub instead of from MRAN.</li>
+  <li>As with any other R package, before executing any rJava functions, the package has to be loaded first:
+    <pre><code class="language-shell">&gt; library(rJava)
+</code></pre>
+  </li>
+</ul>
+
+<p>Supported rJava features:</p>
+<ul>
+  <li>The <code>$</code> and <code>[</code> operators work the same as described above.</li>
+</ul>
+
+<h2 id="java-graphics-interoperability">Java Graphics Interoperability</h2>
+<p>GraalVM R runtime’s graphics subsystem is mostly compatible with GNU-R’s graphics subsystem, i.e., most of the functions provided by <code>grid</code> and <code>graphics</code> base packages are supported.
+See <a href="https://cran.r-project.org/doc/manuals/r-release/R-ints.html#Graphics-Devices">Reference of GNU-R’s graphical subsystem</a>.</p>
+
+<p>Aside from all the GNU-R graphics functionality, GraalVM R runtime provides an additional <code>awt</code> device and functions tailored to manipulate the SVG device: <code>svg.off</code> and <code>sv.string</code>.
+The <code>awt</code> device is based on the Java <code>Graphics2D</code> object and users can pass it to their own <code>Graphics2D</code> object instance when opening the device using the <code>awt</code> function, as shown in the Java interop example.
+When the <code>Graphics2D</code> object is not provided to <code>awt</code>, it opens a new window similar to <code>X11</code>.</p>
+
+<p>The SVG device is demonstrated in the following code sample:</p>
+
+<pre><code class="language-R">library(lattice)
+svg()
+mtcars$cars &lt;- rownames(mtcars)
+print(barchart(cars~mpg, data=mtcars))
+svgCode &lt;- svg.off()
+cat(svgCode)
+</code></pre>
+<p>To learn more, see the <code>?functionName</code> syntax.</p>
+
+      </div>
+  </div>
+</div>
+
+</div>
+
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

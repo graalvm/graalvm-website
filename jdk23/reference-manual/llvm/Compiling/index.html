@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="compiling-to-llvm-bitcode">Compiling to LLVM Bitcode</h1>
+
+<p>GraalVM can execute C/C++, Rust, and other languages that can be compiled to LLVM bitcode.
+As the first step, you have to compile a program to LLVM bitcode using some LLVM compiler front end, for example, <code>clang</code> for C and C++, <code>rust</code> for the Rust programing language, etc.</p>
+
+<h2 id="file-format">File Format</h2>
+
+<p>While the GraalVM LLVM runtime can execute <a href="https://llvm.org/docs/BitCodeFormat.html">plain bitcode files</a>, the preferred format is a <em>native executable</em> with <em>embedded bitcode</em>.
+The executable file formats differ on Linux and macOS.
+Linux by default uses ELF files.
+The bitcode is stored in a section called <code>.llvmbc</code>.
+The macOS platform uses Mach-O files.
+The bitcode is in the <code>__bundle</code> section of the <code>__LLVM</code> segment.</p>
+
+<p>Using native executables with embedded bitcode offers two advantages over plain bitcode files.
+First, build systems for native projects, for example a <code>Makefile</code>, expect the result to be an executable.
+Embedding the bitcode instead of changing the output format improves compatibility with existing projects.
+Second, executables allow specifying library dependencies which is not possible with LLVM bitcode.
+The GraalVM LLVM runtime utilizes this information to find and load dependencies.</p>
+
+<h2 id="llvm-toolchain-for-compiling-cc">LLVM Toolchain for Compiling C/C++</h2>
+
+<p>To simplify compiling C/C++ to executables with embedded bitcode, the LLVM runtime comes with a prebuilt LLVM toolchain.
+The toolchain contains compilers such as <code>clang</code> for C or <code>clang++</code> for C++, but also other tools that are needed
+for building native projects such as a linker (<code>ld</code>), or an archiver (<code>ar</code>) for creating static libraries.</p>
+
+<ol>
+  <li>Get the location of the toolchain, using the <code>--print-toolchain-path</code> argument of <code>lli</code>:
+    <pre><code class="language-shell"> ./path/to/bin/lli --print-toolchain-path
+</code></pre>
+  </li>
+  <li>Set the <code>LLVM_TOOLCHAIN</code> environment variable:
+    <pre><code class="language-shell"> export LLVM_TOOLCHAIN=$(./path/to/bin/lli --print-toolchain-path)
+</code></pre>
+  </li>
+  <li>Then see the content of the toolchain path for a list of available tools:
+    <pre><code class="language-shell"> ls $LLVM_TOOLCHAIN
+</code></pre>
+  </li>
+</ol>
+
+<p>Use those tools just as you would for native compilation. For example, save this C code in a file named <code>hello.c</code>:</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+
+int main() {
+    printf("Hello from GraalVM!\n");
+    return 0;
+}
+</code></pre>
+
+<p>Then you can compile <code>hello.c</code> to an executable with embedded LLVM bitcode as follows:</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello.c -o hello
+</code></pre>
+
+<p>The resulting executable, <code>hello</code>, can be executed on GraalVM using <code>lli</code>:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/lli hello
+</code></pre>
+
+<h2 id="external-library-dependencies">External Library Dependencies</h2>
+
+<p>If the bitcode file depends on external libraries, GraalVM will automatically pick up the dependencies from the binary headers.
+For example:</p>
+<pre><code class="language-c">#include &lt;unistd.h&gt;
+#include &lt;ncurses.h&gt;
+
+int main() {
+    initscr();
+    printw("Hello, Curses!");
+    refresh();
+    sleep(1);
+    endwin();
+    return 0;
+}
+</code></pre>
+
+<p>This <em>hello-curses.c</em> file can be then compiled and run with:</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang hello-curses.c -lncurses -o hello-curses
+lli hello-curses
+</code></pre>
+
+<h2 id="running-c">Running C++</h2>
+
+<p>For running C++ code, the GraalVM LLVM runtime requires the <a href="https://libcxx.llvm.org"><code>libc++</code></a> standard library from the LLVM project.
+The LLVM toolchain shipped with GraalVM automatically links against <code>libc++</code>.
+For example, save this code as a <em>hello-c++.cpp</em> file:</p>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+
+int main() {
+    std::cout &lt;&lt; "Hello, C++ World!" &lt;&lt; std::endl;
+}
+</code></pre>
+
+<p>Compile it with <code>clang++</code> shipped with GraalVM and execute:</p>
+<pre><code class="language-shell">$LLVM_TOOLCHAIN/clang++ hello-c++.cpp -o hello-c++
+lli hello-c++
+Hello, C++ World!
+</code></pre>
+
+<h2 id="running-rust">Running Rust</h2>
+
+<p>The LLVM toolchain, bundled with GraalVM, does not come with the Rust compiler.
+To install Rust, run the following in your command prompt, then follow the onscreen instructions:</p>
+<pre><code class="language-shell">curl https://sh.rustup.rs -sSf | sh
+</code></pre>
+
+<p>Save this example Rust code in a <em>hello-rust.rs</em> file:</p>
+<pre><code class="language-rs">fn main() {
+    println!("Hello Rust!");
+}
+</code></pre>
+
+<p>This can be then compiled to bitcode with the <code>--emit=llvm-bc</code> flag:</p>
+<pre><code class="language-shell">rustc --emit=llvm-bc hello-rust.rs
+</code></pre>
+
+<p>To run the Rust program, we have to tell GraalVM where to find the Rust standard libraries:</p>
+<pre><code class="language-shell">lli --lib $(rustc --print sysroot)/lib/libstd-* hello-rust.bc
+Hello Rust!
+</code></pre>
+
+<p>Since the Rust compiler is not using the LLVM toolchain shipped with GraalVM, depending on the local Rust installation, an error similar to one of the following might happen:</p>
+<pre><code>Mismatching target triple (expected x86_64-unknown-linux-gnu, got x86_64-pc-linux-gnu)
+Mismatching target triple (expected x86_64-apple-macosx10.11.0, got x86_64-apple-darwin)
+</code></pre>
+
+<p>This indicates that the Rust compiler used a different target triple than the LLVM toolchain shipped with GraalVM.
+In this particular case, the differences are just different naming conventions across Linux distributions or MacOS versions, there is no real difference.
+In that case, the error can be safely ignored:</p>
+
+<pre><code class="language-shell">lli --experimental-options --llvm.verifyBitcode=false --lib $(rustc --print sysroot)/lib/libstd-* hello-rust.bc
+</code></pre>
+
+<p>This option should only be used after manually verifying that the target triples are really compatible, i.e., the architecture, operating system, and C library all match.
+For example, <code>x86_64-unknown-linux-musl</code> and <code>x86_64-unknown-linux-gnu</code> are really different, the bitcode is compiled for a different C library.
+The <code>--llvm.verifyBitcode=false</code> option disables all checks, GraalVM will then try to run the bitcode regardless, which might randomly fail in unexpected ways.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

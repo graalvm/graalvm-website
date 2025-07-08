@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="polyglot-api-based-test-compatibility-kit">Polyglot API-based Test Compatibility Kit</h1>
+
+<p>The Test Compatibility Kit (TCK) is a collection of tests verifying the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html">TruffleLanguage</a> inter-operability and instrumentation.
+The TCK is based on the <code>org.graalvm.polyglot</code> API.</p>
+
+<h2 id="adding-a-language">Adding a Language</h2>
+
+<p>To test your language, implement the <a href="http://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/tck/LanguageProvider.html">LanguageProvider</a>.
+The <code>LanguageProvider</code>s are loaded using the <code>java.util.ServiceLoader</code>, so you need to register your implementation in the <code>META-INF/services/org.graalvm.polyglot.tck.LanguageProvider</code> file.
+The <code>LanguageProvider</code> should provide the language data types, language expressions (operators), and language control flow statements represented as functions returning the data type or executing the operator (statement).
+To allow composition of the returned functions, the parameter and return types have to be assigned to them using
+the <a href="http://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/tck/Snippet.Builder.html">Snippet.Builder</a>.
+The <code>LanguageProvider</code> should also provide simple but representative scripts which the TCK can use to test instrumentation.</p>
+
+<h2 id="running-tck-tests-with-mx">Running TCK Tests with <code>mx</code></h2>
+
+<p>The tests are executed using <code>mx unitest</code>. When running the tests, all <code>LanguageProvider</code>s in the primary suite and dependent suites are used. The <code>truffle</code> suite provides the <code>java-host</code> <code>LanguageProvider</code>, creating Java data types and <a href="http://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/proxy/Proxy.html">Proxies</a> to test Java inter-operability.</p>
+
+<p>To run just the TCK tests use:</p>
+
+<p><code>mx unittest com.oracle.truffle.tck.tests</code></p>
+
+<p>Or, simply use:</p>
+
+<p><code>mx tck</code></p>
+
+<p>To restrict the TCK tests to test a certain language, use the <code>tck.language</code> property.
+The following example tests JavaScript with data types from all available languages:</p>
+
+<p><code>mx tck -Dtck.language=js</code></p>
+
+<p>To restrict the data types to a certain language, use the <code>tck.values</code> property.
+The following example tests JavaScript with Java types:</p>
+
+<p><code>mx tck -Dtck.values=java-host -Dtck.language=js</code></p>
+
+<p>To run a single test, specify the full test name.
+For example, to run a test for SimpleLanguage <code>+</code> operator with SimpleLanguage <code>number</code> and <code>big number</code> use:</p>
+
+<p><code>mx tck 'ExpressionTest#testExpression[sl::+(sl::number, sl::number)]'</code></p>
+
+<p>To run the TCK tests on GraalVM it is enough to set the mx <code>--java-home</code> to point to GraalVM:</p>
+
+<p><code>mx --java-home=&lt;path_to_graalvm&gt; tck</code></p>
+
+<p>To disable output and error output use the <code>tck.verbose</code> property:</p>
+
+<p><code>mx tck -Dtck.verbose=false</code></p>
+
+<p>To disable output and error output only for a certain test, use the <code>tck.{TestSimpleName}.verbose</code> property:</p>
+
+<p><code>mx tck -Dtck.ErrorTypeTest.verbose=false</code></p>
+
+<p>You can also disable output and error output for all tests but one:</p>
+
+<p><code>mx tck -Dtck.verbose=false -Dtck.ErrorTypeTest.verbose=true</code></p>
+
+<h2 id="running-tck-tests-with-apache-maven">Running TCK Tests with Apache Maven</h2>
+<p>The Apache Maven can be used to execute Truffle TCK tests. First, create a Maven module (project) containing the language
+TCK provider. Ensure that this module has a test dependency on the language being tested and TCK tests <code>org.graalvm.truffle:truffle-tck-tests</code>.
+Configure the <code>maven-surefire-plugin</code> to identify tests in the <code>org.graalvm.truffle:truffle-tck-tests</code> artifact.
+This can be achieved using the following snippet within the <build> section of your project's pom.xml:</build></p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;dependenciesToScan&gt;
+                    &lt;dependency&gt;org.graalvm.truffle:truffle-tck-tests&lt;/dependency&gt;
+                &lt;/dependenciesToScan&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+<p>To include additional languages in the TCK execution add their TCK providers as test dependencies. For example, adding <code>org.graalvm.js:js-truffle-tck</code> will include JavaScript in the testing process.
+You can utilize the SimpleLanguage TCK provider <a href="https://github.com/oracle/graal/blob/master/truffle/external_repos/simplelanguage/tck/pom.xml">pom.xml</a> as a template to get started.
+To test the runtime optimizations set the <code>JAVA_HOME</code> environment variable to the GraalVM location before running <code>mvn package</code>.</p>
+
+<h3 id="customize-tck-tests">Customize TCK Tests</h3>
+<p>To restrict the TCK tests to test a certain language, use the <code>tck.language</code> property.
+The following example tests JavaScript with data types from all available languages.</p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;argLine&gt;
+                    -Dtck.language=js
+                &lt;/argLine&gt;
+                [...]
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+
+<p>To restrict the data types to a certain language, use the <code>tck.values</code> property.
+The following example tests JavaScript with Java types.</p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;argLine&gt;
+                    -Dtck.values=java-host
+                    -Dtck.language=js
+                &lt;/argLine&gt;
+                [...]
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+
+<p>To execute a specific TCK test you can use the test parameter along with the <code>-Dtest</code> option.
+For example: <code>mvn test -Dtest=ScriptTest</code></p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="security-considerations-in-native-image">Security Considerations in Native Image</h1>
+
+<p>The <code>native-image</code> builder generates a snapshot of an application after startup and bundles it in a binary executable.
+The security report section of the native image <a href="/jdk23/reference-manual/native-image/overview/BuildOutput/#security-report">build output</a> provides security relevant information about the native image build.</p>
+
+<h2 id="class-initialization">Class Initialization</h2>
+
+<p>The <code>native-image</code> builder may execute the static initializers of certain classes at build time (see <a href="/jdk23/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">class initialization</a> for more details).
+Executing static initializers at build time persists the state after initialization in the image heap.
+This means that any information that is obtained or computed in static initializers becomes part of a native executable.
+This can either result in sensitive data ending up in the snapshot or fixing initialization data that is supposed to be obtained at startup, such as random number seeds.</p>
+
+<p>Developers can request static initializers that process sensitive information to be executed at run time by specifying the <code>--initialize-at-run-time</code> CLI parameter when building a native executable, followed by a comma-separated list of packages and classes (and implicitly all of their subclasses) that must be initialized at runtime and not during image building.
+Alternatively developers can make use of the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/RuntimeClassInitialization.html"><code>RuntimeClassInitialization</code> API</a>.</p>
+
+<p>Developers should run the <code>native-image</code> builder in a dedicated environment, such as a container, that does not contain any sensitive information in the first place.</p>
+
+<h2 id="software-bill-of-materials">Software Bill of Materials</h2>
+
+<p>GraalVM Native Image can assemble a Software Bill of Materials (SBOM) at build time to detect any libraries that may be susceptible to known security vulnerabilities.
+Native Image provides the <code>--enable-sbom</code> option to embed an SBOM into a native executable (only available in Oracle GraalVM). 
+In addition to being embedded, the SBOM can be added to the classpath or exported as a JSON by using <code>--enable-sbom=classpath,export</code>.</p>
+
+<p>The CycloneDX format is supported and the default. 
+To embed a CycloneDX SBOM into a native executable, pass the <code>--enable-sbom</code> option to the <code>native-image</code> command.</p>
+
+<p>The implementation constructs the SBOM by recovering all version information observable in external library manifests for classes included in a native executable. 
+The SBOM is also compressed in order to limit the SBOM’s impact on the native executable size.<br />
+The SBOM is stored in the <code>gzip</code> format with the exported <code>sbom</code> symbol referencing its start address and the <code>sbom_length</code> symbol its size.</p>
+
+<p>After embedding the compressed SBOM into the executable, the <a href="/jdk23/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">Native Image Inspect Tool</a> is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code> from both executables and shared libraries.
+It outputs the SBOM in the following format:</p>
+
+<pre><code class="language-json">{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.4",
+  "version": 1,
+  "components": [
+    {
+      "type": "library",
+      "group": "io.netty",
+      "name": "netty-codec-http2",
+      "version": "4.1.76.Final",
+      "properties": [
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:codec:codec:4.1.76.Final:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:codec:netty-codec-http2:4.1.76.Final:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:codec:netty_codec_http2:4.1.76.Final:*:*:*:*:*:*:*"
+        },
+        ...
+      ]
+    },
+    ...
+  ],
+  "serialNumber": "urn:uuid:51ec305f-616e-4139-a033-a094bb94a17c"
+}
+</code></pre>
+
+<p>To scan for any vulnerable libraries, submit the SBOM to a vulnerability scanner.
+For example, the popular <a href="https://anchore.com/">Anchore software supply chain management platform</a> makes the <code>grype</code> scanner freely available.
+You can check whether the libraries given in your SBOMs have known vulnerabilities documented in Anchore’s database.
+For this purpose, the output of the tool can be fed directly to the <code>grype</code> scanner to check for vulnerable libraries, using the command <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype</code> which produces the following output:</p>
+<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
+netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
+</code></pre>
+
+<p>You can then use this report to update any vulnerable dependencies found in your executable.</p>
+
+<blockquote>
+  <p>Note that if <code>native-image-inspect</code> is used without the <code>--sbom</code> option, it will execute parts of the specified native binary to extract the method-level information.
+This functionality should not be used on native image executables from unknown or untrusted sources.</p>
+</blockquote>
+
+<h2 id="java-serialization-in-native-image">Java serialization in Native Image</h2>
+
+<p>Native Image supports Serialization to help users deserialize the constructors for classes, contained in a native executable.
+Unless picked up by native image analysis automatically, <a href="/jdk23/reference-manual/native-image/metadata/#reflection">these classes have to be prespecified</a>, as classes not contained in a native executable cannot be deserialized.
+Native Image cannot prevent exploitation of deserialization vulnerabilities in isolation.
+The <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html#8">serialization and deserialization Secure Coding Guidelines for Java SE</a> should be followed.</p>
+
+<p>The security report section of the native image <a href="/jdk23/reference-manual/native-image/overview/BuildOutput/#security-report">build output</a> provides information on whether deserialization code is part of a native image’s attack surface or not.</p>
+
+<h2 id="miscellaneous">Miscellaneous</h2>
+
+<p>Setting the security manager is not allowed. For more information see the <a href="/jdk23/reference-manual/native-image/metadata/Compatibility/#security-manager">compatibility documentation</a>.</p>
+
+<p>Native Image provides multiple ways to specify a certificate file used to define the default TrustStore.
+While the default behavior for <code>native-image</code> is to capture and use the default TrustStore from the build-time host environment, this can be changed at run time by setting the “javax.net.ssl.trustStore*” system properties.
+See the <a href="/jdk23/reference-manual/native-image/dynamic-features/CertificateManagement/">documentation</a> for more details.</p>
+
+<p>The directory containing the native executable is part of the search path when loading native libraries using <code>System.loadLibrary()</code> at run time.</p>
+
+<p>Native Image will not allow a Java Security Manager to be enabled because this functionality has now deprecated since Java 17.
+Attempting to set a security manager will trigger a runtime error.</p>
+
+<h2 id="related-documentation">Related Documentation</h2>
+
+<ul>
+  <li><a href="/jdk23/security-guide/">Security Guide</a></li>
+  <li><a href="/jdk23/security-guide/sandboxing/">Sandboxing</a></li>
+  <li><a href="/jdk23/security-guide/native-image/Jipher/">Jipher JCE with Native Image</a></li>
+</ul>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>

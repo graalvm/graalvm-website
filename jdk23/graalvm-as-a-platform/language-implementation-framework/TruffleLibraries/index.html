@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk23/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk23/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk23/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk23/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk23/assets/main.css'>
+  <script src='/jdk23/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk23/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk23/resources/lib/purl/purl.js'></script>
+  <script src='/jdk23/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk23/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk23/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk23/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk23/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="truffle-library-guide">Truffle Library Guide</h1>
+
+<p>Truffle Libraries allow language implementations to use polymorphic dispatch for receiver types with support for implementation-specific caching/profiling and automatic support for uncached dispatch.
+Truffle Libraries enable modularity and encapsulation for representation types language implementations on top of Truffle.
+Read this guide first before using them.</p>
+
+<h2 id="getting-started">Getting Started</h2>
+
+<p>This tutorial provides a trace through a use-case on how to use Truffle Libraries.
+The full API documentation can be found in the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/library/package-summary.html">Javadoc</a>.
+This document assumes prior knowledge of Truffle APIs and the use of <code>@Specialization</code> with the <code>@Cached</code> annotation.</p>
+
+<h3 id="motivating-example">Motivating Example</h3>
+
+<p>When implementing arrays in Truffle Languages it is often necessary to use multiple representations for efficiency.
+For example, if the array is constructed from an arithmetic sequence of integers (e.g., <code>range(from: 1, step: 2, length: 3)</code>), then it is best represented using the <code>start</code>, <code>stride</code>, and <code>length</code> instead of materializing the full array.
+Of course, when an array element is written, then the array needs to be materialized.
+In this example we are going to implement an array implementation with two representations:</p>
+
+<ul>
+  <li>Buffer: represents a materialized array representation backed by a Java array.</li>
+  <li>Sequence: represents an arithmetic sequence of numbers represented by <code>start</code>, <code>stride</code> and <code>length</code>: <code>[start, start + 1 * stride, ..., start + (length - 1) * stride]</code>.</li>
+</ul>
+
+<p>To keep the example simple we will only support <code>int</code> values and we will ignore index bounds error handling.
+We will also just implement the read operation and not the typically more complicated write operation.</p>
+
+<p>To make the example more interesting, we will implement an optimization that will let the compiler allow constant fold sequenced array accesses even if the array receiver value is not constant.</p>
+
+<p>Assume we have the following code snippet <code>range(start, stride, length)[2]</code>.
+In this snippet, the variables <code>start</code> and <code>stride</code> are not known to be constant values, therefore, equivalent code to <code>start + stride * 2</code> gets compiled.
+However, if the <code>start</code> and <code>stride</code> values are known to always be the same then the compiler could constant-fold the entire operation.
+This optimization requires the use of caching.
+We will later show how this works.</p>
+
+<p>In the dynamic array implementation of GraalVM’s JavaScript runtime, we use 20 different representations.
+There are representations for constant, zero-based, contiguous, holes, and sparse arrays.
+Some representations are further specialized for the types <code>byte</code>, <code>int</code>, <code>double</code>, <code>JSObject</code>, and <code>Object</code>.
+The source code can be found <a href="https://github.com/graalvm/graaljs/tree/master/graal-js/src/com.oracle.truffle.js/src/com/oracle/truffle/js/runtime/array/dyn">here</a>. Note: Currently, JavaScript arrays do not use Truffle Libraries yet.</p>
+
+<p>In the following sections, we discuss multiple implementation strategies for the array representations, ultimately describing how Truffle Libraries can be used to achieve this.</p>
+
+<h3 id="strategy-1-specialization-per-representation">Strategy 1: Specialization per Representation</h3>
+
+<p>For this strategy, we will start by declaring classes for the two representations <code>BufferArray</code> and <code>SequenceArray</code>.</p>
+
+<pre><code class="language-java">final class BufferArray {
+    int length;
+    int[] buffer;
+    /*...*/
+}
+
+final class SequenceArray {
+    final int start;
+    final int stride;
+    final int length;
+    /*...*/
+}
+</code></pre>
+
+<p>The <code>BufferArray</code> implementation has a mutable buffer and length and is used as the materialized array representation.
+The sequence array is represented by the final fields <code>start</code>, <code>stride</code>, and <code>length</code>.</p>
+
+<p>Now, we specify the basic read operations like this:</p>
+
+<pre><code class="language-java">abstract class ExpressionNode extends Node {
+    abstract Object execute(VirtualFrame frame);
+}
+
+@NodeChild @NodeChild
+abstract class ArrayReadNode extends ExpressionNode {
+
+    @Specialization
+    int doBuffer(BufferArray array, int index) {
+        return array.buffer[index];
+    }
+
+    @Specialization
+    int doSequence(SequenceArray seq, int index) {
+        return seq.start + seq.stride * index;
+    }
+}
+</code></pre>
+
+<p>The array read node specifies two specializations for the buffer version and the sequence.
+As mentioned before we are going to ignore error bounds checks for simplicity.</p>
+
+<p>Now we try to make the array read specialize on the constant-ness of values of the sequence in order to allow the <code>range(start, stride, length)[2]</code> example to fold if start and stride are constant.
+To find out whether start and stride are constants we need to profile their value.
+To profile these values we need to add another specialization to the array read operation like this:</p>
+
+<pre><code class="language-java">@NodeChild @NodeChild
+class ArrayReadNode extends ExpressionNode {
+    /* doBuffer() */
+    @Specialization(guards = {"seq.stride == cachedStride",
+                              "seq.start  == cachedStart"}, limit = "1")
+    int doSequenceCached(SequenceArray seq, int index,
+             @Cached("seq.start")  int cachedStart,
+             @Cached("seq.stride") int cachedStride) {
+        return cachedStart + cachedStride * index;
+    }
+    /* doSequence() */
+}
+</code></pre>
+
+<p>If the speculation guards of this specialization succeed then the start and stride are effectively constant.
+For example, with the values <code>3</code> and <code>2</code>, the compiler would see <code>3 + 2 * 2</code> which is <code>7</code>.
+The limit is set to <code>1</code> to only try this speculation once.
+It would likely be inefficient to increase the limit as this would introduce additional control flow to the compiled code.
+If the speculation does not succeed, i.e., if the operation observes multiple start and stride values, we want to fall back to the normal sequence specialization.
+To achieve this we change the <code>doSequence</code> specialization by adding <code>replaces = "doSequenceCached"</code> like this:</p>
+
+<pre><code class="language-java">@NodeChild @NodeChild
+class ArrayReadNode extends ExpressionNode {
+    /* doSequenceCached() */
+    @Specialization(replaces = "doSequenceCached")
+    int doSequence(SequenceArray seq, int index) {
+        return seq.start + seq.stride * index;
+    }
+}
+</code></pre>
+
+<p>Now we have achieved the goal of implementing our array representations including additional profiling.
+The runnable source code for Strategy 1 can be found <a href="https://github.com/oracle/graal/tree/master/truffle/src/com.oracle.truffle.api.library.test/src/com/oracle/truffle/api/library/test/examples/ArrayStrategy1.java">here</a>.
+This strategy has some nice properties:</p>
+
+<ul>
+  <li>The operation is easy to read and all cases are fully enumerated.</li>
+  <li>The generated code of the read node only requires a single bit per specialization to remember which representation type was observed at runtime.</li>
+</ul>
+
+<p>We would already be done with this tutorial if there would not be some problems with this:</p>
+
+<ul>
+  <li>New representations cannot be loaded dynamically; they need to be statically known, making the separation of representation types from operations impossible.</li>
+  <li>Changing or adding representation types often requires the modification of many operations.</li>
+  <li>Representation classes need to expose most implementation details to operations (no encapsulation).</li>
+</ul>
+
+<p>These problems are the primary motivations for Truffle Libraries.</p>
+
+<h3 id="strategy-2-java-interfaces">Strategy 2: Java Interfaces</h3>
+
+<p>Now we will try to address these problems by using Java interfaces.
+We start by defining an array interface:</p>
+
+<pre><code class="language-java">interface Array {
+    int read(int index);
+}
+</code></pre>
+
+<p>The implementations can now implement the <code>Array</code> interface and implement the read method in the representation class.</p>
+
+<pre><code class="language-java">final class BufferArray implements Array {
+    private int length;
+    private int[] buffer;
+    /*...*/
+    @Override public int read(int index) {
+        return buffer[index];
+    }
+}
+
+final class SequenceArray implements Array {
+    private final int start;
+    private final int stride;
+    private final int length;
+    /*...*/
+    @Override public int read(int index) {
+        return start + (stride * index);
+    }
+}
+</code></pre>
+
+<p>Finally, we specify the operation node:</p>
+
+<pre><code class="language-java">@NodeChild @NodeChild
+abstract class ArrayReadNode extends ExpressionNode {
+    @Specialization
+   int doDefault(Array array, int index) {
+        return array.read(index);
+    }
+}
+</code></pre>
+
+<p>The problem with this operation implementation is that the partial evaluator does not know which concrete type the array receiver has.
+Therefore, it needs to stop partial evaluation and emit a slow interface call for the <code>read</code> method call.
+This is not what we want, but we can introduce a polymorphic type cache to resolve it like this:</p>
+
+<pre><code class="language-java">class ArrayReadNode extends ExpressionNode {
+    @Specialization(guards = "array.getClass() == arrayClass", limit = "2")
+    int doCached(Array array, int index,
+           @Cached("array.getClass()") Class&lt;? extends Array&gt; arrayClass) {
+        return arrayClass.cast(array).read(index);
+    }
+
+    @Specialization(replaces = "doCached")
+    int doDefault(Array array, int index) {
+        return array.read(index);
+    }
+}
+</code></pre>
+
+<p>We solved the problem of partially evaluating the implementation, but there is no way to express the extra specialization for the constant stride and start index optimization in this solution.</p>
+
+<p>This is what we discovered/ solved so far:</p>
+
+<ul>
+  <li>Interfaces are existing well-known concept for polymorphism in Java.</li>
+  <li>New interface implementations can be loaded enabling modularity.</li>
+  <li>We found a convenient way to use the operations from slow-paths.</li>
+  <li>Representation types can encapsulate implementation details.</li>
+</ul>
+
+<p>But we have introduced new problems:</p>
+
+<ul>
+  <li>No representation specific profiling / caching can be performed.</li>
+  <li>Every interface call requires a polymorphic class cache on the call-site.</li>
+</ul>
+
+<p>The runnable source code for Strategy 2 can be found <a href="https://github.com/oracle/graal/tree/master/truffle/src/com.oracle.truffle.api.library.test/src/com/oracle/truffle/api/library/test/examples/ArrayStrategy2.java">here</a>.</p>
+
+<h3 id="strategy-3-truffle-libraries">Strategy 3: Truffle Libraries</h3>
+
+<p>Truffle Libraries work similar to the Java interfaces.
+Instead of a Java interface, we create an abstract class extending the <code>Library</code> class and annotate it with <code>@GenerateLibrary</code>. We create abstract methods like with the interface, but we insert a receiver argument in the beginning, in our case of type <code>Object</code>.
+Instead of performing interface type checks we use an explicit abstract method in the library typically named <code>is${Type}</code>.</p>
+
+<p>We do this for our example:</p>
+
+<pre><code class="language-java">@GenerateLibrary
+public abstract class ArrayLibrary extends Library {
+
+    public boolean isArray(Object receiver) {
+        return false;
+    }
+
+    public abstract int read(Object receiver, int index);
+}
+</code></pre>
+
+<p>This <code>ArrayLibrary</code> specifies two messages: <code>isArray</code> and <code>read</code>.
+At compile time, the annotation processor generates a package protected class <code>ArrayLibraryGen</code>.
+Unlike generated nodes classes, you never need to refer to this class.</p>
+
+<p>Instead of implementing a Java interface, we export the library using the <code>@ExportLibrary</code> annotation on the representation type.
+Message exports are specified using instance methods on the representation and can, therefore, omit the receiver argument of the library.</p>
+
+<p>The first representation we implement this way is the <code>BufferArray</code> representation:</p>
+
+<pre><code class="language-java">@ExportLibrary(ArrayLibrary.class)
+final class BufferArray {
+    private int length;
+    private int[] buffer;
+    /*...*/
+    @ExportMessage boolean isArray() {
+      return true;
+    }
+    @ExportMessage int read(int index) {
+      return buffer[index];
+    }
+}
+</code></pre>
+
+<p>This implementation is very similar to the interface version, but in addition, we specify the <code>isArray</code> message.
+Again, the annotation processor generates the boilerplate code that implements the library abstract class.</p>
+
+<p>Next, we implement the sequence representation.
+We start by implementing it without the optimization for the start and stride value.</p>
+
+<pre><code class="language-java">@ExportLibrary(ArrayLibrary.class)
+final class SequenceArray {
+    private final int start;
+    private final int stride;
+    private final int length;
+    /*...*/
+    @ExportMessage int read(int index) {
+        return start + stride * index;
+    }
+}
+</code></pre>
+
+<p>So far this was equivalent to the interface implementation, but with Truffle Libraries we can now also use specializations in our representations by exporting a message using a class instead of a method.
+The convention is that the class is named exactly like the exported message, but with the first letter upper-case.</p>
+
+<p>Now we implement our stride and start specialization using this mechanism:</p>
+
+<pre><code class="language-java">@ExportLibrary(ArrayLibrary.class)
+final class SequenceArray {
+    final int start;
+    final int stride;
+    final int length;
+    /*...*/
+
+    @ExportMessage static class Read {
+        @Specialization(guards = {"seq.stride == cachedStride",
+                                  "seq.start  == cachedStart"}, limit = "1")
+        static int doSequenceCached(SequenceArray seq, int index,
+                 @Cached("seq.start")  int cachedStart,
+                 @Cached("seq.stride") int cachedStride) {
+            return cachedStart + cachedStride * index;
+        }
+
+        @Specialization(replaces = "doSequenceCached")
+        static int doSequence(SequenceArray seq, int index) {
+            return doSequenceCached(seq, index, seq.start, seq.stride);
+        }
+    }
+}
+</code></pre>
+
+<p>Since the message is declared using an inner class we need to specify the receiver type.
+Compared to normal nodes, this class must not extend <code>Node</code> and its methods must be <code>static</code> to allow the annotation processor to generate efficient code for the library subclass.</p>
+
+<p>Last, we need to use the array library in our read operation.
+The Library API provides an annotation called <code>@CachedLibrary</code> that is responsible for dispatching to libraries.
+The array read operation now looks like this:</p>
+
+<pre><code class="language-java">@NodeChild @NodeChild
+class ArrayReadNode extends ExpressionNode {
+    @Specialization(guards = "arrays.isArray(array)", limit = "2")
+    int doDefault(Object array, int index,
+                  @CachedLibrary("array") ArrayLibrary arrays) {
+        return arrays.read(array, index);
+    }
+}
+</code></pre>
+
+<p>Similar to the type cache we have seen in Strategy 2 we specialize the library to a particular value.
+The first attribute of <code>@CachedLibrary</code>, <code>"array"</code> specifies the value the library is specialized for.
+A specialized library can only be used for values they were specialized for.
+If they are used with other values then the framework will fail with an assertion error.</p>
+
+<p>Instead of using the <code>Array</code> type as the parameter type, we use the <code>isArray</code> message in the guard.
+Using a specialized library requires us to specify the limit on the specialization.
+The limit specifies how many specializations of a library can be instantiated until the operation should rewrite itself to use an uncached version of the library.</p>
+
+<p>In the array example we have only implemented two array representations.
+Therefore it is impossible that the limit is exceeded.
+In real array implementations, we are likely to use many more representations.
+The limit should be set to a value that is unlikely to be exceeded in representative applications, but at the same time does not produce too much code.</p>
+
+<p>The uncached or slow-path version of a library can be reached by exceeding the limit of the specialization, but it can also be used manually, e.g., if the array operation needs to be invoked when no node is available.
+This is usually the case for parts of the language implementation that are invoked infrequently.
+With the interface strategy (Strategy 2), the array read operation could be used by just invoking the interface method.</p>
+
+<p>With Truffle libraries, we need to lookup an uncached version of the library first.
+Every use of <code>@ExportLibrary</code> generates a cached but also an uncached / slow-path library subclass.
+The uncached version of the exported library uses the same semantics as <code>@GenerateUncached</code>.
+Typically, as with our example, the uncached version can be derived automatically.
+The DSL shows an error if it needs further details on how to generate the uncached version.
+The uncached version of the library can be invoked like this:</p>
+
+<pre><code class="language-java">ArrayLibrary arrays = LibraryFactory.resolve(ArrayLibrary.class).getUncached();
+arrays.read(array, index);
+</code></pre>
+
+<p>In order to decrease the verbosity of this example, it is recommended that the library class provides the following optional static utilities:</p>
+
+<pre><code class="language-java">@GenerateLibrary
+public abstract class ArrayLibrary extends Library {
+    /*...*/
+    public static LibraryFactory&lt;ArrayLibrary&gt; getFactory() {
+        return FACTORY;
+    }
+
+    public static ArrayLibrary getUncached() {
+        return FACTORY.getUncached();
+    }
+
+    private static final LibraryFactory&lt;ArrayLibrary&gt; FACTORY =
+               LibraryFactory.resolve(ArrayLibrary.class);
+}
+</code></pre>
+
+<p>The verbose example from above can now be simplified as:</p>
+
+<pre><code class="language-java">ArrayLibrary.getUncached().readArray(array, index);
+</code></pre>
+
+<p>The runnable source code for Strategy 3 can be found <a href="https://github.com/oracle/graal/tree/master/truffle/src/com.oracle.truffle.api.library.test/src/com/oracle/truffle/api/library/test/examples/ArrayStrategy3.java">here</a>.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>In this tutorial, we have learned that with Truffle Libraries we no longer need to compromise the modularity of representation types by creating a specialization per representation (Strategy 1) and the profiling is no longer blocked by interface calls (Strategy 2).
+With Truffle Libraries we now support polymorphic dispatch with type encapsulation but don’t lose the capability of using profiling/caching techniques in representation types.</p>
+
+<h2 id="what-to-do-next">What to do next?</h2>
+
+<ul>
+  <li>
+    <p>Run and debug all the examples <a href="https://github.com/oracle/graal/tree/master/truffle/src/com.oracle.truffle.api.library.test/src/com/oracle/truffle/api/library/test/examples/">here</a>.</p>
+  </li>
+  <li>
+    <p>Read the interoperability migration guide, as an example of Truffle Libraries usage <a href="/jdk23/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">here</a>.</p>
+  </li>
+  <li>
+    <p>Read the Truffle Library reference documentation <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/library/package-summary.html">here</a>.</p>
+  </li>
+</ul>
+
+<h2 id="faq">FAQ</h2>
+
+<h4 id="are-there-any-known-limitations">Are there any known limitations?</h4>
+
+<ul>
+  <li>Library exports currently cannot explicitly invoke their <code>super</code> implementation. This makes reflective implementations currently infeasible. See the example <a href="https://github.com/oracle/graal/tree/master/truffle/src/com.oracle.truffle.api.library.test/src/com/oracle/truffle/api/library/test/examples/ReflectiveCallExample.java">here</a>.</li>
+  <li>Boxing elimination for return values is currently not supported. A message can only have one generic return type. Support for this is planned.</li>
+  <li>Reflection without static dependencies on the <code>Library</code> class is currently not supported. Support for full dynamic reflection is planned.</li>
+</ul>
+
+<h4 id="when-should-i-use-truffle-libraries">When should I use Truffle Libraries?</h4>
+
+<p><em>When to use?</em></p>
+
+<ul>
+  <li>If the representations are modular and cannot be enumerated for an operation (e.g., Truffle Interoperability).</li>
+  <li>If there is more than one representation of a type and one of the representations needs profiling/caching (e.g., see the motivating example).</li>
+  <li>If there is a need for a way to proxy all values of a language (e.g., for dynamic taint tracking).</li>
+</ul>
+
+<p><em>When not to use?</em></p>
+
+<ul>
+  <li>For basic types that only have one representation.</li>
+  <li>For primitive representations that require boxing elimination to speed up the interpreter. Boxing elimination is not supported with Truffle Libraries at the moment.</li>
+</ul>
+
+<h4 id="i-decided-to-use-a-truffle-library-to-abstract-the-language-specific-types-of-my-language-should-those-be-exposed-to-other-languages-and-tools">I decided to use a Truffle Library to abstract the language specific types of my language. Should those be exposed to other languages and tools?</h4>
+
+<p>All libraries are accessible to other languages and tools via the <code>ReflectionLibrary</code>.
+It is recommended that the language implementation documentation specifies which libraries and messages are intended for external use, and which ones may be subject to breaking changes.</p>
+
+<h4 id="what-happens-when-a-new-method-is-added-to-a-library-but-a-dynamically-loaded-implementation-hasnt-been-updated-for-it">What happens when a new method is added to a library but a dynamically loaded implementation hasn’t been updated for it?</h4>
+
+<p>If the library method was specified <code>abstract</code> then an <code>AbstractMethodError</code> will be thrown.
+Otherwise the default implementation specified by the library method body will be called.
+This allows to customize the error in case an abstract method is used.
+For example, for Truffle interoperability we often throw an <code>UnsupportedMessageException</code> instead of an <code>AbstractMethodError</code>.</p>
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk23/resources/js/main.js'></script>
+  </body>
+
+</html>
