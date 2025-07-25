@@ -113,13 +113,13 @@
     </div>
     <div class="col-sm-9 docsmod">
       <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
-        <h2 id="graalwasm-documentation"><a href="#graalwasm-documentation" class="anchor-link">GraalWasm Documentation</a></h2>
+        <h2 id="graalwasm-documentation"><a href="#graalwasm-documentation"></a><a href="#graalwasm-documentation" class="anchor-link">GraalWasm Documentation</a></h2>
 
 <p>GraalWasm is an open-source WebAssembly runtime.
 It runs WebAssembly programs in binary format and can be used to embed and leverage WebAssembly modules in Java applications.
 GraalWasm is under active development and implements a number of WebAssembly extensions.</p>
 
-<h3 id="webassembly-module-system"><a href="#webassembly-module-system" class="anchor-link">WebAssembly Module System</a></h3>
+<h3 id="webassembly-module-system"><a href="#webassembly-module-system"></a><a href="#webassembly-module-system" class="anchor-link">WebAssembly Module System</a></h3>
 
 <p>Using GraalWasm, you can load WebAssembly modules in your application, access them from Java, and make them interoperate with other Graal languages.
 To proficiently use GraalWasm, it is important to first understand how GraalWasm maps WebAssembly’s module system onto the Polyglot API.</p>
@@ -129,28 +129,42 @@ A valid <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source
 
 <p>Here is one way you can build a WebAssembly <code>Source</code>:</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Source</span> <span class="n">source</span> <span class="o">=</span> <span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">,</span> <span class="k">new</span> <span class="nc">File</span><span class="o">(</span><span class="s">"example.wasm"</span><span class="o">)).</span><span class="na">name</span><span class="o">(</span><span class="s">"example"</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Source</span> <span class="n">source</span> <span class="o">=</span> <span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">,</span> <span class="k">new</span> <span class="nc">File</span><span class="o">(</span><span class="s">"example.wasm"</span><span class="o">)).</span><span class="na">build</span><span class="o">();</span>
 </code></pre></div></div>
 
-<p>When you evaluate a WebAssembly <code>Source</code>, the module is parsed, and validated, and a module instance is returned as the resulting value.
-The module instance can also later be retrieved from the top-level bindings.
-The name of the binding in the top-level scope is the same as the name of the <code>Source</code> that was evaluated.</p>
+<p>Or directly from a byte array:</p>
 
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Evaluate the Source named "example".</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Source</span> <span class="n">source</span> <span class="o">=</span> <span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">,</span> <span class="nc">ByteSequence</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">in</span><span class="o">.</span><span class="na">readAllBytes</span><span class="o">()),</span> <span class="s">"example"</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</code></pre></div></div>
+
+<p>When you evaluate a WebAssembly <code>Source</code>, the module is parsed and validated, and a module object is returned as the result value.
+This module can then be instantiated using <code>module.</code><a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#newInstance(java.lang.Object...)"><code>newInstance()</code></a>.
+To access exported functions and bindings, first get the <em>exports</em> member of the instance using <code>instance.getMember("exports")</code>, which returns an object containing all the exported members.
+You can then use <code>exports.getMember("bindingName")</code> to read an exported binding, and either <code>exports.getMember("functionName").execute(...args)</code> or <code>exports.invokeMember("functionName", ...args)</code> to call an exported function.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Evaluate the Source.</span>
 <span class="nc">Value</span> <span class="n">exampleModule</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="n">source</span><span class="o">);</span>
-<span class="c1">// It is now accessible under the binding name "example".</span>
-<span class="k">assert</span> <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">).</span><span class="na">getMember</span><span class="o">(</span><span class="s">"example"</span><span class="o">)</span> <span class="o">==</span> <span class="n">exampleModule</span><span class="o">;</span>
+<span class="c1">// Instantiate the example module (optional: provide an import object).</span>
+<span class="nc">Value</span> <span class="n">exampleInstance</span> <span class="o">=</span> <span class="n">exampleModule</span><span class="o">.</span><span class="na">newInstance</span><span class="o">();</span>
+<span class="c1">// Get the exports of the module instance.</span>
+<span class="nc">Value</span> <span class="n">exampleExports</span> <span class="o">=</span> <span class="n">exampleInstance</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"exports"</span><span class="o">);</span>
+<span class="c1">// Invoke an exported function.</span>
+<span class="k">assert</span> <span class="n">exampleExports</span><span class="o">.</span><span class="na">invokeMember</span><span class="o">(</span><span class="s">"factorial"</span><span class="o">,</span> <span class="mi">8</span><span class="o">).</span><span class="na">asInt</span><span class="o">()</span> <span class="o">==</span> <span class="mi">40320</span><span class="o">;</span>
+<span class="c1">// Get the value of an exported global.</span>
+<span class="k">assert</span> <span class="n">exampleExports</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"theAnswerToLife"</span><span class="o">).</span><span class="na">asInt</span><span class="o">()</span> <span class="o">==</span> <span class="mi">42</span><span class="o">;</span>
 </code></pre></div></div>
 
 <p><a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html#getName()">Source names</a> are important in GraalWasm because they are also used to resolve module imports.
 If a module tries to import a symbol from module <code>foo</code>, then GraalWasm looks for that symbol in the module whose <code>Source</code> was named <code>foo</code>.
-These imports are not resolved until when a WebAssembly module instance’s members are accessed or executed for the first time in a given context.</p>
+These imports are resolved from the arguments passed to <code>module.newInstance()</code> (either the import object or a module argument).
+When using the <code>wasm.EvalReturnsInstance=true</code> option, the imports are not resolved until the module instance’s exports are accessed or executed for the first time.</p>
 
-<h4 id="module-instance-objects"><a href="#module-instance-objects" class="anchor-link">Module Instance Objects</a></h4>
+<h4 id="module-instance-objects"><a href="#module-instance-objects"></a><a href="#module-instance-objects" class="anchor-link">Module Instance Objects</a></h4>
 
-<p>By evaluating WebAssembly modules through the Polyglot API, you get access to module instance objects.
-Module instance objects expose members for every symbol that was exported from the WebAssembly module.
-You can get a list of all exported symbols using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getMemberKeys()">getMemberKeys</a>, access individual exports using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getMember(java.lang.String)">getMember</a> and, in the case of mutable globals, use <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#putMember(java.lang.String,java.lang.Object)">putMember</a> to set their values.</p>
+<p>By calling <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#newInstance(java.lang.Object...)"><code>newInstance()</code></a> on the WebAssembly module value returned by <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html#eval(org.graalvm.polyglot.Source)"><code>Context.eval(Source)</code></a>, you instantiate the module and create new module instance objects.
+Module instance objects expose a read-only “exports” member, an object that contains a member for every symbol that was exported from the WebAssembly module.
+You can get a list of all exported symbols using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getMemberKeys()">getMemberKeys</a>, access individual exports using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getMember(java.lang.String)">getMember</a> and, in the case of mutable globals, use <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#putMember(java.lang.String,java.lang.Object)">putMember</a> to set their values.
+You can also call functions using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#invokeMember(java.lang.String,java.lang.Object...)">invokeMember</a>.</p>
 
 <p>Here is how the various kinds of WebAssembly exports map to polyglot values:</p>
 
@@ -159,8 +173,10 @@ You can get a list of all exported symbols using <a href="https://www.graalvm.or
     <p>Functions</p>
 
     <p>Functions are exported as executable values, which you can call using <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#execute(java.lang.Object...)">execute</a>.
+Alternatively, you can use <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#invokeMember(java.lang.String,java.lang.Object...)">invokeMember</a> on the <em>exports</em> object.
 Function arguments and return values are mapped between WebAssembly value types and polyglot values using the <a href="#type-mapping">type mapping</a>.
-If a function returns multiple values, these are wrapped in an interop array.</p>
+If a function returns multiple values, these are wrapped in an interop array.
+Use <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html#getArrayElement(long)">getArrayElement</a> to extract the individual return values.</p>
   </li>
   <li>
     <p>Globals</p>
@@ -179,18 +195,18 @@ The buffer interface lets you do bulk copies of memory using <a href="https://ww
   <li>
     <p>Tables</p>
 
-    <p>Exported tables are opaque and cannot be queried or modified.</p>
+    <p>Exported tables are opaque and cannot be queried or modified currently.</p>
   </li>
 </ul>
 
-<h3 id="type-mapping"><a href="#type-mapping" class="anchor-link">Type Mapping</a></h3>
+<h3 id="type-mapping"><a href="#type-mapping"></a><a href="#type-mapping" class="anchor-link">Type Mapping</a></h3>
 
 <p>Whenever a WebAssembly value is passed either to Java code or to another Graal language, via a function call, return value, or exported global access, it is mapped to a polyglot value.
 The tables below show how this mapping works.
 WebAssembly is a statically-typed language and all values (locals, function arguments, return values) have a static type.
 Based on this type, GraalWasm interprets a polyglot value as a value of this type or reports a type error if the types do not match.</p>
 
-<h4 id="webassembly-values-as-polyglot-values"><a href="#webassembly-values-as-polyglot-values" class="anchor-link">WebAssembly Values as Polyglot Values</a></h4>
+<h4 id="webassembly-values-as-polyglot-values"><a href="#webassembly-values-as-polyglot-values"></a><a href="#webassembly-values-as-polyglot-values" class="anchor-link">WebAssembly Values as Polyglot Values</a></h4>
 
 <p>This table describes for each WebAssembly value type which polyglot interfaces the resulting value implements.</p>
 
@@ -233,7 +249,7 @@ Based on this type, GraalWasm interprets a polyglot value as a value of this typ
   </tbody>
 </table>
 
-<h4 id="passing-arguments-to-webassembly-functions"><a href="#passing-arguments-to-webassembly-functions" class="anchor-link">Passing Arguments to WebAssembly Functions</a></h4>
+<h4 id="passing-arguments-to-webassembly-functions"><a href="#passing-arguments-to-webassembly-functions"></a><a href="#passing-arguments-to-webassembly-functions" class="anchor-link">Passing Arguments to WebAssembly Functions</a></h4>
 
 <p>When calling an exported WebAssembly function, its exact type signature must be respected.
 The table below gives the expected argument type for every possible WebAssembly parameter type.</p>
@@ -277,7 +293,7 @@ The table below gives the expected argument type for every possible WebAssembly 
   </tbody>
 </table>
 
-<h3 id="options"><a href="#options" class="anchor-link">Options</a></h3>
+<h3 id="options"><a href="#options"></a><a href="#options" class="anchor-link">Options</a></h3>
 
 <p>GraalWasm can be configured with several options.
 When using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a>, options are passed programmatically to the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">Context</a> object:</p>
@@ -292,7 +308,7 @@ Experimental options are provided with no guarantee of future support and can ch
 If an experimental option is used with the <code>wasm</code> launcher, the <code>--experimental-options</code> option has to be provided.
 When using a <code>Context</code>, the method <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#allowExperimentalOptions(boolean)">allowExperimentalOptions(true)</a> has to be called on the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html">Context.Builder</a>.</p>
 
-<h4 id="stable-options"><a href="#stable-options" class="anchor-link">Stable Options</a></h4>
+<h4 id="stable-options"><a href="#stable-options"></a><a href="#stable-options" class="anchor-link">Stable Options</a></h4>
 
 <p>The following stable options are provided:</p>
 
@@ -327,7 +343,7 @@ Access will be granted only to the contents of these pre-opened directories.</p>
   </li>
 </ul>
 
-<h4 id="experimental-options"><a href="#experimental-options" class="anchor-link">Experimental Options</a></h4>
+<h4 id="experimental-options"><a href="#experimental-options"></a><a href="#experimental-options" class="anchor-link">Experimental Options</a></h4>
 
 <p>Note that these options are experimental and are not guaranteed to be maintained or supported in the future.
 To use them, the <code>--experimental-options</code> option is required, or experimental options have to be enabled on the <code>Context</code>.</p>
@@ -377,7 +393,7 @@ Defaults to <code>false</code>.</p>
   </li>
 </ul>
 
-<h3 id="using-the-graalwasm-launcher"><a href="#using-the-graalwasm-launcher" class="anchor-link">Using the GraalWasm Launcher</a></h3>
+<h3 id="using-the-graalwasm-launcher"><a href="#using-the-graalwasm-launcher"></a><a href="#using-the-graalwasm-launcher" class="anchor-link">Using the GraalWasm Launcher</a></h3>
 
 <p>GraalWasm standalones provide the <code>wasm</code> launcher, which you can use to execute programs compiled as WebAssembly binary modules.</p>
 
@@ -416,7 +432,7 @@ The first such function found will be executed as the entry point by the <code>w
   </li>
 </ul>
 
-<h4 id="related-documentation"><a href="#related-documentation" class="anchor-link">Related Documentation</a></h4>
+<h4 id="related-documentation"><a href="#related-documentation"></a><a href="#related-documentation" class="anchor-link">Related Documentation</a></h4>
 
 <ul>
   <li><a href="https://github.com/graalvm/graal-languages-demos/tree/main/graalwasm/graalwasm-embed-c-code-guide" target="_blank">Embed C in Java Using GraalWasm</a></li>

@@ -154,10 +154,10 @@
               <img src="/webassembly/assets/img/icon-set-general/speed-icon.svg" alt="speed icon" />
             </div>
             <div class="langbenefits__title">
-              <h4>Fastest Wasm on the JVM</h4>
+              <h4>Portable Native Extensions</h4>
             </div>
             <div class="langpage__benefits-text">
-              <h5><a href="https://www.graalvm.org/latest/reference-manual/java/compiler/">Graal JIT</a> compiles Wasm for native code speed</h5>
+              <h5><a href="https://github.com/graalvm/graal-languages-demos/tree/main/graalwasm/graalwasm-embed-c-code-guide/" target="_blank">Integrate C</a>, C++, Rust, and Go libraries using Wasm as an alternative to JNI or FFM API</h5>
             </div>
           </div>
         </div>
@@ -171,6 +171,17 @@
             </div>
             <div class="langpage__benefits-text">
               <h5>Simplifies use of WebAssembly modules with <a href="https://github.com/graalvm/graal-languages-demos/blob/main/graalwasm/graalwasm-spring-boot-photon/" target="_blank">JavaScript bindings</a></h5>
+            </div>
+          </div>
+          <div class="langbenefits__card">
+            <div class="langbenefits__icon">
+              <img src="/webassembly/assets/img/icon-set-general/speed-icon.svg" alt="speed icon" />
+            </div>
+            <div class="langbenefits__title">
+              <h4>Fastest Wasm on the JVM</h4>
+            </div>
+            <div class="langpage__benefits-text">
+              <h5><a href="https://www.graalvm.org/latest/reference-manual/java/compiler/">Graal JIT</a> compiles Wasm for native code speed</h5>
             </div>
           </div>
           <div class="langbenefits__card">
@@ -244,11 +255,14 @@
                       <div class="language__example-subtitle">
             <h4>2. Create a WebAssembly module, for example with <a href="https://webassembly.github.io/wabt/demo/wat2wasm/" target="_blank">wat2wasm</a></h4>
           </div>
-<figure class="highlight"><pre><code class="language-javascript" data-lang="javascript"><span class="p">(</span><span class="nx">module</span>
-    <span class="p">(</span><span class="nf">func </span><span class="p">(</span><span class="k">export</span> <span class="dl">"</span><span class="s2">addTwo</span><span class="dl">"</span><span class="p">)</span> <span class="p">(</span><span class="nx">param</span> <span class="nx">i32</span> <span class="nx">i32</span><span class="p">)</span> <span class="p">(</span><span class="nx">result</span> <span class="nx">i32</span><span class="p">)</span>
-      <span class="nx">local</span><span class="p">.</span><span class="kd">get</span> <span class="mi">0</span>
-      <span class="nx">local</span><span class="p">.</span><span class="kd">get</span> <span class="mi">1</span>
-      <span class="nx">i32</span><span class="p">.</span><span class="nx">add</span><span class="p">))</span></code></pre></figure>
+<figure class="highlight"><pre><code class="language-wat" data-lang="wat"><span class="c1">;; wat2wasm add-two.wat -o add-two.wasm</span>
+<span class="p">(</span><span class="k">module</span>
+  <span class="p">(</span><span class="k">func</span> <span class="p">(</span><span class="k">export</span> <span class="s">"addTwo"</span><span class="p">)</span> <span class="p">(</span><span class="k">param</span> <span class="kt">i32</span> <span class="kt">i32</span><span class="p">)</span> <span class="p">(</span><span class="k">result</span> <span class="kt">i32</span><span class="p">)</span>
+    <span class="na">local.get</span> <span class="mi">0</span>
+    <span class="na">local.get</span> <span class="mi">1</span>
+    <span class="na">i32.add</span>
+  <span class="p">)</span>
+<span class="p">)</span></code></pre></figure>
 </div>
             <div class="example-logo-box">
               <img alt="WebAssembly icon" src="/webassembly/assets/img/logos/webassembly-logo.svg" class="languages__example-logo" />
@@ -259,9 +273,34 @@
           </div>
           <div class="languages__example-box">
             <div class="languages__snippet">
-                      <div class="language__example-subtitle">
-            <h4>3. Embed the Wasm module in Java</h4>
-          </div>
+              <div class="language__example-subtitle">
+                <h4>3. Embed the Wasm module in Java</h4>
+              </div>
+              <div class="tabs-container">
+                <ul class="nav nav-tabs">
+                  <li><a href="#" data-bs-toggle="tab" data-bs-target="#version25" class="nav-link active">≥ 25.0</a></li>
+                  <li><a href="#" data-bs-toggle="tab" data-bs-target="#version24" class="nav-link">≤ 24.2</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div id="version25" class="tab-pane fade show active">
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.net.URL</span><span class="o">;</span>
+
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Source</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Value</span><span class="o">;</span>
+
+<span class="k">try</span> <span class="o">(</span><span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+    <span class="no">URL</span> <span class="n">wasmFile</span> <span class="o">=</span> <span class="nc">Main</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getResource</span><span class="o">(</span><span class="s">"add-two.wasm"</span><span class="o">);</span>
+    <span class="nc">Value</span> <span class="n">mainModule</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">,</span> <span class="n">wasmFile</span><span class="o">).</span><span class="na">build</span><span class="o">());</span>
+    <span class="nc">Value</span> <span class="n">mainInstance</span> <span class="o">=</span> <span class="n">mainModule</span><span class="o">.</span><span class="na">newInstance</span><span class="o">();</span>
+    <span class="nc">Value</span> <span class="n">addTwo</span> <span class="o">=</span> <span class="n">mainInstance</span><span class="o">.</span><span class="na">getMember</span><span class="o">(</span><span class="s">"exports"</span><span class="o">).</span><span class="na">getMember</span><span class="o">(</span><span class="s">"addTwo"</span><span class="o">);</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"addTwo(40, 2) = "</span> <span class="o">+</span> <span class="n">addTwo</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="mi">40</span><span class="o">,</span> <span class="mi">2</span><span class="o">));</span>
+<span class="o">}</span></code></pre></figure>
+
+                  </div>
+                  <div id="version24" class="tab-pane fade">
+
 <figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="kn">import</span> <span class="nn">java.net.URL</span><span class="o">;</span>
 
 <span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
@@ -275,7 +314,11 @@
     <span class="nc">Value</span> <span class="n">addTwo</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"wasm"</span><span class="o">).</span><span class="na">getMember</span><span class="o">(</span><span class="n">moduleName</span><span class="o">).</span><span class="na">getMember</span><span class="o">(</span><span class="s">"addTwo"</span><span class="o">);</span>
     <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"addTwo(40, 2) = "</span> <span class="o">+</span> <span class="n">addTwo</span><span class="o">.</span><span class="na">execute</span><span class="o">(</span><span class="mi">40</span><span class="o">,</span> <span class="mi">2</span><span class="o">));</span>
 <span class="o">}</span></code></pre></figure>
-</div>
+
+                  </div>
+                </div>
+              </div>
+            </div><!-- languages__snippet -->
             <div class="example-logo-box">
               <img alt="Java icon" src="/webassembly/assets/img/logos/java-logo.svg" class="languages__example-logo" />
             </div>
