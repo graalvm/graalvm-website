@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -569,18 +569,20 @@ Below is the example output when building a native executable of the <code>Hello
 GraalVM Native Image: Generating 'helloworld' (executable)...
 ================================================================================
 [1/8] Initializing...                                            (2.8s @ 0.15GB)
- Java version: 25+13, vendor version: GraalVM CE 25-dev+13.1
+ Java version: 20+34, vendor version: GraalVM CE 20-dev+34.1
  Graal compiler: optimization level: 2, target machine: x86-64-v3
  C compiler: gcc (linux, x86_64, 12.2.0)
  Garbage collector: Serial GC (max heap size: 80% of RAM)
 --------------------------------------------------------------------------------
  Build resources:
- - 13.24GB of memory (42.7% of system memory, using available memory)
+ - 13.24GB of memory (42.7% of 31.00GB system memory, determined at start)
  - 16 thread(s) (100.0% of 16 available processor(s), determined at start)
 [2/8] Performing analysis...  [****]                             (4.5s @ 0.54GB)
-    3,158 types,   3,625 fields, and  14,804 methods found reachable
-    1,012 types,      36 fields, and     377 methods registered for reflection
-       57 types,      57 fields, and      52 methods registered for JNI access
+    3,163 reachable types   (72.5% of    4,364 total)
+    3,801 reachable fields  (50.3% of    7,553 total)
+   15,183 reachable methods (45.5% of   33,405 total)
+      957 types,    81 fields, and   480 methods registered for reflection
+       57 types,    55 fields, and    52 methods registered for JNI access
         4 native libraries: dl, pthread, rt, z
 [3/8] Building universe...                                       (0.8s @ 0.99GB)
 [4/8] Parsing methods...      [*]                                (0.6s @ 0.75GB)
@@ -592,7 +594,7 @@ GraalVM Native Image: Generating 'helloworld' (executable)...
    7.03MB (32.02%) for image heap:   93,301 objects and 5 resources
    8.96MB (40.83%) for debug info generated in 1.0s
  659.13kB ( 2.93%) for other data
-  21.96MB in total image size, 21.04MB in total file size
+  21.96MB in total
 --------------------------------------------------------------------------------
 Top 10 origins of code area:            Top 10 object types in image heap:
    4.03MB java.base                        1.14MB byte[] for code metadata
@@ -761,13 +763,12 @@ The <code>NATIVE_IMAGE_OPTIONS</code> environment variable is designed to be use
       </h4>
 <p>The memory limit and number of threads used by the build process.</p>
 
-<p>More precisely, the memory limit of the Java heap, so actual memory consumption can be higher.
+<p>More precisely, the memory limit of the Java heap, so actual memory consumption can be even higher.
 Please check the <a href="#glossary-peak-rss">peak RSS</a> reported at the end of the build to understand how much memory was actually used.
-By default, the build process uses the dedicated mode (up to 85% of system memory) in containers or CI environments (when the <code>$CI</code> environment variable is set to <code>true</code>), but never more than 32GB of memory.
-Otherwise, it tries to use available memory to avoid memory pressure on developer machines (shared mode).
-If less than 8GB of memory are available, the build process falls back to the dedicated mode.
+By default, the build process tries to only use free memory (to avoid memory pressure on the build machine), and never more than 32GB of memory.
+If less than 8GB of memory are free, the build process falls back to use 85% of total memory.
 Therefore, consider freeing up memory if your machine is slow during a build, for example, by closing applications that you do not need.
-It is possible to override the default behavior and set relative or absolute memory limits, for example with <code>-J-XX:MaxRAMPercentage=60.0</code> or <code>-J-Xmx16g</code>.</p>
+It is possible to overwrite the default behavior, for example with <code>-J-XX:MaxRAMPercentage=60.0</code> or <code>-J-Xmx16g</code>.</p>
 
 <p>By default, the build process uses all available processors to maximize speed, but not more than 32 threads.
 Use the <code>--parallelism</code> option to set the number of threads explicitly (for example, <code>--parallelism=4</code>).
@@ -791,11 +792,9 @@ A large number of iterations can indicate problems in the analysis likely caused
         
         
       </h4>
-<p>The number of types (primitives, classes, interfaces, and arrays), fields, and methods that are found reachable by the static analysis.
-The reachability metrics give an impression of how small or large the application is.
-These metrics can be helpful when compared before and after merging code changes or adding, removing, or upgrading dependencies of an application.
-This can help to understand the impact that certain code changes or dependencies have on the overall native binary.
-A larger number of reachable types, fields, and methods will also result in a larger native binary.</p>
+<p>The number of types (primitives, classes, interfaces, and arrays), fields, and methods that are reachable versus the total number of types, fields, and methods loaded as part of the build process.
+A significantly larger number of loaded elements that are not reachable can indicate a configuration problem.
+To reduce overhead, please ensure that your class path and module path only contain entries that are needed for building the application.</p>
     
       <h4 id="reflection-registrations">
         
@@ -893,11 +892,7 @@ The progress indicator is printed periodically at an increasing interval.</p>
         
       </h3>
 <p>In this stage, the native binary is created and written to disk.
-Debug info is also generated as part of this stage (if requested).
-This section breaks down the total image size as well as <a href="#glossary-code-area">code area</a> and <a href="#glossary-image-heap">image heap</a> (see below for more details).
-The total image size is calculated before linking by summing the sizes of the code area, image heap, debug information (if requested and embedded in the binary), and other data.
-The total file size is the actual size of the image on disk after linking.
-Typically, the file size is slightly smaller than the image size due to additional link time optimizations.</p>
+Debug info is also generated as part of this stage (if requested).</p>
     
       <h4 id="code-area">
         
@@ -1045,49 +1040,11 @@ If not included, the attack surface of the executable is reduced as the executab
       </h4>
 <p>This section indicates whether a SBOM was assembled and in what ways it was stored. 
 The storage formats include: <code>embed</code>, which embeds the SBOM in the binary; <code>classpath</code>, which saves the SBOM to the classpath; and <code>export</code>, which includes the SBOM as a JSON build artifact. 
-The SBOM feature is enabled by default and defaults to the <code>embed</code> option. 
+Use <code>--enable-sbom</code> to activate this feature which defaults to the <code>embed</code> option. 
 When embedded, the SBOM size is displayed. 
-The number of components is always displayed. 
-The SBOM feature can be disabled with <code>--enable-sbom=false</code>.</p>
+The number of components is always displayed.</p>
 
-<p>Unassociated types are displayed when certain types (such as classes, interfaces, or annotations) cannot be linked to an SBOM component.
-If these types contain vulnerabilities, SBOM scanning will not detect them.
-To fix this, ensure that proper GAV coordinates (Group ID, Artifact ID, and Version) are defined in the project POM’s properties or in <em>MANIFEST.MF</em> using standard formats.</p>
-
-<p>Use the <a href="/latest/reference-manual/native-image/overview/build-report/">build report</a> to view included components, their dependencies, and any unassociated types.
-For more information, see <a href="/latest/security-guide/native-image/">Software Bill of Materials</a>.</p>
-    
-      <h4 id="advanced-obfuscation">
-        
-        
-          <a name="glossary-obfuscation"></a>Advanced Obfuscation
-        
-        
-      </h4>
-<p>This section indicates whether advanced obfuscation was applied.
-Advanced obfuscation is applied to your application code and third-party dependencies, but not to the JDK or <a href="https://github.com/oracle/graal/tree/master/substratevm">Substrate VM</a> code.</p>
-
-<p><strong>Obfuscated elements include:</strong></p>
-<ul>
-  <li>Module, package, and class names</li>
-  <li>Method and source file names (as seen in stack traces)</li>
-  <li>Field names (as seen in heap dumps)</li>
-</ul>
-
-<p><strong>Elements that are <em>not</em> obfuscated:</strong></p>
-<ul>
-  <li>Names affected by registrations in reachability metadata</li>
-  <li>Names in preserved code (via <code>-H:Preserve</code>)</li>
-  <li>Module and package names containing a class that loads a resource</li>
-  <li>Names of annotations, lambdas, and proxies</li>
-</ul>
-
-<p>To export a mapping from original to obfuscated names, use <code>-H:AdvancedObfuscation=export-mapping</code>. 
-See the <a href="/latest/reference-manual/native-image/overview/build-report/">build report</a> for summary statistics, such as the percentage of class and method names that were obfuscated.</p>
-
-<blockquote>
-  <p>Native Image obfuscates binaries by removing class files, applying aggressive optimizations, and eliminating dead code. The advanced obfuscation feature also obfuscates symbol names.</p>
-</blockquote>
+<p>For more information, see <a href="/latest/security-guide/native-image/">Software Bill of Materials</a>.</p>
     
       <h4 id="backwards-edge-control-flow-integrity-cfi">
         
@@ -1118,18 +1075,6 @@ This feature is currently only available for code compiled by Graal for Linux AM
       </h2>
 
 <p>The build output may contain one or more of the following recommendations that help you get the best out of Native Image.</p>
-    
-      <h4 id="futr-use-the-correct-semantics-and-prepare-for-future-releases">
-        
-        
-          <a name="recommendation-futr"></a><code>FUTR</code>: Use the Correct Semantics and Prepare for Future Releases
-        
-        
-      </h4>
-
-<p>Use <code>--future-defaults=all</code> to enable all features that are planned to be default in a future GraalVM release.
-This option is unlikely to affect your program’s behavior but guarantees that it adheres to the correct execution semantics.
-Additionally, it safeguards against unexpected changes in future GraalVM updates.</p>
     
       <h4 id="awt-missing-reachability-metadata-for-abstract-window-toolkit">
         
@@ -1313,7 +1258,7 @@ This schema also contains descriptions for each possible artifact type and expla
 
 <p>The build output produced by the <code>native-image</code> builder is designed for humans, can evolve with new releases, and should thus not be parsed in any way by tools.
 Instead, use the <code>-H:BuildOutputJSONFile=&lt;file.json&gt;</code> option to instruct the builder to produce machine-readable build output in JSON format that can be used, for example, for building monitoring tools.
-Such a JSON file validates against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.4.json"><code>build-output-schema-v0.9.4.json</code></a>.
+Such a JSON file validates against the JSON schema defined in <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets/build-output-schema-v0.9.3.json"><code>build-output-schema-v0.9.3.json</code></a>.
 Note that a JSON file is produced if and only if a build succeeds.</p>
 
 <p>The following example illustrates how this could be used in a CI/CD build pipeline to check that the number of reachable methods does not exceed a certain threshold:</p>

@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -440,7 +440,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM allows a host application written in a JVM-based language to execute guest code written in Javascript or WebAssembly via the <a href="/latest/reference-manual/embed-languages/">Polyglot API</a>.
+<p>GraalVM allows a host application written in a JVM-based language to execute guest code written in Javascript via the <a href="/latest/reference-manual/embed-languages/">Polyglot API</a>.
 Configured with a <a href="#sandbox-policies">sandbox policy</a>, a security boundary between a host application and guest code can be established.
 For example, host code can execute untrusted guest code using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/SandboxPolicy.html#UNTRUSTED">UNTRUSTED</a> policy.
 Host code can also execute multiple mutually distrusting instances of guest code that will be protected from one another.
@@ -590,9 +590,10 @@ The attack surface of GraalVM when running untrusted code consists of the entire
 <ul>
   <li>Requires redirection of the standard <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#in-java.io.InputStream-">input</a> stream.</li>
   <li>Requires setting the maximum memory consumption of the guest code. This is a limit in addition to the maximum isolate heap size backed by a mechanism that keeps track of the size of objects allocated by the guest code on the guest VM heap. This limit can be thought of as a “soft” memory limit, whereas the isolate heap size is the “hard” limit.</li>
-  <li>Requires setting the maximum depth of any Abstract Syntax Tree (AST) of the guest code. This puts a bound on the stack space consumed by a single guest method.</li>
+  <li>Requires setting the maximum number of stack frames that can be pushed onto the stack by guest code. This limit can protect against unbounded recursion that exhausts the stack.</li>
+  <li>Requires setting the maximum depth of any Abstract Syntax Tree (AST) of the guest code. Together with the stack frame limit, this puts a bound on the stack space consumed by guest code.</li>
   <li>Requires setting the maximum output and error stream sizes. As output and error streams have to be redirected, the receiving ends are on the host side. Limiting the output and error stream sizes protects against availability issues on the host.</li>
-  <li>Requires untrusted code mitigations to be enabled. Untrusted code mitigations address risks from JIT spraying and speculative execution attacks. They include constant blinding as well as masking memory accesses and use of speculative execution barriers.</li>
+  <li>Requires untrusted code mitigations to be enabled. Untrusted code mitigations address risks from JIT spraying and speculative execution attacks. They include constant blinding as well as comprehensive use of speculative execution barriers.</li>
   <li>Further restricts host access to ensure there are no implicit entry points to host code. This means that guest-code access to host arrays, lists, maps, buffers, iterables and iterators is disallowed. The reason is that there may be various implementations of these APIs on the host side, resulting in implicit entry points. In addition, direct mappings of guest implementations to host interfaces via <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.Builder.html">HostAccess.Builder#allowImplementationsAnnotatedBy</a> are disallowed. The <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/HostAccess.html#UNTRUSTED">HostAccess.UNTRUSTED</a> host access policy is preconfigured to fulfill the requirements for the UNTRUSTED sandboxing policy.</li>
 </ul>
 
@@ -1023,37 +1024,8 @@ In the case of a misprediction, the result of these instructions is discarded.
 However, the execution may have caused side effects in the micro-architectural state of a CPU.
 For example, data may have been pulled into the cache during transient execution - a side-channel that can be read by timing data access.</p>
 
-<p>GraalVM protects against Spectre attacks by applying masking to memory accesses in runtime compiled code.
-Since the masking operation is also effective during speculative execution, accesses protected by masks are always scoped to the isolate heap.
-For memory accesses where masking is not applicable, GraalVM inserts speculative execution barrier instructions to prevent attackers from crafting speculative execution gadgets.
-On AArch64 protection relies solely on speculative execution barrier instructions.</p>
-    
-      <h3 id="process-isolation">
-        
-        
-          Process Isolation <a href="#process-isolation" class="anchor_heading">#</a>
-        
-        
-      </h3>
-
-<p>As an experimental feature, the dedicated native-image isolate that runs the Polyglot engine in the ISOLATED and UNTRUSTED policy can run in a separate process.
-The feature is enabled by setting <code>engine.IsolateMode=external</code>, experimental options have to be allowed:</p>
-<pre><code class="language-java">try (Context context = Context.newBuilder("js")
-                              .allowExperimentalOptions(true)
-                              .sandbox(SandboxPolicy.ISOLATED)
-                              .out(new ByteArrayOutputStream())
-                              .err(new ByteArrayOutputStream())
-                              .option("engine.MaxIsolateMemory", "256MB")
-                              .option("engine.IsolateMode", "external")
-                              .build()) {
-    context.eval("js", "print('Hello JavaScript!');");
-}
-</code></pre>
-
-<p>Executing guest code in a separate process further deepens the isolation between the host application and guest code by providing a separate address space and signal domain.
-This means that defenses against leaking sensitive data from the same address space are no longer necessary and fatal crashes of the native-image isolate no longer affect the host application.
-These properties come at the expense of slower startup performance of a corresponding Polyglot engine as well as an increased communication overhead between host and guest code.
-Under the hood, host and guest processes communicate via Unix Domain sockets, transparently hidden behind the Polyglot API.</p>
+<p>GraalVM protects against Spectre attacks by inserting speculative execution barrier instructions in runtime compiled guest code to prevent attackers from crafting speculative execution gadgets.
+A speculative execution barrier is placed at each target of a conditional branch that is relevant to Java memory safety to stop speculative execution.</p>
     
       <h2 id="sharing-execution-engines">
         
@@ -1063,7 +1035,7 @@ Under the hood, host and guest processes communicate via Unix Domain sockets, tr
         
       </h2>
 
-<p>Guest code of different trust domains has to be separated at the Polyglot engine level, that is, only guest code of the same trust domain should share an engine.
+<p>Guest code of different trust domains has to be separated at the polyglot engine level, that is, only guest code of the same trust domain should share an engine.
 When multiple context share an engine, all of them must have the same sandbox policy (the engine’s sandbox policy).
 Application developers may choose to share execution engines among execution contexts for performance reasons.
 While the context holds the state of the executed code, the engine holds the code itself.

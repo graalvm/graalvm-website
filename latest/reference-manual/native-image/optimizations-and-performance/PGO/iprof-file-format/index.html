@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -447,32 +447,31 @@ This document outlines the structure and semantics of the <em>iprof</em> file fo
         
       </h2>
 
-<p>The full schema of the JSON format used for <em>iprof</em> files can be found in the <a href="/docs/reference-manual/native-image/assets/iprof-v1.1.0.schema.json">iprof-v1.1.0.schema.json</a> document.
+<p>The full schema of the JSON format used for <em>iprof</em> files can be found in the <a href="/docs/reference-manual/native-image/assets/iprof-v1.0.0.schema.json">iprof-v1.0.0.schema.json</a> document.
 This JSON schema fully defines the <em>iprof</em> file format and can be used to validate the structure of an arbitrary <em>iprof</em> file.</p>
 
 <p>A minimal valid <em>iprof</em> file consists of a JSON object containing 3 fields: <code>types</code>, <code>methods</code> and <code>version</code>.
-The following is a minimal valid <em>iprof</em> file for the current version (<code>1.1.0</code>).</p>
+The following is a minimal valid <em>iprof</em> file for the current version (<code>1.0.0</code>).</p>
 
 <pre><code class="language-json">{
-  "version": "1.1.0",
+  "version": "1.0.0",
   "types": [],
   "methods": []
 }
 </code></pre>
 
 <p>In addition to these fields, the <em>iprof</em> file may optionally contain others that provide information on various run-time profiles.
-The following is an example of a fully populated <em>iprof</em> file (version <code>1.1.0</code>) with the actual content of each of the fields replaced with <code>...</code>.</p>
+The following is an example of a fully populated <em>iprof</em> file (version <code>1.0.0</code>) with the actual content of each of the fields replaced with <code>...</code>.</p>
 
 <pre><code class="language-json">{
-  "version": "1.1.0",
+  "version": "1.0.0",
   "types": [...],
   "methods": [...],
   "monitorProfiles": [...],
   "virtualInvokeProfiles": [...],
   "callCountProfiles": [...],
   "conditionalProfiles": [...],
-  "samplingProfiles": [...],
-  "instanceofProfiles": [...],
+  "samplingProfiles": [...]
 }
 </code></pre>
 
@@ -554,10 +553,10 @@ The <em>iprof</em> format uses a semantic versioning scheme (ie. <code>major.min
 The major version is updated for breaking changes (for example, a new way of encoding the information),
 minor for non-breaking ones (for example, adding a new optional field in the top-level JSON object),
 and the patch version is updated for minor fixes that should not impact any client.
-The current version of the <em>iprof</em> file format is <code>1.1.0</code>, which can be seen in the <em>iprof</em> file from the example application.</p>
+The current version of the <em>iprof</em> file format is <code>1.0.0</code>, which can be seen in the <em>iprof</em> file from the example application.</p>
 
 <pre><code class="language-json">...
-    "version": "1.1.0",
+    "version": "1.0.0",
 ...
 </code></pre>
     
@@ -1192,38 +1191,6 @@ In this case, it means that the context described in the previous paragraph was 
 
 <p>The other object in the sampling profiles array contains a different context and this sample was seen only once.
 Understanding the nature of this sample is left as an exercise to the reader.</p>
-    
-      <h2 id="instance-of-profiles">
-        
-        
-          Instance-of Profiles <a href="#instance-of-profiles" class="anchor_heading">#</a>
-        
-        
-      </h2>
-
-<blockquote>
-  <p>Note: Instance-of profiles were added in the <em>iprof</em> file format version 1.1.0. They are not present in version 1.0.0.</p>
-</blockquote>
-
-<p>Instance-of profiles contain information on the run-time types of values that are checked at <code>instanceof</code> operators.
-Specifically, they record how many times a particular run-time type was encountered at a given <code>instanceof</code> operation.
-Thus, instance-of profiling information can be stored in the same format as <a href="#virtual-invoke-profiles">Virtual Invoke Profiles</a>.
-The only difference is that the resulting type histogram in the <code>records</code> part describes the types seen at <code>instanceof</code> checks, rather than the receiver types of virtual method calls.
-Consider the following Java code:</p>
-
-<pre><code class="language-java">    public class A {}
-    public class B extends A {}
-
-    public static void doForA(Object obj) {
-        if(obj instanceof A) {
-            doSomething(obj);
-        }
-    }
-</code></pre>
-
-<p>The <code>records</code> section of the profile will include all types (e.g., <code>A</code>, <code>B</code>, <code>Object</code>, <code>String</code>) encountered at run time for the <code>obj</code> variable, together with their occurrence counts.
-Thus, the length of the <code>records</code> array for instance-of profiles is always a multiple of 2,
-since the values represent a type ID and count pair.</p>
     
       <h2 id="related-documentation">
         

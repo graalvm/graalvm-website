@@ -1,4 +1,4 @@
-let currentMajorJavaVersion = "25";
+let currentMajorJavaVersion = "24";
 let currentPlatform = "empty-choice";
 let currentDownloadLink = null;
 
@@ -89,7 +89,7 @@ const platforms = {
 const fullJavaVersions = {
   "17": "17.0.12",
   "21": "21.0.8",
-  "25": "25",
+  "24": "24.0.2",
 }
 
 function updateGHASnippet(majorJavaVersion) {

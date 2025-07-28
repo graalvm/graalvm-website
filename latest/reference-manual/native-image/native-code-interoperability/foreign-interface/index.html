@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -572,7 +572,7 @@ Specifically, downcalls are supported on x64 Linux, Windows and MacOS, while upc
       </h3>
 
 <p>The FFM API provides the <code>SymbolLookup</code> interface to find functions in native libraries by name.
-Native image supports all available symbol lookup methods, i.e., <code>SymbolLookup.loaderLookup()</code>, <code>SymbolLookup.libraryLookup()</code>, and <code>Linker.defaultLookup()</code>.</p>
+<code>SymbolLookup.loaderLookup()</code> is currently the only supported kind of <code>SymbolLookup</code>.</p>
     
       <h3 id="registering-foreign-calls">
         
@@ -583,13 +583,9 @@ Native image supports all available symbol lookup methods, i.e., <code>SymbolLoo
       </h3>
 
 <p>In order to perform calls to native code at run time, supporting code must be generated at image build time.
-Therefore, the <code>native-image</code> tool must be provided with descriptors that characterize the functions with which downcalls or upcalls can be performed at runtime.</p>
+Therefore, the <code>native-image</code> tool must be provided with descriptors that characterize the functions to which downcalls may be performed at run time.</p>
 
-<p>For upcalls, it is recommended to register a specific static method as an upcall target by providing its declaring class and the method name.
-This allows <code>native-image</code> to create specialized upcall code that can be orders of magnitude faster than a upcall registered only by function descriptor.
-Whenever possible, this should be the preferred way to register upcalls.</p>
-
-<p>Descriptors and target methods can be registered using a custom <code>Feature</code>, for example:</p>
+<p>These descriptors can be registered using a custom <code>Feature</code>, for example:</p>
 <pre><code class="language-java">import static java.lang.foreign.ValueLayout.*;
 
 class ForeignRegistrationFeature implements Feature { 
@@ -601,9 +597,6 @@ class ForeignRegistrationFeature implements Feature {
     RuntimeForeignAccess.registerForUpcall(FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT));
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.of(ADDRESS, JAVA_INT, JAVA_INT), Linker.Option.firstVariadicArg(1));
     RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.ofVoid(JAVA_INT), Linker.Option.captureCallState("errno"));
-
-    MethodHandle target = MethodHandles.lookup().findStatic(UserClass.class, "aStaticMethod", MethodType.of(int.class, int.class, int.class));
-    RuntimeForeignAccess.registerForUpcall(target, FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_INT));
   }
 }
 </code></pre>
