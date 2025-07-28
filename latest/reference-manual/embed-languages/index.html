@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -546,7 +546,7 @@ For example:</p>
 To access polyglot classes from the class path, you must also specify the <code>--add-modules=org.graalvm.polyglot</code> JVM option.
 If you are using <a href="#build-native-executables-from-polyglot-applications">GraalVM Native Image</a>, polyglot modules on the class path will be automatically upgraded to the module path.</p>
 
-<p>While we do support creating single uber JAR files from polyglot libraries, for example, using the Maven Assembly plugin, but we do not recommend it.
+<p>While we do support <a href="#uber-jar-file-creation">creating single uber JAR files</a> from polyglot libraries, for example, using the Maven Assembly plugin, we do not recommend it.
 Also note that uber JAR files are not supported when creating native binaries with GraalVM Native Image.</p>
     
       <h2 id="compile-and-run-a-polyglot-application">
@@ -1831,7 +1831,7 @@ This table shows the level of optimizations the Java runtimes currently provide:
   <tbody>
     <tr>
       <td>Oracle GraalVM</td>
-      <td>Optimized with additional compiler passes</td>
+      <td>Best (includes additional compiler optimizations)</td>
     </tr>
     <tr>
       <td>GraalVM Community Edition</td>
@@ -1839,11 +1839,11 @@ This table shows the level of optimizations the Java runtimes currently provide:
     </tr>
     <tr>
       <td>Oracle JDK</td>
-      <td>Optimized if enabled via experimental VM option</td>
+      <td>Optimized via VM option</td>
     </tr>
     <tr>
       <td>OpenJDK</td>
-      <td>Optimized if enabled via experimental VM option</td>
+      <td>Optimized via VM option and <code>--upgrade-module-path</code></td>
     </tr>
     <tr>
       <td>JDK without JVMCI capability</td>
@@ -2221,6 +2221,16 @@ public class PolyglotIsolate {
 }
 </code></pre>
 
+<p>Starting from GraalVM 25.0, a polyglot isolate can be launched in a separate external sub-process by setting the <code>--engine.IsolateMode=external</code> option.
+This allows the isolate to run in a fully separate OS process, providing an additional level of isolation. The default mode remains <code>internal</code>, which uses a Native Image isolate embedded in the same process.</p>
+
+<pre><code class="language-java">Context context = Context.newBuilder("js")
+			  .allowHostAccess(HostAccess.SCOPED)
+			  .option("engine.SpawnIsolate", "true")
+			  .option("engine.IsolateMode", "external")
+			  .build()
+</code></pre>
+
 <p>Currently, the following languages are available as polyglot isolates:</p>
 
 <table>
@@ -2453,6 +2463,146 @@ public class ExecutionListenerTest {
   <li>The <code>context.eval()</code> call evaluates a specified snippet of guest language code.</li>
   <li>The <code>listener.close()</code> closes a listener earlier, however execution listeners are automatically closed with the engine.</li>
 </ul>
+    
+      <h2 id="uber-jar-file-creation">
+        
+        
+          Uber JAR File Creation <a href="#uber-jar-file-creation" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Uber JARs are JAR files that bundle all dependencies into a single archive for easier distribution.
+However, creating an Uber JAR is not recommended for Graal languages because it breaks module descriptors, file integrity metadata, and JAR signature information.
+Uber JARs are only supported on HotSpot and are not supported for native image generation, as the Native Image tool requires intact Java module descriptors.</p>
+
+<p>If you must use Uber JARs, use the minimal configuration below and verify that it is still up to date whenever you upgrade.</p>
+
+<p>You can find a working example of valid Maven Shade and Assembly plugin configurations in the <a href="https://github.com/graalvm/polyglot-embedding-demo?tab=readme-ov-file#maven-usage">polyglot embedding example</a>.
+See the <code>shade</code> and <code>assembly</code> profiles in <a href="https://github.com/graalvm/polyglot-embedding-demo/blob/main/pom.xml#L384"><em>pom.xml</em></a>.</p>
+    
+      <h3 id="maven-shade-plugin">
+        
+        
+          Maven Shade Plugin <a href="#maven-shade-plugin" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>If you intend to use the Maven Shade plugin, include at least the following transformers and filter configuration:</p>
+
+<pre><code class="language-xml">&lt;profile&gt;
+    &lt;id&gt;shade&lt;/id&gt;
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-shade-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.5.1&lt;/version&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;shade&lt;/goal&gt;
+                        &lt;/goals&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+                &lt;configuration&gt;
+                    &lt;transformers&gt;
+                        &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/&gt;
+                        &lt;transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"&gt;
+                            &lt;mainClass&gt;org.example.embedding.Main&lt;/mainClass&gt;
+                            &lt;manifestEntries&gt;
+                                &lt;Multi-Release&gt;true&lt;/Multi-Release&gt;
+                            &lt;/manifestEntries&gt;
+                        &lt;/transformer&gt;
+                    &lt;/transformers&gt;
+                    &lt;filters&gt;
+                    	  &lt;!-- Filters JAR signature files --&gt;
+                        &lt;filter&gt;
+                            &lt;artifact&gt;*:*:*:*&lt;/artifact&gt;
+                            &lt;excludes&gt;
+                                &lt;exclude&gt;META-INF/*.SF&lt;/exclude&gt;
+                                &lt;exclude&gt;META-INF/*.DSA&lt;/exclude&gt;
+                                &lt;exclude&gt;META-INF/*.RSA&lt;/exclude&gt;
+                            &lt;/excludes&gt;
+                        &lt;/filter&gt;
+                    &lt;/filters&gt;
+                &lt;/configuration&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/profile&gt;
+</code></pre>
+    
+      <h3 id="maven-assembly-plugin">
+        
+        
+          Maven Assembly plugin <a href="#maven-assembly-plugin" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>If you are using the Maven Assembly plugin, you may apply the following configuration:</p>
+
+<pre><code class="language-xml">&lt;profile&gt;
+    &lt;id&gt;assembly&lt;/id&gt;
+    &lt;build&gt;
+        &lt;plugins&gt;
+            &lt;plugin&gt;
+                &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+                &lt;artifactId&gt;maven-assembly-plugin&lt;/artifactId&gt;
+                &lt;version&gt;3.6.0&lt;/version&gt;
+                &lt;executions&gt;
+                    &lt;execution&gt;
+                        &lt;phase&gt;package&lt;/phase&gt;
+                        &lt;goals&gt;
+                            &lt;goal&gt;single&lt;/goal&gt;
+                        &lt;/goals&gt;
+                        &lt;configuration&gt;
+                            &lt;archive&gt;
+                                &lt;manifest&gt;
+                                    &lt;mainClass&gt;org.example.embedding.Main&lt;/mainClass&gt;
+                                &lt;/manifest&gt;
+                                &lt;manifestEntries&gt;
+                                    &lt;Multi-Release&gt;true&lt;/Multi-Release&gt;
+                                &lt;/manifestEntries&gt;
+                            &lt;/archive&gt;
+                            &lt;descriptors&gt;
+                                &lt;descriptor&gt;assembly.xml&lt;/descriptor&gt;
+                            &lt;/descriptors&gt;
+                        &lt;/configuration&gt;
+                    &lt;/execution&gt;
+                &lt;/executions&gt;
+            &lt;/plugin&gt;
+        &lt;/plugins&gt;
+    &lt;/build&gt;
+&lt;/profile&gt;
+</code></pre>
+<p>with the corresponding <code>assembly.xml</code>:</p>
+
+<pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 http://maven.apache.org/xsd/assembly-2.2.0.xsd"&gt;
+    &lt;id&gt;jar-with-dependencies&lt;/id&gt;
+    &lt;formats&gt;
+        &lt;format&gt;jar&lt;/format&gt;
+    &lt;/formats&gt;
+    &lt;includeBaseDirectory&gt;false&lt;/includeBaseDirectory&gt;
+    &lt;dependencySets&gt;
+        &lt;dependencySet&gt;
+            &lt;outputDirectory&gt;/&lt;/outputDirectory&gt;
+            &lt;useProjectArtifact&gt;true&lt;/useProjectArtifact&gt;
+            &lt;unpack&gt;true&lt;/unpack&gt;
+            &lt;scope&gt;runtime&lt;/scope&gt;
+        &lt;/dependencySet&gt;
+    &lt;/dependencySets&gt;
+    &lt;containerDescriptorHandlers&gt;
+        &lt;containerDescriptorHandler&gt;
+            &lt;handlerName&gt;metaInf-services&lt;/handlerName&gt;
+        &lt;/containerDescriptorHandler&gt;
+    &lt;/containerDescriptorHandlers&gt;
+&lt;/assembly
+</code></pre>
     
       <h2 id="compatibility-with-jsr-223-scriptengine">
         

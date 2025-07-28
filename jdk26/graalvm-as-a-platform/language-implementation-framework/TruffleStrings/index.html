@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/resources/img/og-image.jpg' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      Truffle Strings Guide
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/TruffleStrings/">
+  
+
+  <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/assets/main.css'>
+  <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
+  <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
+  <script src='/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/resources/lib/purl/purl.js'></script>
+  <script src='/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+
+
+
+  <body class="preload">
+    <div class="wrapper wrapper--nofooter">
+      <header  class="header header--content" 
+  role="banner">
+
+  
+  
+
+
+
+
+  <div class="d-flex">
+    <nav class="menu">
+      <div class="menu__logo">
+        <a class="menu__logojs" href="/">
+          <img src='/resources/img/home/logo_mobile_openmenu.svg' alt="GraalVM logo">
+        </a>
+      </div>
+      <ul class="menu__list">
+        <li class="menu__item">
+          <a href='/latest/docs/' class="menu__link">Docs</a>
+        </li>
+        <li class="menu__item">
+          <a href='/guides/' class="menu__link">Guides</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://medium.com/graalvm" class="menu__link" target="_blank">Blog</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://www.youtube.com/graalvm" class="menu__link" target="_blank">Videos</a>
+        </li>
+        <li class="menu__item">
+          <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal Projects</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gdk.svg">
+                    <a href="https://graal.cloud/gdk/" class="item-line">Graal Dev Kit for Micronaut</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="/python/" class="item-line">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/wasm-navi.svg">
+                    <a href="/webassembly/" class="item-line">GraalWasm</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href='/reference-manual/java-on-truffle/' class="item-line">Espresso</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <div class="menu__item icons githubstar" tabindex="0">
+          <span class="github-widget">
+            <a tabindex="-1" class="github-button" href="https://github.com/oracle/graal" data-icon="octicon-star"
+              data-show-count="true" aria-label="Star oracle/graal on GitHub">Star</a>
+          </span>
+        </div>
+        <div class="menu__downloads">
+          <a href='/downloads/' class="btn btn-try btn-primary">Download</a>
+        </div>
+      </ul>
+      <div role="button" class="menu-btn menu-btn--menu js-show-menu" tabindex="-1" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+  
+</header>
+      <main class="content" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <article>
+  <div class="row d-flex flex-wrap">
+    <div class="col-sm-3 docsimpro col-bg">
+      <div class="sidebar-wrap">
+        <div class="sidebar">
+          <div class="menuabout">
+            <img id="sidebarClose" src="/resources/img/docs-sidebar/arrow-sidebar(close).svg"
+              alt="Expand or collapse sidebar" class="btn-color no-display">
+            <img id="sidebarOpen" src="/resources/img/docs-sidebar/arrow-sidebar.svg" alt="Expand or collapse sidebar">
+          </div>
+          
+<div class="toc-floating">
+
+
+<script>
+var sidebar = document.currentScript.parentElement;
+
+
+$(document).ready(function(){
+  var header = $('.header').height();
+  var invisibleBlock;
+
+  $("#content-wrapper h1, #content-wrapper h2").each(function() {
+    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
+  });
+
+  $(window).scroll(function() {
+    var lastitem = null;
+    $("#content-wrapper h1, #content-wrapper h2").each(function() {
+      var heading = $(this);
+      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
+      var listitem = $(sidebar).find("li").filter(function() {
+        return $(this).find("a").attr("href") == "#" + heading.attr("id");
+      });
+      listitem.removeClass("toc-bullets-focused");
+      if (position <= 0) {
+        lastitem = listitem;
+      }
+    });
+    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
+  });
+});
+
+</script>
+
+<!-- Docs version dropdown -->
+<section class="versions">
+  <div class="dropdown">
+    <div class="d-flex align-items-center version-dropdown">
+      <input name="select_value" type="hidden" id="selectedValue">
+      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
+        <span class="value-text" id="valueText">Version</span>
+      </div>
+      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
+        <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
+        <li class="select-option" onclick="window.open('https://github.com/oracle/graal/tree/master/docs', '_blank').focus()">Dev Build</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<ul class="toc-bullets">
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/">
+            Truffle Language Implementation Framework
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/BranchInstrumentation/">
+              Truffle Branches Instrumentation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/DynamicObjectModel/">
+              Dynamic Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/StaticObjectModel/">
+              Static Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">
+              Host Optimization for Interpreter Code
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Inlining/">
+              Truffle Approach to Function Inlining
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Profiling/">
+              Profiling Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">
+              Truffle Interop 2.0
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Languages/">
+              Language Implementations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">
+              Implementing a New Language with Truffle
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/NFI/">
+              Truffle Native Function Interface
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
+              Optimizing Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Options/">
+              Options
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/OnStackReplacement/">
+              On-Stack Replacement
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub toc-bullets-highlight">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TruffleStrings/">
+              Truffle Strings Guide
+            </a>
+          </li>
+
+          
+            <div>
+  <script>
+    var scriptElement = document.currentScript;
+    var div = $(scriptElement.parentElement);
+    $(window).on("load", function() {
+      $("#content-wrapper h2").each(function() {
+        var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+        a.text($(this).text().replace('#', ''));
+        li.append(a);
+        div.append(li);
+      });
+    });
+  </script>
+</div>
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/SpecializationHistogram/">
+              Specialization Histogram
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
+              Testing DSL Specializations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TCK/">
+              Polyglot API Based TCK
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
+              Truffle Approach to the Compilation Queue
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">
+              Truffle Library Guide
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AOTOverview/">
+              Truffle AOT Overview
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AOT/">
+              Truffle AOT Compilation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
+              Auxiliary Engine Caching
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Safepoint/">
+              Truffle Language Safepoint Tutorial
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/Monomorphization/">
+              Monomorphization
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">
+              Splitting Algorithm
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/MonomorphizationUseCases/">
+              Monomorphization Use Cases
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/ReportingPolymorphism/">
+              Reporting Polymorphic Specializations to Runtime
+            </a>
+          </li>
+
+          
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-9 docsmod">
+      <div id="content-wrapper" class="docs-content-old docs-content--with-sidebar">
+        <div class="docsnote">
+          <div class="docsnote__body">
+            <div class="docsnote__column">
+              <div class="docsnote-mid__card">
+                <div class="rightside">
+                  <img src='/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote-mid__subtitle">This documentation is for the unreleased GraalVM version.<a href="https://github.com/graalvm/oracle-graalvm-ea-builds/releases" target="_blank">Download Early Access Builds from GitHub</a>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        
+  <ul class="breadcrumb">
+    <li><a href='/'>Home</a></li>
+    
+    
+      
+      <li>
+        <a href="/jdk26/">
+          Jdk26
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/jdk26/graalvm-as-a-platform/">
+          Graalvm As A Platform
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/">
+          Language Implementation Framework
+        </a>
+      </li>
+      
+    
+      
+    
+  </ul>
+
+
+        
+        <h1 id="truffle-strings-guide">
+        
+        
+          Truffle Strings Guide
+        
+        
+      </h1>
+
+<p>Truffle Strings is Truffle’s primitive String type, which can be shared between languages.
+Language implementers are encouraged to use Truffle Strings as their language’s string type for easier interoperability and better performance.</p>
+
+<p><code>TruffleString</code> supports a plethora of string encodings, but is especially optimized for the most commonly used:</p>
+
+<ul>
+  <li><code>UTF-8</code></li>
+  <li><code>UTF-16</code></li>
+  <li><code>UTF-32</code></li>
+  <li><code>US-ASCII</code></li>
+  <li><code>ISO-8859-1</code></li>
+  <li><code>BYTES</code></li>
+</ul>
+    
+      <h3 id="trufflestring-api">
+        
+        
+          TruffleString API <a href="#trufflestring-api" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>All operations exposed by <code>TruffleString</code> are provided as an inner <code>Node</code>, and as static or instance methods.
+Users should use the provided nodes where possible, as the static/instance methods are just shorthands for executing their respective node’s uncached version.
+All nodes are named <code>{NameOfOperation}Node</code>, and all convenience methods are named <code>{nameOfOperation}Uncached</code>.</p>
+
+<p>Some operations support lazy evaluation, such as lazy concatenation or lazy evaluation of certain string properties.
+Most of these operations provide a parameter <code>boolean lazy</code>, which allows the user to enable or disable lazy evaluation on a per-callsite basis.</p>
+
+<p>Operations dealing with index values, such as <code>CodePointAtIndex</code>, are available in two variants: codepoint-based indexing and byte-based indexing.
+Byte-based indexing is indicated by the <code>ByteIndex</code>-suffix or prefix in an operation’s name, otherwise indices are based on codepoints.
+For example, the index parameter of<code>CodePointAtIndex</code> is codepoint-based, whereas <code>CodePointAtByteIndex</code> uses a byte-based index.</p>
+
+<p>The list of currently available operations is listed below and grouped by category.</p>
+
+<p>Creating a new <code>TruffleString</code>:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromCodePointNode.html">FromCodePoint</a>:
+Create a new TruffleString from a given codepoint.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromLongNode.html">FromLong</a>:
+Create a new TruffleString from a given long value.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromByteArrayNode.html">FromByteArray</a>:
+Create a new TruffleString from a given byte array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromCharArrayUTF16Node.html">FromCharArrayUTF16</a>:
+Create a UTF-16 TruffleString from a given char array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromIntArrayUTF32Node.html">FromIntArrayUTF32</a>:
+Create a UTF-32 TruffleString from a given int array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromJavaStringNode.html">FromJavaString</a>:
+Create a TruffleString from a given <code>java.lang.String</code>.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.FromNativePointerNode.html">FromNativePointer</a>:
+Create a new TruffleString from a given native pointer.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.Encoding.html#getEmpty--">Encoding#getEmpty</a>:
+Get an empty TruffleString in that encoding.</li>
+</ul>
+
+<p>Query string properties:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isEmpty--">isEmpty</a>:
+Check if a string is empty.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CodePointLengthNode.html">CodePointLength</a>:
+Get a string’s length in codepoints.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#byteLength-com.oracle.truffle.api.strings.TruffleString.Encoding-">byteLength</a>:
+Get a string’s length in bytes.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.IsValidNode.html">IsValid</a>:
+Check whether a string is encoded correctly.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.GetCodeRange.html">GetCodeRange</a>:
+Get coarse information about the string’s content (are all codepoints in this string from the ASCII/LATIN-1/BMP
+range?).</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.GetByteCodeRangeNode.html">GetByteCodeRange</a>:
+Get coarse information about the string’s content, without taking 16/32-bit based encodings into account.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CodeRangeEqualsNode.html">CodeRangeEquals</a>:
+Check whether a string’s code range equals the given code range.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isCompatibleTo-com.oracle.truffle.api.strings.TruffleString.Encoding-">isCompatibleTo</a>:
+Check if a string is compatible to / can be viewed in a given encoding.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isManaged--">isManaged</a>:
+Check if a string is not backed by a native pointer.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isNative--">isNative</a>:
+Check if a string is backed by a native pointer.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isImmutable--">isImmutable</a>:
+Check if a string is an instance of <code>TruffleString</code>.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isMutable--">isMutable</a>:
+Check if a string is an instance of <code>MutableTruffleString</code>.</li>
+</ul>
+
+<p>Comparison:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.EqualNode.html">Equal</a>:
+Check if two strings are equal. Note that this operation is encoding-sensitive!</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.RegionEqualNode.html">RegionEqual</a>:
+Check if two strings are equal in a given region defined by a codepoint-based offset and length.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.RegionEqualByteIndexNode.html">RegionEqualByteIndex</a>:
+Check if two strings are equal in a given region defined by a byte-based offset and length.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CompareBytesNode.html">CompareBytes</a>:
+Compare two strings byte-by-byte.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CompareCharsUTF16Node.html">CompareCharsUTF16</a>:
+Compare two UTF-16 strings char-by-char.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CompareIntsUTF32Node.html">CompareIntsUTF32</a>:
+Compare two UTF-32 strings int-by-int.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.HashCodeNode.html">HashCode</a>:
+Get a string’s hash code. The hash code is based on the string’s bytes, so strings with the same codepoints but
+different encodings may have different hash codes.</li>
+</ul>
+
+<p>Conversion:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.SwitchEncodingNode.html">SwitchEncoding</a>:
+Convert a string to a given encoding.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ForceEncodingNode.html">ForceEncoding</a>:
+Create a string containing the same bytes as the given string, but assigned to the given encoding.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.AsTruffleStringNode.html">AsTruffleString</a>:
+Convert a MutableTruffleString to an immutable TruffleString.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.AsManagedNode.html">AsManaged</a>:
+Convert a TruffleString backed by a native pointer to one backed by a java byte array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ToValidStringNode.html">ToValidString</a>:
+Convert a TruffleString to a version that is encoded correctly.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CopyToByteArrayNode.html">CopyToByteArray</a>:
+Copy a string’s content into a byte array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.GetInternalByteArrayNode.html">GetInternalByteArray</a>:
+Get a string’s internal byte array.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CopyToNativeMemoryNode.html">CopyToNativeMemory</a>:
+Copy a string’s content into a native pointer.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.GetInternalNativePointerNode.html">GetInternalNativePointer</a>:
+Get a native string’s pointer object.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ToJavaStringNode.html">ToJavaString</a>:
+Convert a string to a <code>java.lang.String</code>.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ParseIntNode.html">ParseInt</a>:
+Parse a string’s content as an int value.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ParseLongNode.html">ParseLong</a>:
+Parse a string’s content as a long value.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ParseDoubleNode.html">ParseDouble</a>:
+Parse a string’s content as a double value.</li>
+</ul>
+
+<p>Accessing codepoints and bytes:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.MaterializeNode.html">Materialize</a>:
+Use this node to avoid materialization code inside loops iterating over a string’s code points or bytes.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ReadByteNode.html">ReadByte</a>:
+Read a single byte from a string.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ReadCharUTF16Node.html">ReadCharUTF16</a>:
+Read a single char from a UTF-16 string.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CodePointAtIndexNode.html">CodePointAtIndex</a>:
+Read a single codepoint from a string at a given codepoint-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CodePointAtByteIndexNode.html">CodePointAtByteIndex</a>:
+Read a single codepoint from a string at a given byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CreateCodePointIteratorNode.html">CreateCodePointIterator</a>:
+Return a <code>TruffleStringIterator</code> object suitable for iterating the string’s codepoints.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CreateBackwardCodePointIteratorNode.html">CreateBackwardCodePointIterator</a>:
+Return a <code>TruffleStringIterator</code> object suitable for iterating the string’s codepoints, starting from the end of the
+string.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteLengthOfCodePointNode.html">ByteLengthOfCodePoint</a>:
+Return the number of bytes occupied by the codepoint starting at a given byte index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CodePointIndexToByteIndexNode.html">CodePointIndexToByteIndex</a>:
+Convert a given codepoint index to a byte index on a given string.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteIndexToCodePointIndexNode.html">ByteIndexToCodePointIndex</a>:
+Convert a given byte index to a codepoint index on a given string.</li>
+</ul>
+
+<p>Search:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteIndexOfAnyByteNode.html">ByteIndexOfAnyByte</a>:
+Find the first occurrence of any of a set of given bytes in a string and return its byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.CharIndexOfAnyCharUTF16Node.html">CharIndexOfAnyCharUTF16</a>:
+Find the first occurrence of any of a set of given chars in a UTF-16 string and return its char-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.IntIndexOfAnyIntUTF32Node.html">IntIndexOfAnyIntUTF32</a>:
+Find the first occurrence of any of a set of given ints in a UTF-32 string and return its int-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.IndexOfCodePointNode.html">IndexOfCodePoint</a>:
+Find the first occurrence of a given codepoint in a string and return its codepoint-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteIndexOfCodePointNode.html">ByteIndexOfCodePoint</a>:
+Find the first occurrence of a given codepoint in a string and return its byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteIndexOfCodePointSetNode.html">ByteIndexOfCodePointSet</a>:
+Find the first occurrence of a codepoint contained in a given set in a string and return its byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.LastIndexOfCodePointNode.html">LastIndexOfCodePoint</a>:
+Find the last occurrence of a given codepoint in a string and return its codepoint-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.LastByteIndexOfCodePointNode.html">LastByteIndexOfCodePoint</a>:
+Find the last occurrence of a given codepoint in a string and return its byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.IndexOfStringNode.html">IndexOfString</a>:
+Find the first occurrence of a given substring in a string and return its codepoint-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ByteIndexOfStringNode.html">ByteIndexOfString</a>:
+Find the first occurrence of a given substring in a string and return its byte-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.LastIndexOfStringNode.html">LastIndexOfString</a>:
+Find the last occurrence of a given substring in a string and return its codepoint-based index.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.LastByteIndexOfStringNode.html">LastByteIndexOfString</a>:
+Find the last occurrence of a given substring in a string and return its byte-based index.</li>
+</ul>
+
+<p>Combining:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.ConcatNode.html">Concat</a>:
+Concatenate two strings.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.SubstringNode.html">Substring</a>:
+Create a substring from a given string, bounded by a codepoint-based offset and length.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.SubstringByteIndexNode.html">SubstringByteIndex</a>:
+Create a substring from a given string, bounded by a byte-based offset and length.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleString.RepeatNode.html">Repeat</a>:
+Repeat a given string <em>n</em> times.</li>
+</ul>
+    
+      <h3 id="instantiation">
+        
+        
+          Instantiation <a href="#instantiation" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>A <code>TruffleString</code> can be created from a codepoint, a number, a primitive array or a <code>java.lang.String</code>.</p>
+
+<p>Strings of any encoding can be created with <code>TruffleString.FromByteArrayNode</code>, which expects a byte array containing the already encoded string.
+This operation can be non-copying, by setting the <code>copy</code> parameter to <code>false</code>.</p>
+
+<p>Important: <code>TruffleStrings</code> will assume the array content to be immutable, do not modify the array after passing it to the non-copying variant of this operation.</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static TruffleString someSpecialization(
+            @Cached TruffleString.FromByteArrayNode fromByteArrayNode) {
+        byte[] array = {'a', 'b', 'c'};
+        return fromByteArrayNode.execute(array, 0, array.length, TruffleString.Encoding.UTF_8, false);
+    }
+}
+</code></pre>
+
+<p>For easier creation of UTF-16 and UTF-32 strings independent of the system’s endianness, <code>TruffleString</code> provides <code>TruffleString.FromCharArrayUTF16Node</code> and <code>TruffleString.FromIntArrayUTF32Node</code>.</p>
+
+<p><code>TruffleString</code> may also be created via <code>TruffleStringBuilder</code>, which is <code>TruffleString</code>’s equivalent to <code>java.lang.StringBuilder</code>.</p>
+
+<p><code>TruffleStringBuilder</code> provides the following operations:</p>
+
+<ul>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendByteNode.html">AppendByte</a>:
+Append a single byte to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendCharUTF16Node.html">AppendCharUTF16</a>:
+Append a single char to a UTF-16 string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendCodePointNode.html">AppendCodePoint</a>:
+Append a single codepoint to string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendIntNumberNode.html">AppendIntNumber</a>:
+Append an integer number to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendLongNumberNode.html">AppendLongNumber</a>:
+Append a long number to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendStringNode.html">AppendString</a>:
+Append a TruffleString to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendSubstringByteIndexNode.html">AppendSubstringByteIndex</a>:
+Append a substring, defined by a byte-based offset and length, to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.AppendJavaStringUTF16Node.html">AppendJavaStringUTF16</a>:
+Append a Java String substring, defined by a char-based offset and length, to a string builder.</li>
+  <li><a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/TruffleStringBuilder.ToStringNode.html">ToString</a>:
+Create a new TruffleString from a string builder.</li>
+</ul>
+
+<p>See the below example:</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+import com.oracle.truffle.api.strings.TruffleStringBuilder;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static TruffleString someSpecialization(
+            @Cached TruffleStringBuilder.AppendCharUTF16Node appendCharNode,
+            @Cached TruffleStringBuilder.AppendJavaStringUTF16Node appendJavaStringNode,
+            @Cached TruffleStringBuilder.AppendIntNumberNode appendIntNumberNode,
+            @Cached TruffleStringBuilder.AppendStringNode appendStringNode,
+            @Cached TruffleString.FromCharArrayUTF16Node fromCharArrayUTF16Node,
+            @Cached TruffleStringBuilder.AppendCodePointNode appendCodePointNode,
+            @Cached TruffleStringBuilder.ToStringNode toStringNode) {
+        TruffleStringBuilder sb = TruffleStringBuilder.create(TruffleString.Encoding.UTF_16);
+        sb = appendCharNode.execute(sb, 'a');
+        sb = appendJavaStringNode.execute(sb, "abc", /* fromIndex: */ 1, /* length: */ 2);
+        sb = appendIntNumberNode.execute(sb, 123);
+        TruffleString string = fromCharArrayUTF16Node.execute(new char[]{'x', 'y'}, /* fromIndex: */ 0, /* length: */ 2);
+        sb = appendStringNode.execute(sb, string);
+        sb = appendCodePointNode.execute(sb, 'z');
+        return toStringNode.execute(sb); // string content: "abc123xyz"
+    }
+}
+</code></pre>
+    
+      <h3 id="encodings">
+        
+        
+          Encodings <a href="#encodings" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Every <code>TruffleString</code> is encoded in a specific internal encoding, which is set during instantiation.</p>
+
+<p><code>TruffleString</code> is fully optimized for the following encodings:</p>
+
+<ul>
+  <li><code>UTF-8</code></li>
+  <li><code>UTF-16</code></li>
+  <li><code>UTF-32</code></li>
+  <li><code>US-ASCII</code></li>
+  <li><code>ISO-8859-1</code></li>
+  <li><code>BYTES</code></li>
+</ul>
+
+<p>Many other encodings are supported, but not fully optimized.
+To use them, they must be enabled by setting <code>needsAllEncodings = true</code> in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Registration.html">Truffle language registration</a>.</p>
+
+<p>A <code>TruffleString</code>’s internal encoding is not exposed.
+Instead of querying a string’s encoding, languages should pass an <code>expectedEncoding</code> parameter to all methods where the string’s encoding matters (which is almost all operations).
+This allows re-using string objects when converting between encodings, if a string is byte-equivalent in both encodings.
+A string can be converted to a different encoding using <code>SwitchEncodingNode</code>, as shown in the following example:</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+import com.oracle.truffle.api.strings.TruffleStringBuilder;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static void someSpecialization(
+            @Cached TruffleString.FromJavaStringNode fromJavaStringNode,
+            @Cached TruffleString.ReadByteNode readByteNode,
+            @Cached TruffleString.SwitchEncodingNode switchEncodingNode,
+            @Cached TruffleString.ReadByteNode utf8ReadByteNode) {
+
+        // instantiate a new UTF-16 string
+        TruffleString utf16String = fromJavaStringNode.execute("foo", TruffleString.Encoding.UTF_16);
+
+        // read a byte with expectedEncoding = UTF-16.
+        // if the string is not byte-compatible with UTF-16, this method will throw an IllegalArgumentException
+        System.out.printf("%x%n", readByteNode.execute(utf16String, /* byteIndex */ 0, TruffleString.Encoding.UTF_16));
+
+        // convert to UTF-8.
+        // note that utf8String may be reference-equal to utf16String!
+        TruffleString utf8String = switchEncodingNode.execute(utf16String, TruffleString.Encoding.UTF_8);
+
+        // read a byte with expectedEncoding = UTF-8
+        // if the string is not byte-compatible with UTF-8, this method will throw an IllegalArgumentException
+        System.out.printf("%x%n", utf8ReadByteNode.execute(utf8String, /* byteIndex */ 0, TruffleString.Encoding.UTF_8));
+    }
+}
+</code></pre>
+
+<p>Byte-equivalency between encodings is determined <em>with</em> string compaction on UTF-16 and UTF-32, so e.g. a compacted UTF-16 String is byte-equivalent to ISO-8859-1, and if all of its characters are in the ASCII range (see <code>CodeRange</code>), it is also byte-equivalent to UTF-8.</p>
+
+<p>To check if your code is switching encodings properly, run your unit tests with the system property <code>truffle.strings.debug-strict-encoding-checks=true</code>.
+This disables re-using string objects when switching encodings, and makes encoding checks more strict: all operations working on a single string will enforce an exact match,
+whereas operations working on two strings will still allow byte-equivalent re-interpretations.</p>
+
+<p>All <code>TruffleString</code> operations with more than one string parameter require the strings to be in an encoding compatible with the result encoding.
+So either the strings need to be in the same encoding, or the caller must ensure that both Strings are <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/strings/AbstractTruffleString.html#isCompatibleTo-com.oracle.truffle.api.strings.TruffleString.Encoding-">compatible</a> with the resulting encoding.
+This enable callers which already know the <code>SwitchEncodingNodes</code> would be noops to just skip them for footprint reasons.</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+import com.oracle.truffle.api.strings.TruffleStringBuilder;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static boolean someSpecialization(
+            TruffleString a,
+            TruffleString b,
+            @Cached TruffleString.SwitchEncodingNode switchEncodingNodeA,
+            @Cached TruffleString.SwitchEncodingNode switchEncodingNodeB,
+            @Cached TruffleString.EqualNode equalNode) {
+        TruffleString utf8A = switchEncodingNodeA.execute(a, TruffleString.Encoding.UTF_8);
+        TruffleString utf8B = switchEncodingNodeB.execute(b, TruffleString.Encoding.UTF_8);
+        return equalNode.execute(utf8A, utf8B, TruffleString.Encoding.UTF_8);
+    }
+}
+</code></pre>
+    
+      <h3 id="string-properties">
+        
+        
+          String Properties <a href="#string-properties" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><code>TruffleString</code> exposes the following properties:</p>
+
+<ul>
+  <li><code>byteLength</code>: The string’s length in bytes, exposed via the <code>byteLength</code> method.</li>
+  <li><code>codePointLength</code>: The string’s length in codepoints, exposed via <code>CodePointLengthNode</code>.</li>
+  <li><code>isValid</code>: Can be queried via <code>IsValidNode</code> to check whether the string is encoded correctly.</li>
+  <li><code>codeRange</code>: Provides coarse information about the string’s content, exposed via <code>GetCodeRangeNode</code>. This property can
+have the following values:
+    <ul>
+      <li><code>ASCII</code>: All codepoints in this string are part of the Basic Latin Unicode block, also known as ASCII (0x00 -
+0x7f).</li>
+      <li><code>LATIN-1</code>: All codepoints in this string are part of the ISO-8859-1 character set (0x00 - 0xff), which is
+equivalent to the union of the Basic Latin and the Latin-1 Supplement Unicode block. At least one codepoint in the
+string is greater than 0x7f. Only applicable to ISO-8859-1, UTF-16 and UTF-32.</li>
+      <li><code>BMP</code>: All codepoints in this string are part of the Unicode Basic Multilingual Plane (BMP) (0x0000 - 0xffff). At
+least one codepoint in the string is greater than 0xff. Only applicable to UTF-16 and UTF-32.</li>
+      <li><code>VALID</code>: This string is encoded correctly, and contains at least one codepoint outside the other applicable code
+ranges (e.g. for UTF-8, this means there is one codepoint outside the ASCII range, and for UTF-16 this means that
+there is one codepoint outside the BMP range).</li>
+      <li><code>BROKEN</code>: This string is not encoded correctly. No further information about its contents can be determined.</li>
+    </ul>
+  </li>
+  <li><code>hashCode</code>: The string’s hash code, exposed via <code>HashCodeNode</code>. The hash code is dependent on the string’s encoding;
+strings must always be converted to a common encoding before comparing their hash codes!</li>
+</ul>
+
+<p>See the below example how to query all properties exposed by <code>TruffleString</code>:</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static TruffleString someSpecialization(
+            TruffleString string,
+            @Cached TruffleString.CodePointLengthNode codePointLengthNode,
+            @Cached TruffleString.IsValidNode isValidNode,
+            @Cached TruffleString.GetCodeRangeNode getCodeRangeNode,
+            @Cached TruffleString.HashCodeNode hashCodeNode) {
+        System.out.println("byte length: " + string.byteLength(TruffleString.Encoding.UTF_8));
+        System.out.println("codepoint length: " + codePointLengthNode.execute(string, TruffleString.Encoding.UTF_8));
+        System.out.println("is valid: " + isValidNode.execute(string));
+        System.out.println("code range: " + getCodeRangeNode.execute(string));
+        System.out.println("hash code: " + hashCodeNode.execute(string, TruffleString.Encoding.UTF_8));
+    }
+}
+</code></pre>
+    
+      <h3 id="string-equality-and-comparison">
+        
+        
+          String Equality and Comparison <a href="#string-equality-and-comparison" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><code>TruffleString</code> objects should be checked for equality using <code>EqualNode</code>.
+Just like <code>HashCodeNode</code>, the equality comparison is sensitive to the string’s encoding, so before any comparison, strings should always be converted to a common encoding. <code>Object#equals(Object)</code> behaves analogous to <code>EqualNode</code>, but since this method does not have an <code>expectedEncoding</code> parameter, it will determine the string’s common encoding automatically.
+If the string’s encodings are not equal, <code>TruffleString</code> will check whether one string is binary-compatible to the other string’s encoding, and if so, match their content. Otherwise, the strings are deemed not equal, no automatic conversion is applied.</p>
+
+<p>Note that since <code>TruffleString</code>’s <code>hashCode</code> and <code>equals</code> methods are sensitive to string encoding, <code>TruffleString</code> objects must always be converted to a common encoding before, e.g., using them as keys in a <code>HashMap</code>.</p>
+
+<p><code>TruffleString</code> also provides three comparison nodes <code>CompareBytesNode</code>, <code>CompareCharsUTF16Node</code>, and <code>CompareIntsUTF32Node</code>, to compare strings respectively byte-by-byte, char-by-char, and int-by-int.</p>
+    
+      <h3 id="concatenation">
+        
+        
+          Concatenation <a href="#concatenation" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Concatenation is done via <code>ConcatNode</code>.
+This operation requires both strings to be in <code>expectedEncoding</code>, which is also the encoding of the resulting string. <em>Lazy concatenation</em> is supported via the <code>lazy</code> parameter.
+When two strings are concatenated lazily, the allocation and initialization of the new string’s internal array is delayed until another operation requires direct access to that array.
+Materialization of such “lazy concatenation strings” can be triggered explicitly with a <code>MaterializeNode</code>.
+This is useful to do before accessing a string in a loop, such as in the following example:</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static TruffleString someSpecialization(
+            TruffleString utf8StringA,
+            TruffleString utf8StringB,
+            @Cached TruffleString.ConcatNode concatNode,
+            @Cached TruffleString.MaterializeNode materializeNode,
+            @Cached TruffleString.ReadByteNode readByteNode) {
+        // lazy concatenation
+        TruffleString lazyConcatenated = concatNode.execute(utf8StringA, utf8StringB, TruffleString.Encoding.UTF_8, /* lazy */ true);
+
+        // explicit materialization
+        TruffleString materialized = materializeNode.execute(lazyConcatenated, TruffleString.Encoding.UTF_8);
+
+        int byteLength = materialized.byteLength(TruffleString.Encoding.UTF_8);
+        for (int i = 0; i &lt; byteLength; i++) {
+            // string is guaranteed to be materialized here, so no slow materialization code can end up in this loop
+            System.out.printf("%x%n", readByteNode.execute(materialized, i, TruffleString.Encoding.UTF_8));
+        }
+    }
+}
+</code></pre>
+    
+      <h3 id="substrings">
+        
+        
+          Substrings <a href="#substrings" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>Substrings can be created via <code>SubstringNode</code> and <code>SubstringByteIndexNode</code>, which use codepoint-based and byte-based indices, respectively.
+Substrings can also be <code>lazy</code>, meaning that no new array is created for the resulting string, but instead the parent string’s array is re-used and just accessed with the offset and length passed to the substring node.
+Currently, a lazy substring’s internal array is never trimmed (i.e. replaced by a new array of the string’s exact length).
+Note that this behavior effectively creates a memory leak whenever a lazy substring is created.
+An extreme example where this could be problematic: given a string that is 100 megabyte in size, any lazy substring created from this string will keep the 100 megabyte array alive, even when the original string is freed by the garbage collector.
+Use lazy substrings with caution.</p>
+    
+      <h3 id="interoperability-with-javalangstring">
+        
+        
+          Interoperability with <code>java.lang.String</code> <a href="#interoperability-with-javalangstring" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>TruffleString provides <code>FromJavaStringNode</code> for converting a <code>java.lang.String</code> to <code>TruffleString</code>.
+To convert from <code>TruffleString</code> to <code>java.lang.String</code>, use a <code>ToJavaStringNode</code>.
+This node will internally convert the string to UTF-16, if necessary, and create a <code>java.lang.String</code> from that representation.</p>
+
+<p><code>Object#toString()</code> is implemented using the uncached version of <code>ToJavaStringNode</code> and should be avoided on fast paths.</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static void someSpecialization(
+            @Cached TruffleString.FromJavaStringNode fromJavaStringNode,
+            @Cached TruffleString.SwitchEncodingNode switchEncodingNode,
+            @Cached TruffleString.ToJavaStringNode toJavaStringNode,
+            @Cached TruffleString.ReadByteNode readByteNode) {
+        TruffleString utf16String = fromJavaStringNode.execute("foo", TruffleString.Encoding.UTF_16);
+        TruffleString utf8String = switchEncodingNode.execute(utf16String, TruffleString.Encoding.UTF_8);
+        System.out.println(toJavaStringNode.execute(utf8String));
+    }
+}
+</code></pre>
+
+<p><code>TruffleString</code> also exposes <code>#toStringDebug()</code> for debugging purposes.
+Do not use this method for anything other than debugging, as its return value is unspecified and may change at any time.</p>
+    
+      <h3 id="differences-to-javalangstring">
+        
+        
+          Differences to <code>java.lang.String</code> <a href="#differences-to-javalangstring" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The following items should be considered when switching from <code>java.lang.String</code> to <code>TruffleString</code>:</p>
+
+<ul>
+  <li>The static overhead of <code>TruffleString</code> instances is larger than that of <code>java.lang.String</code> objects. A <code>TruffleString</code> object
+contains 2 pointers fields, 4 <code>int</code> fields and 4 <code>byte</code> fields, which will usually result in a total object size of 40
+bytes (object header of 12 bytes, 4 bytes per pointer with compressed oops, 8-byte memory alignment). A
+<code>java.lang.String</code> object contains one pointer field, one <code>int</code> field and one <code>byte</code> field, which in the same conditions
+results in a total object size of 24 bytes. This difference in memory footprint may negatively impact some cases where
+lots of small strings are generated.</li>
+  <li><code>TruffleString</code> does string compaction just like <code>java.lang.String</code>.</li>
+  <li>If your language needs to convert strings to other encodings, e.g. UTF-8, which is very common in web applications,
+<code>TruffleString</code> can turn this operation into a no-op if the string does now contain special characters. For example,
+ASCII-only strings can be re-interpreted as almost any encoding, and converting an ASCII-only UTF-16 string to UTF-8
+is a no-op.
+In cases where transcoding a string is unavoidable, <code>TruffleString</code>s will cache the transcoded string in the original
+string, so transcoding is only done once per string and encoding.</li>
+  <li>In order to use 3rd party libraries, <code>TruffleString</code> object will have to be converted to <code>java.lang.String</code> and back. In
+order to make this as cheap as possible, <code>TruffleString</code> re-uses Java String’s internal byte arrays when converting from
+<code>java.lang.String</code> to <code>TruffleString</code>, and caches Java Strings created from <code>TruffleString</code> objects in the object itself.</li>
+  <li><code>TruffleString</code> offers additional features not present in <code>java.lang.String</code>:
+    <ul>
+      <li>Lazy concatenation and string views, which can significantly decrease the amount of array-copy operations your
+language may have to do.</li>
+      <li><code>String</code> views into native memory, completely avoiding the need to copy native memory into Java arrays before using
+it.</li>
+      <li><code>String</code> content classification via the <code>codeRange</code> property, which allows specializations on strings that are
+ASCII-only et cetera. This can reduce the complexity of some string operations significantly.</li>
+    </ul>
+  </li>
+  <li>The performance of all <code>TruffleString</code> operations should be on par with or better than their <code>java.lang.String</code>-counterparts.</li>
+</ul>
+    
+      <h3 id="codepoint-iterators">
+        
+        
+          Codepoint Iterators <a href="#codepoint-iterators" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><code>TruffleString</code> provides <code>TruffleStringIterator</code> as a means of iterating over a string’s codepoints.
+This method should be preferred over using <code>CodePointAtIndexNode</code> in a loop, especially on variable-width encodings such as UTF-8, since <code>CodePointAtIndexNode</code> may have to re-calculate the byte index equivalent of the given codepoint index on every call.</p>
+
+<p>See the example:</p>
+
+<pre><code class="language-java">import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.strings.TruffleString;
+import com.oracle.truffle.api.strings.TruffleStringIterator;
+
+abstract static class SomeNode extends Node {
+
+    @Specialization
+    static void someSpecialization(
+            TruffleString string,
+            @Cached TruffleString.CreateCodePointIteratorNode createCodePointIteratorNode,
+            @Cached TruffleStringIterator.NextNode nextNode,
+            @Cached TruffleString.CodePointLengthNode codePointLengthNode,
+            @Cached TruffleString.CodePointAtIndexNode codePointAtIndexNode) {
+
+        // iterating over a string's codepoints using TruffleStringIterator
+        TruffleStringIterator iterator = createCodePointIteratorNode.execute(string, TruffleString.Encoding.UTF_8);
+        while (iterator.hasNext()) {
+            System.out.printf("%x%n", nextNode.execute(iterator));
+        }
+
+        // suboptimal variant: using CodePointAtIndexNode in a loop
+        int codePointLength = codePointLengthNode.execute(string, TruffleString.Encoding.UTF_8);
+        for (int i = 0; i &lt; codePointLength; i++) {
+            // performance problem: codePointAtIndexNode may have to calculate the byte index corresponding
+            // to codepoint index i for every loop iteration
+            System.out.printf("%x%n", codePointAtIndexNode.execute(string, i, TruffleString.Encoding.UTF_8));
+        }
+    }
+}
+</code></pre>
+    
+      <h3 id="mutable-strings">
+        
+        
+          Mutable Strings <a href="#mutable-strings" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p><code>TruffleString</code> also provides a mutable string variant called <code>MutableTruffleString</code>, which is also accepted in all nodes of <code>TruffleString</code>. <code>MutableTruffleString</code> is <em>not thread-safe</em> and allows overwriting bytes in its internal byte array or native pointer via <code>WriteByteNode</code>.
+The internal array or native pointer’s content may also be modified externally, but the corresponding <code>MutableTruffleString</code> must be notified of this via <code>notifyExternalMutation()</code>.
+<code>MutableTruffleString</code> is <em>not</em> a Truffle interop type, and must be converted to an immutable <code>TruffleString</code> via <code>TruffleString.AsTruffleString</code> before passing a language boundary.</p>
+
+      </div>
+      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+</div>
+
+      </main>
+      <!-- Connect with us -->
+<section class="content-section socials">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row-socials">
+      <div class="title">
+        <h2 class="title-section">Connect with us</h2>
+      </div>
+      <div class="social-icons">
+        <div class="wider-logo">
+          <a href="https://github.com/oracle/graal" target="_blank" title="github social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="github social media icon">
+              <path
+                d="M12 0C5.374 0 0 5.373 0 12C0 17.302 3.438 21.8 8.207 23.387C8.806 23.498 9 23.126 9 22.81V20.576C5.662 21.302 4.967 19.16 4.967 19.16C4.421 17.773 3.634 17.404 3.634 17.404C2.545 16.659 3.717 16.675 3.717 16.675C4.922 16.759 5.556 17.912 5.556 17.912C6.626 19.746 8.363 19.216 9.048 18.909C9.155 18.134 9.466 17.604 9.81 17.305C7.145 17 4.343 15.971 4.343 11.374C4.343 10.063 4.812 8.993 5.579 8.153C5.455 7.85 5.044 6.629 5.696 4.977C5.696 4.977 6.704 4.655 8.997 6.207C9.954 5.941 10.98 5.808 12 5.803C13.02 5.808 14.047 5.941 15.006 6.207C17.297 4.655 18.303 4.977 18.303 4.977C18.956 6.63 18.545 7.851 18.421 8.153C19.191 8.993 19.656 10.064 19.656 11.374C19.656 15.983 16.849 16.998 14.177 17.295C14.607 17.667 15 18.397 15 19.517V22.81C15 23.129 15.192 23.504 15.801 23.386C20.566 21.797 24 17.3 24 12C24 5.373 18.627 0 12 0Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://x.com/graalvm" target="_blank" title="x social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg" alt="X social media icon">
+              <path d="M714.2 507.9L1167 0H1060.1L661.8 460.4L343.9 0H0L475.4 690.3L0 1227H106.9L531.8 738.5L875.6 1227H1219.5L714.2 507.9ZM582.6 675.5L537.9 611.2L144.6 80.6H288.5L598.8 530.5L643.5 594.8L1048.5 1146.4H904.6L582.6 675.5Z" fill="#171F26"/>
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.linkedin.com/company/graalvm/" target="_blank" title="linkedin social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="linkedin social media icon">
+              <path
+                d="M12 0C5.3736 0 0 5.3736 0 12C0 18.6264 5.3736 24 12 24C18.6264 24 24 18.6264 24 12C24 5.3736 18.6264 0 12 0ZM8.51294 18.1406H5.59039V9.34808H8.51294V18.1406ZM7.05176 8.14746H7.03271C6.052 8.14746 5.41772 7.47235 5.41772 6.6286C5.41772 5.76581 6.07141 5.10938 7.07117 5.10938C8.07092 5.10938 8.68616 5.76581 8.7052 6.6286C8.7052 7.47235 8.07092 8.14746 7.05176 8.14746ZM19.051 18.1406H16.1288V13.4368C16.1288 12.2547 15.7057 11.4485 14.6483 11.4485C13.8409 11.4485 13.3601 11.9923 13.1488 12.5173C13.0715 12.7051 13.0527 12.9677 13.0527 13.2305V18.1406H10.1303C10.1303 18.1406 10.1686 10.173 10.1303 9.34808H13.0527V10.593C13.441 9.9939 14.1359 9.14172 15.6865 9.14172C17.6093 9.14172 19.051 10.3984 19.051 13.099V18.1406Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://medium.com/graalvm" target="_blank" title="medium social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="medium social media icon">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M12 0C5.374 0 0 5.372 0 12C0 18.627 5.374 24 12 24C18.627 24 24 18.627 24 12C24 5.372 18.627 0 12 0ZM18.974 17.557V17.322L17.882 16.25C17.786 16.177 17.738 16.056 17.758 15.937V8.063C17.738 7.944 17.786 7.823 17.882 7.75L19 6.678V6.443H15.131L12.373 13.323L9.235 6.443H5.176V6.678L6.484 8.253C6.612 8.368 6.678 8.538 6.66 8.71V14.898C6.698 15.121 6.628 15.349 6.471 15.512L5 17.296V17.531H9.17V17.296L7.699 15.512C7.541 15.349 7.466 15.123 7.497 14.898V9.546L11.157 17.531H11.582L14.725 9.546V15.911C14.725 16.081 14.725 16.113 14.614 16.224L13.484 17.322V17.557H18.974Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://bsky.app/profile/graalvm.org" target="_blank" title="blue sky social media link">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2442_17265)">
+              <path d="M6.6075 3.99362C9.59982 6.25419 12.8184 10.8377 14.0001 13.2975C15.1819 10.8379 18.4003 6.25415 21.3927 3.99362C23.5518 2.36248 27.0501 1.1004 27.0501 5.11641C27.0501 5.91846 26.5931 11.8541 26.3251 12.8177C25.3935 16.1679 21.9986 17.0224 18.9789 16.5052C24.2574 17.4093 25.6002 20.4037 22.7002 23.3982C17.1927 29.0853 14.7843 21.9713 14.1669 20.1484C14.0537 19.8143 14.0008 19.6579 14 19.7909C13.9992 19.6579 13.9463 19.8143 13.8332 20.1484C13.216 21.9713 10.8077 29.0855 5.29983 23.3982C2.39985 20.4037 3.74261 17.4091 9.0212 16.5052C6.00134 17.0224 2.60645 16.1679 1.67495 12.8177C1.40692 11.854 0.949951 5.91837 0.949951 5.11641C0.949951 1.1004 4.44834 2.36248 6.60735 3.99362H6.6075Z" fill="#171F26"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2442_17265">
+              <rect width="27" height="24" fill="white" transform="translate(0.5 2)"/>
+              </clipPath>
+              </defs>
+              </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="/slack-invitation/" title="slack social media link">
+            <svg class="social-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="slack social media icon">
+              <path
+                d="M13.0009 23.1698C12.9989 23.6678 12.8495 24.154 12.5714 24.5671C12.2933 24.9802 11.899 25.3017 11.4384 25.4909C10.9777 25.6801 10.4714 25.7285 9.98319 25.6302C9.49502 25.5318 9.04693 25.291 8.6955 24.9382C8.34408 24.5854 8.10506 24.1363 8.00863 23.6478C7.91221 23.1592 7.96269 22.6531 8.15371 22.1932C8.34474 21.7333 8.66773 21.3403 9.08193 21.0638C9.49612 20.7874 9.98294 20.6398 10.4809 20.6398H13.0009V23.1698ZM14.2709 29.4798C14.3636 30.0763 14.6665 30.6201 15.125 31.0128C15.5835 31.4055 16.1672 31.6214 16.7709 31.6214C17.3746 31.6214 17.9584 31.4055 18.4168 31.0128C18.8753 30.6201 19.1782 30.0763 19.2709 29.4798V23.1698C19.327 22.8091 19.3043 22.4404 19.2044 22.0893C19.1045 21.7381 18.9299 21.4127 18.6923 21.1354C18.4548 20.8582 18.1601 20.6356 17.8284 20.483C17.4968 20.3304 17.136 20.2514 16.7709 20.2514C16.4058 20.2514 16.0451 20.3304 15.7134 20.483C15.3817 20.6356 15.087 20.8582 14.8495 21.1354C14.612 21.4127 14.4373 21.7381 14.3374 22.0893C14.2375 22.4404 14.2149 22.8091 14.2709 23.1698V29.4798ZM19.2709 13.0398V10.5198C19.2806 10.0137 19.1382 9.51621 18.8622 9.09184C18.5861 8.66746 18.1891 8.33567 17.7224 8.13936C17.2558 7.94305 16.741 7.89125 16.2445 7.99067C15.7481 8.09009 15.293 8.33615 14.9379 8.69703C14.5829 9.05791 14.3442 9.51701 14.2529 10.015C14.1616 10.5129 14.2217 11.0268 14.4256 11.4902C14.6295 11.9536 14.9677 12.3452 15.3965 12.6143C15.8253 12.8835 16.325 13.0177 16.8309 12.9998L19.2709 13.0398ZM10.4309 14.3098C9.8344 14.4025 9.29069 14.7054 8.89796 15.1639C8.50523 15.6224 8.28938 16.2061 8.28938 16.8098C8.28938 17.4135 8.50523 17.9973 8.89796 18.4557C9.29069 18.9142 9.8344 19.2171 10.4309 19.3098H16.7409C17.1017 19.3659 17.4703 19.3432 17.8215 19.2433C18.1726 19.1434 18.498 18.9688 18.7753 18.7312C19.0526 18.4937 19.2751 18.199 19.4278 17.8673C19.5804 17.5357 19.6594 17.1749 19.6594 16.8098C19.6594 16.4447 19.5804 16.084 19.4278 15.7523C19.2751 15.4206 19.0526 15.1259 18.7753 14.8884C18.498 14.6509 18.1726 14.4762 17.8215 14.3763C17.4703 14.2765 17.1017 14.2538 16.7409 14.3098H10.4309ZM26.8709 19.3098H29.3909C29.8984 19.3379 30.4027 19.2124 30.8378 18.9497C31.273 18.6871 31.619 18.2994 31.8307 17.8373C32.0424 17.3752 32.1099 16.86 32.0246 16.3589C31.9392 15.8578 31.7049 15.3941 31.3522 15.0281C30.9995 14.6621 30.5447 14.4108 30.0471 14.307C29.5495 14.2032 29.0322 14.2517 28.5626 14.4461C28.093 14.6406 27.6928 14.972 27.4142 15.3972C27.1357 15.8224 26.9916 16.3216 27.0009 16.8298L26.8709 19.3098ZM25.6009 10.4698C25.5605 9.82762 25.2769 9.22495 24.8078 8.78447C24.3387 8.34399 23.7194 8.0988 23.0759 8.0988C22.4324 8.0988 21.8131 8.34399 21.3441 8.78447C20.875 9.22495 20.5914 9.82762 20.5509 10.4698V16.7798C20.5292 17.1248 20.5784 17.4705 20.6955 17.7957C20.8125 18.1209 20.995 18.4187 21.2316 18.6707C21.4682 18.9226 21.7539 19.1234 22.0711 19.2607C22.3883 19.398 22.7303 19.4688 23.0759 19.4688C23.4216 19.4688 23.7635 19.398 24.0807 19.2607C24.3979 19.1234 24.6837 18.9226 24.9203 18.6707C25.1568 18.4187 25.3393 18.1209 25.4564 17.7957C25.5734 17.4705 25.6226 17.1248 25.6009 16.7798V10.4698ZM20.6409 26.9998V29.5198C20.6389 30.0206 20.7856 30.5108 21.0624 30.9281C21.3392 31.3455 21.7337 31.6713 22.1958 31.8644C22.6579 32.0574 23.1669 32.1089 23.6583 32.0124C24.1498 31.9159 24.6015 31.6758 24.9563 31.3223C25.3112 30.9689 25.5531 30.5181 25.6516 30.0271C25.75 29.536 25.7005 29.0268 25.5093 28.564C25.3181 28.1011 24.9938 27.7054 24.5775 27.4269C24.1613 27.1485 23.6717 26.9998 23.1709 26.9998H20.6409ZM29.4809 25.7298C30.1231 25.6894 30.7258 25.4058 31.1663 24.9367C31.6068 24.4676 31.8519 23.8483 31.8519 23.2048C31.8519 22.5613 31.6068 21.942 31.1663 21.473C30.7258 21.0039 30.1231 20.7203 29.4809 20.6798H23.1709C22.826 20.6581 22.4802 20.7073 22.155 20.8244C21.8298 20.9414 21.532 21.1239 21.2801 21.3605C21.0281 21.5971 20.8273 21.8828 20.69 22.2C20.5528 22.5172 20.4819 22.8592 20.4819 23.2048C20.4819 23.5505 20.5528 23.8924 20.69 24.2096C20.8273 24.5268 21.0281 24.8126 21.2801 25.0492C21.532 25.2858 21.8298 25.4682 22.155 25.5853C22.4802 25.7023 22.826 25.7515 23.1709 25.7298H29.4809Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.youtube.com/graalvm" target="_blank" title="youtube social media link">
+            <svg class="social-icon" width="35" height="24" viewBox="0 0 35 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="youtube social media icon">
+              <path
+                d="M18.1713 23.9692L11.0316 23.839C8.71989 23.7937 6.40246 23.8843 4.13616 23.4143C0.688425 22.7121 0.444187 19.2692 0.188588 16.3812C-0.163569 12.321 -0.0272501 8.18716 0.637305 4.16095C1.01218 1.90151 2.48897 0.553774 4.77232 0.406542C12.48 -0.125756 20.2388 -0.0634659 27.9295 0.185695C28.7417 0.208346 29.5597 0.332927 30.3605 0.474496C34.3138 1.16535 34.4103 5.06699 34.6659 8.35138C34.9215 11.6698 34.8136 15.0051 34.3251 18.3008C33.9332 21.0303 33.1835 23.318 30.0197 23.5389C26.0551 23.8277 22.1814 24.0599 18.2054 23.9862C18.2054 23.9692 18.1827 23.9692 18.1713 23.9692ZM13.9738 17.0607C16.9615 15.3505 19.8924 13.6687 22.863 11.9699C19.8696 10.2597 16.9445 8.57789 13.9738 6.87907V17.0607Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__getstarted">
+        <div class="rubber-footer">
+          <p class="title-footer quickstart">Get started with GraalVM</p>
+          <p class="footer-desc">Available for Linux, macOS, and Windows platforms</p>
+          <a href="/latest/docs/getting-started/" class="btn btn-primary">Get started</a>
+        </div>
+      </div>
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
+              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/25.0/javadoc/sdk/" target="_blank">GraalVM SDK
+                  Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">GraalVM Blog</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">GraalVM
+                  Workshops</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">GraalVM
+                  Demos</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
+                  GraalVM</a></li>
+              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
+                  Developers</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
+                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
+                  Guidelines</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
+              </li>
+              <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/support/">Support</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2018, 2025, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+            registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function fadeInAndOut(thz) {
+    var elmt = thz.nextElementSibling;//Get the element that is below the button that
+    //was just clicked
+    if (elmt.clientHeight) {
+      elmt.style.height = 0;
+    } else {
+      var wrapper = elmt.querySelector('ul');
+      elmt.style.height = wrapper.clientHeight + "px";
+    }
+  }
+</script>
+    </div>
+    <div class="overlay"></div>
+    <script src='/resources/lib/slick-slider/slick.min.js'></script>
+    <script src='/resources/js/main.js'></script>
+    <script src='/resources/js/download.js'></script>
+    <script src='/resources/js/sidebar.js'></script>
+    <script src='/resources/js/favicon.js'></script>
+  </body>
+</html>

@@ -189,8 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -1328,7 +1328,11 @@ and then clicking the <code>Search in following phases</code> button.</p>
 <p>Since the version 25, Truffle has an automatic deoptimization cycle detection feature. This feature is available and enabled by default when running optimized on JDK 25 and later.
 Whenever a deoptimization cycle is detected, the compilation fails with a permanent bailout that contains the Java stacktrace of the location, if available.</p>
 
-<p>Compilation failures are not printed by default. One way of printing compilation failures is to set the option <code>engine.CompilationFailureAction</code> to <code>Print</code>. To also print an approximated stack trace of the deoptimization location, <code>compiler.NodeSourcePositions</code> has to be enabled.</p>
+<p>Compilation failures are not printed by default. One way of printing compilation failures is to set the option <code>engine.CompilationFailureAction</code> to <code>Print</code>. This also prints an approximated stack trace of the deoptimization location.</p>
+
+<blockquote>
+  <p>Note: To get the approximated stack trace of the deoptimization location in a native image, the image has to be built with <code>-H:+IncludeNodeSourcePositions</code>.</p>
+</blockquote>
 
 <p>Deoptimization cycle detection can be completely disabled by setting <code>compiler.DeoptCycleDetectionThreshold</code> to <code>-1</code>.</p>
 
@@ -1370,7 +1374,7 @@ Whenever a deoptimization cycle is detected, the compilation fails with a perman
 <p>In general, when no new code to compile is introduced, Truffle compilations should eventually stabilize and no new compilations/deoptimizations should be produced. However, the above root node
 <code>InvalidArgumentProfilingNode</code> contains a bug which causes a deoptimization cycle. When the root node is executed repeatedly and the argument keeps changing, the number of deoptimizations/recompilations is unlimited.
 The following command executes the program with the default deoptimization cycle detection and a deopt stacktrace printing for any detected repeated deoptimization.</p>
-<pre><code class="language-commandline">java -Dpolyglot.engine.AllowExperimentalOptions=true -Dpolyglot.compiler.NodeSourcePositions=true -Dpolyglot.engine.CompilationFailureAction=Print DeoptCycleDetectionTest
+<pre><code class="language-commandline">java -Dpolyglot.engine.CompilationFailureAction=Print DeoptCycleDetectionTest
 </code></pre>
 <p>The expected output is</p>
 <pre><code>[engine] opt fail     DeoptCycleDetectionTest.InvalidArgumentProfilingNode@761490b0|AST      1

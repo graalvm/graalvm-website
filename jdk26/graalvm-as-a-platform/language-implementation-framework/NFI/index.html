@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/resources/img/og-image.jpg' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      Truffle Native Function Interface
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/NFI/">
+  
+
+  <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/assets/main.css'>
+  <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
+  <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
+  <script src='/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/resources/lib/purl/purl.js'></script>
+  <script src='/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+
+
+
+  <body class="preload">
+    <div class="wrapper wrapper--nofooter">
+      <header  class="header header--content" 
+  role="banner">
+
+  
+  
+
+
+
+
+  <div class="d-flex">
+    <nav class="menu">
+      <div class="menu__logo">
+        <a class="menu__logojs" href="/">
+          <img src='/resources/img/home/logo_mobile_openmenu.svg' alt="GraalVM logo">
+        </a>
+      </div>
+      <ul class="menu__list">
+        <li class="menu__item">
+          <a href='/latest/docs/' class="menu__link">Docs</a>
+        </li>
+        <li class="menu__item">
+          <a href='/guides/' class="menu__link">Guides</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://medium.com/graalvm" class="menu__link" target="_blank">Blog</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://www.youtube.com/graalvm" class="menu__link" target="_blank">Videos</a>
+        </li>
+        <li class="menu__item">
+          <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal Projects</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gdk.svg">
+                    <a href="https://graal.cloud/gdk/" class="item-line">Graal Dev Kit for Micronaut</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="/python/" class="item-line">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/wasm-navi.svg">
+                    <a href="/webassembly/" class="item-line">GraalWasm</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href='/reference-manual/java-on-truffle/' class="item-line">Espresso</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <div class="menu__item icons githubstar" tabindex="0">
+          <span class="github-widget">
+            <a tabindex="-1" class="github-button" href="https://github.com/oracle/graal" data-icon="octicon-star"
+              data-show-count="true" aria-label="Star oracle/graal on GitHub">Star</a>
+          </span>
+        </div>
+        <div class="menu__downloads">
+          <a href='/downloads/' class="btn btn-try btn-primary">Download</a>
+        </div>
+      </ul>
+      <div role="button" class="menu-btn menu-btn--menu js-show-menu" tabindex="-1" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+  
+</header>
+      <main class="content" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <article>
+  <div class="row d-flex flex-wrap">
+    <div class="col-sm-3 docsimpro col-bg">
+      <div class="sidebar-wrap">
+        <div class="sidebar">
+          <div class="menuabout">
+            <img id="sidebarClose" src="/resources/img/docs-sidebar/arrow-sidebar(close).svg"
+              alt="Expand or collapse sidebar" class="btn-color no-display">
+            <img id="sidebarOpen" src="/resources/img/docs-sidebar/arrow-sidebar.svg" alt="Expand or collapse sidebar">
+          </div>
+          
+<div class="toc-floating">
+
+
+<script>
+var sidebar = document.currentScript.parentElement;
+
+
+$(document).ready(function(){
+  var header = $('.header').height();
+  var invisibleBlock;
+
+  $("#content-wrapper h1, #content-wrapper h2").each(function() {
+    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
+  });
+
+  $(window).scroll(function() {
+    var lastitem = null;
+    $("#content-wrapper h1, #content-wrapper h2").each(function() {
+      var heading = $(this);
+      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
+      var listitem = $(sidebar).find("li").filter(function() {
+        return $(this).find("a").attr("href") == "#" + heading.attr("id");
+      });
+      listitem.removeClass("toc-bullets-focused");
+      if (position <= 0) {
+        lastitem = listitem;
+      }
+    });
+    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
+  });
+});
+
+</script>
+
+<!-- Docs version dropdown -->
+<section class="versions">
+  <div class="dropdown">
+    <div class="d-flex align-items-center version-dropdown">
+      <input name="select_value" type="hidden" id="selectedValue">
+      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
+        <span class="value-text" id="valueText">Version</span>
+      </div>
+      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
+        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Latest)', 'latest');">GraalVM for JDK 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 26 (Early Access)', 'jdk26');">GraalVM for JDK 26 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
+        <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
+        <li class="select-option" onclick="window.open('https://github.com/oracle/graal/tree/master/docs', '_blank').focus()">Dev Build</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<ul class="toc-bullets">
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/">
+            Truffle Language Implementation Framework
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/BranchInstrumentation/">
+              Truffle Branches Instrumentation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/DynamicObjectModel/">
+              Dynamic Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/StaticObjectModel/">
+              Static Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">
+              Host Optimization for Interpreter Code
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Inlining/">
+              Truffle Approach to Function Inlining
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Profiling/">
+              Profiling Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">
+              Truffle Interop 2.0
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Languages/">
+              Language Implementations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">
+              Implementing a New Language with Truffle
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub toc-bullets-highlight">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/NFI/">
+              Truffle Native Function Interface
+            </a>
+          </li>
+
+          
+            <div>
+  <script>
+    var scriptElement = document.currentScript;
+    var div = $(scriptElement.parentElement);
+    $(window).on("load", function() {
+      $("#content-wrapper h2").each(function() {
+        var li = $("<li></li>", { class: "toc-bullets-sub toc-bullets-sub-3" });
+        var a = $("<a></a>", { href: "#" + $(this).attr("id") });
+        a.text($(this).text().replace('#', ''));
+        li.append(a);
+        div.append(li);
+      });
+    });
+  </script>
+</div>
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
+              Optimizing Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Options/">
+              Options
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/OnStackReplacement/">
+              On-Stack Replacement
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TruffleStrings/">
+              Truffle Strings Guide
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/SpecializationHistogram/">
+              Specialization Histogram
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
+              Testing DSL Specializations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TCK/">
+              Polyglot API Based TCK
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
+              Truffle Approach to the Compilation Queue
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">
+              Truffle Library Guide
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AOTOverview/">
+              Truffle AOT Overview
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AOT/">
+              Truffle AOT Compilation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
+              Auxiliary Engine Caching
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/Safepoint/">
+              Truffle Language Safepoint Tutorial
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/Monomorphization/">
+              Monomorphization
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">
+              Splitting Algorithm
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/MonomorphizationUseCases/">
+              Monomorphization Use Cases
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/splitting/ReportingPolymorphism/">
+              Reporting Polymorphic Specializations to Runtime
+            </a>
+          </li>
+
+          
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-9 docsmod">
+      <div id="content-wrapper" class="docs-content-old docs-content--with-sidebar">
+        <div class="docsnote">
+          <div class="docsnote__body">
+            <div class="docsnote__column">
+              <div class="docsnote-mid__card">
+                <div class="rightside">
+                  <img src='/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote-mid__subtitle">This documentation is for the unreleased GraalVM version.<a href="https://github.com/graalvm/oracle-graalvm-ea-builds/releases" target="_blank">Download Early Access Builds from GitHub</a>.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        
+  <ul class="breadcrumb">
+    <li><a href='/'>Home</a></li>
+    
+    
+      
+      <li>
+        <a href="/jdk26/">
+          Jdk26
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/jdk26/graalvm-as-a-platform/">
+          Graalvm As A Platform
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/jdk26/graalvm-as-a-platform/language-implementation-framework/">
+          Language Implementation Framework
+        </a>
+      </li>
+      
+    
+      
+    
+  </ul>
+
+
+        
+        <h1 id="truffle-native-function-interface">
+        
+        
+          Truffle Native Function Interface
+        
+        
+      </h1>
+
+<p>Truffle includes a way to call native functions, called the Native Function Interface (NFI).
+It is implemented as an internal language on top of Truffle that language implementors can access via the standard polyglot eval interface and Truffle interoperability.
+NFI is intended to be used, for example, to implement a language’s FFI, or to call native runtime routines that are not available in Java.</p>
+
+<p>NFI uses <code>libffi</code>.
+On a standard JVM it calls it using JNI, and on GraalVM Native Image it uses system Java.
+In the future it may be optimised by the Graal Compiler in native executables so that native calls are made directly from the compiled code.</p>
+    
+      <h2 id="stability">
+        
+        
+          Stability <a href="#stability" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The NFI is an internal language designed for language implementors.
+It is not considered stable and the interface and behavior may change without warning.
+It is not intended to be used directly by end-users.</p>
+    
+      <h2 id="basic-concepts">
+        
+        
+          Basic Concepts <a href="#basic-concepts" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The NFI is accessed via the polyglot interface of whatever language you are using.
+This could be Java, or it could be a Truffle language.
+This lets you use the NFI from both your Java language implementation code, or from your guest language to reduce the amount of Java that you need to write.</p>
+
+<p>The entry point is the polyglot <code>eval</code> interface.
+This runs a special DSL, and returns Truffle interoperability objects which can then expose more methods.</p>
+
+<p>Below are some examples using Ruby’s polyglot interface, but any other JVM or a language implementation could be used instead.</p>
+    
+      <h2 id="basic-example">
+        
+        
+          Basic Example <a href="#basic-example" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Here is a basic working example, before going into the details:</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load "libSDL2.dylib"')  # load a library
+symbol = library['SDL_GetRevisionNumber']               # load a symbol from the library
+signature = Polyglot.eval('nfi', '():UINT32')           # prepare a signature
+function = signature.bind(symbol)                       # bind the symbol to the signature to create a function
+puts function.call # =&gt; 12373                           # call the function
+</code></pre>
+    
+      <h2 id="loading-libaries">
+        
+        
+          Loading libaries <a href="#loading-libaries" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To load a library, a script written in the ‘<code>nfi</code>’ language DSL is evaluated.
+It returns an object that represents the loaded library.</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', '...load command...')
+</code></pre>
+
+<p>The load command can be any of these forms:</p>
+
+<ul>
+  <li><code>default</code></li>
+  <li><code>load "filename"</code></li>
+  <li><code>load (flag | flag | ...) "filename"</code></li>
+</ul>
+
+<p>The <code>default</code> command returns a pseudo-library that contains all symbols already loaded in
+the process, equivalent to <code>RTLD_DEFAULT</code> in the Posix interface.</p>
+
+<p>The <code>load "filename"</code> command loads a library from a file.
+You are responsible for any cross-platform concerns about library naming conventions and load paths.</p>
+
+<p>The <code>load (flag | flag | ...) "filename"</code> command allows you to specify flags to load the library.
+For the default backend (backends will be described later), and when running on a Posix platform, the flags available are <code>RTLD_GLOBAL</code>, <code>RTLD_LOCAL</code>, <code>RTLD_LAZY</code>, and <code>RTLD_NOW</code>, which have the conventional Posix semantics.
+The default is <code>RTLD_NOW</code> if neither <code>RTLD_LAZY</code> nor <code>RTLD_NOW</code> were specified.</p>
+    
+      <h2 id="loading-symbols-from-libraries">
+        
+        
+          Loading Symbols from Libraries <a href="#loading-symbols-from-libraries" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To load a symbol from a library, read the symbol as a property from the library object that was previously loaded.</p>
+
+<pre><code class="language-ruby">symbol = library['symbol_name']
+</code></pre>
+    
+      <h2 id="producing-native-function-objects-from-symbols">
+        
+        
+          Producing Native Function Objects from Symbols <a href="#producing-native-function-objects-from-symbols" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To get an executable object that you can call in order to invoke the native function, <em>bind</em> the symbol object that was previously loaded, by creating a signature object and calling the <code>bind</code> method on it.
+The signature object needs to match the native function’s actual type signature.</p>
+
+<pre><code class="language-ruby">signature = Polyglot.eval('nfi', '...signature...')
+function = signature.bind(symbol)
+</code></pre>
+
+<p>The format of the signature is <code>(arg, arg, ...) : return</code>, where <code>arg</code> and <code>return</code> are types.</p>
+
+<p>Types can be one of the simple types:</p>
+
+<ul>
+  <li><code>VOID</code></li>
+  <li><code>UINT8</code></li>
+  <li><code>SINT8</code></li>
+  <li><code>UINT16</code></li>
+  <li><code>SINT16</code></li>
+  <li><code>UINT32</code></li>
+  <li><code>SINT32</code></li>
+  <li><code>UINT64</code></li>
+  <li><code>SINT64</code></li>
+  <li><code>FLOAT</code></li>
+  <li><code>DOUBLE</code></li>
+  <li><code>POINTER</code></li>
+  <li><code>STRING</code></li>
+  <li><code>OBJECT</code></li>
+  <li><code>ENV</code></li>
+</ul>
+
+<p>Array types are formed by placing another type in square brackets.
+For example <code>[UINT8]</code>. These are C-style arrays.</p>
+
+<p>Function pointer types are formed by writing a nested signature.
+For example the signature of <code>qsort</code> would be <code>(POINTER, UINT64, UINT64, (POINTER, POINTER) : SINT32) : VOID</code>.</p>
+
+<p>For a function with a signature with variadic arguments, you specify <code>...</code> where the variadic arguments start, but then you must specify the actual types that you will be calling the function with.
+You may therefore need to bind the same symbol multiple times in order to call it with different types or a different number of arguments.
+For example, to call <code>printf</code> with <code>%d %f</code> you would use the type signature <code>(STRING, ...SINT32, DOUBLE) : SINT32</code>.</p>
+
+<p>Type expressions can be nested arbitrarily deep.</p>
+
+<p>Two additional special types, <code>ENV</code> and <code>OBJECT</code>, are described in the section on the native API, later in this document.</p>
+
+<p>Types can be written in any case.</p>
+
+<p>You are responsible for any mapping of types from a foreign language such as C into NFI types.</p>
+    
+      <h2 id="calling-native-function-objects">
+        
+        
+          Calling Native Function Objects <a href="#calling-native-function-objects" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>To call a native function, execute it.</p>
+
+<pre><code class="language-ruby">return_value = function.call(...arguments...)
+</code></pre>
+    
+      <h2 id="calling-back-from-native-code-to-managed-functions">
+        
+        
+          Calling back from Native Code to Managed Functions <a href="#calling-back-from-native-code-to-managed-functions" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Using nested signatures, a function call can get function pointers as arguments.
+The managed caller needs to pass a Polyglot executable object, that will be converted to a native function pointer.
+When calling this function pointer from the native side, the <code>execute</code> message is sent to the Polyglot object.</p>
+
+<pre><code class="language-C">void native_function(int32_t (*fn)(int32_t)) {
+  printf("%d\n", fn(15));
+}
+</code></pre>
+
+<pre><code class="language-ruby">signature = Polyglot.eval('nfi', '((SINT32):SINT32):VOID')
+native_function = signature.bind(library['native_function'])
+native_function.call(-&gt;(x) { x + 1 })
+</code></pre>
+
+<p>The arguments and return values of callback functions are converted the same as for regular function calls, with the conversion in the other direction, i.e., arguments are converted from native to managed, and return values are converted from managed to native.</p>
+
+<p>Callback function pointers can themselves have function pointer arguments.
+That works as you would expect: the function accepts a native function pointer as argument, and it is converted to a Truffle executable object.
+Sending the <code>execute</code> message to that object calls the native function pointer, same as calling a regular NFI function.</p>
+
+<p>Function pointer types are also supported as return types.</p>
+    
+      <h2 id="combined-loading-and-binding">
+        
+        
+          Combined Loading and Binding <a href="#combined-loading-and-binding" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>You can optionally combine loading a library with loading symbols and binding them.
+This is achieved with an extended <code>load</code> command, which then returns an object with the already bound functions as methods.</p>
+
+<p>These two examples are equivalent:</p>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load libSDL2.dylib')
+symbol = library['SDL_GetRevisionNumber']
+signature = Polyglot.eval('nfi', '():UINT32')
+function = signature.bind(symbol)
+puts function.call # =&gt; 12373
+</code></pre>
+
+<pre><code class="language-ruby">library = Polyglot.eval('nfi', 'load libSDL2.dylib { SDL_GetRevisionNumber():UINT32; }')
+puts library.SDL_GetRevisionNumber # =&gt; 12373
+</code></pre>
+
+<p>The definitions in the curly braces <code>{}</code> can contain multiple function bindings, so that many functions can be loaded from a library at once.</p>
+    
+      <h2 id="backends">
+        
+        
+          Backends <a href="#backends" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The load command can be prefixed by <code>with</code> in order to select a specific NFI backend.
+Multiple NFI backends are available.
+The default is called <code>native</code>, and will be used if there is no <code>with</code> prefix, or the selected backend is not available.</p>
+
+<p>Depending on the configuration of components you are running, available backends may include:</p>
+<ul>
+  <li><code>native</code></li>
+  <li><code>llvm</code>, which uses the GraalVM LLVM runtime to run the native code</li>
+  <li><code>panama</code></li>
+</ul>
+    
+      <h3 id="panama-backend">
+        
+        
+          Panama backend <a href="#panama-backend" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The Panama backend uses the Foreign Function and Memory APIs introduced by <a href="https://openjdk.org/projects/panama/">project Panama</a>. 
+This backend only supports a subset of all the types. Specifically, it does not support <code>STRING</code>, <code>OBJECT</code>, <code>ENV</code>, <code>FP80</code> or array types.
+Although less feature-complete, the backend is typically more performant.
+It is available starting from JDK 22.</p>
+    
+      <h3 id="truffle-nfi-on-native-image">
+        
+        
+          Truffle NFI on Native Image <a href="#truffle-nfi-on-native-image" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>To build a native image that contains the Truffle NFI, it is sufficient to use the <code>--language:nfi</code> argument, or specify <code>Requires = language:nfi</code> in <code>native-image.properties</code>.
+It is possible to select what implementation to use for the <code>native</code> backend using <code>--language:nfi=&lt;backend&gt;</code>.</p>
+
+<p>Note that the <code>--language:nfi=&lt;backend&gt;</code> argument must come before any other arguments that might pull in the NFI as dependency via <code>Requires = language:nfi</code>.
+The first instance of <code>language:nfi</code> wins and determines what backend will be built into the native image.</p>
+
+<p>Available arguments for <code>--language:nfi=&lt;backend&gt;</code> are:</p>
+<ul>
+  <li><code>libffi</code> (the default)</li>
+  <li><code>none</code></li>
+</ul>
+
+<p>Selecting the <code>none</code> native backend will effectively disable access to native functions using the Truffle NFI.
+This will break users of the NFI that rely on native access (e.g. the GraalVM LLVM Runtime, unless used with <code>--llvm.managed</code> on EE).</p>
+    
+      <h2 id="native-api">
+        
+        
+          Native API <a href="#native-api" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The NFI can be used with unmodified, already compiled native code, but it can also be used with a Truffle-specific API being used by the native code.</p>
+
+<p>The special type <code>ENV</code> adds an additional parameter <code>TruffleEnv *env</code> to the signature.
+An additional simple type <code>OBJECT</code> translates to an opaque <code>TruffleObject</code> type.</p>
+
+<p>The <code>trufflenfi.h</code> header file provides declarations for working with these types, that can then be used by the native code called through the NFI.
+See <code>trufflenfi.h</code> for more documentation on this API.</p>
+    
+      <h2 id="type-marshalling">
+        
+        
+          Type Marshalling <a href="#type-marshalling" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>This section describes in detail how argument values and return values are converted for all types in the function signature.</p>
+
+<p>The following table shows the possible types in NFI signatures with their corresponding C language types on the native side, and what polyglot values these arguments map to on the managed side:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>NFI type</th>
+      <th>C language type</th>
+      <th>Polyglot value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>VOID</code></td>
+      <td><code>void</code></td>
+      <td>Polyglot object with <code>isNull == true</code> (only valid as return type).</td>
+    </tr>
+    <tr>
+      <td><code>SINT8/16/32/64</code></td>
+      <td><code>int8/16/32/64_t</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsIn...</code> the corresponding integer type.</td>
+    </tr>
+    <tr>
+      <td><code>UINT8/16/32/64</code></td>
+      <td><code>uint8/16/32/64_t</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsIn...</code> the corresponding integer type.</td>
+    </tr>
+    <tr>
+      <td><code>FLOAT</code></td>
+      <td><code>float</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsInFloat</code>.</td>
+    </tr>
+    <tr>
+      <td><code>DOUBLE</code></td>
+      <td><code>double</code></td>
+      <td>Polyglot <code>isNumber</code> that <code>fitsInDouble</code>.</td>
+    </tr>
+    <tr>
+      <td><code>POINTER</code></td>
+      <td><code>void *</code></td>
+      <td>Polyglot object with <code>isPointer == true</code> or <code>isNull == true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>STRING</code></td>
+      <td><code>char *</code> (zero-terminated UTF-8 string)</td>
+      <td>Polyglot <code>isString</code>.</td>
+    </tr>
+    <tr>
+      <td><code>OBJECT</code></td>
+      <td><code>TruffleObject</code></td>
+      <td>Arbitrary object.</td>
+    </tr>
+    <tr>
+      <td><code>[type]</code></td>
+      <td><code>type *</code> (array of primitive)</td>
+      <td>Java host primitive array.</td>
+    </tr>
+    <tr>
+      <td><code>(args):ret</code></td>
+      <td><code>ret (*)(args)</code> (function pointer type)</td>
+      <td>Polyglot function with <code>isExecutable == true</code>.</td>
+    </tr>
+    <tr>
+      <td><code>ENV</code></td>
+      <td><code>TruffleEnv *</code></td>
+      <td>nothing (injected argument)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>The following sections describe the type conversions in detail.</p>
+
+<p>The type conversion behavior with function pointers can be slightly confusing, because the direction of the arguments is reversed.
+When in doubt, always try to figure out in which direction arguments or return values flow, from managed to native or from native to managed.</p>
+    
+      <h3 id="void">
+        
+        
+          <code>VOID</code> <a href="#void" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This type is only allowed as return type, and is used to denote functions that do not return a value.</p>
+
+<p>Since in the Polyglot API, all executable objects have to return a value, a Polyglot object with <code>isNull == true</code> will be returned from native functions that have a <code>VOID</code> return type.</p>
+
+<p>The return value of managed callback functions with return type <code>VOID</code> will be ignored.</p>
+    
+      <h3 id="primitive-numbers">
+        
+        
+          Primitive Numbers <a href="#primitive-numbers" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>The primitive number types are converted as you might expect.
+The argument needs to be a Polyglot number, and its value needs to fit in the value range of the specified numeric type.</p>
+
+<p>One thing to note is the handling of the unsigned integer types.
+Even though the Polyglot API does not specify separate messages for values fitting in unsigned types, the conversion is still using the unsigned value ranges.
+For example, the value <code>0xFF</code> passed from native to managed through a return value of type <code>SINT8</code> will result in a Polyglot number <code>-1</code>, which <code>fitsInByte</code>.
+But the same value returned as <code>UINT8</code> results in a Polyglot number <code>255</code>, which does <em>not</em> <code>fitsInByte</code>.</p>
+
+<p>When passing numbers from managed code to native code, the signedness of the number is ignored, only the bits of the number are relevant.
+So for example, passing <code>-1</code> to an argument of type <code>UINT8</code> is allowed, and the result on the native side is <code>255</code>, since it has the same bits as <code>-1</code>.
+The other way round, passing <code>255</code> to an argument of type <code>SINT8</code> is also allowed, and the result on the native side is <code>-1</code>.</p>
+
+<p>Since in the current Polyglot API it is not possible to represent numbers outside of the signed 64-bit range, the <code>UINT64</code> type is currently handled with <em>signed</em> semantics.
+This is a known bug in the API, and will change in a future release.</p>
+    
+      <h3 id="pointer">
+        
+        
+          <code>POINTER</code> <a href="#pointer" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This type is a generic pointer argument.
+On the native side, it does not matter what exact pointer type the argument is.</p>
+
+<p>A polyglot object passed to <code>POINTER</code> arguments will be converted to a native pointer if possible (using the <code>isPointer</code>, <code>asPointer</code> and <code>toNative</code> messages as necessary).
+An object with <code>isNull == true</code> will be passed as a native <code>NULL</code>.</p>
+
+<p><code>POINTER</code> return values will produce a polyglot object with <code>isPointer == true</code>.
+The native <code>NULL</code> pointer will additionally have <code>isNull == true</code>.</p>
+    
+      <h3 id="string">
+        
+        
+          <code>STRING</code> <a href="#string" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This is a pointer type with special conversion semantics for strings.</p>
+
+<p>Polyglot strings passed from managed to native using the <code>STRING</code> type will be converted to a zero-terminated UTF-8 encoded string.
+For <code>STRING</code> arguments, the pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+The <code>STRING</code> values returned from managed function pointers to a native caller are also owned by the caller.
+They have to be freed with <code>free</code> after use.</p>
+
+<p>Polyglot pointer values or null values can also be passed to <code>STRING</code> arguments.
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid UTF-8 string.</p>
+
+<p>The <code>STRING</code> values passed from native functions to managed code behave like <code>POINTER</code> return values, but in addition they have <code>isString == true</code>.
+The user is responsible for the ownership of the pointer and it might be necessary to <code>free</code> the return value, depending on the semantics of the called native function.
+After freeing the returned pointer, the returned polyglot string is invalid and reading it results in undefined behavior.
+In that sense, the returned polyglot string is not a safe object, similar to a raw pointer.
+It is recommented that the user of the NFI copies the returned string before passing it along to untrusted managed code.</p>
+    
+      <h3 id="object">
+        
+        
+          <code>OBJECT</code> <a href="#object" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This argument corresponds to the C type <code>TruffleObject</code>.
+This type is defined in <code>trufflenfi.h</code>, and is an opaque pointer type.
+A value of type <code>TruffleObject</code> represents a reference to an arbitrary managed object.</p>
+
+<p>Native code can do nothing with values of type <code>TruffleObject</code> except pass them back to managed code, either through return values or passing them to callback function pointers.</p>
+
+<p>The lifetime of <code>TruffleObject</code> references needs to be managed manually.
+See the documentation in <code>trufflenfi.h</code> for API functions to manage the lifetime of <code>TruffleObject</code> references.</p>
+
+<p>A <code>TruffleObject</code> passed as an argument is owned by the caller, and guaranteed to stay alive for the duration of the call.
+A <code>TruffleObject</code> reference returned from a callback function pointer is owned by the caller, and needs to be freed after use.
+Returning a <code>TruffleObject</code> from a native function does <em>not</em> transfer ownership (but there is an API function in <code>trufflenfi.h</code> to do that).</p>
+    
+      <h3 id="-native-primitive-arrays">
+        
+        
+          <code>[...]</code> (Native Primitive Arrays) <a href="#-native-primitive-arrays" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This type is only allowed as an argument from managed code to a native function, and only arrays of primitive numeric types are supported.</p>
+
+<p>On the managed side, only Java host objects containing a Java primitive array are supported.
+On the native side, the type is a pointer to the contents of the array.
+It is the user’s responsibility to pass along the array length as a separate argument.</p>
+
+<p>The pointer is valid for the duration of the native call only.</p>
+
+<p>Modifications to the contents are propagated back to the Java array after returning from the call.
+The effects of concurrent access to the Java array during the native call are unspecified.</p>
+    
+      <h3 id="-function-pointer">
+        
+        
+          <code>(...):...</code> (Function Pointer) <a href="#-function-pointer" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>On the native side, a nested signature type corresponds to a function pointer with the given signature, calling back to managed code.</p>
+
+<p>Polyglot executable objects passed from managed to native using a function pointer type are converted to a function pointer that can be called by the native code.
+For function pointer arguments, the function pointer is owned by the caller, and is guaranteed to stay alive for the duration of the call only.
+Function pointer return values are owned by the caller, and have to be freed manually.
+See <code>polyglot.h</code> for API functions to manage the lifetime of function pointer values.</p>
+
+<p>Polyglot pointer values or null values can also be passed to function pointer arguments.
+The semantics is the same as for <code>POINTER</code> arguments.
+The user is responsible for ensuring that the pointer is a valid function pointer.</p>
+
+<p>Function pointer return types are the same as regular <code>POINTER</code> return types, but in addition they are already <em>bound</em> to the given signature type.
+They support the <code>execute</code> message, and behave the same as regular NFI functions.</p>
+    
+      <h3 id="env">
+        
+        
+          <code>ENV</code> <a href="#env" class="anchor_heading">#</a>
+        
+        
+      </h3>
+
+<p>This type is a special argument of type <code>TruffleEnv *</code>.
+It is only valid as argument type, not as a return type.
+It is an injected argument on the native side, there is no corresponding argument on the managed side.</p>
+
+<p>When used as argument type of a native function, the native function will get an environment pointer on this position.
+That environment pointer can be used to call API functions (see <code>trufflenfi.h</code>).
+The argument is injected, for example, if the signature is <code>(SINT32, ENV, SINT32):VOID</code>.
+This function object is expected to be called with two integer arguments, and the corresponding native function will be called with three arguments: first the first real argument, then the injected <code>ENV</code> argument, and then the second real argument.</p>
+
+<p>When the <code>ENV</code> type is used as an argument type for a function pointer parameter, that function pointer must be called with a valid NFI environment as an argument.
+If the caller already has an environment, threading it through to callback function pointers is more efficient than calling them without an <code>ENV</code> argument.</p>
+    
+      <h2 id="calling-convention">
+        
+        
+          Calling Convention <a href="#calling-convention" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Native functions must use the system’s standard ABI.
+There is currently no support for alternative ABIs.</p>
+
+      </div>
+      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+</div>
+
+      </main>
+      <!-- Connect with us -->
+<section class="content-section socials">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row-socials">
+      <div class="title">
+        <h2 class="title-section">Connect with us</h2>
+      </div>
+      <div class="social-icons">
+        <div class="wider-logo">
+          <a href="https://github.com/oracle/graal" target="_blank" title="github social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="github social media icon">
+              <path
+                d="M12 0C5.374 0 0 5.373 0 12C0 17.302 3.438 21.8 8.207 23.387C8.806 23.498 9 23.126 9 22.81V20.576C5.662 21.302 4.967 19.16 4.967 19.16C4.421 17.773 3.634 17.404 3.634 17.404C2.545 16.659 3.717 16.675 3.717 16.675C4.922 16.759 5.556 17.912 5.556 17.912C6.626 19.746 8.363 19.216 9.048 18.909C9.155 18.134 9.466 17.604 9.81 17.305C7.145 17 4.343 15.971 4.343 11.374C4.343 10.063 4.812 8.993 5.579 8.153C5.455 7.85 5.044 6.629 5.696 4.977C5.696 4.977 6.704 4.655 8.997 6.207C9.954 5.941 10.98 5.808 12 5.803C13.02 5.808 14.047 5.941 15.006 6.207C17.297 4.655 18.303 4.977 18.303 4.977C18.956 6.63 18.545 7.851 18.421 8.153C19.191 8.993 19.656 10.064 19.656 11.374C19.656 15.983 16.849 16.998 14.177 17.295C14.607 17.667 15 18.397 15 19.517V22.81C15 23.129 15.192 23.504 15.801 23.386C20.566 21.797 24 17.3 24 12C24 5.373 18.627 0 12 0Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://x.com/graalvm" target="_blank" title="x social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg" alt="X social media icon">
+              <path d="M714.2 507.9L1167 0H1060.1L661.8 460.4L343.9 0H0L475.4 690.3L0 1227H106.9L531.8 738.5L875.6 1227H1219.5L714.2 507.9ZM582.6 675.5L537.9 611.2L144.6 80.6H288.5L598.8 530.5L643.5 594.8L1048.5 1146.4H904.6L582.6 675.5Z" fill="#171F26"/>
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.linkedin.com/company/graalvm/" target="_blank" title="linkedin social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="linkedin social media icon">
+              <path
+                d="M12 0C5.3736 0 0 5.3736 0 12C0 18.6264 5.3736 24 12 24C18.6264 24 24 18.6264 24 12C24 5.3736 18.6264 0 12 0ZM8.51294 18.1406H5.59039V9.34808H8.51294V18.1406ZM7.05176 8.14746H7.03271C6.052 8.14746 5.41772 7.47235 5.41772 6.6286C5.41772 5.76581 6.07141 5.10938 7.07117 5.10938C8.07092 5.10938 8.68616 5.76581 8.7052 6.6286C8.7052 7.47235 8.07092 8.14746 7.05176 8.14746ZM19.051 18.1406H16.1288V13.4368C16.1288 12.2547 15.7057 11.4485 14.6483 11.4485C13.8409 11.4485 13.3601 11.9923 13.1488 12.5173C13.0715 12.7051 13.0527 12.9677 13.0527 13.2305V18.1406H10.1303C10.1303 18.1406 10.1686 10.173 10.1303 9.34808H13.0527V10.593C13.441 9.9939 14.1359 9.14172 15.6865 9.14172C17.6093 9.14172 19.051 10.3984 19.051 13.099V18.1406Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://medium.com/graalvm" target="_blank" title="medium social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="medium social media icon">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M12 0C5.374 0 0 5.372 0 12C0 18.627 5.374 24 12 24C18.627 24 24 18.627 24 12C24 5.372 18.627 0 12 0ZM18.974 17.557V17.322L17.882 16.25C17.786 16.177 17.738 16.056 17.758 15.937V8.063C17.738 7.944 17.786 7.823 17.882 7.75L19 6.678V6.443H15.131L12.373 13.323L9.235 6.443H5.176V6.678L6.484 8.253C6.612 8.368 6.678 8.538 6.66 8.71V14.898C6.698 15.121 6.628 15.349 6.471 15.512L5 17.296V17.531H9.17V17.296L7.699 15.512C7.541 15.349 7.466 15.123 7.497 14.898V9.546L11.157 17.531H11.582L14.725 9.546V15.911C14.725 16.081 14.725 16.113 14.614 16.224L13.484 17.322V17.557H18.974Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://bsky.app/profile/graalvm.org" target="_blank" title="blue sky social media link">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2442_17265)">
+              <path d="M6.6075 3.99362C9.59982 6.25419 12.8184 10.8377 14.0001 13.2975C15.1819 10.8379 18.4003 6.25415 21.3927 3.99362C23.5518 2.36248 27.0501 1.1004 27.0501 5.11641C27.0501 5.91846 26.5931 11.8541 26.3251 12.8177C25.3935 16.1679 21.9986 17.0224 18.9789 16.5052C24.2574 17.4093 25.6002 20.4037 22.7002 23.3982C17.1927 29.0853 14.7843 21.9713 14.1669 20.1484C14.0537 19.8143 14.0008 19.6579 14 19.7909C13.9992 19.6579 13.9463 19.8143 13.8332 20.1484C13.216 21.9713 10.8077 29.0855 5.29983 23.3982C2.39985 20.4037 3.74261 17.4091 9.0212 16.5052C6.00134 17.0224 2.60645 16.1679 1.67495 12.8177C1.40692 11.854 0.949951 5.91837 0.949951 5.11641C0.949951 1.1004 4.44834 2.36248 6.60735 3.99362H6.6075Z" fill="#171F26"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2442_17265">
+              <rect width="27" height="24" fill="white" transform="translate(0.5 2)"/>
+              </clipPath>
+              </defs>
+              </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="/slack-invitation/" title="slack social media link">
+            <svg class="social-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="slack social media icon">
+              <path
+                d="M13.0009 23.1698C12.9989 23.6678 12.8495 24.154 12.5714 24.5671C12.2933 24.9802 11.899 25.3017 11.4384 25.4909C10.9777 25.6801 10.4714 25.7285 9.98319 25.6302C9.49502 25.5318 9.04693 25.291 8.6955 24.9382C8.34408 24.5854 8.10506 24.1363 8.00863 23.6478C7.91221 23.1592 7.96269 22.6531 8.15371 22.1932C8.34474 21.7333 8.66773 21.3403 9.08193 21.0638C9.49612 20.7874 9.98294 20.6398 10.4809 20.6398H13.0009V23.1698ZM14.2709 29.4798C14.3636 30.0763 14.6665 30.6201 15.125 31.0128C15.5835 31.4055 16.1672 31.6214 16.7709 31.6214C17.3746 31.6214 17.9584 31.4055 18.4168 31.0128C18.8753 30.6201 19.1782 30.0763 19.2709 29.4798V23.1698C19.327 22.8091 19.3043 22.4404 19.2044 22.0893C19.1045 21.7381 18.9299 21.4127 18.6923 21.1354C18.4548 20.8582 18.1601 20.6356 17.8284 20.483C17.4968 20.3304 17.136 20.2514 16.7709 20.2514C16.4058 20.2514 16.0451 20.3304 15.7134 20.483C15.3817 20.6356 15.087 20.8582 14.8495 21.1354C14.612 21.4127 14.4373 21.7381 14.3374 22.0893C14.2375 22.4404 14.2149 22.8091 14.2709 23.1698V29.4798ZM19.2709 13.0398V10.5198C19.2806 10.0137 19.1382 9.51621 18.8622 9.09184C18.5861 8.66746 18.1891 8.33567 17.7224 8.13936C17.2558 7.94305 16.741 7.89125 16.2445 7.99067C15.7481 8.09009 15.293 8.33615 14.9379 8.69703C14.5829 9.05791 14.3442 9.51701 14.2529 10.015C14.1616 10.5129 14.2217 11.0268 14.4256 11.4902C14.6295 11.9536 14.9677 12.3452 15.3965 12.6143C15.8253 12.8835 16.325 13.0177 16.8309 12.9998L19.2709 13.0398ZM10.4309 14.3098C9.8344 14.4025 9.29069 14.7054 8.89796 15.1639C8.50523 15.6224 8.28938 16.2061 8.28938 16.8098C8.28938 17.4135 8.50523 17.9973 8.89796 18.4557C9.29069 18.9142 9.8344 19.2171 10.4309 19.3098H16.7409C17.1017 19.3659 17.4703 19.3432 17.8215 19.2433C18.1726 19.1434 18.498 18.9688 18.7753 18.7312C19.0526 18.4937 19.2751 18.199 19.4278 17.8673C19.5804 17.5357 19.6594 17.1749 19.6594 16.8098C19.6594 16.4447 19.5804 16.084 19.4278 15.7523C19.2751 15.4206 19.0526 15.1259 18.7753 14.8884C18.498 14.6509 18.1726 14.4762 17.8215 14.3763C17.4703 14.2765 17.1017 14.2538 16.7409 14.3098H10.4309ZM26.8709 19.3098H29.3909C29.8984 19.3379 30.4027 19.2124 30.8378 18.9497C31.273 18.6871 31.619 18.2994 31.8307 17.8373C32.0424 17.3752 32.1099 16.86 32.0246 16.3589C31.9392 15.8578 31.7049 15.3941 31.3522 15.0281C30.9995 14.6621 30.5447 14.4108 30.0471 14.307C29.5495 14.2032 29.0322 14.2517 28.5626 14.4461C28.093 14.6406 27.6928 14.972 27.4142 15.3972C27.1357 15.8224 26.9916 16.3216 27.0009 16.8298L26.8709 19.3098ZM25.6009 10.4698C25.5605 9.82762 25.2769 9.22495 24.8078 8.78447C24.3387 8.34399 23.7194 8.0988 23.0759 8.0988C22.4324 8.0988 21.8131 8.34399 21.3441 8.78447C20.875 9.22495 20.5914 9.82762 20.5509 10.4698V16.7798C20.5292 17.1248 20.5784 17.4705 20.6955 17.7957C20.8125 18.1209 20.995 18.4187 21.2316 18.6707C21.4682 18.9226 21.7539 19.1234 22.0711 19.2607C22.3883 19.398 22.7303 19.4688 23.0759 19.4688C23.4216 19.4688 23.7635 19.398 24.0807 19.2607C24.3979 19.1234 24.6837 18.9226 24.9203 18.6707C25.1568 18.4187 25.3393 18.1209 25.4564 17.7957C25.5734 17.4705 25.6226 17.1248 25.6009 16.7798V10.4698ZM20.6409 26.9998V29.5198C20.6389 30.0206 20.7856 30.5108 21.0624 30.9281C21.3392 31.3455 21.7337 31.6713 22.1958 31.8644C22.6579 32.0574 23.1669 32.1089 23.6583 32.0124C24.1498 31.9159 24.6015 31.6758 24.9563 31.3223C25.3112 30.9689 25.5531 30.5181 25.6516 30.0271C25.75 29.536 25.7005 29.0268 25.5093 28.564C25.3181 28.1011 24.9938 27.7054 24.5775 27.4269C24.1613 27.1485 23.6717 26.9998 23.1709 26.9998H20.6409ZM29.4809 25.7298C30.1231 25.6894 30.7258 25.4058 31.1663 24.9367C31.6068 24.4676 31.8519 23.8483 31.8519 23.2048C31.8519 22.5613 31.6068 21.942 31.1663 21.473C30.7258 21.0039 30.1231 20.7203 29.4809 20.6798H23.1709C22.826 20.6581 22.4802 20.7073 22.155 20.8244C21.8298 20.9414 21.532 21.1239 21.2801 21.3605C21.0281 21.5971 20.8273 21.8828 20.69 22.2C20.5528 22.5172 20.4819 22.8592 20.4819 23.2048C20.4819 23.5505 20.5528 23.8924 20.69 24.2096C20.8273 24.5268 21.0281 24.8126 21.2801 25.0492C21.532 25.2858 21.8298 25.4682 22.155 25.5853C22.4802 25.7023 22.826 25.7515 23.1709 25.7298H29.4809Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.youtube.com/graalvm" target="_blank" title="youtube social media link">
+            <svg class="social-icon" width="35" height="24" viewBox="0 0 35 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="youtube social media icon">
+              <path
+                d="M18.1713 23.9692L11.0316 23.839C8.71989 23.7937 6.40246 23.8843 4.13616 23.4143C0.688425 22.7121 0.444187 19.2692 0.188588 16.3812C-0.163569 12.321 -0.0272501 8.18716 0.637305 4.16095C1.01218 1.90151 2.48897 0.553774 4.77232 0.406542C12.48 -0.125756 20.2388 -0.0634659 27.9295 0.185695C28.7417 0.208346 29.5597 0.332927 30.3605 0.474496C34.3138 1.16535 34.4103 5.06699 34.6659 8.35138C34.9215 11.6698 34.8136 15.0051 34.3251 18.3008C33.9332 21.0303 33.1835 23.318 30.0197 23.5389C26.0551 23.8277 22.1814 24.0599 18.2054 23.9862C18.2054 23.9692 18.1827 23.9692 18.1713 23.9692ZM13.9738 17.0607C16.9615 15.3505 19.8924 13.6687 22.863 11.9699C19.8696 10.2597 16.9445 8.57789 13.9738 6.87907V17.0607Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__getstarted">
+        <div class="rubber-footer">
+          <p class="title-footer quickstart">Get started with GraalVM</p>
+          <p class="footer-desc">Available for Linux, macOS, and Windows platforms</p>
+          <a href="/latest/docs/getting-started/" class="btn btn-primary">Get started</a>
+        </div>
+      </div>
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
+              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/25.0/javadoc/sdk/" target="_blank">GraalVM SDK
+                  Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">GraalVM Blog</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">GraalVM
+                  Workshops</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">GraalVM
+                  Demos</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
+                  GraalVM</a></li>
+              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
+                  Developers</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
+                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
+                  Guidelines</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
+              </li>
+              <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/support/">Support</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2018, 2025, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+            registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function fadeInAndOut(thz) {
+    var elmt = thz.nextElementSibling;//Get the element that is below the button that
+    //was just clicked
+    if (elmt.clientHeight) {
+      elmt.style.height = 0;
+    } else {
+      var wrapper = elmt.querySelector('ul');
+      elmt.style.height = wrapper.clientHeight + "px";
+    }
+  }
+</script>
+    </div>
+    <div class="overlay"></div>
+    <script src='/resources/lib/slick-slider/slick.min.js'></script>
+    <script src='/resources/js/main.js'></script>
+    <script src='/resources/js/download.js'></script>
+    <script src='/resources/js/sidebar.js'></script>
+    <script src='/resources/js/favicon.js'></script>
+  </body>
+</html>
