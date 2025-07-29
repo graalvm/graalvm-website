@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>26.0.0-dev</b><br>2cb5f709a02689d9a069a2e61c66c7ffbeee92a1</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>26.0.0-dev</b><br>8bfc1ec4c051d3d201e92d70c6f8bcc99903405c</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -777,9 +777,10 @@ Warning: this method will lead to a shape transition every time a new value is s
 be used sparingly (with at most one constant value per property) since it could cause an
 excessive amount of shapes to be created.
 <p>
-Note: the value will be strongly referenced from the shape and should be a value type or
-light-weight object without any references to guest language objects in order to prevent
-potential memory leaks.
+Note: the value is strongly referenced from the shape property map. It should ideally be a
+value type or light-weight object without any references to guest language objects in order
+to prevent potential memory leaks from holding onto the Shape in inline caches. The Shape
+transition itself is weak, so the previous shapes will not hold strongly on the value.
 
 <h3 id="usage-example--heading2">Usage example:</h3>
 
@@ -834,9 +835,11 @@ objLib.put(receiver, key, value);
 <div class="block">Sets the object's dynamic type identifier. What this type represents is completely up to the
 language. For example, it could be a guest-language class.
 
-The type object is strongly referenced from the shape. It is important that this be a
-singleton or light-weight object without any references to guest language objects in order to
-keep the memory footprint low and prevent potential memory leaks.
+The type object is strongly referenced from the shape. It should ideally be a singleton or
+light-weight object without any references to guest language objects in order to keep the
+memory footprint low and prevent potential memory leaks from holding onto the Shape in inline
+caches. The Shape transition itself is weak, so the previous shapes will not hold strongly on
+the type object.
 
 Type objects are always compared by object identity, never <code>equals</code>.</div>
 <dl class="notes">
