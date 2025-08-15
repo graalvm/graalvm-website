@@ -588,6 +588,19 @@ The report will detail all registered service classes, the API methods that trig
   <p>Note: The <code>--enable-all-security-services</code> option is now deprecated and it will be removed in a future release.</p>
 </blockquote>
     
+      <h2 id="provider-initialization">
+        
+        
+          Provider Initialization <a href="#provider-initialization" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>Currently, security providers are initialized at build time.
+To move their initialization to run time, use the option <code>--future-defaults=run-time-initialize-security-providers</code>, <code>--future-defaults=all</code>, or <code>--future-defaults=run-time-initialize-jdk</code>.
+Provider verification will still occur at build time.
+Run-time initialization of security providers helps reduce image heap size.</p>
+    
       <h2 id="provider-registration">
         
         
@@ -598,7 +611,8 @@ The report will detail all registered service classes, the API methods that trig
 
 <p>The <code>native-image</code> builder captures the list of providers and their preference order from the underlying JVM.
 The provider order is specified in the <code>java.security</code> file under <code>&lt;java-home&gt;/conf/security/java.security</code>.
-New security providers cannot be registered at run time; all providers must be statically configured at executable build time.</p>
+New security providers cannot be registered at run time by default (see the section above); all providers must be statically configured at executable build time.
+If the user specifies <code>--future-defaults=run-time-initialize-security-providers</code>, <code>--future-defaults=all</code>, or <code>--future-defaults=run-time-initialize-jdk</code> to move providers initialization to run time, then a specific properties file can be used via the command line option <code>-Djava.security.properties=&lt;path&gt;</code>.</p>
     
       <h2 id="providers-reordering-at-run-time">
         
@@ -614,6 +628,9 @@ For example, if the <code>BouncyCastle</code> provider is registered at build ti
 Security.removeProvider("BC");
 Security.insertProviderAt(bcProvider, 1);
 </code></pre>
+
+<p>If <code>--future-defaults=all</code> or <code>--future-defaults=run-time-initialize-jdk</code> is enabled, the list of providers is constructed at run time.
+The same approach to manipulating providers can then be used.</p>
     
       <h2 id="securerandom">
         
@@ -765,8 +782,12 @@ If relying on the third-party code that does not comply to the above requirement
             <ul class="footer-list">
               <li class="footer-list__item"><a href="/guides/">Guides</a></li>
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
-              <li class="footer-list__item"><a href="https://www.graalvm.org/25.0/javadoc/sdk/" target="_blank">GraalVM SDK
-                  Javadoc</a></li>
+              <li class="footer-list__item">
+                GraalVM SDK Javadoc:
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>&nbsp;|
+                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>&nbsp;|
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+              </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">GraalVM Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">GraalVM
                   Workshops</a></li>

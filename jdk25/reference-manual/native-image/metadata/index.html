@@ -562,6 +562,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
   <li><a href="#metadata-types">Metadata Types</a></li>
   <li><a href="#reflection">Reflection (Including Dynamic Proxies)</a></li>
   <li><a href="#java-native-interface">Java Native Interface</a></li>
+  <li><a href="#foreign-function-and-memory-api">Foreign Function and Memory API</a></li>
   <li><a href="#resources">Resources</a></li>
   <li><a href="#resource-bundles">Resource Bundles</a></li>
   <li><a href="#serialization">Serialization</a></li>
@@ -1061,6 +1062,27 @@ is not required:</p>
   <p>Note that most libraries that use JNI do not handle exceptions properly, so to see which elements are missing <code>--exact-reachability-metadata</code> in combination with <code>-XX:MissingRegistrationReportingMode=Warn</code> must be used.</p>
 </blockquote>
     
+      <h2 id="foreign-function-and-memory-api">
+        
+        
+          Foreign Function and Memory API <a href="#foreign-function-and-memory-api" class="anchor_heading">#</a>
+        
+        
+      </h2>
+
+<p>The <a href="/jdk25/reference-manual/native-image/native-code-interoperability/ffm-api/">Foreign Function and Memory (FFM) API</a> is an interface that enables Java code to interact with native code and vice versa.</p>
+
+<p>In particular, it allows you to create <em>downcall handles</em> and <em>upcall stubs</em>.</p>
+<ul>
+  <li>A downcall handle is a method handle that refers to a native function. Invoking it results in a call to the native function.</li>
+  <li>An upcall stub is executable code generated at run time that can be passed as a function pointer to native code. Calling this function pointer results in the execution of a Java method handle.</li>
+</ul>
+
+<p>To perform downcalls or upcalls at run time, supporting code must be generated at image build time.
+Therefore, the <code>native-image</code> builder must be provided with descriptors that characterize the functions with which downcalls or upcalls can be performed at run time.</p>
+
+<p>If the necessary metadata is not provided, a <code>MissingForeignRegistrationError</code> will be thrown at run time.</p>
+    
       <h2 id="resources">
         
         
@@ -1404,7 +1426,29 @@ As a result, this use case does not require any additional metadata.</p>
     {
       "bundle": "fully.qualified.bundle.name"
     }
-  ]
+  ],
+  "foreign": {
+    "downcalls": [
+      {
+        "returnType": "&lt;return-type&gt;",
+        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
+      }
+    ],
+    "upcalls": [
+      {
+        "returnType": "&lt;return-type&gt;",
+        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
+      }
+    ],
+    "directUpcalls": [
+      {
+        "class": "org.example.SomeClass",
+        "method": "method1",
+        "returnType": "&lt;return-type&gt;",
+        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
+      }
+    ]
+  }
 }
 </code></pre>
     
@@ -1574,8 +1618,12 @@ Note: Predefined classes are the best-effort approach for legacy projects, and t
             <ul class="footer-list">
               <li class="footer-list__item"><a href="/guides/">Guides</a></li>
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
-              <li class="footer-list__item"><a href="https://www.graalvm.org/25.0/javadoc/sdk/" target="_blank">GraalVM SDK
-                  Javadoc</a></li>
+              <li class="footer-list__item">
+                GraalVM SDK Javadoc:
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>&nbsp;|
+                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>&nbsp;|
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+              </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">GraalVM Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">GraalVM
                   Workshops</a></li>
