@@ -637,7 +637,7 @@ MethodHandle rand = linker.downcallHandle(
 </code></pre>
 
 <p>The return type <code>int</code> denotes a C data type and is one of several <em>canonical types</em>.
-The following canonical types are guaranteed to be available on all platforms (see also the documentation for <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/foreign/Linker.html"><code>java.lang.foreign.Linker</code></a>):</p>
+The following canonical types are guaranteed to be available on all platforms (see also the documentation for <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/foreign/Linker.html"><code>java.lang.foreign.Linker</code></a>):</p>
 
 <ul>
   <li><code>bool</code></li>
@@ -680,7 +680,7 @@ double vector_length(struct Point x);
 <p>In Java, you can create the appropriate downcall handle like this:</p>
 
 <pre><code class="language-java">SymbolLookup lookup = SymbolLookup.libraryLookup(/* ... */);
-MemoryLayout cDouble = linker.canonicalLayouts().get("double"); 
+MemoryLayout cDouble = linker.canonicalLayouts().get("double");
 MemoryLayout pointLayout = MemoryLayout.structLayout(cDouble, cDouble);
 MethodHandle vectorLength = linker.downcallHandle(
         lookup.find("vector_length").orElseThrow(),
@@ -808,7 +808,7 @@ MethodHandle sin = linker.downcallHandle(
 
 <p>In the configuration file, the linker options are specified as properties of a JSON object.
 You can specify two additional linker options, <code>critical</code> and <code>firstVariadicArg</code>.
-For a description of those options, please refer to the documentation of <a href="https://docs.oracle.com/en/java/javase/24/docs/api/java.base/java/lang/foreign/Linker.Option.html"><code>java.lang.foreign.Linker.Option</code></a>.</p>
+For a description of those options, please refer to the documentation of <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/foreign/Linker.Option.html"><code>java.lang.foreign.Linker.Option</code></a>.</p>
 
 <p>In Java, the linker option <code>critical</code> takes an argument which specifies if the called native function may access heap objects during execution:</p>
 
@@ -1014,7 +1014,7 @@ public class InvokeQsort {
             STDLIB.find("qsort").orElseThrow(),
             FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER)
     );
-    
+
     private static final MemoryLayout C_INT = Linker.nativeLinker().canonicalLayouts().get("int");
 
     // Function descriptor of the qsort compare function
@@ -1132,7 +1132,7 @@ public class CustomFeature implements Feature {
 
         // required for C function 'double vector_length(struct Point x)'
         RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.of(C_DOUBLE, POINT_LAYOUT));
-        
+
         // required for C function 'double sin(double x)'; capture "errno"
         RuntimeForeignAccess.registerForDowncall(FunctionDescriptor.of(C_DOUBLE, C_DOUBLE), Linker.Option.captureCallState("errno"));
 
@@ -1301,7 +1301,7 @@ public class ComputePaddingFeature implements Feature {
     private static final MemoryLayout NEEDS_PADDING = MemoryLayout.structLayout(C_WCHAR_T.withName("x"),
             computePadding(),
             C_LONG_LONG.withName("y"));
-    
+
     private static MemoryLayout computePadding() {
         assert C_LONG_LONG.byteSize() &gt; C_WCHAR_T.byteSize();
         return MemoryLayout.padding(C_LONG_LONG.byteSize() - C_WCHAR_T.byteSize());
