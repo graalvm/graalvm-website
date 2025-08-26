@@ -599,21 +599,20 @@ $(document).ready(function(){
         </div>
       </div>
     </div>
-    <div class="col-sm-9 docsmod">
-      <div id="content-wrapper" class="docs-content-old docs-content--with-sidebar">
-        <div class="docsnote">
-          <div class="docsnote__body">
-            <div class="docsnote__column">
-              <div class="docsnote-mid__card">
-                <div class="rightside">
-                  <img src='/resources/img/note-icon-docs-light.svg'>
-                  <p class="docsnote-mid__subtitle">This documentation is for the unreleased GraalVM version.<a href="https://github.com/graalvm/oracle-graalvm-ea-builds/releases" target="_blank">Download Early Access Builds from GitHub</a>.</p>
-                </div>
-              </div>
+    <div class="docsnote">
+      <div class="docsnote__body">
+        <div class="docsnote__column">
+          <div class="docsnote-mid__card">
+            <div class="rightside">
+              <img src='/resources/img/note-icon-docs-light.svg'>
+              <p class="docsnote-mid__subtitle">This documentation is for the unreleased GraalVM version.<a href="https://github.com/graalvm/oracle-graalvm-ea-builds/releases" target="_blank">Download Early Access Builds from GitHub</a>.</p>
             </div>
           </div>
         </div>
-        <div class="spacer"></div>
+      </div>
+    </div>
+    <div class="col-sm-9 docsmod">
+      <div id="content-wrapper" class="docs-content-old docs-content--with-sidebar">
         
   <ul class="breadcrumb">
     <li><a href='/'>Home</a></li>
@@ -721,11 +720,12 @@ If there are nodes you think should be there in a benchmark that are not, think 
 
 <p>The <code>--engine.TraceCompilation</code> command prints a line each time a method is compiled:</p>
 
-<pre><code class="language-shell">[engine] opt done   id=244   EqualityConstraint.execute                         |Tier 1|Time   268( 220+47  )ms|AST   17|Inlined   0Y   2N|IR    238/   437|CodeSize    1874|Timestamp 758868036671903|Src octane-deltablue.js:528
+<pre><code class="language-shell">[engine] opt done   engine=2  id=213   EqualityConstraint.execute                         |Tier 1|Time    14(  11+3   )ms|AST   31|Inlined   0Y   2N|IR    218/   365|CodeSize    1386|Addr 0x782dd1fb9300|CompId 23519  |UTC 2025-07-08T08:25:20.339|Src octane-deltablue.js:528 0xb0b56c7b
 </code></pre>
 
 <p>Here is a quick overview of the information provided in these logs:</p>
 <ul>
+  <li><code>engine</code> - Unique identifier of the engine the compilation is done for.</li>
   <li><code>id</code> - Unique identifier of the call target.</li>
   <li><code>Tier</code> - For which compilation tier was the targed scheduled.</li>
   <li><code>Time</code> - How long did the compilation last, with separation between the Truffle tier (mainly partial evaluation) and the Graal Tiers.</li>
@@ -733,34 +733,37 @@ If there are nodes you think should be there in a benchmark that are not, think 
   <li><code>Inlined</code> - How many calls were inlined and how many remained calls after inlining.</li>
   <li><code>IR</code> - Graal node count after partial evaluation and after compilation.</li>
   <li><code>CodeSize</code> - The size of the code generated for the call target.</li>
-  <li><code>Timestamp</code> - The time when the event happened as reported by <code>System.nanoTime()</code>.</li>
-  <li><code>Src</code> - Abbreviated source section of the call target.</li>
+  <li><code>Addr</code> - The address of the compiled code.</li>
+  <li><code>CompId</code> - VM specific compilation ID of the compilation.</li>
+  <li><code>UTC</code> - The time when the event happened.</li>
+  <li><code>Src</code> - Abbreviated source section of the call target and the hash code of the source.</li>
 </ul>
 
 <p>The <code>--engine.TraceCompilationDetails</code> command prints a line when compilation is queued, unqueued, started, or completed:</p>
 
-<pre><code class="language-shell">[engine] opt queued id=237   BinaryConstraint.output                            |Tier 1|Count/Thres         25/       25|Queue: Size    1 Change +1  Load  0.06 Time     0us|Timestamp 758865671350686|Src octane-deltablue.js:416
-[engine] opt start  id=237   BinaryConstraint.output                            |Tier 1|Priority        25|Rate 0.000000|Queue: Size    0 Change +0  Load  0.06 Time     0us|Timestamp 758865708273384|Src octane-deltablue.js:416
-[engine] opt queued id=239   OrderedCollection.size                             |Tier 1|Count/Thres         25/       25|Queue: Size    1 Change +1  Load  0.06 Time     0us|Timestamp 758865727664193|Src octane-deltablue.js:71
-[engine] opt queued id=52    Array.prototype.push                               |Tier 1|Count/Thres         25/       50|Queue: Size    2 Change +1  Load  0.13 Time     0us|Timestamp 758865744191674|Src &lt;builtin&gt;:1
+<pre><code class="language-shell">[engine] opt queued engine=2  id=206   BinaryConstraint.output                            |Tier 1|Count/Thres         75/      100|Queue: Size    3 Change +1  Load  0,25 Time     0us                                   |UTC 2025-07-08T08:25:19.974|Src octane-deltablue.js:416 0xb0b56c7b
+[engine] opt queued engine=2  id=208   OrderedCollection.size                             |Tier 1|Count/Thres        100/      125|Queue: Size    4 Change +1  Load  0,31 Time     0us                                   |UTC 2025-07-08T08:25:19.997|Src octane-deltablue.js:71 0xb0b56c7b
+[engine] opt queued engine=2  id=32    Array.prototype.push                               |Tier 1|Count/Thres        125/      175|Queue: Size    5 Change +1  Load  0,44 Time     0us                                   |UTC 2025-07-08T08:25:20.025|Src &lt;builtin&gt;:1 0xe756ac41
+[engine] opt start  engine=2  id=206   BinaryConstraint.output                            |Tier 1|Priority     93750|Rate 0,000003|Queue: Size    4 Change -1  Load  0,50 Time   195us                                   |UTC 2025-07-08T08:25:20.039|Src octane-deltablue.js:416 0xb0b56c7b|Bonuses first tier
 ... more log ...
-[engine] opt start  id=239   OrderedCollection.size                             |Tier 1|Priority    181875|Rate 0.000001|Queue: Size   11 Change -1  Load  0.63 Time   575us|Timestamp 758866381654116|Src octane-deltablue.js:71
-[engine] opt done   id=237   BinaryConstraint.output                            |Tier 1|Time   717( 654+64  )ms|AST   19|Inlined   0Y   0N|IR    143/   220|CodeSize     882|Timestamp 758866435391354|Src octane-deltablue.js:416
-[engine] opt start  id=236   BinaryConstraint.input                             |Tier 1|Priority    144000|Rate 0.000001|Queue: Size   10 Change -1  Load  0.56 Time    48us|Timestamp 758866452554530|Src octane-deltablue.js:409
+[engine] opt done   engine=2  id=206   BinaryConstraint.output                            |Tier 1|Time   126( 122+4   )ms|AST   32|Inlined   0Y   0N|IR    138/   169|CodeSize     608|Addr 0x782dd1ecec00|CompId 22170  |UTC 2025-07-08T08:25:20.170|Src octane-deltablue.js:416 0xb0b56c7b
+[engine] opt start  engine=2  id=208   OrderedCollection.size                             |Tier 1|Priority    323626|Rate 0,000005|Queue: Size    8 Change -1  Load  0,88 Time    17us                                   |UTC 2025-07-08T08:25:20.173|Src octane-deltablue.js:71 0xb0b56c7b|Bonuses first tier
+[engine] opt queued engine=2  id=215   OrderedCollection.at                               |Tier 1|Count/Thres        350/      325|Queue: Size    9 Change +1  Load  0,81 Time     0us                                   |UTC 2025-07-08T08:25:20.185|Src octane-deltablue.js:67 0xb0b56c7b
 ... more log ...
-[engine] opt queued id=239   OrderedCollection.size                             |Tier 2|Count/Thres       8750/     8125|Queue: Size   18 Change +1  Load  0.81 Time     0us|Timestamp 758867756295139|Src octane-deltablue.js:71
-[engine] opt queued id=237   BinaryConstraint.output                            |Tier 2|Count/Thres       8499/     8750|Queue: Size   19 Change +1  Load  0.88 Time     0us|Timestamp 758867758263099|Src octane-deltablue.js:416
-[engine] opt start  id=244   EqualityConstraint.execute                         |Tier 1|Priority   2618289|Rate 0.000015|Queue: Size   19 Change -1  Load  0.88 Time   180us|Timestamp 758867767116908|Src octane-deltablue.js:528
+[engine] opt queued engine=2  id=208   OrderedCollection.size                             |Tier 2|Count/Thres      10000/    10000|Queue: Size   19 Change +1  Load  1,00 Time     0us                                   |UTC 2025-07-08T08:25:20.274|Src octane-deltablue.js:71 0xb0b56c7b
+[engine] opt queued engine=2  id=206   BinaryConstraint.output                            |Tier 2|Count/Thres      10000/    10000|Queue: Size   20 Change +1  Load  1,00 Time     0us                                   |UTC 2025-07-08T08:25:20.277|Src octane-deltablue.js:416 0xb0b56c7b
+[engine] opt done   engine=2  id=214   Planner.addConstraintsConsumingTo                  |Tier 1|Time    90(  68+22  )ms|AST   79|Inlined   0Y   5N|IR    467/   841|CodeSize    3515|Addr 0x782dd1f74e80|CompId 23040  |UTC 2025-07-08T08:25:20.293|Src octane-deltablue.js:743 0xb0b56c7b
+[engine] opt start  engine=2  id=205   BinaryConstraint.input                             |Tier 1|Priority   4087953|Rate 0,000111|Queue: Size   19 Change -1  Load  1,00 Time    25us                                   |UTC 2025-07-08T08:25:20.294|Src octane-deltablue.js:409 0xb0b56c7b|Bonuses first tier
 ... more log ...
-[engine] opt done   id=246   OrderedCollection.at                               |Tier 2|Time    89(  80+9   )ms|AST   15|Inlined   0Y   0N|IR     50/   110|CodeSize     582|Timestamp 758873628915755|Src octane-deltablue.js:67
-[engine] opt start  id=237   BinaryConstraint.output                            |Tier 2|Priority    173536|Rate 0.000054|Queue: Size   18 Change -1  Load  0.94 Time    18us|Timestamp 758873629411012|Src octane-deltablue.js:416
-[engine] opt queued id=238   Planner.addPropagate                               |Tier 2|Count/Thres       9375/     8750|Queue: Size   19 Change +1  Load  0.88 Time     0us|Timestamp 758873663196884|Src octane-deltablue.js:696
-[engine] opt queued id=226   Variable.addConstraint                             |Tier 2|Count/Thres       8771/     9375|Queue: Size   20 Change +1  Load  0.94 Time     0us|Timestamp 758873665823697|Src octane-deltablue.js:556
-[engine] opt done   id=293   change                                             |Tier 1|Time   167( 130+37  )ms|AST   60|Inlined   0Y   6N|IR    576/  1220|CodeSize    5554|Timestamp 758873669483749|Src octane-deltablue.js:867
-[engine] opt start  id=270   Plan.execute                                       |Tier 2|Priority    157871|Rate 0.000072|Queue: Size   19 Change -1  Load  1.00 Time    17us|Timestamp 758873669912101|Src octane-deltablue.js:778
-[engine] opt done   id=237   BinaryConstraint.output                            |Tier 2|Time    58(  52+6   )ms|AST   19|Inlined   0Y   0N|IR    103/   181|CodeSize     734|Timestamp 758873687678394|Src octane-deltablue.js:416
+[engine] opt done   engine=2  id=215   OrderedCollection.at                               |Tier 2|Time     5(   2+2   )ms|AST   23|Inlined   0Y   0N|IR     49/    94|CodeSize     485|Addr 0x782dd23b7980|CompId 26009  |UTC 2025-07-08T08:25:21.228|Src octane-deltablue.js:67 0xb0b56c7b
+[engine] opt start  engine=2  id=206   BinaryConstraint.output                            |Tier 2|Priority   1723949|Rate 0,003724|Queue: Size   82 Change -1  Load  1,00 Time    25us                                   |UTC 2025-07-08T08:25:21.228|Src octane-deltablue.js:416 0xb0b56c7b|Bonuses
+[engine] opt done   engine=2  id=206   BinaryConstraint.output                            |Tier 2|Time     6(   3+2   )ms|AST   32|Inlined   0Y   0N|IR    100/   144|CodeSize     639|Addr 0x782dd23b8300|CompId 26014  |UTC 2025-07-08T08:25:21.234|Src octane-deltablue.js:416 0xb0b56c7b
+[engine] opt start  engine=2  id=240   Plan.size                                          |Tier 2|Priority   1565159|Rate 0,003621|Queue: Size   81 Change -1  Load  1,00 Time    23us                                   |UTC 2025-07-08T08:25:21.234|Src octane-deltablue.js:770 0xb0b56c7b|Bonuses
+[engine] opt done   engine=2  id=240   Plan.size                                          |Tier 2|Time     6(   4+2   )ms|AST   19|Inlined   1Y   0N|IR     43/   112|CodeSize     463|Addr 0x782dd23bdc00|CompId 26018  |UTC 2025-07-08T08:25:21.240|Src octane-deltablue.js:770 0xb0b56c7b
+[engine] opt start  engine=2  id=239   Plan.execute                                       |Tier 2|Priority   1591366|Rate 0,004334|Queue: Size   80 Change -1  Load  1,00 Time    27us                                   |UTC 2025-07-08T08:25:21.240|Src octane-deltablue.js:778 0xb0b56c7b|Bonuses
+[engine] opt done   engine=2  id=239   Plan.execute                                       |Tier 2|Time    45(  28+17  )ms|AST   53|Inlined   9Y   0N|IR    609/   552|CodeSize    1583|Addr 0x782dd23c5d00|CompId 26052  |UTC 2025-07-08T08:25:21.285|Src octane-deltablue.js:778 0xb0b56c7b
 ... more log ...
-[engine] opt unque. id=304   Date.prototype.valueOf                             |Tier 2|Count/Thres      80234/     3125|Queue: Size    4 Change  0  Load  0.31 Time     0us|Timestamp 758899904132076|Src &lt;builtin&gt;:1|Reason Target inlined into only caller
+[engine] opt unque. engine=2  id=266   Date.prototype.valueOf                             |Tier 2|Count/Thres     145950/    10000|Queue: Size   15 Change  0  Load  1,00 Time     0us                                   |UTC 2025-07-08T08:25:26.409|Src &lt;builtin&gt;:1 0xe756ac41|Reason Target inlined into only caller
 </code></pre>
 
 <p>Here is a quick overview of the information added in these logs:</p>
@@ -937,6 +940,73 @@ The <code>store</code> enables warnings when the store location argument is not 
       AMD64AddressNode                              : count= 166, sum=   20072, min=       0, average=      120.92, max=    1960, maxTarget=MeasureDefault
       ...
 </code></pre>
+
+<p>The <code>--engine.TraceSourceCache</code> command prints a line for each source cache miss, eviction, or failure. <code>--engine.TraceSourceCacheDetails</code> additionally prints a line for each source cache hit or uncache miss:</p>
+
+<pre><code class="language-shell">[engine] source-cache-miss  0xb0b56c7b octane-deltablue.js                               |ParseTime  294 ms|Engine 2 |Layer 1 |CallTarget 27   |Lang js        |Policy EXCLUSIVE|WEAK    |UTC 2025-07-08T08:25:19.042
+[engine] source-cache-hit   0xb0b56c7b octane-deltablue.js                               |Hits            1|Engine 2 |Layer 1 |CallTarget 27   |Lang js        |Policy EXCLUSIVE|WEAK    |UTC 2025-07-08T08:25:19.280
+[engine] source-cache-evict 0xb0b56c7b octane-deltablue.js                               |Hits            7|Engine 2 |Layer 1 |CallTarget 27   |Lang js        |Policy EXCLUSIVE|WEAK    |UTC 2025-07-08T08:25:21.007
+</code></pre>
+<p>Repeated source cache evictions of the same sources may lead to repeated parsing and compilation of the same sources under different call target IDs. This usually points at a bug on the embedder size - missing or insufficient caching of sources.</p>
+
+<p>The <code>--engine.SourceCacheStatistics</code> command prints statistics on source cache for an engine when the engine is closed:</p>
+
+<pre><code class="language-shell">[engine] Polyglot source cache statistics for engine 2
+--- SHARING LAYER 1; WEAK CACHE -------------------------
+    Languages                                  :
+         regex                                 :
+            Character Based Sources Stats      :
+                Sources                        : count=             14
+                    Size (C)                   : count=             14, sum=                     384, min=      20, avg=    27,43, max=         33, maxSource=0xde3bf656 /^--warmup-iterations(?:=(.*))?$/
+                    Biggest Sources            :
+                        0xc34c7396             : size=              33, name=/^--show-intermediate(?:=(.*))?$/
+                        0xde3bf656             : size=              33, name=/^--warmup-iterations(?:=(.*))?$/
+                        0x58e35256             : size=              30, name=/^--profile-memory(?:=(.*))?$/
+                        ...
+                Cache                          : parse time(ms)=   193, parse rate(C/s)=     1989,64, hits=      0, misses=    14, evictions=    0, failures=    0, hit rate= 0%
+                    Parse Successful           : count=             14
+                        Time (ms)              : count=             14, sum=                     193, min=       4, avg=    13,79, max=         51, maxSource=0x5618ad36 /^--iterations(?:=(.*))?$/
+                        Size (C)               : count=             14, sum=                     384, min=      20, avg=    27,43, max=         33, maxSource=0xde3bf656 /^--warmup-iterations(?:=(.*))?$/
+                    Sources With Most Hits     :
+                        0xbb7ccb96             : parse time(ms)=     5, parse rate(C/s)=     4600,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--buckets(?:=(.*))?$/
+                        0x8facaf76             : parse time(ms)=    14, parse rate(C/s)=     2071,43, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--deterministic(?:=(.*))?$/
+                        0x8abc7416             : parse time(ms)=    10, parse rate(C/s)=     2500,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--dump-heap(?:=(.*))?$/
+                        ...
+                    Sources With Most Misses   :
+                        0xbb7ccb96             : parse time(ms)=     5, parse rate(C/s)=     4600,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--buckets(?:=(.*))?$/
+                        0x8facaf76             : parse time(ms)=    14, parse rate(C/s)=     2071,43, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--deterministic(?:=(.*))?$/
+                        0x8abc7416             : parse time(ms)=    10, parse rate(C/s)=     2500,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--dump-heap(?:=(.*))?$/
+                        ...
+                    Sources With Most Evictions:
+                        0xbb7ccb96             : parse time(ms)=     5, parse rate(C/s)=     4600,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--buckets(?:=(.*))?$/
+                        0x8facaf76             : parse time(ms)=    14, parse rate(C/s)=     2071,43, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--deterministic(?:=(.*))?$/
+                        0x8abc7416             : parse time(ms)=    10, parse rate(C/s)=     2500,00, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=/^--dump-heap(?:=(.*))?$/
+                        ...
+                    Failures                   : count=              0
+         js                                    :
+            Character Based Sources Stats      :
+                Sources                        : count=              2
+                    Size (C)                   : count=              2, sum=                   53256, min=   25744, avg= 26628,00, max=      27512, maxSource=0x0e851a37 harness.js
+                    Biggest Sources            :
+                        0x0e851a37             : size=           27512, name=harness.js
+                        0xb0b56c7b             : size=           25744, name=octane-deltablue.js
+                Cache                          : parse time(ms)=   649, parse rate(C/s)=    82058,55, hits=      0, misses=     2, evictions=    0, failures=    0, hit rate= 0%
+                    Parse Successful           : count=              2
+                        Time (ms)              : count=              2, sum=                     649, min=     294, avg=   324,50, max=        355, maxSource=0x0e851a37 harness.js
+                        Size (C)               : count=              2, sum=                   53256, min=   25744, avg= 26628,00, max=      27512, maxSource=0x0e851a37 harness.js
+                    Sources With Most Hits     :
+                        0x0e851a37             : parse time(ms)=   355, parse rate(C/s)=    77498,59, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=harness.js
+                        0xb0b56c7b             : parse time(ms)=   294, parse rate(C/s)=    87564,63, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=octane-deltablue.js
+                    Sources With Most Misses   :
+                        0x0e851a37             : parse time(ms)=   355, parse rate(C/s)=    77498,59, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=harness.js
+                        0xb0b56c7b             : parse time(ms)=   294, parse rate(C/s)=    87564,63, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=octane-deltablue.js
+                    Sources With Most Evictions:
+                        0x0e851a37             : parse time(ms)=   355, parse rate(C/s)=    77498,59, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=harness.js
+                        0xb0b56c7b             : parse time(ms)=   294, parse rate(C/s)=    87564,63, hits=      0, misses=     1, evictions=    0, failures=    0, hit rate= 0%, name=octane-deltablue.js
+                    Failures                   : count=              0
+</code></pre>
+
+<p>The <code>--engine.SourceCacheStatisticDetails</code> command prints statistics on source cache for an engine when the engine is closed. Statistics for all individual sources are printed.</p>
 
 <p>The <code>--engine.TraceMethodExpansion=truffleTier</code> command prints a tree of all expanded Java methods with statistics after each compilation:</p>
 
@@ -1400,6 +1470,8 @@ jdk.graal.compiler.code.SourceStackTraceBailoutException$1: Deopt taken too many
 <p>The sensitivity of the deoptimization cycle detection can be fine-tuned by the options <code>compiler.DeoptCycleDetectionThreshold</code> and <code>compiler.DeoptCycleDetectionAllowedRepeats</code>.</p>
 
 <p>After the number of successful compilations of a call target reaches <code>compiler.DeoptCycleDetectionThreshold</code>, the subsequent Truffle compilations of the call target execute an extra deoptimization cycle detection phase that adds information to the compilation framework which allows it to later detect that the exactly same compiled code was deoptimized at the exatly same location repeatedly. If that happens the compilation fails with a permanent bailout. If <code>compiler.DeoptCycleDetectionAllowedRepeats</code> is set to a higher value than the default <code>0</code>, the compilation will only fail after the same deopt is repeated more times than the allowed count.</p>
+
+<p>See <a href="/jdk25/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">Deoptimization Cycle Patterns</a> to learn about common patterns that cause deoptimization cycles and thus should be avoided.</p>
     
       <h2 id="debugging-invalidations">
         
