@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -397,7 +396,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">
-              Inspect Tool
+              Inspection Tool
             </a>
           </li>
 
@@ -418,8 +417,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/NMT/">
-              Native Memory Tracking
+            <a href="">
+              
             </a>
           </li>
 
@@ -429,8 +428,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/jcmd/">
-              Java Diagnostic Command
+            <a href="">
+              
             </a>
           </li>
 
@@ -440,8 +439,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/JDWP/">
-              Java Debug Wire Protocol (JDWP) with Native Image
+            <a href="">
+              
             </a>
           </li>
 
@@ -451,8 +450,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/perf-profiler/">
-              Linux Perf Profiler Support
+            <a href="">
+              
             </a>
           </li>
 
@@ -584,40 +583,12 @@ $(document).ready(function(){
         
         
       </h1>
-    
-      <h3 id="table-of-contents">
-        
-        
-          Table of Contents <a href="#table-of-contents" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
 
-<ul>
-  <li><a href="#introduction">Introduction</a></li>
-  <li><a href="#source-file-caching">Source File Caching</a></li>
-  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
-  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
-  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
-  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
-  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
-  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
-  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
-</ul>
-    
-      <h2 id="introduction">
-        
-        
-          Introduction <a href="#introduction" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>To build a native executable with debug information, provide the <code>-g</code> command-line option for <code>javac</code> when compiling the application, and then to the <code>native-image</code> builder:</p>
-<pre><code class="language-shell">javac -g Hello.java
-native-image -g Hello
+<p>To add debug information to a generated native image, provide the <code>-g</code> option to the <code>native-image</code> builder:</p>
+<pre><code class="language-shell">native-image -g Hello
 </code></pre>
-<p>This enables source-level debugging, and the debugger (GDB) then correlates machine instructions with specific source lines in Java files.
+
+<p>The <code>-g</code> flag instructs <code>native-image</code> to generate debug information.
 The resulting image will contain debug records in a format the GNU Debugger (GDB) understands.
 Additionally, you can pass <code>-O0</code> to the builder which specifies that no compiler optimizations should be performed.
 Disabling all optimizations is not required, but in general it makes the debugging experience better.</p>
@@ -626,7 +597,10 @@ Disabling all optimizations is not required, but in general it makes the debuggi
 
 <p>By default, debug info will only include details of some of the values of parameters and local variables.
 This means that the debugger will report many parameters and local variables as being undefined. If you pass <code>-O0</code> to the builder then full debug information will be included.
-If you want more parameter and local variable information to be included when employing higher levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command line flag to the <code>native-image</code> command:</p>
+If you
+want more parameter and local variable information to be included when employing higher
+levels of optimization (<code>-O1</code> or, the default, <code>-O2</code>) you need to pass an extra command
+line flag to the <code>native-image</code> command</p>
 
 <pre><code class="language-shell">native-image -g -H:+SourceLevelDebug Hello
 </code></pre>
@@ -638,7 +612,7 @@ and local variable information by passing flag <code>-H:+SourceLevelDebug</code>
 slightly differently and for some applications this can slow down execution.</p>
 
 <p>The basic <code>perf report</code> command, which displays a histogram showing percentage execution time in each Java method, only requires passing flags <code>-g</code> and <code>-H:+SourceLevelDebug</code> to the <code>native-image</code> command.
-However, more sophisticated uses of <code>perf</code> (for example, <code>perf annotate</code>) and use of
+However, more sophisticated uses of <code>perf</code> (i.e. <code>perf annotate</code>) and use of
 <code>valgrind</code> requires debug info to be supplemented with linkage symbols identifying compiled Java methods.
 Java method symbols are omitted from the generated native image by default but they can be retained achieved by passing one extra flag to the <code>native-image</code> command</p>
 
@@ -655,6 +629,25 @@ resulting image file.</p>
 <blockquote>
   <p>Note: Debug info support for <code>perf</code> and <code>valgrind</code> on Linux is an experimental feature.</p>
 </blockquote>
+    
+      <h3 id="table-of-contents">
+        
+        
+          Table of Contents <a href="#table-of-contents" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="#source-file-caching">Source File Caching</a></li>
+  <li><a href="#special-considerations-for-debugging-java-from-gdb">Special Considerations for Debugging Java from GDB</a></li>
+  <li><a href="#identifying-source-code-location">Identifying Source Code Location</a></li>
+  <li><a href="#configuring-source-paths-in-gnu-debugger">Configuring Source Paths in GNU Debugger</a></li>
+  <li><a href="#checking-debug-info-on-linux">Checking Debug Info on Linux</a></li>
+  <li><a href="#debugging-with-isolates">Debugging with Isolates</a></li>
+  <li><a href="#debugging-helper-methods">Debugging Helper Methods</a></li>
+  <li><a href="#special-considerations-for-using-perf-and-valgrind">Special Considerations for using perf and valgrind</a></li>
+</ul>
     
       <h2 id="source-file-caching">
         
@@ -674,7 +667,7 @@ This local cache provides a convenient way of making just the necessary sources 
 
 <p>The implementation tries to be smart about locating source files.
 It uses the current <code>JAVA_HOME</code> to locate the JDK src.zip when searching for JDK runtime sources.
-It also uses entries on the class path to suggest locations for GraalVM source files and application source files (see below for precise details of the scheme used to identify source locations).
+It also uses entries in the classpath to suggest locations for GraalVM source files and application source files (see below for precise details of the scheme used to identify source locations).
 However, source layouts do vary and it may not be possible to find all sources.
 Hence, users can specify the location of source files explicitly on the command line using option <code>DebugInfoSourceSearchPath</code>:</p>
 
@@ -684,6 +677,7 @@ javac -cp apps/greeter/classes \
     --source-path apps/hello/src \
     -d apps/hello/classes org/my/hello/Hello.java
 native-image -g \
+    -H:-SpawnIsolates \
     -H:DebugInfoSourceSearchPath=apps/hello/src \
     -H:DebugInfoSourceSearchPath=apps/greeter/src \
     -cp apps/hello/classes:apps/greeter/classes org.my.hello.Hello
@@ -691,7 +685,7 @@ native-image -g \
 
 <p>The <code>DebugInfoSourceSearchPath</code> option can be repeated as many times as required to notify all the target source locations.
 The value passed to this option can be either an absolute or relative path.
-It can identify either a directory, a source JAR file, or a source ZIP file.
+It can identify either a directory, a source JAR, or a source ZIP file.
 It is also possible to specify several source roots at once using a comma separator:</p>
 
 <pre><code class="language-shell">native-image -g \
@@ -707,6 +701,7 @@ As an example, the following variant of the previous command specifies an absolu
 
 <pre><code class="language-shell">SOURCE_CACHE_ROOT=/tmp/$$/sources
 native-image -g \
+    -H:-SpawnIsolates \
     -H:DebugInfoSourceCacheRoot=$SOURCE_CACHE_ROOT \
     -H:DebugInfoSourceSearchPath=apps/hello/target/hello-sources.jar,apps/greeter/target/greeter-sources.jar \
     -cp apps/target/hello.jar:apps/target/greeter.jar \
@@ -717,8 +712,8 @@ native-image -g \
 <p>If the source cache path includes a directory that does not yet exist, it will be created during population of the cache.</p>
 
 <p>Note that in all the examples above the <code>DebugInfoSourceSearchPath</code> options are actually redundant.
-In the first case, the class path entries for <em>apps/hello/classes/</em> and <em>apps/greeter/classes/</em> will be used to derive the default search roots <em>apps/hello/src/</em> and <em>apps/greeter/src/</em>.
-In the second case, the class path entries for <em>apps/target/hello.jar</em> and <em>apps/target/greeter.jar</em> will be used to derive the default search roots <em>apps/target/hello-sources.jar</em> and <em>apps/target/greeter-sources.jar</em>.</p>
+In the first case, the classpath entries for <em>apps/hello/classes</em> and <em>apps/greeter/classes</em> will be used to derive the default search roots <em>apps/hello/src</em> and <em>apps/greeter/src</em>.
+In the second case, the classpath entries for <em>apps/target/hello.jar</em> and <em>apps/target/greeter.jar</em> will be used to derive the default search roots <em>apps/target/hello-sources.jar</em> and <em>apps/target/greeter-sources.jar</em>.</p>
     
       <h2 id="supported-features">
         
@@ -763,10 +758,10 @@ In the corresponding C++ model the Java name is used to label the underlying C++
 This class layout type declares the expected fields like <code>hash</code> of type <code>int</code> and <code>value</code> of type <code>byte[]</code> and methods like <code>String(byte[])</code>, <code>charAt(int)</code>, etc. However, the copy constructor which appears in Java as <code>String(String)</code> appears in <code>gdb</code> with the signature <code>String(java.lang.String *)</code>.</p>
 
 <p>The C++ layout class inherits fields and methods from class (layout) type <code>java.lang.Object</code> using C++ public inheritance.
-The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes up to two fields (depending on the VM configuration).
-The first field is called <code>hub</code> and its type is <code>java.lang.Class *</code> that is, it is a pointer to the object’s class.
-The second field (optional) is called <code>idHash</code> and has type <code>int</code>.
-It stores an identity hashcode for the object.</p>
+The latter in turn inherits standard oop (ordinary object pointer) header fields from a special struct class named <code>_objhdr</code> which includes two fields. The first field is called
+<code>hub</code> and its type is <code>java.lang.Class *</code> i.e. it is a pointer to the object’s
+class. The second field is called <code>idHash</code> and has type <code>int</code>. It stores an
+identity hashcode for the object.</p>
 
 <p>The <code>ptype</code> command can be used to print details of a specific type.
 Note that the Java type name must be specified in quotes because to escape the embedded <code>.</code> characters.</p>
@@ -918,13 +913,13 @@ is an object reference and, if so,  what the object’s class is.
 Given a valid object reference it is always possible to print the
 contents of the <code>String</code> referenced from the <code>hub</code>’s name field.</p>
 
-<p>Note that as a consequence, this enables every object observed by the debugger
-to be downcast to its dynamic type. That is, even if the debugger only sees the static
-type of (for example) java.nio.file.Path, we can easily downcast to the dynamic type, which
+<p>Note that as a consequence, this allows every object observed by the debugger
+to be downcast to its dynamic type. i.e. even if the debugger only sees the static
+type of e.g. java.nio.file.Path we can easily downcast to the dynamic type, which
 might be a subtype such as <code>jdk.nio.zipfs.ZipPath</code>, thus making it possible to inspect
 fields that we would not be able to observe from the static type alone.
 First the value is cast to an object reference.
-Then a path expression is used to dereference through the <code>hub</code> field and the <code>hub</code>’s name field to the <code>byte[]</code> value array located in the name <code>String</code>.</p>
+Then a path expression is used to dereference through the the <code>hub</code> field and the <code>hub</code>’s name field to the <code>byte[]</code> value array located in the name <code>String</code>.</p>
 
 <pre><code>(gdb) print/x ((_objhdr *)$rdi)
 $7 = (_objhdr *) 0x7ffff7c01130
@@ -990,7 +985,7 @@ end
 0x8779c8:	"[Ljava.lang.String;"
 </code></pre>
 
-<p>The native image heap contains a unique hub object (an instance of
+<p>The native image heap contains a unique hub object (i.e. instance of
 <code>java.lang.Class</code>) for every Java type that is included in the
 image. It is possible to refer to these class constants using the
 standard Java class literal syntax:</p>
@@ -1028,7 +1023,7 @@ $9 = 0xc87b78 "long"
 (gdb) 
 </code></pre>
 
-<p>Interface layouts are modeled as C++ union types.
+<p>Interface layouts are modelled as C++ union types.
 The members of the union include the C++ layout types for all Java classes which implement the interface.</p>
 
 <pre><code>(gdb) ptype 'java.lang.CharSequence'
@@ -1196,21 +1191,21 @@ Retrieved files are cached under subdirectory <em>sources</em>, using the module
 <p>For example, on Linux the source for <code>class java.util.HashMap</code> will be cached in file <em>sources/java.base/java/util/HashMap.java</em>.
 Debug info records for this class and its methods will identify this source file using the relative directory path <em>java.base/java/util</em> and file name <em>HashMap.java</em>. On Windows things will be the same modulo use of <code>\</code> rather than <code>/</code> as the file separator.</p>
 
-<p>Sources for GraalVM classes are retrieved from ZIP files or source directories derived from entries on the class path.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (for example, class <code>com.oracle.svm.core.VM</code> has its source file cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
+<p>Sources for GraalVM classes are retrieved from ZIP files or source directories derived from entries in the classpath.
+Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>com.oracle.svm.core.VM</code> has its source file cached at <code>sources/com/oracle/svm/core/VM.java</code>).</p>
 
-<p>The lookup scheme for cached GraalVM sources varies depending upon what is found in each class path entry.
+<p>The lookup scheme for cached GraalVM sources varies depending upon what is found in each classpath entry.
 Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding file <em>/path/to/foo.src.zip</em> is considered as a candidate ZIP file system from which source files may be extracted.
 When the entry specifies a directory like <em>/path/to/bar</em>, then directories <em>/path/to/bar/src</em> and <em>/path/to/bar/src_gen</em> are considered as candidates.
-Candidates are skipped when the ZIP file or source directory does not exist, or it does not contain at least one subdirectory hierarchy that matches one of the expected GraalVM package hierarchies.</p>
+Candidates are skipped when the ZIP file or source directory does not exist, or it does not contain at least one subdirectory hierarchy that matches one of the the expected GraalVM package hierarchies.</p>
 
-<p>Sources for application classes are retrieved from source JAR files or source directories derived from entries in the class path.
-Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (for example, class <code>org.my.foo.Foo</code> has its source file cached as <em>sources/org/my/foo/Foo.java</em>).</p>
+<p>Sources for application classes are retrieved from source JAR files or source directories derived from entries in the classpath.
+Retrieved files are cached under subdirectory <em>sources</em>, using the package name of the associated class to define the directory hierarchy in which the source is located (e.g., class <code>org.my.foo.Foo</code> has its source file cached as <code>sources/org/my/foo/Foo.java</code>).</p>
 
-<p>The lookup scheme for cached application sources varies depending upon what is found in each class path entry.
-Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding JAR file <em>/path/to/foo-sources.jar</em> is considered as a candidate ZIP file system from which source files may be extracted.
-When the entry specifies a directory like <em>/path/to/bar/classes/</em> or <em>/path/to/bar/target/classes/</em> then one of the directories
-<em>/path/to/bar/src/main/java/</em>, <em>/path/to/bar/src/java/</em> or <em>/path/to/bar/src/</em> is selected as a candidate (in that order of preference).
+<p>The lookup scheme for cached application sources varies depending upon what is found in each classpath entry.
+Given a JAR file entry like <em>/path/to/foo.jar</em>, the corresponding JAR <em>/path/to/foo-sources.jar</em> is considered as a candidate ZIP file system from which source files may be extracted.
+When the entry specifies a dir like <em>/path/to/bar/classes</em> or <em>/path/to/bar/target/classes</em> then one of the directories
+<em>/path/to/bar/src/main/java</em>, <em>/path/to/bar/src/java</em> or <em>/path/to/bar/src</em> is selected as a candidate (in that order of preference).
 Finally, the current directory in which the native executable is being run is also considered as a candidate.</p>
 
 <p>These lookup strategies are only provisional and may need extending in the future.
@@ -1234,7 +1229,7 @@ If the sources cache is not located in the directory in which you run GDB, you c
 
 <p>The argument to the set directories command should identify the location of the sources cache as an absolute path or a relative path from the working directory of the <code>gdb</code> session.</p>
 
-<p>Note that the current implementation does not yet find some sources for the GraalVM JIT compiler in the <em>jdk.graal.compiler*</em> package subspace.</p>
+<p>Note that the current implementation does not yet find some sources for the GraalVM JIT compiler in the <em>org.graalvm.compiler*</em> package subspace.</p>
 
 <p>You can supplement the files cached in <code>sources</code> by unzipping application source JAR files or copying application source trees into the cache.
 You will need to ensure that any new subdirectory you add to <code>sources</code> corresponds to the top level package for the classes whose sources are being included.</p>
@@ -1319,21 +1314,21 @@ at a specific address in memory.</p>
         
       </h2>
 
-<p>The use of <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">isolates</a> in native image affects the way ordinary object pointers (oops) are encoded.
+<p>Enabling the use of <a href="https://medium.com/graalvm/isolates-and-compressed-references-more-flexible-and-efficient-memory-management-for-graalvm-a044cc50b67e">isolates</a>, by passing command line option <code>-H:-SpawnIsolates</code> to the <code>native-image</code> builder, affects the way ordinary object pointers (oops) are encoded.
 In turn, that means the debug info generator has to provide <code>gdb</code> with information about how to translate an encoded oop to the address in memory, where the object data is stored.
 This sometimes requires care when asking <code>gdb</code> to process encoded oops vs decoded raw addresses.</p>
 
-<p>If isolates were disabled, oops would essentially be raw addresses pointing directly at the object contents.
+<p>When isolates are disabled, oops are essentially raw addresses pointing directly at the object contents.
 This is generally the same whether the oop is embedded in a static/instance field or is referenced from a local or parameter variable located in a register or saved to the stack.
 It is not quite that simple because the bottom 3 bits of some oops may be used to hold “tags” that record certain transient properties of an object.
 However, the debug info provided to <code>gdb</code> means that it will remove these tag bits before dereferencing the oop as an address.</p>
 
-<p>With the use of isolates, oops references stored in static or instance fields are actually relative addresses, offsets from a dedicated heap base register (r14 on x86_64, r29 on AArch64), rather than direct addresses (in a few special cases the offset may also have some low tag bits set).
+<p>By contrast, when isolates are enabled, oops references stored in static or instance fields are actually relative addresses, offsets from a dedicated heap base register (r14 on x86_64, r29 on AArch64), rather than direct addresses (in a few special cases the offset may also have some low tag bits set).
 When an “indirect” oop of this kind gets loaded during execution, it is almost always immediately converted to a “raw” address by adding the offset to the heap base register value.
 So, oops which occur as the value of local or parameter vars are actually raw addresses.</p>
 
 <blockquote>
-  <p>Note that on some operating systems enabling isolates causes problems with printing of objects when using a <code>gdb</code> release version 10 or earlier. It is strongly recommended to upgrade your debugger to a later version.</p>
+  <p>Note that on some operating systems enabling isolates causes problems with printing of objects when using a <code>gdb</code> release version 10 or earlier. It is currently recommended to disable use of isolates, by passing command line option <code>-H:-SpawnIsolates</code>, when generating debug info if your operating system includes one of these earlier releases. Alternatively, you may be able to upgrade your debugger to a later version.</p>
 </blockquote>
 
 <p>The DWARF info encoded into the image, when isolates are enabled, tells <code>gdb</code> to rebase indirect oops whenever it tries to dereference them to access underlying object data.
@@ -1405,7 +1400,7 @@ $4 = {
 </code></pre>
 
 <p>Since the indirect types inherit from the corresponding raw type it is possible to use an expression that identifies an indirect type pointer in almost all cases where an expression identifying a raw type pointer would work.
-The only case where care might be needed is when casting a displayed numeric field value or displayed register value.</p>
+The only case case where care might be needed is when casting a displayed numeric field value or displayed register value.</p>
 
 <p>For example, if the indirect <code>hub</code> oop printed above is passed to <code>hubname_raw</code>, the cast to type Object internal to that command fails to force the required indirect oops translation.
 The resulting memory access fails:</p>
@@ -1457,7 +1452,7 @@ inlined compiled method code as well as mappings from code addresses
 to the corresponding source files and lines.
 <code>perf</code> and <code>valgrind</code> are able to use this information for some of
 their recording and reporting operations.
-For example, <code>perf report</code> is able to associate code addresses sampled
+For example, <code>perf report</code> is able to associate code adresses sampled
 during a <code>perf record</code> session with Java methods and print the
 DWARF-derived method name for the method in its output histogram.</p>
 
@@ -1522,15 +1517,15 @@ Each instruction is prefaced with it’s address in the program’s code
 section.
 The disassembly interleaves the source lines from which the code is
 derived, 521-524 for the top level code and 207-209 for the code
-inlined from <code>Objects.requireNonNull()</code>.
-Also, the start of the method is labeled with the name defined in the
+inlined from from <code>Objects.requireNonNull()</code>.
+Also, the start of the method is labelled with the name defined in the
 DWARF debug info, <code>java.lang.String::String()</code>.
 However, the branch instruction <code>jbe</code> at address <code>0x519d6f</code> uses a
 very large offset from <code>graal_vm_locator_symbol</code>.
 The printed offset does identify the correct address relative to the
 location of the symbol.
 However, this fails to make clear that the target address actually
-lies within the compiled code range for method <code>String::String()</code>, in other words that this is a method-local branch.</p>
+lies within the compiled code range for method <code>String::String()</code> i.e. that thsi is a method-local branch.</p>
 
 <p>Readability of the tool output is significantly improved if
 option <code>-H-DeleteLocalSymbols</code> is passed to the <code>native-image</code>
@@ -1597,7 +1592,7 @@ the first comment with 521 rather than 516.</p>
 for all methods and C functions in the image.
 It is possible to annotate a specific method by passing it’s name as
 an argument to the perf annotate command.
-Note, however, that <code>perf</code> requires the mangled symbol name as
+Note, however, that <code>perf</code> requries the mangled symbol name as
 argument rather than the DWARF name.
 So, in order to annotate method <code>java.lang.String::String()</code> it is
 necessary to run command <code>perf annotate
@@ -1607,31 +1602,16 @@ String_constructor_f60263d569497f1facccd5467ef60532e990f75d</code>.</p>
 retained in order to provide high quality output.
 When <code>callgrind</code> is used in combination with a viewer like
 <code>kcachegrind</code> it is possible to identify a great deal of valuable
-information about native image execution and relate it back to
+information about native image execution aand relate it back to
 specific source code lines.</p>
     
-      <h3 id="call-graph-recording-with-perf-record">
-        
-        
-          Call-graph recording with <code>perf record</code> <a href="#call-graph-recording-with-perf-record" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Normally when perf does stack frame recording (when <code>--call-graph</code> is used), it uses frame pointers to recognize the individual stack frames.
-This assumes that the executable that gets profiled actually preserves frame pointers whenever a function gets called.
-For native images, this can be achieved by using <code>-H:+PreserveFramePointer</code> as an image build argument.</p>
-
-<p>An alternative solution is to make perf use dwarf debug info (specifically debug_frame data) to help unwind stack frames.
-To make this work, the image needs to be built with <code>-g</code> (to generate debuginfo), and <code>perf record</code> needs to use the argument <code>--call-graph dwarf</code> to make sure dwarf debug info (instead of frame pointers) is used for stack unwinding.</p>
-    
-      <h2 id="related-documentation">
+      <h3 id="related-documentation">
         
         
           Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
-      </h2>
+      </h3>
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/guides/debug-native-image-process/">Debug Native Executables with GDB</a></li>
@@ -1752,9 +1732,8 @@ To make this work, the image needs to be built with <code>-g</code> (to generate
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

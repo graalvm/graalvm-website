@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -219,8 +218,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/dev/getting-started/">
-            Getting Started
+          <a href="">
+            
           </a>
         </li>
 
@@ -268,7 +267,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/java/">
-              GraalVM as a Java Virtual Machine
+              Java and JVM
             </a>
           </li>
 
@@ -290,7 +289,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/embed-languages/">
-              Embedding Languages
+              Embedding Reference
             </a>
           </li>
 
@@ -328,7 +327,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/tools/">
-              Tools for Graal Languages
+              Tools for GraalVM Languages
             </a>
           </li>
 
@@ -360,23 +359,6 @@ $(document).ready(function(){
           
           <a href="/dev/security-guide/">
             Security Guide
-          </a>
-        </li>
-
-        
-        
-
-        
-        
-      
-    
-      
-        
-          <li class="toc-bullets-main">
-        
-          
-          <a href="/pages/javadocs/jdk26-ea.html">
-            SDK Javadoc for JDK 26
           </a>
         </li>
 
@@ -470,6 +452,7 @@ $(document).ready(function(){
 
 <ul>
   <li><a href="#running-polyglot-applications">Running Polyglot Applications</a></li>
+  <li><a href="#polyglot-launcher">Polyglot Launcher</a></li>
   <li><a href="#polyglot-options">Polyglot Options</a></li>
   <li><a href="#passing-options-for-language-launchers">Passing Options for Language Launchers</a></li>
   <li><a href="#passing-options-programmatically">Passing Options Programmatically</a></li>
@@ -501,8 +484,17 @@ For more details, proceed to the <a href="http://dx.doi.org/10.1145/2816707.2816
 <p>The following examples are designed to get you started with a basic polyglot application.
 Select a section for your <em>Start Language</em> and then select a tab for the <em>Target Language</em>.</p>
 
-<p>The below examples are expected to work equally from a JVM or native standalone distribution.
-For native launchers and native executables using Java as a Target Language and accessing classes other than Java arrays, it is required to recompile the image and provide a <a href="/dev/reference-manual/native-image/metadata/#reflection">reflection configuration file</a>.</p>
+<p>Ensure you set up GraalVM before you begin.</p>
+
+<p>The below examples work:</p>
+<ul>
+  <li>on a JVM, by passing <code>--polyglot --jvm</code>.</li>
+  <li>on native launchers with <code>--polyglot</code> (e.g., <code>js --polyglot</code>).
+It might be required to <a href="/dev/reference-manual/graalvm-updater/#rebuild-images">rebuild images</a> to access languages installed with <code>gu</code>.</li>
+  <li>with native executables (e.g., <code>native-image --language:js</code>).</li>
+</ul>
+
+<p>For native launchers and native executables using Java as a Target Language and accessing classes other than Java arrays, it is required to recompile the image and provide a <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">reflection configuration file</a>.</p>
 
 <p>Note: To start an application with LLVM as a Target Language, make sure to precompile the <em>polyglot.c</em> file provided below.</p>
     
@@ -773,9 +765,9 @@ For native launchers and native executables using Java as a Target Language and 
 
 <p>Run:</p>
 
-<pre><code class="language-shell">js polyglot.js
+<pre><code class="language-shell">js --polyglot --jvm polyglot.js
 42
-node polyglot.js
+node --polyglot --jvm polyglot.js
 42
 </code></pre>
     
@@ -1054,7 +1046,7 @@ node polyglot.js
 
 <p>Run:</p>
 
-<pre><code class="language-shell">Rscript polyglot.R
+<pre><code class="language-shell">Rscript --polyglot --jvm polyglot.R
 [1] 42
 </code></pre>
     
@@ -1326,7 +1318,7 @@ node polyglot.js
 
 <p>Run:</p>
 
-<pre><code class="language-shell">ruby polyglot.rb
+<pre><code class="language-shell">ruby --polyglot --jvm polyglot.rb
 42
 </code></pre>
     
@@ -1603,7 +1595,7 @@ node polyglot.js
 
 <p>Run:</p>
 
-<pre><code class="language-shell">graalpy polyglot.py
+<pre><code class="language-shell">graalpy --polyglot --jvm polyglot.py
 42
 </code></pre>
     
@@ -2231,16 +2223,60 @@ java Polyglot
 </div>
 
 <p>The example C code has to be compiled to LLVM bitcode using the LLVM frontend such as <code>clang</code>.
-A user can use <code>clang</code> from the pre-built <a href="/dev/reference-manual/llvm/#llvm-toolchain">LLVM toolchain shipped with the GraalVM LLVM runtime</a>:</p>
+A user can use <code>clang</code> shipped with GraalVM by installing a pre-built LLVM toolchain support:</p>
 
-<pre><code class="language-shell">export LLVM_TOOLCHAIN=$(lli --print-toolchain-path)
+<pre><code class="language-shell">gu install llvm-toolchain
+export LLVM_TOOLCHAIN=$(lli --print-toolchain-path)
 </code></pre>
 <p>Run:</p>
 
 <pre><code class="language-shell">$LLVM_TOOLCHAIN/clang polyglot.c -lgraalvm-llvm -o polyglot
-lli polyglot
+lli --polyglot polyglot
 42
 </code></pre>
+    
+      <h2 id="polyglot-launcher">
+        
+        
+          Polyglot Launcher <a href="#polyglot-launcher" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>With polyglot applications it is often impossible to decide what the primary language of an application is.
+Therefore, an experimental new launcher, called <code>polyglot</code>, has been added to GraalVM.
+For the moment, this launcher runs code for JavaScript, Ruby, and R without requiring the selection of a primary language.
+The polyglot launcher does not require the <code>--polyglot</code> option; it is enabled by default.</p>
+
+<p>This is how you can run a polyglot application by using the examples from above:</p>
+
+<pre><code class="language-shell">polyglot --jvm polyglot.js polyglot.R polyglot.rb
+</code></pre>
+
+<p>We have also included a basic experimental shell for multiple languages called the <em>Polyglot Shell</em>.
+It is useful to quickly test the interactivity of languages implemented with the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>.
+This is how you can start it:</p>
+
+<pre><code class="language-shell">polyglot --jvm --shell
+</code></pre>
+
+<p>If you have installed all optional languages packs to the core GraalVM installation, then the Polyglot Shell will look like:</p>
+<pre><code class="language-shell">GraalVM MultiLanguage Shell 22.2.0
+Copyright (c) 2013-2021, Oracle and/or its affiliates
+  Java version 22.2.0
+  JavaScript version 22.2.0
+  Python version 3.8.5
+  R version 4.0.3
+  Ruby version 3.0.3
+Usage:
+  Use Ctrl+n to switch language and Ctrl+d to exit.
+  Enter -usage to get a list of available commands.
+js&gt;
+</code></pre>
+
+<blockquote>
+  <p>Note: The <code>polyglot</code> launcher and the <em>Polyglot Shell</em> are experimental features in GraalVM.</p>
+</blockquote>
     
       <h2 id="polyglot-options">
         
@@ -2268,10 +2304,10 @@ lli polyglot
   </li>
 </ul>
     
-      <h2 id="passing-options-to-language-launchers">
+      <h2 id="passing-options-for-language-launchers">
         
         
-          Passing Options to Language Launchers <a href="#passing-options-to-language-launchers" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Passing Options for Language Launchers <a href="#passing-options-for-language-launchers" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
@@ -2376,18 +2412,6 @@ java -Dpolyglot.js.strict=true SystemPropertiesTest
 <blockquote>
   <p>Note: System properties are read once when the polyglot context is created. Subsequent changes have no effect.</p>
 </blockquote>
-    
-      <h3 id="related-documentation">
-        
-        
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<ul>
-  <li>Learn more about a guest and Java host language interoperability from the <a href="/dev/reference-manual/embed-languages/">Embedding Languages documentation</a></li>
-</ul>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -2504,9 +2528,8 @@ java -Dpolyglot.js.strict=true SystemPropertiesTest
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

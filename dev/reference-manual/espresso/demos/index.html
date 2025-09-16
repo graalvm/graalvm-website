@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -236,7 +235,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/espresso/">
-            Espresso
+            Espresso (Java on Truffle)
           </a>
         </li>
 
@@ -424,9 +423,9 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Espresso is an implementation of the Java Virtual Machine Specification, which offers some interesting capabilities in addition to being able to run applications in Java or other JVM languages.
+<p>Java on Truffle is an implementation of the Java Virtual Machine Specification, which offers some interesting capabilities in addition to being able to run applications in Java or other JVM languages.
 For example, the enhanced <a href="/dev/reference-manual/espresso/hotswap/">HotSwap capabilities</a> boosts developer productivity by enabling unlimited hot code reloading.
-Moreover, to illustrate what Espresso can do, consider the following short examples.</p>
+Moreover, to illustrate what Java on Truffle can do, consider the following short examples.</p>
     
       <h2 id="mixing-aot-and-jit-for-java">
         
@@ -444,12 +443,12 @@ Moreover, to illustrate what Espresso can do, consider the following short examp
 </ul>
 
 <p>The main trade off for using Native Image is that the analysis and compilation of your program happens under the closed world assumption, meaning the static analysis needs to process all bytecode which will ever be executed in the application.
-This makes using some language features such as dynamic class loading or reflection tricky.</p>
+This makes using some language features like dynamic class loading or reflection tricky.</p>
 
-<p>Espresso is a JVM implementation of a JVM bytecode interpreter, built on the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>.
+<p>Java on Truffle is a JVM implementation of a JVM bytecode interpreter, built on the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>.
 It is essentially a Java application, as are the Truffle framework itself and the GraalVM JIT compiler.
 All three of them can be compiled ahead-of-time with <code>native-image</code>.
-Using Espresso for some parts of your application makes it possible to isolate the required dynamic behavior and still use the native executable on the rest of your code.</p>
+Using Java on Truffle for some parts of your application makes it possible to isolate the required dynamic behaviour and still use the native executable on the rest of your code.</p>
 
 <p>Consider a canonical Java Shell tool (JShell) as an example command line application.
 It is a REPL capable of evaluating Java code and consists of two parts:</p>
@@ -458,41 +457,38 @@ It is a REPL capable of evaluating Java code and consists of two parts:</p>
   <li>the backend processor for running code you enter into Shell.</li>
 </ul>
 
-<p>This design naturally fits the point we are trying to illustrate. We can build a native executable of the JShell’s UI part, and make it include Espresso to run the code dynamically specified at run time.</p>
-    
-      <h4 id="prerequisites">
-        
-        
-          Prerequisites:
-        
-        
-      </h4>
+<p>This design naturally fits the point we are trying to illustrate. We can build a native executable of the JShell’s UI part, and make it include Java on Truffle to run the code dynamically specified at run time.</p>
+
+<p>Prerequisites:</p>
 <ul>
-  <li><a href="https://www.graalvm.org/downloads/">GraalVM JDK</a></li>
-  <li><a href="/dev/reference-manual/espresso/#getting-started">Espresso</a></li>
+  <li><a href="https://www.graalvm.org/downloads/">Latest GraalVM</a></li>
+  <li><a href="/dev/reference-manual/espresso/#install-java-on-truffle">Java on Truffle</a></li>
 </ul>
 
-<p>Clone the <a href="https://github.com/graalvm/graalvm-demos">project</a> with the demo applications and navigate to the <code>espresso-jshell</code> directory:</p>
-<pre><code class="language-shell">git clone https://github.com/graalvm/graalvm-demos.git
+<ol>
+  <li>Clone the <a href="https://github.com/graalvm/graalvm-demos">project</a> with the demo applications and navigate to the <code>espresso-jshell</code> directory:</li>
+</ol>
+
+<pre><code>git clone https://github.com/graalvm/graalvm-demos.git
 cd graalvm-demos/espresso-jshell
 </code></pre>
 
-<p>The JShell implementation is actually the normal JShell launcher code, which only accepts Espresso implementation of the execution engine.</p>
+<p>The JShell implementation is actually the normal JShell launcher code, which only accepts Java on Truffle implementation (the project code-name is “Espresso”) of the execution engine.</p>
 
 <p>The “glue” code that binds the part which is AOT compiled with the component that dynamically evaluates the code is located in the <code>EspressoExecutionControl</code> class.
-It loads the JShell classes within the Espresso context and delegate the input to them:</p>
+It loads the JShell classes within the Java on Truffle context and delegate the input to them:</p>
 
-<pre><code class="language-shell">protected final Lazy&lt;Value&gt; ClassBytecodes = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassBytecodes"));
-protected final Lazy&lt;Value&gt; byte_array = Lazy.of(() -&gt; loadClass("[B"));
-protected final Lazy&lt;Value&gt; ExecutionControlException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ExecutionControlException"));
-protected final Lazy&lt;Value&gt; RunException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$RunException"));
-protected final Lazy&lt;Value&gt; ClassInstallException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassInstallException"));
-protected final Lazy&lt;Value&gt; NotImplementedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$NotImplementedException"));
-protected final Lazy&lt;Value&gt; EngineTerminationException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$EngineTerminationException"));
-protected final Lazy&lt;Value&gt; InternalException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$InternalException"));
-protected final Lazy&lt;Value&gt; ResolutionException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ResolutionException"));
-protected final Lazy&lt;Value&gt; StoppedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$StoppedException"));
-protected final Lazy&lt;Value&gt; UserException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$UserException"));
+<pre><code class="language-shell">    protected final Lazy&lt;Value&gt; ClassBytecodes = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassBytecodes"));
+    protected final Lazy&lt;Value&gt; byte_array = Lazy.of(() -&gt; loadClass("[B"));
+    protected final Lazy&lt;Value&gt; ExecutionControlException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ExecutionControlException"));
+    protected final Lazy&lt;Value&gt; RunException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$RunException"));
+    protected final Lazy&lt;Value&gt; ClassInstallException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ClassInstallException"));
+    protected final Lazy&lt;Value&gt; NotImplementedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$NotImplementedException"));
+    protected final Lazy&lt;Value&gt; EngineTerminationException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$EngineTerminationException"));
+    protected final Lazy&lt;Value&gt; InternalException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$InternalException"));
+    protected final Lazy&lt;Value&gt; ResolutionException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$ResolutionException"));
+    protected final Lazy&lt;Value&gt; StoppedException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$StoppedException"));
+    protected final Lazy&lt;Value&gt; UserException = Lazy.of(() -&gt; loadClass("jdk.jshell.spi.ExecutionControl$UserException"));
 </code></pre>
 
 <p>There is more code to pass the values correctly and transform the exceptions.
@@ -503,7 +499,8 @@ To try it out, build the <code>espresso-jshell</code> binary using the provided 
   <li>Build a native executable</li>
 </ol>
 
-<p>After the build you can observe the resulting binary file (<code>file</code> and <code>ldd</code> are Linux commands):</p>
+<p>The most important configuration line in the <code>native-image</code> command is <code>--language:java</code> which instructs to include the Java on Truffle implementation into the binary.
+After the build you can observe the resulting binary file (<code>file</code> and <code>ldd</code> are Linux commands)</p>
 <pre><code class="language-shell">file ./espresso-jshell
 ldd ./espresso-jshell
 </code></pre>
@@ -517,9 +514,9 @@ jshell&gt; 1 + 1
 1 ==&gt; 2
 </code></pre>
 
-<p>Experiment with loading new code into JShell and see how Espresso executes it.</p>
+<p>Experiment with loading new code into JShell and see how Java on Truffle executes it.</p>
 
-<p>Watch a video version of the mixing AOT and JIT compiled code with the Espresso demo.</p>
+<p>Watch a video version of the mixing AOT and JIT compiled code with Java on Truffle demo.</p>
 
 <div class="row">
   <div class="col-sm-12">
@@ -540,20 +537,20 @@ jshell&gt; 1 + 1
 </div>
 <p><br /></p>
     
-      <h2 id="graalvm-tools-with-espresso">
+      <h2 id="graalvm-tools-with-java-on-truffle">
         
         
-          GraalVM Tools with Espresso <a href="#graalvm-tools-with-espresso" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          GraalVM Tools with Java on Truffle <a href="#graalvm-tools-with-java-on-truffle" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>Espresso is a proper part of the GraalVM ecosystem, and like other GraalVM-supported languages gets the support of developer tooling by default. The <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a> integrates with the tools such as the debugger, profiler, memory analyzer, the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">Instrumentation API</a>.
+<p>Java on Truffle is a proper part of the GraalVM ecosystem, and like other GraalVM-supported languages gets the support of developer tooling by default. The <a href="/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a> integrates with the tools like the debugger, profiler, memory analyser, the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">Instrumentation API</a>.
 The interpreter for a language needs to mark the AST nodes with some annotations to support those tools.</p>
 
 <p>For example, to be able to use a profiler, a language interpreter needs to mark the root nodes.
 For the debugger purposes, the language expressions should be marked as instrumental, the scopes for the variables specified, and so on. The language interpreter does not need to integrate with the tools itself.
-As a result, you can profile a Java application on Espresso out of the box using either the CPU Sampler or Memory Tracer tools.</p>
+As a result, you can profile a Java on Truffle program out of the box using either the CPU Sampler or Memory Tracer tools.</p>
 
 <p>For example, if we have a class like the following one computing the prime numbers:</p>
 <pre><code class="language-java">import java.util.List;
@@ -600,11 +597,11 @@ You can also try an experiment with the <code>--memtracer</code> option, to see 
 <pre><code class="language-shell">java -truffle --experimental-options --memtracer Main &gt; output.txt
 </code></pre>
 
-<p>Other tools that GraalVM offers are <a href="/dev/tools/chrome-debugger/">Chrome Debugger</a>, <a href="/dev/tools/code-coverage/">Code Coverage</a>, and <a href="/dev/tools/graalvm-insight/">GraalVM Insight</a>.</p>
+<p>Other tools that GraalVM offers are <a href="/tools/chrome-debugger/">Chrome Debugger</a>, <a href="/tools/code-coverage/">Code Coverage</a>, and <a href="/tools/graalvm-insight/">GraalVM Insight</a>.</p>
 
-<p>Having the “out-of-the-box” support for the developer tooling makes Espresso an interesting choice of the JVM.</p>
+<p>Having the “out-of-the-box” support for the developer tooling makes Java on Truffle an interesting choice of the JVM.</p>
 
-<p>Watch a short demonstration of GraalVM built-in tools for Espresso.</p>
+<p>Watch a short demonstration of GraalVM built-in tools for Java on Truffle.</p>
 
 <div class="row">
   <div class="col-sm-12">
@@ -740,9 +737,8 @@ You can also try an experiment with the <code>--memtracer</code> option, to see 
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

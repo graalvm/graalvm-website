@@ -141,7 +141,8 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="build-a-native-shared-library">Build a Native Shared Library</h1>
 
-<p>To build a native shared library, pass the command-line option <code>--shared</code> to the <code>native-image</code> tool, as follows:</p>
+<p>To build a native shared library, pass the command-line argument <code>--shared</code> to the <code>native-image</code> tool, as follows</p>
+
 <pre><code class="language-shell">native-image &lt;class name&gt; --shared
 </code></pre>
 
@@ -149,28 +150,28 @@
 <pre><code class="language-shell">native-image -jar &lt;jarfile&gt; --shared
 </code></pre>
 
-<p>The resulting native shared library will have the <code>main()</code> method of the given Java class as its entrypoint method.</p>
+<p>The resulting native shared library will have the <code>main()</code> method of the given Java class as its <strong>entrypoint</strong> method.</p>
 
-<p>If your library does not include a <code>main()</code> method, use the <code>-o</code> command-line option to specify the library name, as follows:</p>
-<pre><code class="language-shell">native-image --shared -o &lt;libraryname&gt; &lt;class name&gt;
-native-image --shared -jar &lt;jarfile&gt; -o &lt;libraryname&gt;
+<p>If your library doesn’t include a <code>main()</code> method, use the <code>-H:Name=</code> command-line option to specify the library name, as follows:</p>
+
+<pre><code class="language-shell">native-image --shared -H:Name=&lt;libraryname&gt; &lt;class name&gt;
+native-image --shared -jar &lt;jarfile&gt; -H:Name=&lt;libraryname&gt;
 </code></pre>
 
-<p>GraalVM makes it easy to use C to call into a native shared library.
-There are two primary mechanisms for calling a method (function) embedded in a native shared library: the <a href="/dev/reference-manual/native-image/native-code-interoperability/C-API/">Native Image C API</a> and the <a href="https://docs.oracle.com/en/java/javase/25/docs/specs/jni/invocation.html">JNI Invocation API</a>.</p>
+<p>GraalVM makes it easy to use C to call into a native shared library. 
+There are two primary mechanisms for calling a method (function) embedded in a native shared library: the <a href="/dev/reference-manual/native-image/native-code-interoperability/C-API/">Native Image C API</a> and the <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/jni/invocation.html">JNI Invocation API</a>.</p>
 
-<p>This guide describes how to use the <strong>Native Image C API</strong>.
-It consists of the following steps:</p>
+<p>This guide describes how to use the <strong>Native Image C API</strong>. It consists of the following steps:</p>
 <ol>
-  <li>Create and compile a Java class library containing at least one entrypoint method.</li>
+  <li>Create and compile a Java class library containing at least one <strong>entrypoint</strong> method.</li>
   <li>Use the <code>native-image</code> tool to create a shared library from the Java class library.</li>
-  <li>Create and compile a C application that calls that entrypoint method in the shared library.</li>
+  <li>Create and compile a C application that calls an <strong>entrypoint</strong> method in the shared library.</li>
 </ol>
 
 <h3 id="tips-and-tricks">Tips and Tricks</h3>
 
-<p>The shared library must have at least one entrypoint method.
-By default, only a method named <code>main()</code>, originating from a <code>public static void main()</code> method, is identified as an entrypoint and callable from a C application.</p>
+<p>The shared library must have at least one <strong>entrypoint</strong> method.
+By default, only a method named <code>main()</code>, originating from a <code>public static void main()</code> method, is identified as an <strong>entrypoint</strong> and callable from a C application.</p>
 
 <p>To export any other Java method:</p>
 
@@ -179,10 +180,11 @@ By default, only a method named <code>main()</code>, originating from a <code>
   <li>Annotate the method with <code>@CEntryPoint</code> (<code>org.graalvm.nativeimage.c.function.CEntryPoint</code>).</li>
   <li>Make one of the method’s parameters of type <code>IsolateThread</code> or <code>Isolate</code>, for example, the first parameter (<code>org.graalvm.nativeimage.IsolateThread</code>) in the method below. This parameter provides the current thread’s execution context for the call.</li>
   <li>Restrict your parameter and return types to non-object types. These are Java primitive types including pointers, from the <code>org.graalvm.nativeimage.c.type</code> package.</li>
-  <li>Provide a unique name for the method. If you give two exposed methods the same name, the <code>native-image</code> builder will fail with the <code>duplicate symbol</code> message. If you do not specify the name in the annotation, you must provide the <code>-o &lt;libraryName&gt;</code> option at build time.</li>
+  <li>Provide a unique name for the method. If you give two exposed methods the same name, the <code>native-image</code> builder will fail with the <code>duplicate symbol</code> message. If you do not specify the name in the annotation, you must provide the <code>-H:Name=libraryName</code> flag at build time.</li>
 </ul>
 
-<p>Below is an example of the entrypoint method:</p>
+<p>Below is an example of an <strong>entrypoint</strong> method:</p>
+
 <pre><code class="language-java">@CEntryPoint(name = "function_name")
 static int add(IsolateThread thread, int a, int b) {
     return a + b;
@@ -190,25 +192,34 @@ static int add(IsolateThread thread, int a, int b) {
 </code></pre>
 
 <p>When the <code>native-image</code> tool builds a native shared library, it also generates a C header file.
-The header file contains declarations for the <a href="/dev/reference-manual/native-image/native-code-interoperability/C-API/">Native Image C API</a> (which enables you to create isolates and attach threads from C code) as well as declarations for each entrypoint in the shared library.
-This is the C header declaration for the example above:</p>
+The header file contains declarations for the <a href="/dev/reference-manual/native-image/native-code-interoperability/C-API/">Native Image C API</a> (which enables you to create isolates and attach threads from C code) as well as declarations for each <strong>entrypoint</strong> in the shared library.
+The <code>native-image</code> tool generates a C header file containing the following C declaration for the example above:</p>
 <pre><code class="language-c">int add(graal_isolatethread_t* thread, int a, int b);
 </code></pre>
 
-<p>A native shared library can have an unlimited number of entrypoints, for example to implement callbacks or APIs.</p>
+<p>A native shared library can have an unlimited number of <strong>entrypoints</strong>, for example to implement callbacks or APIs.</p>
 
 <h3 id="run-a-demo">Run a Demo</h3>
 
-<p>In the following example, you create a small Java class library (containing one class), use <code>native-image</code> to create a shared library from the class library, and then create a small C application that uses that shared library.
-The C application takes a String as an argument, passes it to the shared library, and prints environment variables that contain the argument.</p>
-
-<h3 id="prerequisite">Prerequisite</h3>
-<p>Make sure you have installed a GraalVM JDK.
-The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
-For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+<p>In the following example, you’ll create a small Java class library (containing one class), use <code>native-image</code> to create a shared library from the class library, and then create a small C application that uses the shared library.
+The C application takes a string as its argument, passes it to the shared library, and prints environment variables that contain the argument.</p>
 
 <ol>
-  <li>Save the following Java code to a file named <em>LibEnvMap.java</em>:
+  <li>
+    <p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+  </li>
+  <li>Then install the LLVM toolchain:
+    <pre><code class="language-bash"> gu install llvm-toolchain
+</code></pre>
+    <blockquote>
+      <p>Note: The llvm-toolchain GraalVM component is not available on Microsoft Windows.</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>Save the following Java code to a file named <em>LibEnvMap.java</em>:</p>
+
     <pre><code class="language-java"> import java.util.Map;
  import org.graalvm.nativeimage.IsolateThread;
  import org.graalvm.nativeimage.c.function.CEntryPoint;
@@ -234,26 +245,31 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
      }
  }
 </code></pre>
-    <p>Notice how the method <code>filterEnv()</code> is identified as an entrypoint using the <code>@CEntryPoint</code> annotation and the method is given a name as a argument to the annotation.</p>
+    <p>Notice how the method <code>filterEnv()</code> is identified as an <strong>entrypoint</strong> using the <code>@CEntryPoint</code> annotation and the method is given a name as a argument to the annotation.</p>
   </li>
   <li>Compile the Java code and build a native shared library, as follows:
-    <pre><code class="language-shell"> javac LibEnvMap.java
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac LibEnvMap.java
 </code></pre>
-    <pre><code class="language-shell"> native-image -o libenvmap --shared
+    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image -H:Name=libenvmap --shared 
 </code></pre>
 
-    <p>It produces the following artifacts:</p>
-    <pre><code> Produced artifacts:
- /demo/graal_isolate.h (header)
- /demo/graal_isolate_dynamic.h (header)
+    <p>It will produce the following artifacts:</p>
+    <pre><code> --------------------------------------------------
+ Produced artifacts:
  /demo/libenvmap.dylib (shared_lib)
  /demo/libenvmap.h (header)
+ /demo/graal_isolate.h (header)
  /demo/libenvmap_dynamic.h (header)
+ /demo/graal_isolate_dynamic.h (header)
+ /demo/libenvmap.build_artifacts.txt
+ ==================================================
 </code></pre>
 
     <p>If you work with C or C++, use these header files directly. For other languages, such as Java, use the function declarations in the headers to set up your foreign call bindings.</p>
   </li>
-  <li>Create a C application, <em>main.c</em>, in the same directory containing the following code:
+  <li>
+    <p>Create a C application, <em>main.c</em>, in the same directory containing the following code:</p>
+
     <pre><code class="language-c"> #include &lt;stdio.h&gt;
  #include &lt;stdlib.h&gt;
 
@@ -281,19 +297,18 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 
     <p>The statement <code>#include "libenvmap.h"</code> loads the native shared library.</p>
   </li>
-  <li>Compile <em>main.c</em> using the <code>clang</code> compiler available on your system:
-    <pre><code class="language-shell"> clang -I ./ -L ./ -l envmap -Wl,-rpath ./ -o main main.c
+  <li>Compile the C application using <code>clang</code>.
+    <pre><code class="language-shell"> $JAVA_HOME/languages/llvm/native/bin/clang -I ./ -L ./ -l envmap -Wl,-rpath ./ -o main main.c 
 </code></pre>
-    <p>It creates an executable file <code>main</code>.</p>
   </li>
   <li>Run the C application by passing a string as an argument. For example:
     <pre><code class="language-shell"> ./main USER
 </code></pre>
-    <p>It correctly prints out the name and value of the matching environment variable(s).</p>
+    <p>It will correctly print out the name and value of the matching environment variable(s).</p>
   </li>
 </ol>
 
-<p>The advantage of using the Native Image C API is that you can determine what your API will look like.
+<p>The advantage of using the Native Image C API is that you can determine what your API will look like. 
 The restriction is that your parameter and return types must be non-object types.
 If you want to manage Java objects from C, you should consider <a href="/dev/reference-manual/native-image/dynamic-features/JNI/">JNI Invocation API</a>.</p>
 
@@ -413,9 +428,8 @@ If you want to manage Java objects from C, you should consider <a href="/dev/ref
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

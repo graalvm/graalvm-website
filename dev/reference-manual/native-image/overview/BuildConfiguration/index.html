@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -321,8 +320,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/overview/build-report/">
-              Build Report
+            <a href="">
+              
             </a>
           </li>
 
@@ -370,8 +369,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/overview/Options/">
-              Command-line Options
+            <a href="/dev/reference-manual/native-image/overview/BuildOptions/">
+              Build Options
             </a>
           </li>
 
@@ -628,7 +627,7 @@ Executing [
 ]
 </code></pre>
 
-<p>Typical examples of configurations that use a configuration from <em>META-INF/native-image</em> can be found in <a href="https://github.com/graalvm/graalvm-demos/blob/master/README.md#configure">Native Image configuration examples</a>.</p>
+<p>Typical examples of configurations that use a configuration from <em>META-INF/native-image</em> can be found in <a href="https://github.com/graalvm/graalvm-demos/tree/master/archive/class-initialization-examples">Native Image configuration examples</a>.</p>
     
       <h2 id="configuration-file-format">
         
@@ -713,7 +712,7 @@ It maxes out at 32GB by default and can be overwritten with, for example, <code>
 <code>-XX:GCTimeRatio=19</code> increases the goal of the total time for garbage collection to 5%, which is more throughput-oriented and reduces peak RSS.
 The build process also exits on the first <code>OutOfMemoryError</code> (<code>-XX:+ExitOnOutOfMemoryError</code>) to provide faster feedback in environments under a lot of memory pressure.</p>
 
-<p>By default, the <code>native-image</code> tool uses up to 32 threads (but not more than the number of processors available). For custom values, use the <code>--parallelism=...</code> option.</p>
+<p>By default, the <code>native-image</code> tool uses up to 32 threads (but not more than the number of processors available). For custom values, use the option <code>-H:NumberOfThreads=...</code>.</p>
 
 <p>For other related options available to the <code>native-image</code> tool, see the output from the command <code>native-image --expert-options-all</code>.</p>
     
@@ -731,22 +730,22 @@ However, you can prevent unwanted linking errors by specifying which classes are
 For that, use the <code>--link-at-build-time</code> option. 
 If the option is used in the right context (see below), you can specify required classes to link at build time without explicitly listing classes and packages.
 It is designed in a way that libraries can only configure their own classes, to avoid any side effects on other libraries.
-You can pass the option to the <code>native-image</code> tool on the command line, embed it in a <em>native-image.properties</em> file on the module path or the class path.</p>
+You can pass the option to the <code>native-image</code> tool on the command line, embed it in a <code>native-image.properties</code> file on the module-path or the classpath.</p>
 
 <p>Depending on how and where the option is used it behaves differently:</p>
 
 <ul>
-  <li>If you use <code>--link-at-build-time</code> without arguments, all classes in the scope are required to be fully defined. If used without arguments on command line, all classes will be treated as “link-at-build-time” classes. If used without arguments embedded in a <em>native-image.properties</em> file on the module path, all classes of the module will be treated as “link-at-build-time” classes. If you use <code>--link-at-build-time</code> embedded in a <em>native-image.properties</em> file on the class path, the following error will be thrown:
-    <pre><code>  Error: Using '--link-at-build-time' without args only allowed on module path. 'META-INF/native-image/org.mylibrary/native-image.properties' in 'file:///home/test/myapp/MyLibrary.jar' not part of module path.
+  <li>If you use <code>--link-at-build-time</code> without arguments, all classes in the scope are required to be fully defined. If used without arguments on command line, all classes will be treated as “link-at-build-time” classes. If used without arguments embedded in a <code>native-image.properties</code> file on the module-path, all classes of the module will be treated as “link-at-build-time” classes. If you use <code>--link-at-build-time</code> embedded in a <code>native-image.properties</code> file on the classpath, the following error will be thrown:
+    <pre><code class="language-shell">  Error: Using '--link-at-build-time' without args only allowed on module-path. 'META-INF/native-image/org.mylibrary/native-image.properties' in 'file:///home/test/myapp/MyLibrary.jar' not part of module-path.
 </code></pre>
   </li>
-  <li>If you use the  <code>--link-at-build-time</code> option with arguments, for example, <code>--link-at-build-time=foo.bar.Foobar,demo.myLibrary.Name,...</code>, the arguments should be fully qualified class names or package names. When used on the module path or class path (embedded in <code>native-image.properties</code> files), only classes and packages defined in the same JAR file can be specified. Packages for libraries used on the class path need to be listed explicitly. To make this process easy, use the <code>@&lt;prop-values-file&gt;</code> syntax to generate a package list (or a class list) in a separate file automatically.</li>
+  <li>If you use the  <code>--link-at-build-time</code> option with arguments, for example, <code>--link-at-build-time=foo.bar.Foobar,demo.myLibrary.Name,...</code>, the arguments should be fully qualified class names or package names. When used on the module-path or classpath (embedded in <code>native-image.properties</code> files), only classes and packages defined in the same JAR file can be specified. Packages for libraries used on the classpath need to be listed explicitly. To make this process easy, use the <code>@&lt;prop-values-file&gt;</code> syntax to generate a package list (or a class list) in a separate file automatically.</li>
 </ul>
 
 <p>Another handy option is <code>--link-at-build-time-paths</code> which allows to specify which classes are required to be fully defined at build time by other means.
 This variant requires arguments that are of the same type as the arguments passed via <code>-p</code> (<code>--module-path</code>) or <code>-cp</code> (<code>--class-path</code>):</p>
 
-<pre><code class="language-shell">--link-at-build-time-paths &lt;class search path of directories and ZIP/JAR files&gt;
+<pre><code class="language-shell">--link-at-build-time-paths &lt;class search path of directories and zip/jar files&gt;
 </code></pre>
 
 <p>The given entries are searched and all classes inside are registered as <code>--link-at-build-time</code> classes.
@@ -763,7 +762,7 @@ This option is only allowed to be used on command line.</p>
 <ul>
   <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">Class Initialization in Native Image</a></li>
   <li><a href="/dev/reference-manual/native-image/basics/">Native Image Basics</a></li>
-  <li><a href="/dev/reference-manual/native-image/overview/Options/">Native Image Build Options</a></li>
+  <li><a href="/dev/reference-manual/native-image/overview/BuildOptions/">Native Image Build Options</a></li>
   <li><a href="/dev/reference-manual/native-image/overview/Build-Overview/">Native Image Build Overview</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
 </ul>
@@ -883,9 +882,8 @@ This option is only allowed to be used on command line.</p>
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

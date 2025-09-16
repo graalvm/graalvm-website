@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -506,34 +505,16 @@ $(document).ready(function(){
         
       </h1>
 
-<p>The dynamic language features of the JVM (for example, reflection and resource handling) compute the <em>dynamically-accessed program elements</em> such as fields, methods, or resource URLs at run time. 
-On HotSpot this is possible because all class files and resources are available at run time and can be loaded by the runtime. 
-Availability of all classes and resources, and their loading at run time, comes with an extra overhead in memory and startup time.</p>
+<p>The dynamic language features of the JVM (including reflection and resource handling) compute the <em>dynamically-accessed program elements</em> such as invoked methods or resource URLs at runtime. 
+The <code>native-image</code> tool performs <a href="/dev/reference-manual/native-image/basics/#static-analysis-reachability-and-closed-world-assumption">static analysis</a> while building a native binary to determine those dynamic features, but it cannot always exhaustively predict all uses.
+To ensure inclusion of these elements into the native binary, you should provide <strong>reachability metadata</strong> (in further text referred as <em>metadata</em>) to the <code>native-image</code> builder. 
+Providing the builder with reachability metadata also ensures seamless compatibility with third-party libraries at runtime.</p>
 
-<p>To make native binaries small, the <code>native-image</code> builder performs <a href="/dev/reference-manual/native-image/basics/#static-analysis-reachability-and-closed-world-assumption">static analysis</a> at build time to determine only the necessary program elements that are needed for the correctness of the application. 
-Small binaries allow fast application startup and low memory footprint, however they come at a cost: determining dynamically-accessed application elements via static analysis is infeasible as reachability of those elements depends on data that is available <em>only</em> at run time.</p>
-
-<p>To ensure inclusion of necessary dynamically-accessed elements into the native binary, the <code>native-image</code> builder requires <strong>reachability metadata</strong> (hereinafter referred to as <em>metadata</em>). 
-Providing the builder with correct and exhaustive reachability metadata guarantees application correctness and ensures compatibility with third-party libraries at runtime.</p>
-
-<p>Metadata can be provided to the <code>native-image</code> builder in the following ways:</p>
+<p>Metadata can be provided to the <code>native-image</code> builder in following ways:</p>
 <ul>
   <li>By <a href="#computing-metadata-in-code">computing metadata in code</a> <a href="/dev/reference-manual/native-image/basics/#image-build-time-vs-image-run-time">when the native binary is built</a> and storing required elements into the <a href="/dev/reference-manual/native-image/basics/#native-image-heap">initial heap of the native binary</a>.</li>
-  <li>By <a href="#specifying-metadata-with-json">providing the <em>reachability-metadata.json</em> file(s)</a> stored in the <em>META-INF/native-image/&lt;group.Id&gt;/&lt;artifactId&gt;/</em> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
-  <li>For more advanced use cases, where classpath scanning or build-time initialization is needed.</li>
+  <li>By <a href="#specifying-metadata-with-json">providing JSON files</a> stored in the <code>META-INF/native-image/&lt;group.id&gt;/&lt;artifact.id&gt;</code> project directory. For more information about how to collect metadata for your application automatically, see <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
 </ul>
-
-<blockquote>
-  <p>Note: Native Image is migrating to the more user-friendly implementation of reachability metadata that shows problems early on and allows easy debugging.</p>
-
-  <p>To enable the new user-friendly reachability-metadata mode for your application, pass the option <code>--exact-reachability-metadata</code> at build time. To enable the user-friendly mode only for concrete packages, pass <code>--exact-reachability-metadata=&lt;comma-separated-list-of-packages&gt;</code>.</p>
-
-  <p>To get an overview of all places in your code where missing registrations occur, without committing to the exact behavior, you can pass <code>-XX:MissingRegistrationReportingMode=Warn</code> when starting the application.</p>
-
-  <p>To detect places where the application accidentally ignores a missing registration error (with <code>catch (Throwable t)</code> blocks), pass <code>-XX:MissingRegistrationReportingMode=Exit</code> when starting the application. The application will then unconditionally print the error message with the stack trace and exit immediately. This behavior is ideal for running application tests to guarantee all metadata is included.</p>
-
-  <p>The user-friendly implementation for reflection will become the default in future releases of GraalVM so the timely adoption is important to avoid project breakage.</p>
-</blockquote>
     
       <h3 id="table-of-contents">
         
@@ -547,14 +528,12 @@ Providing the builder with correct and exhaustive reachability metadata guarante
   <li><a href="#computing-metadata-in-code">Computing Metadata in Code</a></li>
   <li><a href="#specifying-metadata-with-json">Specifying Metadata with JSON</a></li>
   <li><a href="#metadata-types">Metadata Types</a></li>
-  <li><a href="#reflection">Reflection (Including Dynamic Proxies)</a></li>
+  <li><a href="#reflection">Reflection</a></li>
   <li><a href="#java-native-interface">Java Native Interface</a></li>
-  <li><a href="#foreign-function-and-memory-api">Foreign Function and Memory API</a></li>
-  <li><a href="#resources">Resources</a></li>
-  <li><a href="#resource-bundles">Resource Bundles</a></li>
+  <li><a href="#resources-and-resource-bundles">Resources and Resource Bundles</a></li>
+  <li><a href="#dynamic-proxy">Dynamic Proxy</a></li>
   <li><a href="#serialization">Serialization</a></li>
-  <li><a href="#sample-reachability-metadata">Sample Reachability Metadata</a></li>
-  <li><a href="#defining-classes-at-run-time">Defining Classes at Run Time</a></li>
+  <li><a href="#predefined-classes">Predefined Classes</a></li>
 </ul>
     
       <h2 id="computing-metadata-in-code">
@@ -569,7 +548,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 
 <ol>
   <li>
-    <p>By providing <em>constant</em> arguments to functions that dynamically access elements of the JVM. See, for example, <code>Class#forName</code> in the following code:</p>
+    <p>By providing constant arguments to functions that dynamically access elements of the JVM. A good example of such a function is the <code>Class.forName</code> method. In the following code:</p>
 
     <pre><code class="language-java"> class ReflectiveAccess {
      public Class&lt;Foo&gt; fetchFoo() throws ClassNotFoundException {
@@ -577,46 +556,11 @@ Providing the builder with correct and exhaustive reachability metadata guarante
      }
  }
 </code></pre>
-    <p>Here, <code>Class.forName("Foo")</code> is evaluated into a constant at build time. When the native binary is built, this value is stored in its <a href="/dev/reference-manual/native-image/basics/#native-image-heap">initial heap</a>.
- If the class <code>Foo</code> does not exist, the call to <code>Class#forName</code> will be transformed into <code>throw ClassNotFoundException("Foo")</code>.</p>
-
-    <p>The <em>constant</em> is defined as:</p>
-    <ul>
-      <li>A literal (for example, <code>"Foo"</code> or <code>1</code>).</li>
-      <li>Access to a static field that is <a href="/dev/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">initialized at build time</a>.</li>
-      <li>Access to an effectively final variable.</li>
-      <li>Defining an array that whose lenght is constant, and all values are constant.</li>
-      <li>Simple computations on other constants (for example, <code>"F"</code> + <code>"oo"</code>, or an indexing into an array).</li>
-    </ul>
-
-    <p>When passing constant arrays, the following approaches to declare and populate an array are equivalent from the point of view of the <code>native-image</code> builder:</p>
-
-    <pre><code class="language-java">  Class&lt;?&gt;[] params0 = new Class&lt;?&gt;[]{String.class, int.class};
-  Integer.class.getMethod("parseInt", params0);
-</code></pre>
-
-    <pre><code class="language-java">  Class&lt;?&gt;[] params1 = new Class&lt;?&gt;[2];
-  params1[0] = Class.forName("java.lang.String");
-  params1[1] = int.class;
-  Integer.class.getMethod("parseInt", params1);
-</code></pre>
-
-    <pre><code class="language-java">  Class&lt;?&gt;[] params2 = {String.class, int.class};
-  Integer.class.getMethod("parseInt", params2);
-</code></pre>
-
-    <p>Note that Native Image currently aggressively computes constants, and therefore it is not possible to specify exactly what is a constant at build time.</p>
+    <p>the <code>Class.forName("Foo")</code> will be computed into a constant when native binary is built and stored in its <a href="/dev/reference-manual/native-image/basics/#native-image-heap">initial heap</a>.
+  If the class <code>Foo</code> does not exist, the call will be transformed into <code>throw ClassNotFoundException("Foo")</code>.</p>
   </li>
   <li>
-    <p>By <a href="/dev/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">initializing classes at build time</a> and storing dynamically accessed elements into the initial heap of the native executable. 
-This way of providing metadata is suited for cases when specifying metadata with constants or in JSON is not possible. 
-This is necessary in cases when:</p>
-    <ul>
-      <li>The user code needs to generate new class bytecode.</li>
-      <li>The user code needs to traverse the classpath to compute the dynamically accessed program elements necessary for the application.</li>
-    </ul>
-
-    <p>In the following example:</p>
+    <p>By <a href="/dev/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">initializing classes at build time</a> and storing dynamically accessed elements into the initial heap of the native executable. For example:</p>
 
     <pre><code class="language-java"> class InitializedAtBuildTime {
      private static Class&lt;?&gt; aClass;
@@ -628,7 +572,7 @@ This is necessary in cases when:</p>
          }
      }
 
-     public Class&lt;?&gt; fetchFoo() {
+     public Class&lt;?&gt; fetchClass() {
          return aClass;
      }
  }
@@ -636,7 +580,7 @@ This is necessary in cases when:</p>
   </li>
 </ol>
 
-<p>The dynamically accessed elements will be included into the native executable’s heap only if that part of the heap is reachable through an enclosing method (for example, <code>InitializedAtBuildTime#fetchFoo</code>) or a static field (for example, <code>InitializedAtBuildTime.aClass</code>).</p>
+<p>When metadata is computed in code, the dynamically accessed elements will be included into the native executable’s heap only if that part of the heap is reachable through an enclosing method (for example, <code>ReflectiveAccess#fetchFoo</code>) or a static field (for example, <code>InitializedAtBuildTime.aClass</code>).</p>
     
       <h2 id="specifying-metadata-with-json">
         
@@ -646,83 +590,25 @@ This is necessary in cases when:</p>
         
       </h2>
 
-<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;group.Id&gt;\/&lt;artifactId&gt;\/</em>.
-The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.1.0.json">reachability-metadata-schema-v1.1.0.json</a>.</p>
-
-<p>A sample <em>reachability-metadata.json</em> file can be found <a href="#sample-reachability-metadata">in the sample section</a>.
-The <em>reachability-metadata.json</em> configuration contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of <em>metadata entries</em>:</p>
+<p>Each dynamic Java feature that requires metadata has a corresponding JSON file named <code>&lt;feature&gt;-config.json</code>.
+The JSON file consists of entries that tell Native Image the elements to include.
+For example, Java reflection metadata is specified in <code>reflect-config.json</code>, and a sample entry looks like:</p>
 <pre><code class="language-json">{
-  "reflection":[],
-  "resources":[]
+  "name": "Foo"
 }
 </code></pre>
 
-<p>For example, Java reflection metadata is specified under <code>reflection</code>, and an example entry looks like:</p>
-<pre><code class="language-json">{
-  "reflection": [
-    {
-      "type": "Foo"
-    }
-  ]
-}
-</code></pre>
-    
-      <h3 id="conditional-metadata-entries">
-        
-        
-          Conditional Metadata Entries <a href="#conditional-metadata-entries" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Each entry in JSON-based metadata should be <em>conditional</em> to avoid unnecessary growth of the native binary size.
-A conditional entry is specified by adding a <code>condition</code> field to the entry in the following way:</p>
+<p>Each entry in <code>json</code>-based metadata should be conditional to avoid unnecessary growth in the size of the native binary.
+A condition is specified in the following way:</p>
 <pre><code class="language-json">{
   "condition": {
-    "typeReached": "&lt;fully-qualified-class-name&gt;"
+    "typeReachable": "&lt;fully-qualified-class-name&gt;"
   },
   &lt;metadata-entry&gt;
 }
 </code></pre>
-
-<p>A metadata entry with a <code>typeReached</code> condition is considered available at run time, only when the specified fully-qualified type is <em>reached</em> at run time. 
-Before that, all dynamic accesses to the element represented with the <code>metadata-entry</code> will behave as if the <code>metadata-entry</code> does not exist.
-This means that those dynamic accesses will throw a missing-registration error.</p>
-
-<p>A type is reached at run time, right before the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.5">class-initialization routine</a> starts for that type (class or interface), or any of the type’s subtypes are reached.
-For <code>"typeReached": "ConditionType"</code> that guards a metadata entry in the following example, the type is considered reached:</p>
-<pre><code class="language-java">class SuperType {
-    static {
-        // ConditionType reached (subtype reached) =&gt; metadata entry available
-    }
-}
-class ConditionType extends SuperType {
-    static {
-        // ConditionType reached (before static initializer) =&gt; metadata entry available
-    }
-    static ConditionType singleton() {
-        // ConditionType reached (already initialized) =&gt; metadata entry available
-    }
-}
-public class App {
-    public static void main(String[] args) {
-        // ConditionType not reached =&gt; metadata entry not available
-        ConditionType.class;
-        // ConditionType not reached (ConditionType.class doesn't start class initialization) =&gt; metadata entry not available  
-        ConditionType.singleton();
-        // ConditionType reached (already initialized) =&gt; metadata entry available
-    }
-}
-</code></pre>
-
-<p>A type is also reached, if it is marked as <code>initialize-at-build-time</code> or any of its subtypes are marked as <code>initialize-at-build-time</code> and they exist on the classpath.</p>
-
-<p>Array types are never marked as reached and as such cannot be used in conditions.</p>
-
-<p>A conditional metadata entry is included into the image when the fully-qualified type is reachable at build time. 
-This entry affects the image size, and it will be available at run time only when the condition is reached at run time.</p>
-
-<p>You can find more examples of the metadata files in the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a>.</p>
+<p>An entry with a <code>typeReachable</code> condition is considered only when the fully-qualified class is reachable.
+Currently, we support only <code>typeReachable</code> as a condition.</p>
     
       <h2 id="metadata-types">
         
@@ -736,10 +622,10 @@ This entry affects the image size, and it will be available at run time only whe
 <ul>
   <li><a href="#reflection">Java reflection</a> (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods, fields, and their properties at run time.</li>
   <li><a href="#java-native-interface">JNI</a> allows native code to access classes, methods, fields and their properties at run time.</li>
-  <li><a href="#resources">Resources</a> allow arbitrary files present on the classpath to be dynamically accessed in the application.</li>
-  <li><a href="#resource-bundles">Resource Bundles</a> Java localization support (<code>java.util.ResourceBundle</code>) that enables Java code to load L10N resources.</li>
-  <li><a href="#serialization">Serialization</a> enables writing (and reading) Java objects to (and from) streams.</li>
-  <li>(Experimental) <a href="#predefined-classes">Predefined Classes</a> provide support for dynamically generated classes.</li>
+  <li><a href="#resources-and-resource-bundles">Resources and Resource Bundles</a> allow arbitrary files present in the application to be loaded.</li>
+  <li><a href="#dynamic-proxy">Dynamic JDK Proxies</a> create classes on demand that implement a given list of interfaces.</li>
+  <li><a href="#serialization">Serialization</a> enables writing and reading Java objects to and from streams.</li>
+  <li><a href="#predefined-classes">Predefined Classes</a> provide support for dynamically generated classes.</li>
 </ul>
     
       <h2 id="reflection">
@@ -749,216 +635,108 @@ This entry affects the image size, and it will be available at run time only whe
         
         
       </h2>
+    
+      <h3 id="computing-reflection-metadata-in-code">
+        
+        
+          Computing Reflection Metadata in Code <a href="#computing-reflection-metadata-in-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
 
-<p>For all methods in this section Native Image will compute reachability at build time given that all the call arguments are constant. 
-Providing constant arguments in code is a preferred way to provide metadata as it requires no duplication of information in external JSON files.</p>
-
-<p>Reflection in Java starts with <code>java.lang.Class</code> that allows fetching further reflective elements such as methods and fields. 
-The class can be fetched reflectively via the following static functions on <code>java.lang.Class</code>:</p>
+<p>Some reflection methods are treated specially and are evaluated at build time when given constant arguments.
+These methods, in each of the listed classes, are:</p>
 <ul>
-  <li><code>java.lang.Class forName(java.lang.String) throws java.lang.ClassNotFoundException</code></li>
-  <li><code>java.lang.Class forName(java.lang.String, boolean, java.lang.ClassLoader) throws java.lang.ClassNotFoundException</code></li>
-  <li><code>java.lang.Class forName(java.lang.Module, java.lang.String)</code></li>
-  <li><code>java.lang.Class arrayType()</code> - requires metadata for the array type.
-The classes can be also fetched reflectively loading a class from a name with <code>java.lang.ClassLoader#loadClass(String)</code>.</li>
+  <li><code>java.lang.Class</code>: <code>getField</code>, <code>getMethod</code>, <code>getConstructor</code>, <code>getDeclaredField</code>, <code>getDeclaredMethod</code>, <code>getDeclaredConstructor</code>, <code>forName</code>, <code>getClassLoader</code></li>
+  <li><code>java.lang.invoke.MethodHandles</code>: <code>publicLookup</code>, <code>privateLookupIn</code>, <code>arrayConstructor</code>, <code>arrayLength</code>, <code>arrayElementGetter</code>, <code>arrayElementSetter</code>, <code>arrayElementVarHandle</code>, <code>byteArrayViewVarHandle</code>, <code>byteBufferViewVarHandle</code>, <code>lookup</code></li>
+  <li><code>java.lang.invoke.MethodHandles.Lookup</code>: <code>in </code>, <code>findStatic </code>, <code>findVirtual </code>, <code>findConstructor </code>, <code>findClass </code>, <code>accessClass </code>, <code>findSpecial </code>, <code>findGetter </code>, <code>findSetter </code>, <code>findVarHandle </code>, <code>findStaticGetter </code>, <code>findStaticSetter </code>, <code>findStaticVarHandle </code>, <code>unreflect </code>, <code>unreflectSpecial </code>, <code>unreflectConstructor </code>, <code>unreflectGetter </code>, <code>unreflectSetter </code>, <code>unreflectVarHandle</code></li>
+  <li><code>java.lang.invoke.MethodType</code>: <code>methodType</code>, <code>genericMethodType</code>, <code>changeParameterType</code>, <code>insertParameterTypes</code>, <code>appendParameterTypes</code>, <code>replaceParameterTypes</code>, <code>dropParameterTypes</code>, <code>changeReturnType</code>, <code>erase</code>, <code>generic</code>, <code>wrap</code>, <code>unwrap</code>, <code>parameterType</code>, <code>parameterCount</code>, <code>returnType</code>, <code>lastParameterType</code></li>
 </ul>
 
-<p>To provide metadata for the calls that fetch a <code>Class</code> reflectively, the following entry must be added to the <code>reflection</code> array in <em>reachability-metadata.json</em>:</p>
-<pre><code class="language-json">{
-  "type": "FullyQualifiedReflectivelyAccessedType"
-}
+<p>Below are examples of calls that are replaced with the corresponding metadata element:</p>
+
+<pre><code class="language-java">Class.forName("java.lang.Integer")
+Class.forName("java.lang.Integer", true, ClassLoader.getSystemClassLoader())
+Class.forName("java.lang.Integer").getMethod("equals", Object.class)
+Integer.class.getDeclaredMethod("bitCount", int.class)
+Integer.class.getConstructor(String.class)
+Integer.class.getDeclaredConstructor(int.class)
+Integer.class.getField("MAX_VALUE")
+Integer.class.getDeclaredField("value")
 </code></pre>
 
-<p>For proxy classes, the <code>java.lang.Class</code> is fetched with the following methods on <code>java.lang.reflect.Proxy</code>:</p>
-<ul>
-  <li><code>java.lang.Class getProxyClass(java.lang.ClassLoader, java.lang.Class[]) throws java.lang.IllegalArgumentException</code></li>
-  <li><code>java.lang.Object newProxyInstance(java.lang.ClassLoader, java.lang.Class[], java.lang.reflect.InvocationHandler)</code></li>
-</ul>
+<p>When passing constant arrays, the following approaches to declare and populate an array are equivalent from the point of view of the <code>native-image</code> builder:</p>
 
-<p>Metadata, for proxy classes, is in the form an ordered collection of interfaces that defines a proxy:</p>
-<pre><code class="language-json">{
-  "type": {
-    "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"]
-  }
-}
+<pre><code class="language-java">Class&lt;?&gt;[] params0 = new Class&lt;?&gt;[]{String.class, int.class};
+Integer.class.getMethod("parseInt", params0);
 </code></pre>
 
-<p>To provide metadata for a lambda class, add the following entry to the <code>reflection</code> array in
-<em>reachability-metadata.json</em></p>
+<pre><code class="language-java">Class&lt;?&gt;[] params1 = new Class&lt;?&gt;[2];
+params1[0] = Class.forName("java.lang.String");
+params1[1] = int.class;
+Integer.class.getMethod("parseInt", params1);
+</code></pre>
 
-<pre><code class="language-json">{
-  "type": {
-    "lambda": {
-      "declaringClass": "FullyQualifiedLambdaDeclaringType",
-      "declaringMethod": {
-        "name": "declaringMethodName",
-        "parameterType": [
-          "FullyQualifiedParameterType1",
-          "...",
-          "FullyQualifiedParameterType2"
-        ]
-      },
-      "interfaces": [
-        "FullyQualifiedLambdaInterface1",
-        "...",
-        "FullyQualifiedLamdbaInterface2"
-      ]
+<pre><code class="language-java">Class&lt;?&gt;[] params2 = {String.class, int.class};
+Integer.class.getMethod("parseInt", params2);
+</code></pre>
+    
+      <h3 id="specifying-reflection-metadata-in-json">
+        
+        
+          Specifying Reflection Metadata in JSON <a href="#specifying-reflection-metadata-in-json" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Reflection metadata can be specified in the <code>reflect-config.json</code> file.
+The JSON file is an array of reflection entries:</p>
+<pre><code class="language-json">[
+    {
+        "condition": {
+            "typeReachable": "&lt;condition-class&gt;"
+        },
+        "name": "&lt;class&gt;",
+        "methods": [
+            {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-one-type&gt;"]}
+        ],
+        "queriedMethods": [
+            {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-one-type&gt;"]}
+        ],
+        "fields": [
+            {"name": "&lt;fieldName&gt;"}
+        ],
+        "allDeclaredMethods": true,
+        "allDeclaredFields": true,
+        "allDeclaredConstructors": true,
+        "allPublicMethods": true,
+        "allPublicFields": true,
+        "allPublicConstructors": true,
+        "queryAllDeclaredMethods": true,
+        "queryAllDeclaredConstructors": true,
+        "queryAllPublicMethods": true,
+        "queryAllPublicConstructors": true,
+        "unsafeAllocated": true
     }
-  }
-}
+]
 </code></pre>
 
-<p>The <code>"declaringClass"</code> field specifies in which class, and the optional <code>"declaringMethod"</code> field specifies in which
-method the lambda is defined.
-If <code>"declaringMethod"</code> is not provided, all methods of the specified declaring class are searched.
-The <code>"interfaces"</code> field specifies which interfaces are implemented by the lambda class.
-This definition can match multiple lambda classes; in such cases, the registration entry applies to all matching
-classes.</p>
-
-<p>Invocation of methods above without the provided metadata will result in throwing <code>MissingReflectionRegistrationError</code> which extends <code>java.lang.Error</code> and
-should not be handled. Note that even if a type does not exist on the classpath, the methods above will throw a <code>MissingReflectionRegistrationError</code>.</p>
-
-<p>The following methods on <code>java.lang.Class</code> will throw a <code>MissingRegistrationError</code> if the metadata is not provided for a given type:</p>
+<p>The fields in a reflection entry have the following meaning:</p>
 <ul>
-  <li><code>Constructor getConstructor(Class[]) throws NoSuchMethodException,SecurityException</code></li>
-  <li><code>Constructor getDeclaredConstructor(Class[]) throws NoSuchMethodException,SecurityException</code></li>
-  <li><code>Constructor[] getConstructors() throws SecurityException</code></li>
-  <li><code>Constructor[] getDeclaredConstructors() throws SecurityException</code></li>
-  <li><code>Method getMethod(String,Class[]) throws NoSuchMethodException,SecurityException</code></li>
-  <li><code>Method getDeclaredMethod(String,Class[]) throws NoSuchMethodException,SecurityException</code></li>
-  <li><code>Method[] getMethods() throws SecurityException</code></li>
-  <li><code>Method[] getDeclaredMethods() throws SecurityException</code></li>
-  <li><code>Field getField(String) throws NoSuchFieldException,SecurityException</code></li>
-  <li><code>Field getDeclaredField(String) throws NoSuchFieldException,SecurityException</code></li>
-  <li><code>Field[] getFields() throws SecurityException</code></li>
-  <li><code>Field[] getDeclaredFields() throws SecurityException</code></li>
-  <li><code>RecordComponent[] getRecordComponents()</code></li>
-  <li><code>Class[] getPermittedSubclasses()</code></li>
-  <li><code>Object[] getSigners()</code></li>
-  <li><code>Class[] getNestMembers()</code></li>
-  <li><code>Class[] getClasses()</code></li>
-  <li><code>Class[] getDeclaredClasses() throws SecurityException</code></li>
+  <li><code>condition</code>: See <a href="#specifying-metadata-with-json">Conditional Metadata Entries</a></li>
+  <li><code>name</code>: Name of the class that will be reflectively looked up. This property is mandatory.</li>
+  <li><code>methods</code>: List class methods that can be looked up and executed reflectively.
+ Each method is described by its name and a list of parameter types.
+ The parameter types are fully qualified Java class names.</li>
+  <li><code>queriedMethods</code>: List of class methods that can only be looked up.
+ The description of each method is identical to the <code>methods</code> list.</li>
+  <li><code>fields</code>: List of class fields that can be looked up, read, or modified.</li>
+  <li><code>all&lt;access&gt;(Methods/Fields/Constructors)</code>: Registers all methods/fields/constructors for lookup. Methods and constructors can also be invoked.
+ <code>&lt;access&gt;</code> refers to different ways of querying these members in Java and can be either <code>Declared</code> or <code>Public</code>.
+ For more information, see <code>java.lang.Class.getDeclaredMethods()</code> and <code>java.lang.Class.getPublicMethods()</code>.</li>
+  <li><code>queryAll&lt;access&gt;(Methods/Constructors)</code>: Registers all methods/constructors for lookup only.</li>
+  <li><code>unsafeAllocated</code>: Allows objects of this class to be allocated using <code>Unsafe.allocateInstance</code>.</li>
 </ul>
-
-<p>Furthermore, all reflective lookups via <code>java.lang.invoke.MethodHandles.Lookup</code> will also require metadata for the type to be present, or they will throw <code>MissingReflectionRegistrationError</code>.</p>
-
-<p>Note that for lambda-proxy classes, metadata can not be provided.
-This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> that will be addressed in the future releases of GraalVM.</p>
-    
-      <h3 id="reflective-method-invocation">
-        
-        
-          Reflective Method Invocation <a href="#reflective-method-invocation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>To reflectively invoke methods, the method signature must be added to the <code>type</code> metadata:</p>
-<pre><code class="language-json">{
-  "type": "TypeWhoseMethodsAreInvoked",
-  "methods": [
-    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]},
-    {"name": "&lt;methodName2&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]}
-  ]
-}
-</code></pre>
-
-<p>As a convenience, one can allow method invocation for groups of methods by adding the following in <em>reachability-metadata.json</em>:</p>
-<pre><code class="language-json">{
-  "type": "TypeWhoseMethodsAreInvoked",
-  "allDeclaredConstructors": true,
-  "allPublicConstructors": true,
-  "allDeclaredMethods": true,
-  "allPublicMethods": true
-}
-</code></pre>
-<p><code>allDeclaredConstructors</code> and <code>allDeclaredMethods</code> allow calls invocations of methods declared on a given type. 
-<code>allPublicConstructors</code> and <code>allPublicMethods</code> allow invocations of all public methods defined on a type and all of its supertypes.</p>
-
-<p>In case the method-invocation metadata is missing, the following methods will throw a <code>MissingReflectionRegistrationError</code>:</p>
-<ul>
-  <li><code>java.lang.reflect.Method#invoke(Object, Object...)</code></li>
-  <li><code>java.lang.reflect.Constructor#newInstance(Object...)</code></li>
-  <li><code>java.lang.invoke.MethodHandle#invokeExact(Object...)</code></li>
-  <li><code>java.lang.invoke.MethodHandle#invokeWithArguments</code> (all overloaded versions)</li>
-</ul>
-    
-      <h3 id="reflective-field-value-access">
-        
-        
-          Reflective Field-Value Access <a href="#reflective-field-value-access" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>To reflectively access (get or set) field values, metadata about field names must be added to the type:</p>
-<pre><code class="language-json">{
-  "type": "TypeWhoseFieldValuesAreAccessed",
-  "fields": [{"name": "&lt;fieldName1&gt;"}, {"name": "&lt;fieldNameI&gt;"}, {"name": "&lt;fieldNameN&gt;"}]
-}
-</code></pre>
-
-<p>As a convenience one can allow field-value access for all fields by adding the following in <em>reachability-metadata.json</em>:</p>
-<pre><code class="language-json">{
-  "type": "TypeWhoseFieldValuesAreAccessed",
-  "allDeclaredFields": true,
-  "allPublicFields": true
-}
-</code></pre>
-<p><code>allDeclaredFields</code> allow access to all fields declared on a given type, and <code>allPublicFields</code> allows access to all public fields of the given type and all of its supertypes.</p>
-
-<p>In case the field-value-access metadata is missing, the following methods will throw a <code>MissingReflectionRegistrationError</code>:</p>
-<ul>
-  <li><code>java.lang.reflect.Field#get(Object)</code></li>
-  <li><code>java.lang.reflect.Field#set(Object, Object)</code></li>
-  <li>All accessor methods on <code>java.lang.reflect.VarHandle</code>.</li>
-</ul>
-    
-      <h3 id="unsafe-allocation-of-a-type">
-        
-        
-          Unsafe Allocation of a Type <a href="#unsafe-allocation-of-a-type" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>For unsafe allocation of a type via <code>sun.misc.Unsafe#allocateInstance(Class&lt;?&gt;)</code>, or from native code via <code>AllocObject(jClass)</code>, we must provide the following metadata:</p>
-<pre><code class="language-json">{
-  "type": "FullyQualifiedUnsafeAllocatedType",
-  "unsafeAllocated": true
-}
-</code></pre>
-<p>Otherwise, these methods will throw a <code>MissingReflectionRegistrationError</code>.</p>
-    
-      <h3 id="reflection-metadata-summary">
-        
-        
-          Reflection Metadata Summary <a href="#reflection-metadata-summary" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>The overall definition of a type in JSON can have the following values:</p>
-<pre><code class="language-json">{
-  "condition": {
-    "typeReached": "&lt;condition-class&gt;"
-  },
-  "type": "&lt;class&gt;|&lt;proxy-interface-list&gt;",
-  "fields": [
-    {"name": "&lt;fieldName&gt;"}
-  ],
-  "methods": [
-    {"name": "&lt;methodName&gt;", "parameterTypes": ["&lt;param-type&gt;"]}
-  ],
-  "allDeclaredConstructors": true,
-  "allPublicConstructors": true,
-  "allDeclaredMethods": true,
-  "allPublicMethods": true,
-  "allDeclaredFields": true,
-  "allPublicFields": true,
-  "unsafeAllocated": true
-}
-</code></pre>
     
       <h2 id="java-native-interface">
         
@@ -970,132 +748,70 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
 
 <p>Java Native Interface (JNI) allows native code to access arbitrary Java types and type members.
 Native Image cannot predict what such native code will lookup, write to or invoke.
-To build a native binary for a Java application that uses JNI to access Java values, JNI metadata is required.</p>
-
-<p>For example, the following <code>C</code> code:</p>
-<pre><code class="language-C">jclass clazz = FindClass(env, "jni/accessed/Type");
+To build a native binary for a Java application that uses JNI, JNI metadata is most likely required.
+For example, the given <code>C</code> code:</p>
+<pre><code class="language-C">jclass clazz = FindClass(env, "java/lang/String");
 </code></pre>
-<p>looks up the <code>jni.accessed.Type</code> class, which can then be used to instantiate <code>jni.accessed.Type</code>, invoke its methods or access its fields.</p>
-
-<p>The metadata entry for the above call can <em>only</em> be provided via <em>reachability-metadata.json</em>. Specify
-the <code>jniAccessible</code> field in the <code>type</code> entry in the <code>reflection</code> section:</p>
+<p>looks up the <code>java.lang.String</code> class, which can then be used, for example, to invoke different <code>String</code> methods.
+The generated metadata entry for the above call would look like:</p>
 <pre><code class="language-json">{
-  "reflection": [
-    {
-      "type": "jni.accessed.Type",
-      "jniAccessibleType": true
-    }
-  ]
+  "name": "java.lang.String"
 }
 </code></pre>
-
-<p>Adding the metadata for a type does not allow to fetch all of its fields and methods with <code>GetFieldID</code>, <code>GetStaticFieldID</code>, <code>GetStaticMethodID</code>, and <code>GetMethodID</code>.</p>
-
-<p>To access field values, we need to provide field names:</p>
-<pre><code class="language-json">{
-  "type": "jni.accessed.Type",
-  "jniAccessible": true,
-  "fields": [{"name": "value"}]
-}
-</code></pre>
-<p>To access all fields one can use the following attributes:</p>
-<pre><code class="language-json">{
-  "type": "jni.accessed.Type",
-  "jniAccessible": true,
-  "allDeclaredFields": true,
-  "allPublicFields": true
-}
-</code></pre>
-<p><code>allDeclaredFields</code> allow access to all fields declared on a given type, and <code>allPublicFields</code> allows access to all public fields of the given type and all of its supertypes.</p>
-
-<p>To call Java methods from JNI, we must provide metadata for the method signatures:</p>
-<pre><code class="language-json">{
-  "type": "jni.accessed.Type",
-  "jniAccessible": true,
-  "methods": [
-    {"name": "&lt;methodName1&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]},
-    {"name": "&lt;methodName2&gt;", "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]}
-  ]
-}
-</code></pre>
-<p>As a convenience, one can allow method invocation for groups of methods by adding the following:</p>
-<pre><code class="language-json">{
-  "type": "jni.accessed.Type",
-  "jniAccessible": true,
-  "allDeclaredConstructors": true,
-  "allPublicConstructors": true,
-  "allDeclaredMethods": true,
-  "allPublicMethods": true
-}
-</code></pre>
-<p><code>allDeclaredConstructors</code> and <code>allDeclaredMethods</code> allow calls invocations of methods declared on a given type.
-<code>allPublicConstructors</code> and <code>allPublicMethods</code> allow invocations of all public methods defined on a type and all of its supertypes.</p>
-
-<p>To allocate objects of a type with <code>AllocObject</code>, the <code>unsafeAllocated</code> field must be set, but the <code>jniAccessible</code> field
-is not required:</p>
-<pre><code class="language-json">{
-  "reflection": [
-    {
-      "type": "jni.accessed.Type",
-      "unsafeAllocated": true
-    }
-  ]
-}
-</code></pre>
-
-<p>Failing to provide metadata for an element that is dynamically accessed from native code will result in an exception (<code>MissingJNIRegistrationError</code>).</p>
-
-<blockquote>
-  <p>Note that most libraries that use JNI do not handle exceptions properly, so to see which elements are missing <code>--exact-reachability-metadata</code> in combination with <code>-XX:MissingRegistrationReportingMode=Warn</code> must be used.</p>
-</blockquote>
     
-      <h2 id="foreign-function-and-memory-api">
+      <h3 id="jni-metadata-in-code">
         
         
-          Foreign Function and Memory API <a href="#foreign-function-and-memory-api" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          JNI Metadata In Code <a href="#jni-metadata-in-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>It is not possible to specify JNI metadata in code.</p>
+    
+      <h3 id="jni-metadata-in-json">
+        
+        
+          JNI Metadata in JSON <a href="#jni-metadata-in-json" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>Metadata for JNI is provided in <code>jni-config.json</code> files.
+The JSON schema of JNI metadata is identical to the <a href="#specifying-reflection-metadata-in-json">Reflection metadata schema</a>.</p>
+    
+      <h2 id="resources-and-resource-bundles">
+        
+        
+          Resources and Resource Bundles <a href="#resources-and-resource-bundles" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
-
-<p>The <a href="/dev/reference-manual/native-image/native-code-interoperability/ffm-api/">Foreign Function and Memory (FFM) API</a> is an interface that enables Java code to interact with native code and vice versa.</p>
-
-<p>In particular, it allows you to create <em>downcall handles</em> and <em>upcall stubs</em>.</p>
-<ul>
-  <li>A downcall handle is a method handle that refers to a native function. Invoking it results in a call to the native function.</li>
-  <li>An upcall stub is executable code generated at run time that can be passed as a function pointer to native code. Calling this function pointer results in the execution of a Java method handle.</li>
-</ul>
-
-<p>To perform downcalls or upcalls at run time, supporting code must be generated at image build time.
-Therefore, the <code>native-image</code> builder must be provided with descriptors that characterize the functions with which downcalls or upcalls can be performed at run time.</p>
-
-<p>If the necessary metadata is not provided, a <code>MissingForeignRegistrationError</code> will be thrown at run time.</p>
-    
-      <h2 id="resources">
-        
-        
-          Resources <a href="#resources" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
 <p>Java is capable of accessing any resource on the application class path, or the module path for which the requesting code has permission to access.
 Resource metadata instructs the <code>native-image</code> builder to include specified resources and resource bundles in the produced binary.
 A consequence of this approach is that some parts of the application that use resources for configuration (such as logging) are effectively configured at build time.</p>
-
+    
+      <h3 id="resource-metadata-in-code">
+        
+        
+          Resource Metadata In Code <a href="#resource-metadata-in-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
 <p>Native Image will detect calls to <code>java.lang.Class#getResource</code> and <code>java.lang.Class#getResourceAsStream</code> in which:</p>
 <ul>
   <li>The class on which these methods are called is constant</li>
-  <li>The first argument (<code>name</code>) is a constant
+  <li>The first parameter, <code>name</code>, is a constant
 and automatically register such resources.</li>
 </ul>
 
 <p>The code below will work out of the box, because:</p>
 <ul>
-  <li>It uses a class literal (<code>Example.class</code>) as the receiver</li>
-  <li>It uses a string literal as the <code>name</code> parameter
+  <li>We are using a class literal (<code>Example.class</code>)</li>
+  <li>We are using a string literal as the <code>name</code> parameter
     <pre><code class="language-java">class Example {
  public void conquerTheWorld() {
+     ...
      InputStream plan = Example.class.getResourceAsStream("plans/v2/conquer_the_world.txt");
+     ...
  }
 }
 </code></pre>
@@ -1109,160 +825,120 @@ and automatically register such resources.</li>
         
         
       </h3>
-
-<p>Resource metadata is specified in the <code>resources</code> field of the <em>reachability-metadata.json</em> file. 
-Here is the example of resource metadata:</p>
+<p>Metadata for resources is provided in <code>resource-config.json</code> files.</p>
 <pre><code class="language-json">{
-  "resources": [
+  "resources": {
+    "includes": [
+      {
+        "condition": {
+          "typeReachable": "&lt;condition-class&gt;" 
+        },
+        "pattern": ".*\\.txt"
+      }
+    ],
+    "excludes": [
+      {
+        "condition": {
+          "typeReachable": "&lt;condition-class&gt;"
+        },
+        "pattern": ".*\\.txt"
+      }
+    ]
+  },
+  "bundles": [
     {
-      "glob": "path1/level*/**"
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "name": "fully.qualified.bundle.name",
+      "locales": ["en", "de", "sk"]
     }
   ]
 }
 </code></pre>
 
-<p>The <code>glob</code> field uses a subset of <a href="https://en.wikipedia.org/wiki/Glob_(programming)">glob-pattern</a> rules for specifying resources. 
-There are several rules to be observed when specifying a resource path:</p>
-<ul>
-  <li>The <code>native-image</code> tool supports only <em>star</em> (<code>*</code>) and <em>globstar</em> (<code>**</code>) wildcard patterns.
-    <ul>
-      <li>Per definition, <em>star</em> can match any number of any characters on one level while <em>globstar</em> can match any number of characters at any level.</li>
-      <li>If there is a need to treat a star literally (without special meaning), it can be escaped using <code>\</code> (for example, <code>\*</code>).</li>
-    </ul>
-  </li>
-  <li>In the glob, a <em>level</em> represents a part of the pattern separated with <code>/</code>.</li>
-  <li>When writing glob patterns the following rules must be observed:
-    <ul>
-      <li>Glob cannot be empty (for example, <code>""</code> )</li>
-      <li>Glob cannot end with a trailing slash (<code>/</code>) (for example, <code>"foo/bar/"</code>)</li>
-      <li>Glob cannot contain more than two consecutive (non-escaped) <code>*</code> characters on one level (for example, <code>"foo/***/"</code> )</li>
-      <li>Glob cannot contain empty levels (for example, <code>"foo//bar"</code>)</li>
-      <li>Glob cannot contain two consecutive globstar wildcards (example, <code>"foo/**/**"</code>)</li>
-      <li>Glob cannot have other content on the same level as globstar wildcard (for example, <code>"foo/**bar/x"</code>)</li>
-    </ul>
-  </li>
-</ul>
-
-<p>Given the following project structure:</p>
-<pre><code>app-root
-└── src
-    └── main
-        └── resources
-            ├── Resource0.txt
-            └── Resource1.txt
-</code></pre>
-<p>You can:</p>
-<ul>
-  <li>Include all resources with glob <code>**/Resource*.txt</code> (<code>{ "glob":}</code>)</li>
-  <li>Include <em>Resource0.txt</em> with glob <code>**/Resource0.txt</code></li>
-  <li>Include <em>Resource0.txt</em> and <em>Resource1.txt</em> with globs <code>**/Resource0.txt</code> and <code>**/Resource1.txt</code></li>
-</ul>
+<p>Native Image will iterate over all resources and match their relative paths against the Java regex specified in <code>includes</code>.
+If the path matches the regex, the resource is included.
+The <code>excludes</code> statement instructs <code>native-image</code> to omit certain included resources that match the given <code>pattern</code>.</p>
     
-      <h3 id="resources-in-java-modules">
+      <h2 id="dynamic-proxy">
         
         
-          Resources in Java Modules <a href="#resources-in-java-modules" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>For every resource or resource bundle, it is possible to specify the module from which the resource or resource bundle should be taken.
-You can specify a module name in the separate <code>module</code> field in each entry.
-For example:</p>
-<pre><code class="language-json">{
-   "resources": [
-      {
-        "module:": "library.module",
-        "glob": "resource-file.txt" 
-      }
-   ]
-}
-</code></pre>
-
-<p>This will cause the <code>native-image</code> tool to only include <em>resource-file.txt</em> from the Java module <code>library.module</code>.
-If other modules or the classpath containing resources that match the pattern <em>resource-file.txt</em>, only the one in <em>library-module</em> is registered to be included into a native executable.
-Native Image will also ensure that the modules are guaranteed to be accessible at runtime.</p>
-
-<p>Take the following code pattern:</p>
-<pre><code class="language-java">InputStream resource = ModuleLayer.boot().findModule("library.module").getResourceAsStream(resourcePath);
-</code></pre>
-<p>It will always work as expected for resources registered as described above (even if the module does not contain any code that is considered reachable by static analysis).</p>
-    
-      <h3 id="embedded-resources-information">
-        
-        
-          Embedded Resources Information <a href="#embedded-resources-information" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>There are two ways to see which resources were included in a native executable:</p>
-<ol>
-  <li>Use the option <code>--emit build-report</code> to generate a build report for your native executable.
-There you can find information about all included resources under the <code>Resources</code> tab.</li>
-  <li>Use the option <code>-H:+GenerateEmbeddedResourcesFile</code> to generate a JSON file  <em>embedded-resources.json</em>, listing all included resources.</li>
-</ol>
-
-<p>For each registered resource you get:</p>
-<ul>
-  <li><strong>Module</strong> (or <code>unnamed</code> if a resource does not belong to any module)</li>
-  <li><strong>Name</strong> (resource path)</li>
-  <li><strong>Origin</strong> (location of the resource on the system)</li>
-  <li><strong>Type</strong> (whether the resource is a file, directory, or missing)</li>
-  <li><strong>Size</strong> (actual resource size)</li>
-</ul>
-
-<blockquote>
-  <p>Note: The size of a resource directory represents only the size of the names of all directory entries (not a sum of the content sizes).</p>
-</blockquote>
-    
-      <h2 id="resource-bundles">
-        
-        
-          Resource Bundles <a href="#resource-bundles" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Dynamic Proxy <a href="#dynamic-proxy" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
-<p>Java localization support (<code>java.util.ResourceBundle</code>) enables to load L10N resources and show messages localized for a specific <em>locale</em>.
-Native Image needs knowledge of the resource bundles that your application uses so that it can include appropriate resources and program elements to the application.</p>
 
-<p>A simple bundle can be specified in the <code>resources</code> section of <em>reachability-metadata.json</em>:</p>
+<p>The JDK supports generating proxy classes for a given interface list.
+Native Image does not support generating new classes at runtime and requires metadata to properly run code that uses these proxies.</p>
 
-<pre><code class="language-json">{
-  "resources": [
-    {
-      "bundle": "your.pkg.Bundle"
-    }
-  ]
-}
-</code></pre>
-
-<p>To request a bundle from a specific module:</p>
-<pre><code class="language-json">{
-  "resources": [
-    {
-      "bundle": "app.module:module.pkg.Bundle"
-    }
-  ]
-}
-</code></pre>
-
-<p>Resource bundles are included for all locales that are <a href="#locales">included into the image</a>.</p>
+<blockquote>
+  <p>Note: The order of interfaces in the interface list used to create a proxy matters. Creating a proxy with two identical interface lists in which the interfaces are not in the same order, creates two distinct proxy classes.</p>
+</blockquote>
     
-      <h3 id="locales">
+      <h3 id="code-example">
         
         
-          Locales <a href="#locales" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Code Example <a href="#code-example" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>The following code creates two distinct proxies:</p>
+
+<pre><code class="language-java">import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+
+interface IA {
+}
+
+interface IB {
+}
+
+class Example {
+    public void doWork() {
+        InvocationHandler handler;
+        ...
+        Object proxyOne = Proxy.newProxyInstance(Example.class.getClassLoader(), new Class[]{IA.class, IB.class}, handler);
+        Object proxyTwo = Proxy.newProxyInstance(Example.class.getClassLoader(), new Class[]{IB.class, IA.class}, handler);
+        ...
+    }
+}
+</code></pre>
+    
+      <h3 id="dynamic-proxy-metadata-in-code">
+        
+        
+          Dynamic Proxy Metadata In Code <a href="#dynamic-proxy-metadata-in-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>It is also possible to specify which locales should be included in a native executable and which should be the default.
-For example, to switch the default locale to Swiss German and also include French and English, use the following options:</p>
-<pre><code class="language-shell">native-image -Duser.country=CH -Duser.language=de -H:IncludeLocales=fr,en
+<p>The following methods are evaluated at build time when called with constant arguments:</p>
+<ul>
+  <li><code>java.lang.reflect.Proxy.getProxyClass</code></li>
+  <li><code>java.lang.reflect.Proxy.newProxyInstance</code></li>
+</ul>
+    
+      <h3 id="dynamic-proxy-metadata-in-json">
+        
+        
+          Dynamic Proxy Metadata in JSON <a href="#dynamic-proxy-metadata-in-json" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>Metadata for dynamic proxies is provided in <code>proxy-config.json</code> files.</p>
+<pre><code class="language-json">[
+  {
+    "condition": {
+      "typeReachable": "&lt;condition-class&gt;"
+    },
+    "interfaces": [
+      "IA",
+      "IB"
+    ]
+  }
+]
 </code></pre>
-<p>The locales are specified using <a href="https://docs.oracle.com/javase/tutorial/i18n/locale/matching.html">language tags</a>.
-You can include all locales via <code>-H:+IncludeAllLocales</code>, but note that it increases the size of the resulting executable.</p>
     
       <h2 id="serialization">
         
@@ -1271,10 +947,9 @@ You can include all locales via <code>-H:+IncludeAllLocales</code>, but note tha
         
         
       </h2>
-
-<p>Java can serialize (or deserialize) any class that implements the <code>Serializable</code> interface.
-Native Image supports serialization (or deserialization) with proper serialization metadata registration.
-This is necessary because serialization usually requires reflective accesses to the object that is being serialized.</p>
+<p>Java can serialize any class that implements the <code>Serializable</code> interface.
+Native Image supports serialization with proper serializaiton metadata registration. This is necessary as serialization usually
+requires reflectively accessing the class of the object that is being serialized.</p>
     
       <h3 id="serialization-metadata-registration-in-code">
         
@@ -1293,7 +968,7 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 <code>objectInputStream</code>.</p>
 
 <p>Wildcard patterns do the serialization registration only for lambda-proxy classes of an enclosing class. For example, to register lambda serialization in an enclosing class <code>pkg.LambdaHolder</code> use:</p>
-<pre><code class="language-java">  ObjectInputFilter.Config.createFilter("pkg.LambdaHolder$$Lambda*;")
+<pre><code class="language-java">  ObjectInputFilter.Config.createFilter("pkg.LambdaHolder$$Lambda$*;")
 </code></pre>
 
 <p>Patterns like <code>"pkg.**"</code> and <code>"pkg.Prefix*"</code> will not perform serialization registration as they are too general and would increase image size significantly.</p>
@@ -1305,7 +980,6 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 <pre><code class="language-java">  var constructor = SuperSuperClass.class.getDeclaredConstructor();
   var newConstructor = ReflectionFactory.getReflectionFactory().newConstructorForSerialization(BaseClass.class, constructor);
 </code></pre>
-
 <p>Proxy classes can only be registered for serialization via the JSON files.</p>
     
       <h3 id="serialization-metadata-in-json">
@@ -1315,152 +989,78 @@ For example, the following pattern will register the class <code>pkg.Serializabl
         
         
       </h3>
-<p>Serialization metadata is specified in the <code>reflection</code> section of <em>reachability-metadata.json</em>.</p>
-
-<p>To specify a regular <code>serialized.Type</code> use</p>
+<p>Metadata for serialization is provided in <code>serialization-config.json</code> files.</p>
 <pre><code class="language-json">{
-  "reflection": [
+  "types": [
     {
-      "type": "serialized.Type",
-      "serializable": true
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "name": "&lt;fully-qualified-class-name&gt;",
+      "customTargetConstructorClass": "&lt;custom-target-constructor-class&gt;"
     }
-  ]
+  ],
+  "lambdaCapturingTypes": [
+    {
+      "condition": {
+        "typeReachable": "&lt;condition-class&gt;"
+      },
+      "name": "&lt;fully-qualified-class-name&gt;"
+    }
+  ],
+ "proxies": [
+   {
+     "condition": {
+       "typeReachable": "&lt;condition-class&gt;"
+     },
+     "interfaces": ["&lt;fully-qualified-interface-name-1&gt;", "&lt;fully-qualified-interface-name-n&gt;"]
+   }
+ ]
 }
 </code></pre>
 
-<p>To specify a proxy class for serialization, use the following entry:</p>
-<pre><code class="language-json">{
-  "reflection": [
-    {
-      "type": {
-        "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"],
-        "serializable": true
-      }
-    }
-  ]
-}
-</code></pre>
+<p>Each entry in <code>types</code> enables serializing and deserializing objects of the class given by <code>name</code>.</p>
 
-<p>In rare cases an application might explicitly make calls to:</p>
-<pre><code class="language-java">    ReflectionFactory.newConstructorForSerialization(Class&lt;?&gt; cl, Constructor&lt;?&gt; constructorToCall);
-</code></pre>
-<p>The specified <code>constructorToCall</code> differs from the one that would be automatically used during regular serialization of <code>cl</code>.
-When a class is registered for run-time serialization, all potential custom constructors are automatically registered.
-As a result, this use case does not require any additional metadata.</p>
+<p>Each entry in <code>lambdaCapturingTypes</code> enables lambda serialization: all lambdas declared in the methods of the class given by <code>name</code> can be serialized and deserialized.</p>
+
+<p>Each entry in <code>proxies</code> enables the <a href="https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/proxy.html">Proxy</a> serialization by providing an interface list that a proxy implements.</p>
     
-      <h2 id="sample-reachability-metadata">
+      <h2 id="predefined-classes">
         
         
-          Sample Reachability Metadata <a href="#sample-reachability-metadata" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Predefined Classes <a href="#predefined-classes" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>See below is a sample reachability metadata configuration that you can use in <em>reachabilty-metadata.json</em>:</p>
+<p>Native Image requires all classes to be known at build time (a “closed-world assumption”).</p>
 
-<pre><code class="language-json">{
-  "reflection": [
-    {
-      "type": "reflectively.accessed.Type",
-      "fields": [
-        {
-          "name": "field1"
-        }
-      ],
-      "methods": [
-        {
-          "name": "method1",
-          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"] 
-        }
-      ],
-      "allDeclaredConstructors": true,
-      "allPublicConstructors": true,
-      "allDeclaredFields": true,
-      "allPublicFields": true,
-      "allDeclaredMethods": true,
-      "allPublicMethods": true,
-      "unsafeAllocated": true,
-      "serializable": true
-    }
-  ],
-  "jni": [
-    {
-      "type": "jni.accessed.Type",
-      "fields": [
-        {
-          "name": "field1"
-        }
-      ],
-      "methods": [
-        {
-          "name": "method1",
-          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
-        }
-      ],
-      "allDeclaredConstructors": true,
-      "allPublicConstructors": true,
-      "allDeclaredFields": true,
-      "allPublicFields": true,
-      "allDeclaredMethods": true,
-      "allPublicMethods": true
-    }
-  ],
-  "resources": [
-    {
-      "module": "optional.module.of.a.resource",
-      "glob": "path1/level*/**"
-    },
-    {
-      "bundle": "fully.qualified.bundle.name"
-    }
-  ],
-  "foreign": {
-    "downcalls": [
-      {
-        "returnType": "&lt;return-type&gt;",
-        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
-      }
-    ],
-    "upcalls": [
-      {
-        "returnType": "&lt;return-type&gt;",
-        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
-      }
-    ],
-    "directUpcalls": [
-      {
-        "class": "org.example.SomeClass",
-        "method": "method1",
-        "returnType": "&lt;return-type&gt;",
-        "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
-      }
-    ]
-  }
-}
-</code></pre>
+<p>However, Java has support for loading new classes at runtime.
+To emulate class loading, the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">agent</a> can trace dynamically loaded classes and save their bytecode for later use by the <code>native-image</code> builder.
+At runtime, if there is an attempt to load a class with the same name and bytecodes as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
+
+<blockquote>
+  <p>Note: Predefined classes metadata is not meant to be manually written.</p>
+</blockquote>
     
-      <h2 id="defining-classes-at-run-time">
+      <h3 id="predefined-classes-metadata-in-code">
         
         
-          Defining Classes at Run Time <a href="#defining-classes-at-run-time" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Predefined Classes Metadata In Code <a href="#predefined-classes-metadata-in-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
-      </h2>
+      </h3>
 
-<p>Java has support for loading new classes from bytecode at run time, which is not possible in Native Image as all classes must be known at build time (the “closed-world assumption”).
-To overcome this issue there are the following options:</p>
-<ol>
-  <li>Modify or reconfigure your application (or a third-party library) so that it does not generate classes at runtime or load them via non-built-in class loaders.</li>
-  <li>If the classes must be generated, try to generate them at build time in a static initializer of a dedicated class.
-The generated java.lang.Class objects should be stored in static fields and the dedicated class initialized by passing <code>--initialize-at-build-time=&lt;class_name&gt;</code> as the build argument.</li>
-  <li>If none of the above is applicable, use the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Native Image Agent</a> to run the application and collect predefined classes with
-<code>java -agentlib:native-image-agent=config-output-dir=&lt;config-dir&gt;,experimental-class-define-support &lt;application-arguments&gt;</code>.
-At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</li>
-</ol>
-
-<p>Predefined classes metadata is specified in a <em>predefined-classes-config.json</em> file and conform to the JSON schema defined in
-<a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the predefined-classes-config.json:</p>
+<p>It is not possible to specify predefined classes in code.</p>
+    
+      <h3 id="predefined-classes-metadata-in-json">
+        
+        
+          Predefined Classes Metadata in JSON <a href="#predefined-classes-metadata-in-json" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>Metadata for predefined classes is provided in <code>predefined-classes-config.json</code> files.</p>
 <pre><code class="language-json">[
   {
     "type": "agent-extracted",
@@ -1473,18 +1073,16 @@ The schema also includes further details and explanations how this configuration
   }
 ]
 </code></pre>
-<blockquote>
-  <p>Note: Predefined classes metadata is not meant to be manually written.
-Note: Predefined classes are the best-effort approach for legacy projects, and they are not guaranteed to work.</p>
-</blockquote>
+
+<p>The JSON schema is accompanied by the <code>agent-extracted-predefined-classes</code> directory that contains the bytecode of the listed classes.</p>
     
-      <h2 id="further-reading">
+      <h3 id="further-reading">
         
         
           Further Reading <a href="#further-reading" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
-      </h2>
+      </h3>
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Metadata Collection with the Tracing Agent</a></li>
@@ -1607,9 +1205,8 @@ Note: Predefined classes are the best-effort approach for legacy projects, and t
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -332,6 +331,17 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/CloseOnGc/">
+              Automatic Close of Unreachable Context and Engine Objects in Polyglot API
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Languages/">
               Language Implementations
             </a>
@@ -354,8 +364,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
-              Truffle Languages and Instruments Migration to Java Modules
+            <a href="/truffle/docs/ModuleMigration.html">
+              Truffle Language Safepoint Tutorial
             </a>
           </li>
 
@@ -378,6 +388,17 @@ $(document).ready(function(){
             
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
               Optimizing Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">
+              Deoptimization Cycle Patterns
             </a>
           </li>
 
@@ -623,36 +644,20 @@ $(document).ready(function(){
 <p>The Truffle language implementation framework (Truffle) is an open source library for building tools and programming languages implementations as interpreters for self-modifying Abstract Syntax Trees.
 Together with the open source <a href="https://github.com/oracle/graal/tree/master/compiler">Graal compiler</a>, Truffle represents a significant step forward in programming language implementation technology in the current era of dynamic languages.</p>
 
-<p>The Truffle artifacts are uploaded to <a href="https://central.sonatype.com/artifact/org.graalvm.truffle/truffle-api" target="_blank">Maven Central - Sonatype</a>.
+<p>The Truffle bits are uploaded to <a href="https://mvnrepository.com/artifact/org.graalvm.truffle">Maven central</a>. 
 You can use them from your <code>pom.xml</code> file as:</p>
 
-<pre><code class="language-xml">&lt;properties&gt;
-    &lt;graalvm.version&gt;24.2.0&lt;/graalvm.version&gt; &lt;!-- or any later version --&gt;
-&lt;/properties&gt;
-&lt;dependency&gt;
+<pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
     &lt;artifactId&gt;truffle-api&lt;/artifactId&gt;
-    &lt;version&gt;${graalvm.version}&lt;/version&gt; &lt;!-- or any later version --&gt;
+    &lt;version&gt;22.1.0&lt;/version&gt; &lt;!-- or any later version --&gt;
 &lt;/dependency&gt;
-&lt;build&gt;
-    &lt;plugins&gt;
-        &lt;plugin&gt;
-            &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-            &lt;version&gt;3.14.0&lt;/version&gt;
-            &lt;configuration&gt;
-                &lt;source&gt;21&lt;/source&gt;
-                &lt;target&gt;21&lt;/target&gt;
-                &lt;annotationProcessorPaths&gt;
-                    &lt;path&gt;
-                        &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
-                        &lt;artifactId&gt;truffle-dsl-processor&lt;/artifactId&gt;
-                        &lt;version&gt;${graalvm.version}&lt;/version&gt;
-                    &lt;/path&gt;
-                &lt;/annotationProcessorPaths&gt;
-            &lt;/configuration&gt;
-        &lt;/plugin&gt;
-    &lt;/plugins&gt;
-&lt;/build&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
+    &lt;artifactId&gt;truffle-dsl-processor&lt;/artifactId&gt;
+    &lt;version&gt;22.1.0&lt;&lt;/version&gt;
+    &lt;scope&gt;provided&lt;/scope&gt;
+&lt;/dependency&gt;
 </code></pre>
     
       <h2 id="implement-your-language">
@@ -674,13 +679,16 @@ It simplifies language implementation by automatically deriving high-performance
         
       </h3>
 
-<p>We provide extensive <a href="http://graalvm.org/truffle/javadoc/">Truffle API documentation</a>.
-Start by looking at the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html">TruffleLanguage</a> class, which you should subclass to start developing a language.
-Truffle comes with the Graal Compiler and several language implementations as part of GraalVM.</p>
+<p>Information on how to get starting building your language can be found in the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">Language Implementation Tutorial</a>.
+The reference API documentation is available as part of the <a href="http://graalvm.org/truffle/javadoc/">Truffle Javadoc</a>.
+Start with looking at the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.html">TruffleLanguage</a> class, which one should subclass to start developing a language.
+Truffle comes prebuilt with the Graal Compiler and several language implementations as part of GraalVM.</p>
 
 <p>A good way to start implementing your language with Truffle is to fork the <a href="https://github.com/graalvm/simplelanguage">SimpleLanguage</a> project and start hacking.
 SimpleLanguage is a relatively small language implementation, well-documented, and designed to demonstrate most of the Truffle features.
 You could also try by looking at code in one of the existing open source languages <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Languages/">implementations and experiments</a>.</p>
+
+<p>Consider reading <a href="/dev/community/publications/">these publications</a> for a very detailed view into how many of the aspects of Truffle work. However, as with any other software project, the source code is the ground truth.</p>
     
       <h3 id="advanced-topics">
         
@@ -691,12 +699,12 @@ You could also try by looking at code in one of the existing open source languag
       </h3>
 
 <p>Implementing a language using Truffle offers a way to interoperate with other “Truffle” languages.
-To estimate if your language is a valid polyglot citizen, read about using the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TCK/">Polyglot API-based Test Compatibility Kit</a>.
-Somewhat related topics worth exploring are <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">Truffle Libraries</a>, as well as how to use them to implement a <a href="/dev/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">language interoperability</a>.
+To learn more about verifying that your language is a valid polyglot citizen, read more about using the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TCK/">Polyglot TCK</a>.
+Somewhat related topics worth exploring are <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">Truffle Libraries</a>, as well as how to use them to implement a language <a href="/dev/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">interoperability</a>.
 Languages implemented with Truffle can also be embedded in Java host applications using the <a href="/dev/reference-manual/embed-languages/">Polyglot API</a>.</p>
 
-<p>To better understand how to improve the performance of your language, see the documentation on <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Profiling/">Profiling Truffle Interpreters</a> and <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">Optimizing Truffle Interpreters</a>.
-Also, to better understand how to use Truffle’s automated monomorphization feature (for example, splitting), look at the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/Monomorphization/">related documentation</a>.</p>
+<p>To better understand how to improve the performance of your language please consult the documentation on <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Profiling/">profiling</a> and <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">optimizing</a> your language.
+Also, to better understand how to use Truffle’s automated monomorphization feature (i.e., splitting), look at the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/Monomorphization/">related documentation</a>.</p>
     
       <h2 id="implement-your-tool">
         
@@ -706,14 +714,17 @@ Also, to better understand how to use Truffle’s automated monomorphization fea
         
       </h2>
 
-<p>With the Truffle framework, you can develop language-agnostic tools such as debuggers, profilers, and other instrumentations.
+<p>GraalVM provides a framework for creating language-agnostic tools like debuggers, profilers, and other instrumentations.
+In general, GraalVM provides a standardized way to express and run program code enabling cross-language research and the development of tools that can be developed once and then applied to any language.</p>
+
+<p>The reference API documentation is available as part of the <a href="http://graalvm.org/truffle/javadoc/">Truffle Javadoc</a>.
 Start with looking at the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/instrumentation/TruffleInstrument.html">TruffleInstrument</a> class, which – similar to <code>TruffleLanguage</code> – one should subclass to start developing a tool.</p>
 
 <p>If you want to implement your own “Truffle” tool, a good way to start is to fork the <a href="https://github.com/graalvm/simpletool">SimpleTool</a> project – like the SimpleLanguage project described above – and start hacking.
 SimpleTool is a well-documented, minimalistic code-coverage tool designed to be a starting point for understanding the tool development process using Truffle.</p>
 
-<p>Since tools, developed with Truffle, instrument the language using the same AST-node-based approach, most of the techniques available to language developers, in terms of improving performance, are available to the tool developers as well.
-This is why it is recommended that you understand how Truffle works from a language developer’s perspective to get the maximum out of your tool.</p>
+<p>Since tools, developed with Truffle, instrument the language using the same AST-node-based approach, most of the techniques available to language developers in terms of improving performance are available to the tool developers as well.
+This is why it is recommended that you understand how Truffle works from a language developer’s perspective, in order to get the maximum out of your tool.</p>
     
       <h2 id="compatibility">
         
@@ -724,7 +735,7 @@ This is why it is recommended that you understand how Truffle works from a langu
       </h2>
 
 <p>The Truffle API is evolved in a backwards-compatible manner from one version to the next.
-When an API is deprecated, then it will stay deprecated for at least <a href="https://www.graalvm.org/release-calendar/">two GraalVM releases</a> before it will be removed.</p>
+When an API is deprecated, then it will stay deprecated for at least <a href="https://www.graalvm.org/release-notes/version-roadmap/">two GraalVM releases</a>, and a minimum of one month, before it will be removed.</p>
 
 <p>As a best practice it is recommended to upgrade Truffle only one version at a time.
 This way you can increment the version and fix deprecation warnings before continuing to the next version.
@@ -740,8 +751,7 @@ The deprecated Javadoc tags on the deprecated APIs are designed to be a guide on
         
       </h2>
 
-<p>To understand how to modify Truffle, check <a href="https://github.com/oracle/graal/blob/master/truffle/README.md">this file</a>.
-If you would like to contribute to Truffle, consult the <a href="https://github.com/oracle/graal/blob/master/truffle/CONTRIBUTING.md">contribution documentation</a>.</p>
+<p>To understand how to modify Truffle, consult <a href="https://github.com/oracle/graal/blob/master/truffle/README.md">this file</a>, and if you would like to contribute to Truffle, consult the <a href="https://github.com/oracle/graal/blob/master/truffle/CONTRIBUTING.md">contribution documentation</a>.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -858,9 +868,8 @@ If you would like to contribute to Truffle, consult the <a href="https://github.
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -238,7 +237,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            GraalJS
+            JavaScript and Node.js Reference
           </a>
         </li>
 
@@ -274,7 +273,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              GraalJS Compatibility
+              JavaScript Compatibility
             </a>
           </li>
 
@@ -307,7 +306,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalJS
+              Migration Guide from Nashorn to GraalVM JavaScript
             </a>
           </li>
 
@@ -318,7 +317,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalJS
+              Migration Guide from Rhino to GraalVM JavaScript
             </a>
           </li>
 
@@ -351,7 +350,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalJS on a Stock JDK
+              Run GraalVM JavaScript on a Stock JDK
             </a>
           </li>
 
@@ -452,19 +451,20 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalJS provides an early implementation of the ECMAScript <a href="https://github.com/tc39/proposal-operator-overloading">operator overloading proposal</a>.
+<p>GraalVM JavaScript provides an early implementation of the ECMAScript <a href="https://github.com/tc39/proposal-operator-overloading">operator overloading proposal</a>.
 This lets you overload the behavior of JavaScript’s operators on your JavaScript classes.</p>
 
-<p>If you want to experiment with this feature, enable it.
-Since both the proposal and the GraalJS implementation of it are in early stages, you need to pass the <code>--experimental-options</code> option:</p>
+<p>If you want to experiment with this feature, you will first need to enable it.
+Since both the proposal and our implementation of it are in early stages, you will need to set the following experimental option.</p>
+
 <pre><code class="language-shell">js --experimental-options --js.operator-overloading
 </code></pre>
 
 <p>After setting the option, you will see a new builtin in the global namespace, the <code>Operators</code> function.
 You can call this function, passing it a JavaScript object as an argument.
-The object should have a property for every operator you wish to overload, with the key being the name of the operator and the value being a function that implements it.
+The object should have a property for every operator you wish to overload, with the key being the name of the operator and the value being a function which implements it.
 The return value of the <code>Operators</code> function is a constructor that you can then subclass when defining your type.
-By subclassing this constructor, you get a class whose objects inherit the overloaded operator behavior that you defined in your argument to the <code>Operators</code> function.</p>
+By subclassing this constructor, you get a class whose objects will all inherit the overloaded operator behavior that you defined in your argument to the <code>Operators</code> function.</p>
     
       <h2 id="basic-example">
         
@@ -474,7 +474,8 @@ By subclassing this constructor, you get a class whose objects inherit the overl
         
       </h2>
 
-<p>Look at an example from the original proposal featuring vectors:</p>
+<p>Let’s look at an example from the original proposal featuring vectors:</p>
+
 <pre><code class="language-java">const VectorOps = Operators({
   "+"(a, b) {
     return new Vector(a.contents.map((elt, i) =&gt; elt + b.contents[i]));
@@ -494,11 +495,12 @@ class Vector extends VectorOps {
 }
 </code></pre>
 
-<p>Here two operators, <code>+</code> and <code>==</code>, are overloaded.
+<p>Here we define overloads for two operators, <code>+</code> and <code>==</code>.
 Calling the <code>Operators</code> function with the table of overloaded operators yields the <code>VectorOps</code> class.
-Then the <code>Vector</code> class is defined as a subclass of <code>VectorOps</code>.</p>
+We then define our <code>Vector</code> class as a subclass of <code>VectorOps</code>.</p>
 
-<p>If you create instances of <code>Vector</code>, you can observe that they follow the overloaded operator definitions:</p>
+<p>If we create instances of <code>Vector</code>, we can observe that they follow our overloaded operator definitions:</p>
+
 <pre><code>&gt; new Vector([1, 2, 3]) + new Vector([4, 5, 6]) == new Vector([5, 7, 9])
 true
 </code></pre>
@@ -511,7 +513,8 @@ true
         
       </h2>
 
-<p>It is also possible to overload operators between values of different types, allowing, for example, multiplication of vectors by numbers:</p>
+<p>It is also possible to overload operators between values of different types, allowing, for example, multiplication of vectors by numbers.</p>
+
 <pre><code class="language-java">const VectorOps = Operators({
     "+"(a, b) {
         return new Vector(a.contents.map((elt, i) =&gt; elt + b.contents[i]));
@@ -536,20 +539,21 @@ class Vector extends VectorOps {
 }
 </code></pre>
 
-<p>To define mixed-type operators, pass additional objects to the <code>Operators</code> function.
-These extra tables should each have either a <code>left</code> property or a <code>right</code> property, depending on whether you overload the behavior of operators with some other type on the left or on the right side of the operator.
-In the example, the <code>*</code> operator is overloaded for cases when there is a <code>Number</code> on the left and the type, <code>Vector</code>, on the right.
-Each extra table can have either a <code>left</code> property or a <code>right</code> property and then any number of operator overloads that will apply to that particular case.</p>
+<p>To define mixed-type operators, we need to pass additional objects to the <code>Operators</code> function.
+These extra tables should each have either a <code>left</code> property or a <code>right</code> property, depending on whether we are overloading the behavior of operators with some other type on the left or on the right side of the operator.
+In our case, we are overloading the <code>*</code> operator for cases when there is a <code>Number</code> on the left and our type, <code>Vector</code>, on the right.
+Each extra table can have either a <code>left</code> property or a <code>right</code> property and then any number of operator overloads which will apply to that particular case.</p>
 
-<p>Running this example you see:</p>
+<p>Let’s see this in action:</p>
+
 <pre><code>&gt; 2 * new Vector([1, 2, 3]) == new Vector([2, 4, 6])
 true
 </code></pre>
     
-      <h2 id="usage-documentation">
+      <h2 id="reference">
         
         
-          Usage Documentation <a href="#usage-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Reference <a href="#reference" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
@@ -560,6 +564,7 @@ Users should define their own class which extends that class.</p>
 <p>The <code>table</code> argument must be an object with one property for every overloaded operator.
 The property key must be the name of the operator.
 These are the names of operators which can be overloaded:</p>
+
 <ul>
   <li>binary operators: <code>"+"</code>, <code>"-"</code>, <code>"*"</code>, <code>"/"</code>, <code>"%"</code>, <code>"**"</code>, <code>"&amp;"</code>, <code>"^"</code>, <code>"|"</code>, <code>"&lt;&lt;"</code>, <code>"&gt;&gt;"</code>, <code>"&gt;&gt;&gt;"</code>, <code>"=="</code>, <code>"&lt;"</code></li>
   <li>unary operators: <code>"pos"</code>, <code>"neg"</code>, <code>"++"</code>, <code>"--"</code>, <code>"~"</code></li>
@@ -574,13 +579,14 @@ Similarly, the overload for <code>"&lt;"</code> is used for all comparison opera
 
 <p>The <code>table</code> argument can also have an <code>open</code> property.
 If so, the value of that property must be an array of operator names.
-These are the operators that future classes will be able to overload on this type (for example, a <code>Vector</code> type might declare <code>"*"</code> to be open so that later a <code>Matrix</code> type might overload the operations <code>Vector * Matrix</code> and <code>Matrix * Vector</code>).
+These are the operators which future classes will be able to overload on this type (e.g. a <code>Vector</code> type might declare <code>"*"</code> to be open so that later a <code>Matrix</code> type might overload the operations <code>Vector * Matrix</code> and <code>Matrix * Vector</code>).
 If the <code>open</code> property is missing, all operators are considered to be open for future overloading with other types.</p>
 
 <p>Following the first argument <code>table</code> are optional arguments <code>extraTables</code>.
 Each of these must also be an object.
 Each extra table must have either a <code>left</code> property or a <code>right</code> property, not both.
 The value of that property must be one of the following JavaScript constructors:</p>
+
 <ul>
   <li><code>Number</code></li>
   <li><code>BigInt</code></li>
@@ -597,15 +603,17 @@ Similarly for the <code>right</code> property, if the extra table has a <code>ri
 <p>Note that you are free to overload any of the binary operators between your custom type and the JavaScript numeric types <code>Number</code> and <code>BigInt</code>.
 However, the only operators you are allowed to overload between your custom type and the <code>String</code> type are <code>"=="</code> and <code>"&lt;"</code>.</p>
 
-<p>The <code>Operators</code> function returns a constructor that you will usually want to extend in your own class.
+<p>The <code>Operators</code> function will return a constructor that you will usually want to extend in your own class.
 Instances of that class will respect your overloaded operator definitions.
-Whenever you use an operator on an object with overloaded operators, the following happens:
-  1) Every operand that does <em>not</em> have overloaded operators is coerced to a primitive.
+Whenever you use an operator on an object with overloaded operators, the following happens:</p>
+
+<p>1) Every operand that does <em>not</em> have overloaded operators is coerced to a primitive.
   2) If there is an applicable overload for this pairing of operands, it is called. Otherwise, a <code>TypeError</code> is thrown.</p>
 
 <p>Notably, your objects with overloaded operators will not be coerced to primitives when applying operators and you can get <code>TypeError</code>s when applying undefined operators to them.
-There are two exceptions to this:
-  1) If you are using the <code>+</code> operator and one of the arguments is a String (or an object without overloaded operators that coerces to a String via <code>ToPrimitive</code>), then the result will be a concatenation of the <code>ToString</code> values of the two operands.
+There are two exceptions to this:</p>
+
+<p>1) If you are using the <code>+</code> operator and one of the arguments is a string (or an object without overloaded operators that coerces to a string via <code>ToPrimitive</code>), then the result will be a concatenation of the <code>ToString</code> values of the two operands.
   2) If you are using the <code>==</code> operator and there is no applicable overload found, the two operands are assumed to be different (<code>x == y</code> will return <code>false</code> and <code>x != y</code> will return <code>true</code>).</p>
     
       <h2 id="differences-from-the-proposal">
@@ -616,23 +624,12 @@ There are two exceptions to this:
         
       </h2>
 
-<p>There a few differences between the proposal (as defined by its specification and prototype implementation) and GraalJS implementation:</p>
-<ul>
-  <li>You do not have to use the <code>with operators from</code> construction to enable the use of overloaded operators. When you overload operators for a class, those operators can then be used anywhere without using <code>with operators from</code>. Furthermore, the parser will not accept the <code>with operators from</code> clause as valid JavaScript.</li>
-  <li>You cannot use decorators to define overloaded operators. At the time of implementing this proposal, GraalJS does not support decorators (these are still an in-progress proposal).</li>
-  <li>You cannot overload the <code>"[]"</code> and <code>"[]="</code> operators for reading and writing integer-indexed elements. These two operators require more complex treatment and are not currently supported.</li>
-</ul>
-    
-      <h3 id="related-documentation">
-        
-        
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
+<p>There a few differences between the proposal (as defined by its specification and prototype implementation) and our implementation in GraalVM JavaScript:</p>
 
 <ul>
-  <li><a href="https://github.com/tc39/proposal-operator-overloading">ECMAScript operator overloading proposal</a></li>
+  <li>You do not have to use the <code>with operators from</code> construction to enable the use of overloaded operators. When you overload operators for a class, those operators can then be used anywhere without using <code>with operators from</code>. Furthermore, our parser will not accept the <code>with operators from</code> clause as valid JavaScript.</li>
+  <li>You cannot use decorators to define overloaded operators. At the time of implementing this proposal, GraalVM JavaScript does not support decorators (these are still an in-progress proposal).</li>
+  <li>You cannot overload the <code>"[]"</code> and <code>"[]="</code> operators for reading and writing integer-indexed elements. These two operators require more complex treatment and are not currently supported.</li>
 </ul>
 
       </div>
@@ -750,9 +747,8 @@ There are two exceptions to this:
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

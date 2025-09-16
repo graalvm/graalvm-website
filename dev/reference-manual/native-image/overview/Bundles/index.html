@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -321,8 +320,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/overview/build-report/">
-              Build Report
+            <a href="">
+              
             </a>
           </li>
 
@@ -370,8 +369,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/overview/Options/">
-              Command-line Options
+            <a href="/dev/reference-manual/native-image/overview/BuildOptions/">
+              Build Options
             </a>
           </li>
 
@@ -574,9 +573,8 @@ Using Native Image bundles is a safe solution to encapsulate all this input requ
 <ul>
   <li><a href="#creating-bundles">Creating Bundles</a></li>
   <li><a href="#building-with-bundles">Building with Bundles</a></li>
-  <li><a href="#capturing-environment-variables">Capturing Environment Variables</a></li>
-  <li><a href="#combining-bundle-create-and-bundle-apply">Creating New Bundles from Existing Bundles</a></li>
-  <li><a href="#executing-a-bundled-application">Executing a Bundled Application</a></li>
+  <li><a href="#capturing-environment-variables">Environment Variables</a></li>
+  <li><a href="#combining---bundle-create-and---bundle-apply">Creating New Bundles from Existing Bundles</a></li>
   <li><a href="#bundle-file-format">Bundle File Format</a></li>
 </ul>
     
@@ -592,30 +590,17 @@ Using Native Image bundles is a safe solution to encapsulate all this input requ
 This will cause <code>native-image</code> to create a <em>*.nib</em> file in addition to the actual image.</p>
 
 <p>Here is the option description:</p>
-<pre><code>--bundle-create[=new-bundle.nib][,dry-run][,container[=&lt;container-tool&gt;][,dockerfile=&lt;Dockerfile&gt;]]
+<pre><code>--bundle-create[=new-bundle.nib]
                       in addition to image building, create a Native Image bundle file (*.nib
                       file) that allows rebuilding of that image again at a later point. If a
                       bundle-file gets passed, the bundle will be created with the given
                       name. Otherwise, the bundle-file name is derived from the image name.
-                      Note both bundle options can be extended with ",dry-run" and ",container"
-                      * 'dry-run': only perform the bundle operations without any actual image building.
-                      * 'container': sets up a container image for image building and performs image building
-                        from inside that container. Requires podman or rootless docker to be installed.
-                        If available, 'podman' is preferred and rootless 'docker' is the fallback. Specifying
-                        one or the other as '=&lt;container-tool&gt;' forces the use of a specific tool.
-                      * 'dockerfile=&lt;Dockerfile&gt;': Use a user provided 'Dockerfile' instead of the default based on
-                        Oracle Linux 8 base images for GraalVM (see https://github.com/graalvm/container)
+                      Note both bundle options can be combined with --dry-run to only perform
+                      the bundle operations without any actual image building.
 </code></pre>
-    
-      <h3 id="creating-bundles-with-maven">
-        
-        
-          Creating Bundles with Maven <a href="#creating-bundles-with-maven" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
 
-<p>Assuming a Java application is built with Maven, pass the <code>--bundle-create</code> as a build argument in the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#configuration-options">Maven plugin for Native Image building configuration</a>:</p>
+<p>For example, assuming a Micronaut application is built with Maven, make sure the <code>--bundle-create</code> option is used.
+For that, the following needs to be added to the plugins section of <code>pom.xml</code>:</p>
 <pre><code class="language-xml">&lt;plugin&gt;
   &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
   &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
@@ -627,99 +612,94 @@ This will cause <code>native-image</code> to create a <em>*.nib</em> file in add
 &lt;/plugin&gt;
 </code></pre>
 
-<p>Then, run the Maven package command:</p>
-<pre><code class="language-shell">./mvnw -Pnative native:compile
+<p>Then, when you run the Maven package command <code>./mvnw package -Dpackaging=native-image</code>, you will get the following build artifacts:</p>
+<pre><code>Finished generating 'micronautguide' in 2m 0s.
+
+Native Image Bundles: Bundle build output written to /home/testuser/micronaut-data-jdbc-repository-maven-java/target/micronautguide.output
+Native Image Bundles: Bundle written to /home/testuser/micronaut-data-jdbc-repository-maven-java/target/micronautguide.nib
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  02:08 min
+[INFO] Finished at: 2023-03-27T15:09:36+02:00
+[INFO] ------------------------------------------------------------------------
 </code></pre>
-<blockquote>
-  <p>Note: The command to create a native executable with Maven for a Micronaut project is: <code>./mvnw package -Dpackaging=native-image</code>.</p>
-</blockquote>
 
-<p>You get the following build artifacts:</p>
-<pre><code>Finished generating 'application' in 2m 0s.
-
-Native Image Bundles: Bundle build output written to /application/target/application.output
-Native Image Bundles: Bundle written to /application/target/application.nib
-</code></pre>
-
-<p>This output indicates that you have created a native executable, <code>application</code>, and a bundle, <em>application.nib</em>.
+<p>This output indicates that you have created a native executable, <code>micronautguide</code>, and a bundle, <em>micronautguide.nib</em>.
 The bundle file is created in the <em>target/</em> directory.
 It should be copied to some safe place where it can be found if the native executable needs to be rebuilt later.</p>
-    
-      <h3 id="creating-bundles-with-gradle">
-        
-        
-          Creating Bundles with Gradle <a href="#creating-bundles-with-gradle" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Assuming a Java application is built with Gradle, pass the <code>--bundle-create</code> as a build argument in the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#_native_image_options">Gradle plugin for Native Image building configuration</a>:</p>
-
-<pre><code class="language-shell">graalvmNative {
-    binaries {
-        main {
-            buildArgs.add("--bundle-create")
-        }
-    }
-}
-</code></pre>
-
-<p>Then, run the Gradle build command:</p>
-<pre><code class="language-shell">./gradlew nativeCompile
-</code></pre>
-
-<p>You get the following build artifacts:</p>
-<pre><code>Finished generating 'application' in 2m 0s.
-
-Native Image Bundles: Bundle build output written to /application/build/native/nativeCompile/application.output
-Native Image Bundles: Bundle written to /application/build/native/nativeCompile/application.nib
-</code></pre>
-
-<p>This output indicates that you have created a native executable, <code>application</code>, and a bundle, <em>application.nib</em>.
-The bundle file is created in the <em>build/native/nativeCompile/</em> directory.</p>
-    
-      <h3 id="bundle-file-and-output-directory">
-        
-        
-          Bundle File and Output Directory <a href="#bundle-file-and-output-directory" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
 
 <p>Obviously, a bundle file can be large because it contains all input files as well as the executable itself (the executable is compressed within the bundle). 
-Having the native image inside the bundle allows comparing a native executable rebuilt from the bundle against the original one.</p>
-
-<p>A bundle is just a JAR file with a specific layout. 
-This is explained in detail <a href="#bundle-file-format">below</a>.
-To see what is inside a bundle, run:</p>
-<pre><code class="language-shell">jar tf application.nib
+Having the image inside the bundle allows comparing a native executable rebuilt from the bundle against the original one.
+In the case of the <code>micronaut-data-jdbc-repository</code> example, the bundle is 60.7 MB (the executable is 103.4 MB).
+To see what is inside a bundle, run <code>jar tf *.nib</code>:</p>
+<pre><code class="language-shell">$ jar tf micronautguide.nib
+META-INF/MANIFEST.MF
+META-INF/nibundle.properties
+output/default/micronautguide
+input/classes/cp/micronaut-core-3.8.7.jar
+input/classes/cp/netty-buffer-4.1.87.Final.jar
+input/classes/cp/jackson-databind-2.14.1.jar
+input/classes/cp/micronaut-context-3.8.7.jar
+input/classes/cp/reactive-streams-1.0.4.jar
+...
+input/classes/cp/netty-handler-4.1.87.Final.jar
+input/classes/cp/micronaut-jdbc-4.7.2.jar
+input/classes/cp/jackson-core-2.14.0.jar
+input/classes/cp/micronaut-runtime-3.8.7.jar
+input/classes/cp/micronautguide-0.1.jar
+input/stage/build.json
+input/stage/environment.json
+input/stage/path_substitutions.json
+input/stage/path_canonicalizations.json
 </code></pre>
 
-<p>Next to the bundle, you can also find the output directory: <em>application.output</em>.
+<p>As you can see, a bundle is just a JAR file with a specific layout.
+This is explained in detail <a href="#bundle-file-format">below</a>.</p>
+
+<p>Next to the bundle, you can also find the output directory: <em>target/micronautguide.output</em>.
 It contains the native executable and all other files that were created as part of the build. 
-Since you did not specify any options that would produce extra output (for example, <code>-g</code> to generate debugging information or <code>--diagnostics-mode</code>), only the executable can be found there.</p>
+Since you did not specify any options that would produce extra output (for example, <code>-g</code> to generate debugging information or <code>--diagnostics-mode</code>), only the executable can be found there:</p>
+<pre><code class="language-shell">$ tree target/micronautguide.output
+target/micronautguide.output
+├── default
+│   └── micronautguide
+└── other
+</code></pre>
     
       <h3 id="combining-bundle-create-with-dry-run">
         
         
-          Combining –bundle-create with dry-run <a href="#combining-bundle-create-with-dry-run" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Combining –bundle-create with –dry-run <a href="#combining-bundle-create-with-dry-run" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>As mentioned in the <code>--bundle-create</code> option description, it is also possible to let <code>native-image</code> build a bundle but not actually create the image.
+<p>As mentioned in the <code>--bundle-create</code> option description, it is also possible to let <code>native-image</code> build a bundle but not actually perform the image building.
 This might be useful if a user wants to move the bundle to a more powerful machine and build the image there.
-Modify the <code>--bundle-create</code> argument in the Maven / Gradle Native Image plugin configuration above to <code>&lt;buildArg&gt;--bundle-create,dry-run&lt;/buildArg&gt;</code>.
-Then building a project takes only seconds and the created bundle is much smaller. 
-For example, check the contents of <em>target/application.nib</em> and notice that the executable is not included:</p>
-<pre><code class="language-shell">jar tf application.nib
+Modify the above <code>native-maven-plugin</code> configuration to also contain the argument <code>&lt;buildArg&gt;--dry-run&lt;/buildArg&gt;</code>. 
+Then running <code>./mvnw package -Dpackaging=native-image</code> takes only seconds and the created bundle is much smaller:</p>
+<pre><code>Native Image Bundles: Bundle written to /home/testuser/micronaut-data-jdbc-repository-maven-java/target/micronautguide.nib
+
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.267 s
+[INFO] Finished at: 2023-03-27T16:33:21+02:00
+[INFO] ------------------------------------------------------------------------
+</code></pre>
+
+<p>Now <em>micronautguide.nib</em> is only 20 MB in file size and the executable is not included:</p>
+<pre><code class="language-shell">$ jar tf micronautguide.nib
 META-INF/MANIFEST.MF
 META-INF/nibundle.properties
+input/classes/cp/micronaut-core-3.8.7.jar
 ...
 </code></pre>
 
 <p>Note that this time you do not see the following message in the Maven output:</p>
-<pre><code>Native Image Bundles: Bundle build output written to /application/target/application.output
+<pre><code>Native Image Bundles: Bundle build output written to /home/testuser/micronaut-data-jdbc-repository-maven-java/target/micronautguide.output
 </code></pre>
 <p>Since no executable is created, no bundle build output is available.</p>
     
@@ -731,95 +711,53 @@ META-INF/nibundle.properties
         
       </h2>
 
-<p>Assuming that the native executable is used in production and once in a while, an unexpected exception is thrown at run time.
+<p>Assuming that the native executable is used in production and once in a while an unexpected exception is thrown at run time.
 Since you still have the bundle that was used to create the executable, it is trivial to build a variant of that executable with debugging support.
-Use <code>--bundle-apply=application.nib</code> like this:</p>
-<pre><code class="language-shell">native-image --bundle-apply=application.nib -g
+Use <code>--bundle-apply=micronautguide.nib</code> like this:</p>
+<pre><code class="language-shell">$ native-image --bundle-apply=micronautguide.nib -g
+
+Native Image Bundles: Loaded Bundle from /home/testuser/micronautguide.nib
+Native Image Bundles: Bundle created at 'Tuesday, March 28, 2023, 11:12:04 AM Central European Summer Time'
+Native Image Bundles: Using version: '20.0.1+8' (vendor 'Oracle Corporation') on platform: 'linux-amd64'
+Warning: Native Image Bundles are an experimental feature.
+========================================================================================================================
+GraalVM Native Image: Generating 'micronautguide' (executable)...
+========================================================================================================================
+...
+Finished generating 'micronautguide' in 2m 16s.
+
+Native Image Bundles: Bundle build output written to /home/testuser/micronautguide.output
 </code></pre>
 
-<p>After running this command, the executable is rebuilt from the bundle with debug info enabled.</p>
+<p>After running this command, the executable is rebuilt with an extra option <code>-g</code> passed after <code>--bundle-apply</code>.
+The output of this build is in the directory <em>micronautguide.output</em>:</p>
+<pre><code>micronautguide.output
+micronautguide.output/other
+micronautguide.output/default
+micronautguide.output/default/micronautguide.debug
+micronautguide.output/default/micronautguide
+micronautguide.output/default/sources
+micronautguide.output/default/sources/javax
+micronautguide.output/default/sources/javax/smartcardio
+micronautguide.output/default/sources/javax/smartcardio/TerminalFactory.java
+...
+micronautguide.output/default/sources/java/lang/Object.java
+</code></pre>
+
+<p>You successfully rebuilt the application from the bundle with debug info enabled.</p>
 
 <p>The full option help of <code>--bundle-apply</code> shows a more advanced use case that will be discussed <a href="#combining---bundle-create-and---bundle-apply">later</a> in detail:</p>
-<pre><code>--bundle-apply=some-bundle.nib[,dry-run][,container[=&lt;container-tool&gt;][,dockerfile=&lt;Dockerfile&gt;]]
+<pre><code>--bundle-apply=some-bundle.nib
                       an image will be built from the given bundle file with the exact same
                       arguments and files that have been passed to native-image originally
                       to create the bundle. Note that if an extra --bundle-create gets passed
                       after --bundle-apply, a new bundle will be written based on the given
-                      bundle arguments plus any additional arguments that have been passed
+                      bundle args plus any additional arguments that haven been passed
                       afterwards. For example:
                       &gt; native-image --bundle-apply=app.nib --bundle-create=app_dbg.nib -g
                       creates a new bundle app_dbg.nib based on the given app.nib bundle.
                       Both bundles are the same except the new one also uses the -g option.
 </code></pre>
-    
-      <h3 id="building-in-a-container">
-        
-        
-          Building in a Container <a href="#building-in-a-container" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Another addition to the <code>--bundle-create</code> and <code>--bundle-apply</code> options is to perform image building inside a container image.
-This ensures that during the image build <code>native-image</code> can not access any resources that were not explicitly specified via the class path or module path.</p>
-
-<p>Modify the <code>--bundle-create</code> argument in the Maven / Gradle Native Image plugin configuration above to <code>&lt;buildArg&gt;--bundle-create,container&lt;buildArg&gt;</code>.
-This still creates the same bundle as before. 
-However, a container image is built and then used for building the native executable.</p>
-
-<p>If the container image is newly created, you can also see the build output from the container tool. 
-The name of the container image is the hash of the used Dockerfile.
-If the container image already exists you will see the following line in the build output instead:</p>
-
-<pre><code>Native Image Bundles: Reusing container image c253ca50f50b380da0e23b168349271976d57e4e.
-</code></pre>
-
-<p>For building in a container you require either <em>podman</em> or <em>rootless docker</em> to be available on your system.</p>
-
-<blockquote>
-  <p>Building in a container is currently only supported for Linux. Using any other OS native image will not create and use a container image.</p>
-</blockquote>
-
-<p>The container tool used for running the image build can be specified with <code>&lt;buildArg&gt;--bundle-create,container=podman&lt;buildArg&gt;</code> or <code>&lt;buildArg&gt;--bundle-create,container=docker&lt;buildArg&gt;</code>.
-If not specified, <code>native-image</code> uses one of the supported tools. 
-If available, <code>podman</code> is preferred and rootless <code>docker</code> is the fallback.</p>
-
-<p>The Dockerfile used to build the container image may also be explicitly specified with <code>--bundle-create,container,dockerfile=&lt;path-to-dockerfile&gt;</code>.
-If no Dockerfile was specified, a default Dockerfile is used, which is based on the Oracle Linux 8 container images for GraalVM from <a href="https://github.com/graalvm/container">here</a>.
-Whichever Dockerfile is finally used to build the container image is stored in the bundle.
-Even if you do not use the <code>container</code> option, <code>native-image</code> creates a Dockerfile and stores it in the bundle.</p>
-
-<p>Other than creating a container image on the host system, building inside a container does not create any additional build output.
-However, the created bundle contains some additional files:</p>
-<pre><code class="language-shell">jar tf application.nib
-META-INF/MANIFEST.MF
-META-INF/nibundle.properties
-...
-input/stage/path_substitutions.json
-input/stage/path_canonicalizations.json
-input/stage/build.json
-input/stage/run.json
-input/stage/environment.json
-input/stage/Dockerfile
-input/stage/container.json
-</code></pre>
-<p>The bundle contains the Dockerfile used for building the container image and stores the used container tool, its version and the name of the container image in <code>container.json</code>. For example:</p>
-<pre><code class="language-json">{
-    "containerTool":"podman",
-    "containerToolVersion":"podman version 3.4.4",
-    "containerImage":"c253ca50f50b380da0e23b168349271976d57e4e"
-}
-</code></pre>
-
-<p>The <code>container</code> option may also be combined with <code>dry-run</code>, in this case <code>native-image</code> does neither create an executable nor a container image.
-It does not even check if the selected container tool is available.
-In this case, <em>container.json</em> is omitted, or, if you explicitly specified a container tool, just contains the <em>containerTool</em> field without any additional information.</p>
-
-<p>Containerized builds are sticky, which means that if a bundle was created with <code>--bundle-create,container</code> the bundle is marked as a container build.
-If you now use <code>--bundle-apply</code> with this bundle, it is automatically built in a container again.
-However, this does not apply to <a href="#executing-the-bundled-application">executing a bundle</a>, a bundled application is still executed outside a container by default.</p>
-
-<p>The extended command line interface for containerized builds is shown in the option help texts for <code>--bundle-create</code> and <code>--bundle-apply</code> above.</p>
     
       <h2 id="capturing-environment-variables">
         
@@ -832,7 +770,7 @@ However, this does not apply to <a href="#executing-the-bundled-application">exe
 <p>Before bundle support was added, all environment variables were visible to the  <code>native-image</code> builder.
 This approach does not work well with bundles and is problematic for image building without bundles.
 Consider having an environment variable that holds sensitive information from your build machine.
-Due to Native Image’s ability to run code at build time that can create data to be available at run time, it is very easy to build an image where you accidentally leak the contents of such variables.</p>
+Due to Native Image’s ability to run code at build time that can create data to be available at run time, it is very easy to build an image were you accidentally leak the contents of such variables.</p>
 
 <p>Passing environment variables to <code>native-image</code> now requires explicit arguments.</p>
 
@@ -864,100 +802,65 @@ The prefix <code>-E</code> was chosen to make the option look similar to the rel
 The <code>--bundle-apply</code> help message has a simple example.
 A more interesting example arises if an existing bundle is used to create a new bundle that builds a PGO-optimized version of the original application.</p>
 
-<p>Assuming you have already built your application into a bundle named <em>application.nib</em>.
+<p>Assuming you have already built the <code>micronaut-data-jdbc-repository</code> example into a bundle named <em>micronautguide.nib</em>.
 To produce a PGO-optimized variant of that bundle, first build a variant of the native executable that generates PGO profiling information at run time (you will use it later):</p>
-<pre><code class="language-shell">native-image --bundle-apply=application.nib --pgo-instrument
+<pre><code class="language-shell">$ native-image --bundle-apply=micronautguide.nib --pgo-instrument
 </code></pre>
 
 <p>Now run the generated executable so that profile information is collected:</p>
-<pre><code class="language-shell">./target/application
+<pre><code class="language-shell">$ /home/testuser/micronautguide.output/default/micronautguide
 </code></pre>
 
-<p>Once completed, stop the application.</p>
+<p>Based on <a href="https://guides.micronaut.io/latest/micronaut-data-jdbc-repository.html" target="_blank">this walkthrough</a>, you use the running native executable to add new database entries and query the information in the database afterwards so that you get real-world profiling information.
+Once completed, stop the Micronaut application using <code>Ctrl+C</code> (<code>SIGTERM</code>).
+Looking into the current working directory, you can find a new file:</p>
+<pre><code class="language-shell">$ ls -lh  *.iprof
+-rw------- 1 testuser testuser 19M Mar 28 14:52 default.iprof
+</code></pre>
 
-<p>Looking into the current working directory, you can find a new file, <em>default.iprof</em>. 
-It contains the profiling information that was created because you ran the application from the executable built with <code>--pgo-instrument</code>.
+<p>The file <code>default.iprof</code> contains the profiling information that was created because you ran the Micronaut application from the executable built with <code>--pgo-instrument</code>.
 Now you can create a new optimized bundle out of the existing one:</p>
-<pre><code class="language-shell">native-image --bundle-apply=application.nib --bundle-create=application-pgo-optimized.nib,dry-run --pgo
+<pre><code class="language-shell">native-image --bundle-apply=micronautguide.nib --bundle-create=micronautguide-pgo-optimized.nib --dry-run --pgo
 </code></pre>
 
-<p>Now take a look how <em>application-pgo-optimized.nib</em> is different from <em>application.nib</em>:</p>
+<p>Now take a look how <em>micronautguide-pgo-optimized.nib</em> is different from <em>micronautguide.nib</em>:</p>
 <pre><code class="language-shell">$ ls -lh *.nib
--rw-r--r-- 1 testuser testuser  20M Mar 28 11:12 application.nib
--rw-r--r-- 1 testuser testuser  23M Mar 28 15:02 application-pgo-optimized.nib
+-rw-r--r-- 1 testuser testuser  20M Mar 28 11:12 micronautguide.nib
+-rw-r--r-- 1 testuser testuser  23M Mar 28 15:02 micronautguide-pgo-optimized.nib
 </code></pre>
 
-<p>The new bundle should be larger than the original.
+<p>You can see that the new bundle is 3 MB larger than the original.
 The reason, as can be guessed, is that now the bundle contains the <em>default.iprof</em> file.
-Using a tool to compare directories, you can inspect the differences in detail.</p>
+Using a tool to compare directories, you can inspect the differences in detail:</p>
 
-<p>As you can see that <em>application-pgo-optimized.nib</em> contains <em>default.iprof</em> in the directory <em>input/auxiliary</em>, and there are also changes in other files. 
-The contents of <em>META-INF/nibundle.properties</em>, <em>input/stage/path_substitutions.json</em> and <em>input/stage/path_canonicalizations.json</em> will be explained <a href="#bundle-file-format">later</a>. 
+<p><img src="/docs/reference-manual/native-image/visual-bundle-compare.png" alt="visual-bundle-compare" /></p>
+
+<p>As you can see, <em>micronautguide-pgo-optimized.nib</em> contains <em>default.iprof</em> in the directory <em>input/auxiliary</em>, and there
+are also changes in other files. The contents of <em>META-INF/nibundle.properties</em>, <em>input/stage/path_substitutions.json</em>
+and <em>input/stage/path_canonicalizations.json</em> will be explained <a href="#bundle-file-format">later</a>. 
 For now, look at the diff in <em>build.json</em>:</p>
 <pre><code>@@ -4,5 +4,6 @@
    "--no-fallback",
-   "-H:Name=application",
-   "-H:Class=example.com.Application",
+   "-H:Name=micronautguide",
+   "-H:Class=example.micronaut.Application",
 -  "--no-fallback"
 +  "--no-fallback",
 +  "--pgo"
+ ]
 </code></pre>
 
 <p>As expected, the new bundle contains the <code>--pgo</code> option that you passed to <code>native-image</code> to build an optimized bundle.
 Building a native executable from this new bundle generates a PGO-optimized executable out of the box (see <code>PGO: on</code> in build output):</p>
-<pre><code class="language-shell">native-image --bundle-apply=application-pgo-optimized.nib
+<pre><code class="language-shell">$ native-image --bundle-apply=micronautguide-pgo-optimized.nib
+...
+[1/8] Initializing...                                                                                    (3.9s @ 0.27GB)
+ Java version: 20.0.1+8, vendor version: GraalVM EE 20.0.1+8.1
+ Graal compiler: optimization level: '2', target machine: 'x86-64-v3', PGO: on
+ C compiler: gcc (redhat, x86_64, 13.0.1)
+ Garbage collector: Serial GC (max heap size: 80% of RAM)
+ 6 user-specific feature(s)
+...
 </code></pre>
-    
-      <h2 id="executing-a-bundled-application">
-        
-        
-          Executing a Bundled Application <a href="#executing-a-bundled-application" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>As described later in <a href="#bundle-file-format">Bundle File Format</a>, a bundle file is a JAR file with a contained launcher for launching the bundled application.
-This means you can use a native image bundle with any JDK and execute it as a JAR file with <code>&lt;jdk&gt;/bin/java -jar [bundle-file.nib]</code>.
-The launcher uses the command line arguments stored in <em>run.json</em> and adds all JAR files and directories in <em>input/classes/cp/</em> and <em>input/classes/p/</em> to the class path and module path, respectively.</p>
-
-<p>The launcher also comes with a separate command-line interface described in its help text:</p>
-<pre><code>This native image bundle can be used to launch the bundled application.
-
-Usage: java -jar bundle-file [options] [bundle-application-options]
-
-where options include:
-
-    --with-native-image-agent[,update-bundle[=&lt;new-bundle-name&gt;]]
-                runs the application with a native-image-agent attached
-                'update-bundle' adds the agents output to the bundle-files class path.
-                '=&lt;new-bundle-name&gt;' creates a new bundle with the agent output instead.
-                Note 'update-bundle' requires native-image to be installed
-
-    --container[=&lt;container-tool&gt;][,dockerfile=&lt;Dockerfile&gt;]
-                sets up a container image for execution and executes the bundled application
-                from inside that container. Requires podman or rootless docker to be installed.
-                If available, 'podman' is preferred and rootless 'docker' is the fallback. Specifying
-                one or the other as '=&lt;container-tool&gt;' forces the use of a specific tool.
-                'dockerfile=&lt;Dockerfile&gt;': Use a user provided 'Dockerfile' instead of the Dockerfile
-                bundled with the application
-
-    --verbose   enable verbose output
-    --help      print this help message
-</code></pre>
-
-<p>Running the bundled application with the <code>--with-native-image-agent</code> argument requires a <code>native-image-agent</code> library to be available.
-The output of the <code>native-image-agent</code> is written to _<bundle-name>.output/launcher/META-INF/native-image/<bundle-name>-agent_.
-If native image agents output should be inserted into the bundle with `,update-bundle`, the launcher then also requires `native-image`.
-The `update-bundle` option executes the command `native-image --bundle-apply=<bundle-name>.nib --bundle-create=<bundle-name>.nib -cp <bundle-name>.output/launcher` after executing the bundled application with the `native-image-agent` attached.</bundle-name></bundle-name></bundle-name></bundle-name></bundle-name></p>
-
-<p>The <code>container</code> option realizes a similar behavior to <a href="#building-in-a-container">containerized image builds</a>.
-However, the only exception is that in this case the application is executed inside the container instead of <code>native-image</code>.
-Every bundle contains a Dockerfile which is used for executing the bundled application in a container.
-However, this Dockerfile can be overwritten by adding <code>,dockerfile=&lt;path-to-dockerfile&gt;</code> to the <code>--container</code> argument.</p>
-
-<p>The bundle launcher only consumes options it knows, all other arguments are passed on to the bundled application.
-If the bundle launcher parses <code>--</code> without a specified option, the launcher stops parsing arguments.
-All remaining arguments are then also passed on to the bundled application.</p>
     
       <h2 id="bundle-file-format">
         
@@ -977,25 +880,19 @@ Inside a bundle you can find the following inner structure:</p>
 │                              * Bundle format version (BundleFileVersion{Major,Minor})
 │                              * Platform and architecture the bundle was created on 
 │                              * GraalVM / Native-image version used for bundle creation
-├── com.oracle.svm.driver.launcher &lt;- launcher for executing the bundled application
 ├── input &lt;- All information required to rebuild the image
 │   ├── auxiliary &lt;- Contains auxiliary files passed to native-image via arguments
-│   │                (for example, external `config-*.json` files or PGO `*.iprof`-files)
+│   │                (e.g. external `config-*.json` files or PGO `*.iprof`-files)
 │   ├── classes   &lt;- Contains all class-path and module-path entries passed to the builder
 │   │   ├── cp
 │   │   └── p
 │   └── stage
 │       ├── build.json          &lt;- Full native-image command line (minus --bundle options)
-│       ├── container.json            &lt;- Containerization tool, tool version and container
-│       │                                image name (not available information is omitted)
-│       ├── Dockerfile                 &lt;- Dockerfile used for building the container image
 │       ├── environment.json              &lt;- Environment variables used in the image build
 │       ├── path_canonicalizations.json  &lt;- Record of path-canonicalizations that happened
-│       │                                       during bundle creation for the input files
-│       ├── path_substitutions.json          &lt;- Record of path-substitutions that happened
-│       │                                       during bundle creation for the input files                                        
-│       └── run.json            &lt;- Full command line for executing the bundled application
-│                                                        (minus class path and module path)
+│       │                                       during bundle creation for the input files  
+│       └── path_substitutions.json          &lt;- Record of path-substitutions that happened
+│                                               during bundle creation for the input files
 └── output
     ├── default
     │   ├── myimage         &lt;- Created image and other output created by the image builder 
@@ -1015,17 +912,17 @@ Inside a bundle you can find the following inner structure:</p>
 <p>The layout of a bundle file itself is versioned.
 There are two properties in <em>META-INF/nibundle.properties</em> that declare which version of the layout a given bundle file is based on.
 Bundles currently use the following layout version:</p>
-<pre><code>BundleFileVersionMajor=0
+<pre><code class="language-shell">BundleFileVersionMajor=0
 BundleFileVersionMinor=9
 </code></pre>
 
 <p>Future versions of GraalVM might alter or extend the internal structure of bundle files.
 The versioning enables us to evolve the bundle format with backwards compatibility in mind.</p>
     
-      <h3 id="input-data">
+      <h3 id="input">
         
         
-          Input Data <a href="#input-data" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          input <a href="#input" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
@@ -1042,18 +939,18 @@ These include:</p>
 </ul>
 
 <p>The state of environment variables that are relevant for the build are captured in <em>input/stage/environment.json</em>.
-For every <code>-E</code> argument that was seen when the bundle was created, a snapshot of its key-value pair is recorded in the file.
+For every <code>-E</code> argument that were seen when the bundle was created, a snapshot of its key-value pair is recorded in the file.
 The remaining files <em>path_canonicalizations.json</em> and <em>path_substitutions.json</em> contain a record of the file-path transformations that were performed by the <code>native-image</code> tool based on the input file paths as specified by the original command line arguments.</p>
     
-      <h3 id="output-data">
+      <h3 id="output">
         
         
-          Output Data <a href="#output-data" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          output <a href="#output" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>If a native executable is built as part of building the bundle (for example, the <code>dry-run</code> option was not used), you also have an <em>output</em> directory in the bundle.
+<p>If a native executable is built as part of building the bundle (for example, the <code>--dry-run</code> option was not used), you also have an <em>output</em> directory in the bundle.
 It contains the executable that was built along with any other files that were generated as part of building.
 Most output files are located in the directory <em>output/default</em> (the executable, its debug info, and debug sources).
 Builder output files, that would have been written to arbitrary absolute paths if the executable had not been built in the bundle mode, can be found in <em>output/other</em>.</p>
@@ -1186,9 +1083,8 @@ Builder output files, that would have been written to arbitrary absolute paths i
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

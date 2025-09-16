@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -238,7 +237,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            GraalJS
+            JavaScript and Node.js Reference
           </a>
         </li>
 
@@ -274,7 +273,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              GraalJS Compatibility
+              JavaScript Compatibility
             </a>
           </li>
 
@@ -307,7 +306,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalJS
+              Migration Guide from Nashorn to GraalVM JavaScript
             </a>
           </li>
 
@@ -318,7 +317,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalJS
+              Migration Guide from Rhino to GraalVM JavaScript
             </a>
           </li>
 
@@ -367,7 +366,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalJS on a Stock JDK
+              Run GraalVM JavaScript on a Stock JDK
             </a>
           </li>
 
@@ -468,14 +467,14 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM provides a fully-compliant ECMAScript 2024 JavaScript runtime.
+<p>GraalVM provides a fully-compliant ECMAScript 2022 JavaScript language runtime.
 As such, it can run JavaScript code in a variety of embedding scenarios, including <a href="https://medium.com/graalvm/mle-executing-javascript-in-oracle-database-c545feb1a010">Oracle Database</a>, any Java-based application, and Node.js.</p>
 
-<p>Depending on the embedding scenario, applications have access to different built-in capabilities.
-For example, Node.js applications executed using GraalVM’s <code>bin/node</code> executable have access to all of Node.js’ APIs, including built-in Node.js modules such as <code>fs</code>, <code>http</code>, and so on.
+<p>Depending on the GraalVM’s JavaScript embedding scenario, applications have access to different built-in capabilities.
+For example, Node.js applications executed using GraalVM’s <code>bin/node</code> executable have access to all of Node.js’ APIs, including built-in Node.js modules such as <code>fs</code>, <code>http</code>, etc.
 Conversely, JavaScript code embedded in a Java application has access to limited capabilities, as specified through the <a href="/dev/reference-manual/embed-languages/#compile-and-run-a-polyglot-application">Context API</a>, and do not have access to Node.js built-in modules.</p>
 
-<p>This guide describes the main differences between a Node.js application and JavaScript embedded in a Java application.</p>
+<p>This guide describes the main differences between a Node.js application and a GraalVM JavaScript application embedded in Java.</p>
     
       <h2 id="context-creation">
         
@@ -485,12 +484,12 @@ Conversely, JavaScript code embedded in a Java application has access to limited
         
       </h2>
 
-<p>JavaScript code in GraalVM can be executed using an execution <em>context</em>.</p>
+<p>JavaScript code in GraalVM can be executed using a GraalVM execution <em>Context</em>.</p>
 
 <p>In a Java application, a new context can be created using the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html"><code>Context</code> API</a>.
-New contexts can be configured in multiple ways, and configuration options include exposing access to Java classes, allowing access to IO, and so on.
+New contexts can be configured in multiple ways, and configuration options include exposing access to Java classes, allowing access to IO, etc.
 A list of context creation options can be found in the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html">API documentation</a>.
-In this scenario, Java classes can be exposed to JavaScript by using GraalVM’s <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html#getPolyglotBindings">Polyglot <code>Bindings</code></a>.</p>
+In this scenario, Java classes can be exposed to JavaScript by using GraalVM’s <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html#getPolyglotBindings--">polyglot <code>Bindings</code></a>.</p>
 
 <p>In a Node.js application, the GraalVM <code>Context</code> executing the application is pre-initialized by the Node.js runtime, and cannot be configured by the user application.
 In this scenario, Java classes can be exposed to the Node.js application by using the <code>--vm.cp=</code> command line option of the <code>bin/node</code> command, as described below.</p>
@@ -504,10 +503,16 @@ In this scenario, Java classes can be exposed to the Node.js application by usin
       </h2>
 
 <p>JavaScript applications can interact with Java classes using the <code>Java</code> built-in object.
-This object is available by default in the <code>js</code> and <code>node</code> launchers, but accessing Java classes is only possible in the JVM standalone (that have <code>-jvm</code> in the name).</p>
+The object is not available by default, and can be enabled in the following way:</p>
 
-<p>When embedding JavaScript using the Polyglot API, you have to explicitly enable host access in the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html"><code>Context.Builder</code></a> (<code>allowHostAccess</code>, <code>allowHostClassLookup</code>).
-More details on the JavaScript-Java interoperability are available in the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability guide</a>.</p>
+<ol>
+  <li>In Node.js mode, start GraalVM using the <code>bin/node --jvm</code> command.</li>
+  <li>In Java, create a GraalVM context using the <code>withHostInterop()</code> option, e.g.:
+    <pre><code class="language-java">Context.create("js").withHostInterop()
+</code></pre>
+    <p>More details on the Java interoperability capabilities of GraalVM JavaScript are available in <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a>.</p>
+  </li>
+</ol>
     
       <h2 id="multithreading">
         
@@ -517,7 +522,7 @@ More details on the JavaScript-Java interoperability are available in the <a hre
         
       </h2>
 
-<p>A polyglot <code>Context</code> running JavaScript enforces a “share-nothing” model of parallelism: no JavaScript values can be accessed by two concurrent Java threads at the same time.
+<p>A GraalVM context running JavaScript enforces a “share-nothing” model of parallelism: no JavaScript values can be accessed by two concurrent Java threads at the same time.
 In order to leverage parallel execution, multiple contexts have to be created and executed from multiple threads:</p>
 
 <ol>
@@ -527,7 +532,7 @@ The Worker threads API ensures that no sharing can happen between two parallel c
 As long as a context is not accessed by two threads at the same time, parallel execution happens safely.</li>
 </ol>
 
-<p>More details on parallel execution in GraalJS are available in <a href="https://medium.com/graalvm/multi-threaded-java-javascript-language-interoperability-in-graalvm-2f19c1f9c37b">this blog post</a>.</p>
+<p>More details on parallel execution in GraalVM JavaScript are available in <a href="https://medium.com/graalvm/multi-threaded-java-javascript-language-interoperability-in-graalvm-2f19c1f9c37b">this blog post</a>.</p>
     
       <h2 id="java-libraries">
         
@@ -537,15 +542,15 @@ As long as a context is not accessed by two threads at the same time, parallel e
         
       </h2>
 
-<p>Java libraries can be accessed from GraalJS through the <code>Java</code> built-in object.
-In order for a Java library to be accessible from a <code>Context</code>, its JAR files need to be added to the class path. 
-This can be done in the following way:</p>
+<p>Java libraries can be accessed from JavaScript in GraalVM through the <code>Java</code> built-in object.
+In order for a Java library to be accessible from a <code>Context</code>, its <code>jar</code> files need to be added to the GraalVM classpath. This can be done in the following way:</p>
+
 <ol>
-  <li>In Node.js mode, the class path can be modified using the <code>--vm.cp</code> option.</li>
+  <li>In Node.js mode, the classpath can be modified using the <code>--jvm.cp</code> option.</li>
   <li>In Java, the default Java’s <code>-cp</code> option can be used.</li>
 </ol>
 
-<p>Read more in <a href="/dev/reference-manual/js/Options/">Command-line Options</a>.</p>
+<p>More details on GraalVM command line options are available in <a href="/dev/reference-manual/js/Options/">Options</a>.</p>
     
       <h2 id="javascript-packages-and-modules">
         
@@ -559,26 +564,13 @@ This can be done in the following way:</p>
 
 <ol>
   <li>In Node.js mode, JavaScript modules are handled by the Node.js runtime.
-Therefore, GraalJS supports all modules supported by Node.js (including ES modules, CommonJS modules, and native modules).</li>
-  <li>In Java mode, GraalJS can execute any JavaScript module or package that does not depend on native Node.js built-in modules (such as <code>fs</code>, <code>http</code>, and so on).
+Therefore, GraalVM JavaScript supports all modules supported by Node.js (including ES modules, CommonJS modules, and native modules).</li>
+  <li>In Java mode, GraalVM JavaScript can execute any JavaScript module or package that does not depend on native Node.js built-in modules (such as <code>'fs'</code>, <code>'http'</code>, etc.)
 Modules can be loaded using a package bundler, or using the available built-in mechanisms for ES modules.
-CommonJS modules are supported in Java mode under an experimental option.</li>
+CommonJS modules are supported in Java mode under an experimental flag.</li>
 </ol>
 
 <p>More details on JavaScript modules are available in <a href="/dev/reference-manual/js/Modules/">Modules</a>.</p>
-    
-      <h3 id="related-documentation">
-        
-        
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<ul>
-  <li><a href="/dev/reference-manual/js/NodeJS/">Getting Started with Node.js</a></li>
-  <li><a href="/dev/reference-manual/js/Modules/">Using JavaScript Modules and Packages in GraalJS</a></li>
-</ul>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -695,9 +687,8 @@ CommonJS modules are supported in Java mode under an experimental option.</li>
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

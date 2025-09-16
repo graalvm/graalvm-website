@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -236,7 +235,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/espresso/">
-            Espresso
+            Espresso (Java on Truffle)
           </a>
         </li>
 
@@ -424,16 +423,16 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Espresso enables you to interface other “Truffle” languages (languages which interpreters are implemented with the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>) to create polyglot programs—programs written in more than one language.</p>
+<p>Java on Truffle allows you to interface other “Truffle” languages (languages which interpreters are implemented with the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>) to create polyglot programs – programs written in more than one language.</p>
 
-<p>This guide describes how to load code written in other languages, how to export and import objects between languages, how to use Espresso objects from a foreign language, how to use foreign objects from Espresso, and how to embed in a Java application.</p>
+<p>This guide describes how to load code written in foreign languages, how to export and import objects between languages, how to use Java on Truffle objects from a foreign language, how to use foreign objects from Java on Truffle, and how to embed in host Java.</p>
 
-<p>To avoid confusion, the terms <em>host</em> and <em>guest</em> are used to differentiate the different layers where Java is executed. Espresso refers to the guest layer.</p>
+<p>To avoid confusion, the terms <em>host</em> and <em>guest</em> are used to differentiate the different layers where Java is executed. Java on Truffle refers to the guest layer.</p>
 
 <p>You pass polyglot options to the <code>java -truffle</code> launcher.
 If you are using the native configuration, you will need to use the <code>--polyglot</code> flag to get access to other languages.</p>
 
-<p>Foreign objects must “inhabit” a guest Java type when flowing into Espresso.
+<p>Foreign objects must “inhabit” a guest Java type when flowing into Java on Truffle.
 How this type is attached to foreign objects is an implementation detail.</p>
     
       <h2 id="polyglot">
@@ -444,10 +443,11 @@ How this type is attached to foreign objects is an implementation detail.</p>
         
       </h2>
 
-<p>Espresso provides a guest Java Polyglot API, described in <code>polyglot.jar</code>.
-This JAR file is automatically injected in a guest Java context, but can be excluded with <code>--java.Polyglot=false</code>.</p>
+<p>Java on Truffle provides a guest Java Polyglot API, described in <code>polyglot.jar</code>.
+This JAR is automatically injected on guest Java contexts but can be excluded with <code>--java.Polyglot=false</code>.</p>
 
 <p>You can import the <code>Polyglot</code> class to interact with other guest languages:</p>
+
 <pre><code class="language-java">// guest java
 import com.oracle.truffle.espresso.polyglot.Polyglot;
 
@@ -477,10 +477,10 @@ Object elem3 = objects[3];
 assert elem3 == null;
 </code></pre>
 
-<p>The <code>Polyglot.cast(targetClass, obj)</code> method is an augmented Java cast, for example, <code>targetClass.cast(obj)</code>:</p>
+<p>The <code>Polyglot.cast(targetClass, obj)</code> method is an augmented Java cast, e.g., <code>targetClass.cast(obj)</code>:</p>
 <ul>
   <li>Java cast succeeds ⇒ <code>Polyglot.cast</code> succeeds.</li>
-  <li>Java cast does not succeeds, <code>Polyglot.cast</code> can “re-type” foreign objects, for example, to cast to <code>Integer</code>, the foreign object must <code>fitsInInt</code>.</li>
+  <li>Java cast does not succeeds, <code>Polyglot.cast</code> can “re-type” foreign objects, e.g., to cast to <code>Integer</code>, the foreign object must <code>fitsInInt</code>.</li>
   <li>If <code>Polyglot.cast</code> fails, it will throw <code>ClassCastException</code> similar to <code>Class#cast</code>.</li>
 </ul>
 
@@ -567,11 +567,11 @@ assert elem3 == null;
 <pre><code>// guest java
 Object foreignObject = Polyglot.importObject("foreign_object");
 
-// typed imports
+// Also typed imports
 String userName = Polyglot.importObject("user_name", String.class);
 int year = Polyglot.importObject("year", int.class);
 
-// exports
+// And exports
 Polyglot.exportObject("data", new double[]{56.77, 59.23, 55.67, 57.50, 64.44, 61.37);
 Polyglot.exportObject("message", "Hello, Espresso!");
 </code></pre>
@@ -584,7 +584,7 @@ Polyglot.exportObject("message", "Hello, Espresso!");
         
       </h2>
 
-<p>Espresso provides an explicit guest API to access the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/interop/InteropLibrary.html">Interop protocol</a>.
+<p>Java on Truffle provides an explicit guest API to access the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/interop/InteropLibrary.html">Interop protocol</a>.
 It contains methods mimicking the interop protocol messages.
 This API can be used on guest Java objects as well.</p>
 
@@ -608,7 +608,7 @@ System.out.println(Interop.asInt(elem0));     // prints 2
         
       </h2>
 
-<p>Espresso is embedded via the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a>, which is part of GraalVM.</p>
+<p>Java on Truffle is embedded via the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a>, which is part of GraalVM.</p>
 
 <pre><code class="language-java">// host java
 import org.graalvm.polyglot.*;
@@ -634,7 +634,7 @@ class Embedding {
 <p>A number of useful context option can be set with <code>contextBuilder.option(key, value)</code>:</p>
 <ul>
   <li>Java properties can be added by settings <code>java.Properties.property.name</code> to the desired value (in this case this would set the <code>property.name</code>).</li>
-  <li><code>java.Properties.java.class.path</code> can be used to set the class path of the Java on Truffle context.</li>
+  <li><code>java.Properties.java.class.path</code> can be used to set the classpath of the Java on Truffle context.</li>
   <li><code>java.Properties.java.library.path</code> can be used to set the native library path of the Java on Truffle context.</li>
   <li><code>java.EnableAssertions</code> can be set to <code>true</code> to enable assertions.</li>
   <li><code>java.EnableSystemAssertions</code> can be set to <code>true</code> to enable assertions in the Java standard library.</li>
@@ -645,10 +645,10 @@ class Embedding {
   <li><code>java.PolyglotInterfaceMappings</code> can be set to a semicolon-separated list of 1:1 interface type mappings to automatically construct guest proxies for host objects that implement declared interfaces in the list. Please refer to more details in a dedicated section below.</li>
 </ul>
 
-<p><strong>*Espresso does not support evaluation (<code>.eval</code>) of Java sources.</strong></p>
+<p><strong>*Java on Truffle does not support evaluation (<code>.eval</code>) of Java sources.</strong></p>
 
-<p>In Java, methods can be overloaded, for example, several methods can share the same name, with different signatures.
-To remove ambiguity, Espresso allows to specify the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-MethodDescriptor">method descriptor</a> in the <code>methodName/methodDescriptor</code> form:</p>
+<p>In Java, methods can be overloaded, e.g., several methods can share the same name, with different signatures.
+To remove ambiguity, Java on Truffle allows to specify the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-MethodDescriptor">method descriptor</a> in the <code>methodName/methodDescriptor</code> form:</p>
 
 <pre><code class="language-java">// host java
 Value java_lang_String = polyglot.getBindings("java").getMember("java.lang.String");
@@ -674,7 +674,7 @@ Value java_lang_Class = polyglot.getBindings("java").getMember("java.lang.Class"
 // Class#forName(String) returns the Class&lt;Integer&gt; instance.
 Value integer_class = java_lang_Class.invokeMember("forName", "java.lang.Integer");
 
-// Static class accessor to Class&lt;?&gt; instance and vice versa.
+// Static class accessor to Class&lt;?&gt; instance and viceversa.
 assert integer_class.equals(java_lang_Integer.getMember("class"));
 assert java_lang_Integer.equals(integer_class.getMember("static"));
 
@@ -685,12 +685,12 @@ assert java_lang_Number.equals(java_lang_Integer.getMember("super"));
       <h3 id="converting-host-objects-to-guest-types-using-type-converters">
         
         
-          Converting Host Objects to Guest Types Using Type Converters <a href="#converting-host-objects-to-guest-types-using-type-converters" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Converting host objects to guest types using type converters <a href="#converting-host-objects-to-guest-types-using-type-converters" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>Espresso has built-in support for declaring type conversion of host objects to proper guest-typed objects. This is done via context builder options as described above. The main idea is to allow transparent flow of objects from a host to a guest without having to perform guest type checks when host objects enter an embedded Espresso context. Specifically the following options can be set to control type conversion for an embedded context:</p>
+<p>Since version 22.3.0 Java on Truffle has built-in support for declaring type conversion of host objects to proper guest-typed objects. This is done via context builder options as described above. The main idea is to allow transparent flow of objects from host to guest without having to perform guest type checks when host objects enter an embedded Java on Truffle context. Specifically the follwoing options can be set to control type conversion for an embedded context:</p>
     
       <h4 id="javapolyglottypeconverters">
         
@@ -699,7 +699,7 @@ assert java_lang_Number.equals(java_lang_Integer.getMember("super"));
         
         
       </h4>
-<p>This option takes precedence over <code>java.PolyglotInterfaceMappings</code> and thus, if a dedicated type converter function is defined, no other automatic interface mapping proxies are generated Espresso.</p>
+<p>This option takes precedence over <code>java.PolyglotInterfaceMappings</code> and thus, if a dedicated type converter function is defined, no other automatic interface mapping proxies are generated by Java on Truffle.</p>
 
 <p><em>Note: Declared type converters must implement the <code>GuestTypeConversion</code> interface located in the <code>com.oracle.truffle.espresso.polyglot</code> package in <code>polyglor.jar</code>.</em></p>
 <pre><code class="language-java">package com.oracle.truffle.espresso.polyglot;
@@ -710,6 +710,7 @@ public interface GuestTypeConversion&lt;T&gt; {
 </code></pre>
 
 <p>For each type converter declared use one option call like this:</p>
+
 <pre><code class="language-java">// host java
 Context polyglot = Context.newBuilder().allowAllAccess(true).
         option("java.PolyglotTypeConverters.java.math.BigDecimal", "guest.context.path.BigDecimalConverter").
@@ -739,7 +740,7 @@ public class BigDecimalConverter implements GuestTypeConversion&lt;BigDecimal&gt
 }
 
 </code></pre>
-<p>The <code>java.math.Bigdecimal</code> part of the option declares the fully qualified meta name of a host object entering Espresso.</p>
+<p>The <code>java.math.Bigdecimal</code> part of the option declares the fully qualified meta name of a host object entering Java on Truffle.</p>
     
       <h4 id="javapolyglotinterfacemappings">
         
@@ -749,9 +750,9 @@ public class BigDecimalConverter implements GuestTypeConversion&lt;BigDecimal&gt
         
       </h4>
 
-<p>If there are no dedicated <code>java.PolyglotTypeConverters</code> for a host object flowing into an embedded Espresso context, automatic interface type mapping kicks in. <code>java.PolyglotInterfaceMappings</code> enables seamless interface type sharing between the host and the embedded context.</p>
+<p>If there are no dedicated <code>java.PolyglotTypeConverters</code> for a host object flowing into an embedded Java on Truffle context, automatic interface type mapping kicks in. <code>java.PolyglotInterfaceMappings</code> enables seamless interface type sharing between the host and the embedded context.</p>
 
-<p>The following example shows how this option can be used to allow passing common JDK collection types by interface to an embedded Espresso context:</p>
+<p>The following example shows how this option can be used to allow passing common JDK collection types by interface to an embedded Java on Truffle context:</p>
 
 <pre><code class="language-java">// host java
 builder.option("java.PolyglotInterfaceMappings", getInterfaceMappings());
@@ -777,13 +778,14 @@ private static String getInterfaceMappings(){
         
       </h2>
 
-<p>Espresso is designed to be a multithreaded language and much of the ecosystem expects threads to be available.
+<p>Java on Truffle is designed to be a multi-threaded language and much of the ecosystem expects threads to be available.
 This may be incompatible with other Truffle languages which do not support threading, so you can disable the creation of multiple threads with the option <code>--java.MultiThreaded=false</code>.</p>
 
 <p>When this option is enabled, finalizers will not run, neither the <code>ReferenceQueue</code> notification mechanism.
 Both these features would require starting new threads. Note that the garbage-collection of weakly reachable objects remains unaffected.</p>
 
 <p>Instead, reference processing can be manually triggered through a special command, only available in single-threaded environments.</p>
+
 <pre><code class="language-java">// Host Java
 // Will trigger Reference processing and run finalizers
 polyglot.eval("java", "&lt;ProcessReferences&gt;");
@@ -906,9 +908,8 @@ polyglot.eval("java", "&lt;ProcessReferences&gt;");
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

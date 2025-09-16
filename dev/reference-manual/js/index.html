@@ -9,7 +9,7 @@
 
   <title>
     
-      GraalJS
+      GraalVM JavaScript Implementation
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -238,7 +237,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            GraalJS
+            JavaScript and Node.js Reference
           </a>
         </li>
 
@@ -274,7 +273,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              GraalJS Compatibility
+              JavaScript Compatibility
             </a>
           </li>
 
@@ -307,7 +306,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalJS
+              Migration Guide from Nashorn to GraalVM JavaScript
             </a>
           </li>
 
@@ -318,7 +317,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalJS
+              Migration Guide from Rhino to GraalVM JavaScript
             </a>
           </li>
 
@@ -351,7 +350,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalJS on a Stock JDK
+              Run GraalVM JavaScript on a Stock JDK
             </a>
           </li>
 
@@ -436,248 +435,219 @@ $(document).ready(function(){
 
 
         
-        <h1 id="graaljs">
+        <h1 id="graalvm-javascript-implementation">
         
         
-          GraalJS
+          GraalVM JavaScript Implementation
         
         
       </h1>
 
-<p>GraalJS is a fast JavaScript language implementation built on top of GraalVM.
-It is ECMAScript-compliant, provides interoperability with Java and other Graal languages, common tooling, and, if run on the GraalVM JDK, provides the best performance with the Graal JIT compiler by default.
-You can also use GraalJS with Oracle JDK or OpenJDK.</p>
-
-<p>GraalJS is a suitable replacement for projects wanting to <a href="#migration-guides">migrate from Nashorn or Rhino</a> to a JavaScript engine that supports new ECMAScript standards and features.
-You can easily add GraalJS to your Java application as shown below.</p>
+<p>GraalVM provides an ECMAScript-compliant runtime to execute JavaScript and Node.js applications.
+It is fully standard compliant, executes applications with high performance, and provides all benefits from the GraalVM stack, including language interoperability and common tooling.
+This reference documentation provides information on available JavaScript engine configurations, the Node.js runtime, the <code>javax.script.ScriptEngine</code> implementation, multithreading support details, possible embedding scenarios, and more.
+To migrate the code previously targeted to the Nashorn or Rhino engines, migration guides are available.</p>
     
-      <h2 id="getting-started-with-graaljs-on-the-jvm">
+      <h2 id="running-javascript">
         
         
-          Getting Started with GraalJS on the JVM <a href="#getting-started-with-graaljs-on-the-jvm" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Running JavaScript <a href="#running-javascript" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+<p>Since GraalVM 22.2, the JavaScript support is packaged in a separate GraalVM component.
+It can be installed with the <em>GraalVM Updater</em>:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install js
+</code></pre>
+
+<p>Alternatively, you can download the JavaScript component and install it from a file, e.g.:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install --file ~/Downloads/js-...-.jar
+</code></pre>
+<p>This installs <code>js</code> in the <code>$JAVA_HOME/bin</code> directory.
+When the JavaScript component is installed, GraalVM can run plain JavaScript (ECMAScript) code:</p>
+<pre><code class="language-shell">$JAVA_HOME/bin/js [options] [filename...] -- [args]
+</code></pre>
+
+<p>For information about the compatibility of GraalVM JavaScript with existing standards and engines, see <a href="/dev/reference-manual/js/JavaScriptCompatibility/">JavaScriptCompatibility</a>.</p>
+    
+      <h2 id="running-nodejs">
+        
+        
+          Running Node.js <a href="#running-nodejs" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+<p>GraalVM is capable of executing unmodified Node.js applications.
+Applications can import npm modules, including native ones.
+Since GraalVM 21.1, the Node.js support is packaged in a separate GraalVM component.
+It can be installed with the <em>GraalVM Updater</em>:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install nodejs
+</code></pre>
+
+<p>Alternatively, you can download the Node.js component and install it from a file, e.g.:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/gu install --file ~/Downloads/nodejs-installable-...-.jar
+</code></pre>
+
+<p>This installs <code>node</code> and <code>npm</code> launchers in the <code>$JAVA_HOME/bin</code> directory.
+Use the <code>node</code> utility to execute Node.js applications:</p>
+<pre><code class="language-shell">node [options] [filename] [args]
+</code></pre>
+
+<p>To install a Node.js package, use the <code>npm</code> launcher from <code>$JAVA_HOME/bin</code>.
+The <code>npm</code> command is equivalent to the default Node.js command and supports all Node.js APIs.</p>
+
+<ol>
+  <li>Install the <code>colors</code> and <code>ansispan</code> packages using <code>npm install</code> as follows:
+    <pre><code class="language-shell"> npm install colors ansispan
+</code></pre>
+    <p>After the packages are installed, you can use them from your application.</p>
+  </li>
+  <li>Add the following code snippet to a file named <code>app.js</code> and save it in the same directory where you installed the Node.js packages:
+    <pre><code class="language-js"> const http = require("http");
+ const span = require("ansispan");
+ require("colors");
+
+ http.createServer(function (request, response) {
+     response.writeHead(200, {"Content-Type": "text/html"});
+     response.end(span("Hello Graal.js!".green));
+ }).listen(8000, function() { console.log("Graal.js server running at http://127.0.0.1:8000/".red); });
+
+ setTimeout(function() { console.log("DONE!"); process.exit(); }, 2000);
+</code></pre>
+  </li>
+  <li>Execute it on GraalVM using the <code>node</code> command as follows:
+    <pre><code class="language-shell"> node app.js
+</code></pre>
+  </li>
+</ol>
+
+<p>For more information about running Node.js, continue to <a href="/dev/reference-manual/js/NodeJS/">Node.js Runtime</a>.
+Node.js functionality is available when an application is started from the <code>node</code> binary launcher.
+Certain limits apply when launching a Node.js application or accessing npm packages from a Java context, see <a href="/dev/reference-manual/js/NodeJSvsJavaScriptContext/">Node.js vs. Java Script Context</a>.</p>
+    
+      <h2 id="interoperability">
+        
+        
+          Interoperability <a href="#interoperability" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>To embed JavaScript in a Java host application, enable GraalJS by adding it as a project dependency.
-All necessary artifacts can be downloaded directly from Maven Central.
-All artifacts relevant to embedders can be found in the Maven dependency group <a href="https://central.sonatype.com/namespace/org.graalvm.polyglot">org.graalvm.polyglot</a>.</p>
+<p>GraalVM supports several other programming languages like Ruby, R, Python, and LLVM languages.
+While GraalVM is designed to run Node.js and JavaScript applications, it also provides interoperability between those languages and lets you execute code from or call methods in any of those languages using GraalVM Polyglot APIs.</p>
 
-<p>Below is the Maven configuration for a JavaScript embedding:</p>
-<pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-    &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-    &lt;version&gt;${graaljs.version}&lt;/version&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-    &lt;artifactId&gt;js&lt;/artifactId&gt;
-    &lt;version&gt;${graaljs.version}&lt;/version&gt;
-    &lt;type&gt;pom&lt;/type&gt;
-&lt;/dependency&gt;
-</code></pre>
-<p>This enables GraalJS which is built on top of Oracle GraalVM and licensed under the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC)</a>.
-Use <em>artifactId</em> <code>js-community</code> instead of <code>js</code> if you want to use GraalJS built on GraalVM Community Edition.</p>
+<p>To enable Node.js or JavaScript interoperability with other languages, pass the <code>--jvm</code> and <code>--polyglot</code> options. For example:</p>
 
-<p>Go step-by-step to create a Maven project, embedding JavaScript in Java, and run it.
-This example application was tested with GraalVM for JDK 23 and the GraalVM Polyglot API version 24.1.0.
-See how to install GraalVM on the <a href="https://www.graalvm.org/downloads/">Downloads page</a>.</p>
-
-<ol>
-  <li>Create a new Maven Java project named “helloworld” in your favorite IDE or from your terminal with the following structure:
-    <pre><code> ├── pom.xml
- └── src
-     ├── main
-     │   └── java
-     │       └── com
-     │           └── example
-     │               └── App.java
-</code></pre>
-    <p>For example, you can run this command to create a new Maven project using the quickstart archetype:</p>
-    <pre><code class="language-bash"> mvn archetype:generate -DgroupId=com.example -DartifactId=helloworld -DarchetypeArtifactId=maven-archetype-quickstart -DarchetypeVersion=1.5 -DinteractiveMode=false
-</code></pre>
-  </li>
-  <li>Replace the contents of <em>App.java</em> with the following code:
-    <pre><code class="language-java"> package com.example;
-
- import org.graalvm.polyglot.*;
- import org.graalvm.polyglot.proxy.*;
-
- public class App {
-
-     static String JS_CODE = "(function myFun(param){console.log('Hello ' + param + ' from JS');})";
-
-     public static void main(String[] args) {
-         String who = args.length == 0 ? "World" : args[0];
-         System.out.println("Hello " + who + " from Java");
-         try (Context context = Context.create()) {
-             Value value = context.eval("js", JS_CODE);
-             value.execute(who);
-         }
-     }
- }
-</code></pre>
-    <p>This example application uses the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">Polyglot API</a> and returns a JavaScript function as a Java value.</p>
-  </li>
-  <li>Add the following dependencies to <em>pom.xml</em> to include the JavaScript engine (GraalJS):
-    <pre><code class="language-xml"> &lt;dependencies&gt;
-     &lt;dependency&gt;
-         &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-         &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-         &lt;version&gt;${graaljs.version}&lt;/version&gt;
-     &lt;/dependency&gt;
-     &lt;dependency&gt;
-         &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-         &lt;artifactId&gt;js&lt;/artifactId&gt;
-         &lt;version&gt;${graaljs.version}&lt;/version&gt;
-         &lt;type&gt;pom&lt;/type&gt;
-     &lt;/dependency&gt;
- &lt;/dependencies&gt;
-</code></pre>
-    <p>Set the GraalJS and GraalVM Polyglot API versions by adding a <code>graaljs.version</code> property to the <code>&lt;properties&gt;</code> section.
- Alternatively, you can replace <code>${graaljs.version}</code> with the version string directly.
- For this example, use <code>24.1.0</code>:</p>
-    <pre><code class="language-xml"> &lt;properties&gt;
-     &lt;graaljs.version&gt;24.1.0&lt;/graaljs.version&gt;
- &lt;/properties&gt;
-</code></pre>
-  </li>
-  <li>Add the Maven plugins for compiling the project into a JAR file and copying all runtime dependencies into a directory to your <em>pom.xml</em> file:
-    <pre><code class="language-xml"> &lt;build&gt;
-     &lt;plugins&gt;
-         &lt;plugin&gt;
-             &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-             &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-             &lt;version&gt;3.13.0&lt;/version&gt;
-             &lt;configuration&gt;
-                 &lt;fork&gt;true&lt;/fork&gt;
-             &lt;/configuration&gt;
-         &lt;/plugin&gt;
-         &lt;plugin&gt;
-             &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-             &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
-             &lt;version&gt;3.4.2&lt;/version&gt;
-             &lt;configuration&gt;
-                 &lt;archive&gt;
-                     &lt;manifest&gt;
-                         &lt;mainClass&gt;com.example.App&lt;/mainClass&gt;
-                     &lt;/manifest&gt;
-                 &lt;/archive&gt;
-             &lt;/configuration&gt;
-         &lt;/plugin&gt;
-         &lt;plugin&gt;
-             &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-             &lt;artifactId&gt;maven-dependency-plugin&lt;/artifactId&gt;
-             &lt;version&gt;3.8.0&lt;/version&gt;
-             &lt;executions&gt;
-                 &lt;execution&gt;
-                     &lt;id&gt;copy-dependencies&lt;/id&gt;
-                     &lt;phase&gt;package&lt;/phase&gt;
-                     &lt;goals&gt;
-                         &lt;goal&gt;copy-dependencies&lt;/goal&gt;
-                     &lt;/goals&gt;
-                     &lt;configuration&gt;
-                         &lt;outputDirectory&gt;${project.build.directory}/modules&lt;/outputDirectory&gt;
-                         &lt;includeScope&gt;runtime&lt;/includeScope&gt;
-                         &lt;includeTypes&gt;jar&lt;/includeTypes&gt;
-                     &lt;/configuration&gt;
-                 &lt;/execution&gt;
-             &lt;/executions&gt;
-         &lt;/plugin&gt;
-     &lt;/plugins&gt;
- &lt;/build&gt;
-</code></pre>
-  </li>
-  <li>(Optional.) Add <em>module-info.java</em> to your application.
- If you would like to run your application on the module path, create a <em>module-info.java</em> file in <em>src/main/java</em> with the following contents:
-    <pre><code class="language-java"> module com.example {
-     requires org.graalvm.polyglot;
- }
-</code></pre>
-  </li>
-  <li>Compile and package the project:
-    <pre><code class="language-bash"> mvn clean package
-</code></pre>
-  </li>
-  <li>Run the application using GraalVM or another compatible JDK.
-If you’ve included <em>module-info.java</em> in your project (step 5), you can now run the application on the module path, using one of the following commands:
-    <pre><code class="language-bash">java --module-path target/modules:target/helloworld-1.0-SNAPSHOT.jar --module com.example/com.example.App "GraalVM"
-java -p target/modules:target/helloworld-1.0-SNAPSHOT.jar -m com.example/com.example.App "GraalVM"
-</code></pre>
-    <p>Otherwise, you can run with the dependencies on the module path and the application on the class path:</p>
-    <pre><code class="language-bash">java --module-path target/modules --add-modules=org.graalvm.polyglot -cp target/helloworld-1.0-SNAPSHOT.jar com.example.App "GraalVM"
-java --module-path target/modules --add-modules=org.graalvm.polyglot -jar target/helloworld-1.0-SNAPSHOT.jar "GraalVM"
-</code></pre>
-    <p>Alternatively, you can run with everything on the class path as well (in this case you need to use <code>*</code> or specify all JAR files):</p>
-    <pre><code class="language-bash">java -cp "target/modules/*:target/helloworld-1.0-SNAPSHOT.jar" com.example.App "GraalVM"
-# or using shell expansion:
-java -cp "$(find target/modules -name '*.jar' | tr '\n' :)target/helloworld-1.0-SNAPSHOT.jar" com.example.App "GraalVM"
-java -cp "$(printf %s: target/modules/*.jar)target/helloworld-1.0-SNAPSHOT.jar" com.example.App "GraalVM"
+<pre><code class="language-shell">node --jvm --polyglot
+Welcome to Node.js v16.14.2.
+Type ".help" for more information.
+&gt; var array = Polyglot.eval("python", "[1,2,42,4]")
+&gt; console.log(array[2]);
+42
+&gt; console.log(Polyglot.eval('R', 'runif(100)')[0]);
+0.8198353068437427
 </code></pre>
 
-    <blockquote>
-      <p>Note: We discourage bundling all dependencies into a single “fat” JAR (for example, using the Maven Assembly plugin) as it can cause issues and prevent ahead-of-time compilation with <a href="https://www.graalvm.org/reference-manual/native-image/">GraalVM Native Image</a>.
-Instead, we recommend using the original, separate JAR files for all <code>org.graalvm.*</code> dependencies, preferably on the module path.
-Learn more in the <a href="https://www.graalvm.org/reference-manual/embed-languages/#dependency-setup">Guide to Embedding Languages</a>.</p>
-    </blockquote>
-  </li>
-</ol>
+<p>For more information about interoperability with other programming languages, see <a href="/dev/reference-manual/polyglot-programming/">Polyglot Programming</a> for a general description.</p>
+    
+      <h2 id="interoperability-with-java">
+        
+        
+          Interoperability with Java <a href="#interoperability-with-java" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
 
-<p>The source code unit can be represented with a String, as shown in the example, a file, read from URL, and <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">other means</a>.
-By wrapping the function definition (<code>()</code>), you return the function immediately:</p>
-<pre><code class="language-java">Value f = context.eval("js", "(function f(x, y) { return x + y; })");
-Value result = f.execute(19, 23);
+<p>To access Java from JavaScript, use <code>Java.type</code>, as in the following example:</p>
+<pre><code class="language-shell">node --jvm
+&gt; var BigInteger = Java.type('java.math.BigInteger');
+&gt; console.log(BigInteger.valueOf(2).pow(100).toString(16));
+10000000000000000000000000
 </code></pre>
 
-<p>You can also lookup Java types from JavaScript and instantiate them, as demonstrated below:</p>
-<pre><code class="language-java">try (Context context = Context.newBuilder()
-                           .allowHostAccess(HostAccess.newBuilder(HostAccess.ALL).build())
-                           .allowHostClassLookup(className -&gt; true)
-                       .build()) {
-    java.math.BigDecimal v = context.eval("js",
-            "var BigDecimal = Java.type('java.math.BigDecimal');" +
-            "BigDecimal.valueOf(10).pow(20)")
-        .asHostObject();
-    assert v.toString().equals("100000000000000000000");
+<p>Vice versa, you can execute JavaScript from Java by embedding the JavaScript context in the Java program:</p>
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+import org.graalvm.polyglot.proxy.*;
+
+public class HelloPolyglot {
+
+    static String JS_CODE = "(function myFun(param){console.log('hello '+param);})";
+
+    public static void main(String[] args) {
+        System.out.println("Hello Java!");
+        try (Context context = Context.create()) {
+            Value value = context.eval("js", JS_CODE);
+            value.execute(args[0]);
+        }
+    }
 }
 </code></pre>
+<p>By wrapping the function definition (<code>()</code>), you return the function immediately.
+The source code unit can be represented with a String, as in the example, a file, read from URL, and <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">other means</a>.</p>
 
-<p>The Polyglot API offers many other ways to access a guest language code from Java, for example, by directly accessing JavaScript objects, numbers, strings, and arrays.
-Learn more about JavaScript to Java interoperability and find more examples in the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability guide</a>.</p>
+<p>Run the above Java program:</p>
+<pre><code class="language-shell">javac HelloPolyglot.java
+java HelloPolyglot JavaScript
+</code></pre>
+<p>This way you can evaluate JavaScript context embedded in Java, but you will not be able to call a function and set parameters in the function directly from the Java code.
+The Node.js runtime cannot be embedded into a JVM but has to be started as a separate process.</p>
+
+<p>For example, save this code as <em>app.js</em>:</p>
+<pre><code class="language-js">var HelloPolyglot = Java.type("HelloPolyglot");
+
+HelloPolyglot.main(["from node.js"]);
+
+console.log("done");
+</code></pre>
+<p>Then start <code>node</code> with the <code>--jvm</code> option to enable interoperability with Java:</p>
+<pre><code class="language-shell">node --jvm --vm.cp=. app.js
+Hello Java!
+hello from node.js
+done
+</code></pre>
+<p>By setting the classpath, you instruct <code>node</code> to start a JVM properly. 
+Both Node.js and JVM then run in the same process and the interoperability works using the same <code>Value</code> classes as above.</p>
+
+<p>Learn more about language interoperability in the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a> guide.</p>
     
-      <h3 id="related-documentation">
+      <h2 id="further-documentation">
         
         
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Further documentation <a href="#further-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
-      </h3>
+      </h2>
 
-<p>GraalJS is also available as a standalone distribution that you can download from <a href="https://github.com/oracle/graaljs/releases">GitHub</a>.
-Learn more <a href="https://github.com/oracle/graaljs/blob/master/README.md#standalone-distributions">here</a>.</p>
+<p>For additional information, refer to those documentation pages on specific topics around GraalVM JavaScript:</p>
 
-<p>We provide the following documentation for GraalJS users:</p>
+<ul>
+  <li><a href="/dev/reference-manual/js/FAQ/">Frequently Asked Questions</a></li>
+</ul>
+
+<p>Using GraalVM JavaScript:</p>
 <ul>
   <li><a href="/dev/reference-manual/js/JavaScriptCompatibility/">JavaScript Compatibility</a></li>
-  <li><a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a></li>
-  <li><a href="/dev/reference-manual/js/Options/">Options of the JavaScript Engine</a></li>
+  <li><a href="/dev/reference-manual/js/Options/">Options and Flags to the Engine</a></li>
   <li><a href="/dev/reference-manual/js/Multithreading/">Multithreading Support</a></li>
-  <li><a href="/dev/reference-manual/js/RunOnJDK/">Execute GraalJS on a Stock JDK</a></li>
+  <li><a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a></li>
+  <li><a href="/dev/reference-manual/js/RunOnJDK/">Execute GraalVM JavaScript on a Stock JDK</a></li>
 </ul>
-    
-      <h4 id="migration-guides">
-        
-        
-          Migration Guides
-        
-        
-      </h4>
 
-<p>Learn more about migration from legacy environments:</p>
+<p>Legacy environments:</p>
 <ul>
   <li><a href="/dev/reference-manual/js/NashornMigrationGuide/">Migration Guide from Nashorn</a></li>
   <li><a href="/dev/reference-manual/js/RhinoMigrationGuide/">Migration Guide from Rhino</a></li>
-  <li><a href="/dev/reference-manual/js/ScriptEngine/">Work with ScriptEngine</a></li>
+  <li><a href="/dev/reference-manual/js/ScriptEngine/">Work with a javax.script.ScriptEngine</a></li>
+</ul>
+
+<p>Node.js support:</p>
+<ul>
+  <li><a href="/dev/reference-manual/js/NodeJS/">Node.js Support</a></li>
+  <li><a href="/dev/reference-manual/js/NodeJSvsJavaScriptContext/">Differences between node’s native launcher and a Java Context</a></li>
 </ul>
 
       </div>
@@ -795,9 +765,8 @@ Learn more <a href="https://github.com/oracle/graaljs/blob/master/README.md#stan
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

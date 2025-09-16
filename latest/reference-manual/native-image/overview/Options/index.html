@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -564,7 +563,7 @@ $(document).ready(function(){
 <p>Native Image options can also be categorized as <strong>hosted</strong> or <strong>runtime</strong> options.</p>
 
 <ul>
-  <li><strong>Hosted options</strong>: to configure the build process—for example, influence what is included in the native binary and how it is built. 
+  <li><strong>Hosted options</strong>: to configure the build process—for example, influence what is included in the native binary and how it is built.
 These options use the prefix <code>-H:</code>.</li>
   <li><strong>Runtime options</strong>: to provide the initial value(s) when building the native binary, using the prefix <code>-R:</code>. At runtime, the default prefix is <code>-XX:</code> (this is application-specific and not mandated by Native Image).</li>
 </ul>
@@ -585,11 +584,10 @@ These options use the prefix <code>-H:</code>.</li>
   <li><code>-cp, -classpath, --class-path &lt;class search path of directories and ZIP/JAR files&gt;</code>: a <code>:</code> (<code>;</code> on Windows) separated list of directories, JAR archives, and ZIP archives to search for class files</li>
   <li><code>-p &lt;module path&gt;, --module-path &lt;module path&gt;</code>: a <code>:</code> (<code>;</code> on Windows) separated list of directories. Each directory is a directory of modules.</li>
   <li><code>--add-modules &lt;module name&gt;[,&lt;module name&gt;...]</code>: add root modules to resolve in addition to the initial module. <code>&lt;module name&gt;</code> can also be <code>ALL-DEFAULT</code>, <code>ALL-SYSTEM</code>, <code>ALL-MODULE-PATH</code>.</li>
-  <li><code>-D&lt;name&gt;=&lt;value&gt;</code>: set a system property</li>
+  <li><code>-D&lt;name&gt;=&lt;value&gt;</code>: set a system property for image build time only</li>
   <li><code>-J&lt;flag&gt;</code>: pass an option directly to the JVM running the <code>native-image</code> builder</li>
   <li><code>--diagnostics-mode</code>: enable diagnostics output: class initialization, substitutions, etc.</li>
   <li><code>--enable-preview</code>: allow classes to depend on preview features of this release</li>
-  <li><code>--enable-native-access &lt;module name&gt;[,&lt;module name&gt;...]</code>: enable modules that are permitted to perform restricted native operations. <code>&lt;module name&gt;</code> can also be <code>ALL-UNNAMED</code></li>
   <li><code>--verbose</code>: enable verbose output</li>
   <li><code>--version</code>: print the product version and exit</li>
   <li><code>--help</code>: print this help message</li>
@@ -602,16 +600,17 @@ These options use the prefix <code>-H:</code>.</li>
   <li><code>--enable-http</code>: enable HTTP support in a native executable</li>
   <li><code>--enable-https</code>: enable HTTPS support in a native executable</li>
   <li><code>--enable-monitoring</code>: enable monitoring features that allow the VM to be inspected at run time. A comma-separated list can contain <code>heapdump</code>, <code>jfr</code>, <code>jvmstat</code>, <code>jmxserver</code> (experimental), <code>jmxclient</code> (experimental), <code>threaddump</code>, or <code>all</code> (deprecated behavior: defaults to <code>all</code> if no argument is provided). For example: <code>--enable-monitoring=heapdump,jfr</code>.</li>
-  <li><code>--enable-sbom</code>: embed a Software Bill of Materials (SBOM) in the executable or shared library for passive inspection. A comma-separated list can contain <code>cyclonedx</code>, <code>strict</code> (defaults to <code>cyclonedx</code> if no argument is provided), or <code>export</code> to save the SBOM to the native executable’s output directory. The optional <code>strict</code> flag aborts the build if any class cannot be matched to a library in the SBOM. For example: <code>--enable-sbom=cyclonedx,strict</code>. (Not available in GraalVM Community Edition.)</li>
+  <li><code>--enable-native-access &lt;module name&gt;[,&lt;module name&gt;...]</code>: enable modules that are permitted to perform restricted native operations. <code>&lt;module name&gt;</code> can also be <code>ALL-UNNAMED</code></li>
+  <li><code>--enable-sbom</code>: assemble a Software Bill of Materials (SBOM) for the executable or shared library based on the results from the static analysis. Comma-separated list can contain <code>embed</code> to store the SBOM in data sections of the binary, <code>export</code> to save the SBOM in the output directory, <code>classpath</code> to include the SBOM as a Java resource on the classpath at <em>META-INF/native-image/sbom.json</em>, <code>strict</code> to abort the build if any type (such as a class, interface, or annotation) cannot be matched to an SBOM component, <code>cyclonedx</code> (the only format currently supported), and <code>class-level</code> to include class-level metadata. Defaults to embedding an SBOM: <code>--enable-sbom=embed</code>. To disable the SBOM feature, use <code>--enable-sbom=false</code> on the command line.</li>
   <li><code>--enable-url-protocols</code>: list comma-separated URL protocols to enable</li>
   <li><code>--exact-reachability-metadata</code>: enables exact and user-friendly handling of reflection, resources, JNI, and serialization</li>
   <li><code>--exact-reachability-metadata-path</code>: trigger exact handling of reflection, resources, JNI, and serialization from all types in the given class-path or module-path entries</li>
   <li><code>--features</code>: a comma-separated list of fully qualified <a href="https://www.graalvm.org/sdk/javadoc/index.html?org/graalvm/nativeimage/hosted/Feature.html">Feature implementation classes</a></li>
   <li><code>--force-fallback</code>: force building of a fallback native executable</li>
+  <li><code>--future-defaults</code>: enable options that are planned to become defaults in future releases. A comma-separated list can contain <code>all</code>, <code>run-time-initialized-jdk</code>, <code>none</code>.</li>
   <li><code>--gc=&lt;value&gt;</code>: select a Native Image garbage collector implementation. Allowed options for <code>&lt;value&gt;</code> are: <code>G1</code> for G1 garbage collector (not available in GraalVM Community Edition); <code>epsilon</code> for Epsilon garbage collector; <code>serial</code> for Serial garbage collector (default).</li>
   <li><code>--initialize-at-build-time</code>: a comma-separated list of packages and classes (and implicitly all of their superclasses) that are initialized during generation of a native executable. An empty string designates all packages.</li>
   <li><code>--initialize-at-run-time</code>: a comma-separated list of packages and classes (and implicitly all of their subclasses) that must be initialized at run time and not during generation. An empty string is currently not supported.</li>
-  <li><code>--install-exit-handlers</code>: provide <code>java.lang.Terminator</code> exit handlers</li>
   <li><code>--libc</code>: select the <code>libc</code> implementation to use. Available implementations are <code>glibc</code>, <code>musl</code>, <code>bionic</code>.</li>
   <li><code>--link-at-build-time</code>: require types to be fully defined at native executable build time. If used without arguments, all classes in scope of the option are required to be fully defined.</li>
   <li><code>--link-at-build-time-paths</code>: require all types in given class or module path entries to be fully defined at native executable build time</li>
@@ -695,7 +694,7 @@ These options use the prefix <code>-H:</code>.</li>
 
 <p>Native Image provides an informative <a href="/latest/reference-manual/native-image/overview/BuildOutput/">build output</a> including various statistics during the build process.
 The build output in a JSON-based, machine-readable format can be requested using the <code>-H:BuildOutputJSONFile</code> option, and later processed by a monitoring tool.
-The JSON files validate against the JSON schema defined in <a href="/docs/reference-manual/native-image/assets/build-output-schema-v0.9.3.json">build-output-schema-v0.9.3.json</a>.
+The JSON files validate against the JSON schema defined in <a href="/docs/reference-manual/native-image/assets/build-output-schema-v0.9.4.json">build-output-schema-v0.9.4.json</a>.
 A comprehensive report with additional information can be requested using the <code>--emit build-report</code> option.</p>
 
 <blockquote>
@@ -720,6 +719,33 @@ For example:</p>
   <li><code>-XX:Dump= -XX:MethodFilter=ClassName.MethodName</code>: dump the compile graphs at runtime.</li>
 </ul>
     
+      <h3 id="preserving-packages-modules-or-classes">
+        
+        
+          Preserving Packages, Modules, or Classes <a href="#preserving-packages-modules-or-classes" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>GraalVM 25 introduces the <code>-H:Preserve</code> option. This lets you instruct the <code>native-image</code> tool to keep entire packages, modules, or all classes on the classpath in the native executable, even when static analysis cannot discover them.</p>
+
+<p>You can use <code>-H:Preserve</code> in the following ways:</p>
+
+<ul>
+  <li><code>-H:Preserve=all</code>: preserves all elements from the JDK and from the classpath</li>
+  <li><code>-H:Preserve=module=&lt;module&gt;</code>: preserves all elements from a given module</li>
+  <li><code>-H:Preserve=module=ALL-UNNAMED</code>: preserves all elements from the classpath (provided with <code>-cp</code>).</li>
+  <li><code>-H:Preserve=package=&lt;package&gt;</code>: preserves all elements from a given package</li>
+  <li><code>-H:Preserve=path=&lt;cp-entry&gt;</code>: preserves all elements from a given class-path entry</li>
+  <li>You can combine any of the previous uses by separating them with a comma (<code>,</code>). For example: <code>-H:Preserve=path=&lt;cp-entry&gt;,module=&lt;module&gt;,module=&lt;module2&gt;,package=&lt;package&gt;</code></li>
+</ul>
+
+<p>You must explicitly configure multi-interface proxy classes, arrays of dimension 3 and higher, and <em>.class</em> files as resources in the native image. Tooling-related Java modules are not included by default with <code>-H:Preserve=all</code> and must be added with <code>-H:Preserve=module=&lt;module&gt;</code> if needed.</p>
+
+<p>If you get errors related to <code>--initialize-at-build-time</code>, follow the suggestions in the error messages.</p>
+
+<p>For a practical demonstration, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
+    
       <h2 id="system-properties">
         
         
@@ -735,7 +761,7 @@ However, JDK system properties are included in generated executables and are vis
 <p>For example:</p>
 <ul>
   <li><code>-D&lt;system.property&gt;=&lt;value&gt;</code> will only be visible at build time. If this system property is accessed in the native executable, it will return <code>null</code>.</li>
-  <li><code>-Djava.version=24</code> will be visible at both build time and in the native executable because the value is copied into the binary by default.</li>
+  <li><code>-Djava.version=25</code> will be visible at both build time and in the native executable because the value is copied into the binary by default.</li>
 </ul>
 
 <p>The following system properties are automatically copied into the generated executable:</p>
@@ -951,9 +977,8 @@ However, JDK system properties are included in generated executables and are vis
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

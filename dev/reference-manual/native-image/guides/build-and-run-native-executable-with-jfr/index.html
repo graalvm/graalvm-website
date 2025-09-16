@@ -141,28 +141,38 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="build-and-run-native-executables-with-jfr">Build and Run Native Executables with JFR</h1>
 
-<p><a href="https://docs.oracle.com/javacomponents/jmc-5-4/jfr-runtime-guide/about.htm">JDK Flight Recorder (JFR)</a> is a tool for collecting diagnostic and profiling data about a running Java application, built into the JVM.
-GraalVM Native Image supports JFR events and users can use the <a href="https://docs.oracle.com/en/java/javase/25/docs/api/jdk.jfr/jdk/jfr/Event.html"><code>jdk.jfr.Event</code> API</a> with a similar experience to using JFR in the Java HotSpot VM.</p>
+<p>JDK Flight Recorder (JFR) is a tool for collecting diagnostic and profiling data about a running Java application, built into the JVM. 
+GraalVM Native Image supports JFR events and users can use the <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.jfr/jdk/jfr/Event.html"><code>jdk.jfr.Event</code></a> API with a similar experience to using JFR in the Java HotSpot VM.</p>
 
-<p>To collect JFR events when running a native executable, enable JFR support and JFR event recording as described in this guide.</p>
+<p>To record JFR events when running a native executable, enable JFR support and JFR recording as described in this guide.</p>
 
 <blockquote>
-  <p>Note: JFR event recording is not yet available with Native Image on Windows.</p>
+  <p>Note: JFR event recording is not yet supported on GraalVM JDK for Windows.</p>
 </blockquote>
 
-<h2 id="enable-jfr-support-and-record-events-at-runtime">Enable JFR Support and Record Events at Runtime</h2>
+<h2 id="enable-jfr-support-and-record-events-at-run-time">Enable JFR Support and Record Events at Run Time</h2>
 
-<p>To build a native executable with JFR events support, add the <code>--enable-monitoring=jfr</code> option when invoking the <code>native-image</code> tool, and then start JFR recording at runtime.</p>
+<p>To build a native executable with the JFR events support, you first need to add the <code>--enable-monitoring=jfr</code> option when invoking the <code>native-image</code> tool. Then enable the system, start a recording, and configure logging at native executable run time:</p>
+<ul>
+  <li><code>-XX:+FlightRecorder</code>: use to enable JFR at run time</li>
+  <li><code>-XX:StartFlightRecording</code>: use to start a recording on application’s startup</li>
+  <li><code>-XX:FlightRecorderLogging</code>: use to configure the log output for the JFR system</li>
+</ul>
 
-<p>Follow the steps below to practice building a native executable with JFR support and recording events at runtime.</p>
+<p>Follow the steps below to practice building a native executable with JFR support and recording events at run time.</p>
 
-<h3 id="prerequisite">Prerequisite</h3>
-<p>Make sure you have installed a GraalVM JDK.
-The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
-For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+<blockquote>
+  <p>Note: Make sure you have installed a GraalVM JDK. The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>. For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+</blockquote>
 
 <ol>
-  <li>Save the following code to the file named <em>JFRDemo.java</em>.
+  <li>Install VisualVM by running:
+    <pre><code class="language-bash"> gu install visualvm
+</code></pre>
+  </li>
+  <li>
+    <p>Save the following code to the file named <em>JFRDemo.java</em>.</p>
+
     <pre><code class="language-java"> import jdk.jfr.Event;
  import jdk.jfr.Description;
  import jdk.jfr.Label;
@@ -185,39 +195,38 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
 
     <p>This demo application consists of a simple class and JDK library classes.
- It creates an event, annotated with <code>@Label</code> from the <code>jdk.jfr.*</code> package.
+ It creates an event, labelled with the <code>@Label</code> annotation from the <code>jdk.jfr.*</code> package.
  If you run this application, it will not print anything and just run that event.</p>
   </li>
-  <li>Ccompile the application using the GraalVM JDK:
-    <pre><code class="language-shell"> javac JFRDemo.java
+  <li>Compile the Java file using the GraalVM JDK:
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac JFRDemo.java
 </code></pre>
-    <p>It creates two class files: <em>JFRDemo$HelloWorldEvent.class</em>	and <em>JFRDemo.class</em>.</p>
+    <p>It creates two class files: <code>JFRDemo$HelloWorldEvent.class</code>	and <code>JFRDemo.class</code>.</p>
   </li>
   <li>Build a native executable with the VM inspection enabled:
-    <pre><code class="language-shell"> native-image --enable-monitoring=jfr JFRDemo
+    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --enable-monitoring=jfr JFRDemo
 </code></pre>
     <p>The <code>--enable-monitoring=jfr</code> option enables features such as JFR that can be used to inspect the VM.</p>
   </li>
   <li>Run the executable and start recording:
-    <pre><code class="language-shell"> ./jfrdemo -XX:StartFlightRecording=filename=recording.jfr
+    <pre><code class="language-shell"> ./jfrdemo -XX:StartFlightRecording="filename=recording.jfr"
 </code></pre>
-    <p>This command runs the application as a native executable.
- The <code>-XX:StartFlightRecording</code> option enables the built-in Flight Recorder and starts recording to a specified binary file, <em>recording.jfr</em>.
- Additionally, you can configure the log output for JFR by passing the <code>-XX:FlightRecorderLogging</code> runtime option.</p>
+    <p>This command runs the application as a native executable. The <code>-XX:StartFlightRecording</code> option enables the built-in Flight Recorder and starts recording to a specified binary file, <em>recording.jfr</em>.</p>
   </li>
   <li>
-    <p>Start <a href="https://visualvm.github.io/">VisualVM</a> to view the contents of the recording file in a user-friendly way.</p>
+    <p>Start <a href="https://visualvm.github.io/">VisualVM</a> to view the contents of the recording file in a user-friendly way. GraalVM provides VisualVM in the core installation. To start the tool, run:</p>
+
+    <pre><code class="language-shell"> $JAVA_HOME/bin/jvisualvm
+</code></pre>
   </li>
   <li>
-    <p>Go to <strong>File</strong>, then <strong>Add JFR Snapshot</strong>, browse <em>recording.jfr</em>, and open the selected file.
-Confirm the display name and click <strong>OK</strong>. Once opened, there are several options you can check (such as Monitoring, Threads, and Exceptions) but you are mostly interested in browsing events.
-It will look something like this:</p>
+    <p>Go to <strong>File</strong>, then <strong>Add JFR Snapshot</strong>, browse <em>recording.jfr</em>, and open the selected file. Confirm the display name and click <strong>OK</strong>. Once opened, there is a bunch of options you can check: Monitoring, Threads, Exceptions, etc., but you should be mostly interested in the events browsing. It will look something like this:</p>
 
     <p><img src="/docs/reference-manual/native-image/guides/img/jfr.png" alt="JDK Flight Recorder" /></p>
 
     <p>Alternatively, you can view the contents of the recording file in the console window by running this command:</p>
 
-    <pre><code class="language-shell"> jfr print recording.jfr
+    <pre><code class="language-shell"> $JAVA_HOME/bin/jfr print recording.jfr
 </code></pre>
     <p>It prints all the events recorded by Flight Recorder.</p>
   </li>
@@ -226,7 +235,12 @@ It will look something like this:</p>
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
-  <li>Learn more about <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/JFR/">Native Image support for JFR events</a> and how to further configure JFR recording and system logging.</li>
+  <li>
+    <p>Learn more about <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/JFR/">Native Image support for JFR events</a> and how to further configure JFR recording and system logging.</p>
+  </li>
+  <li>
+    <p><a href="https://docs.oracle.com/en/java/javase/17/jfapi/creating-and-recording-your-first-event.html">Create and record your first event with Java</a>.</p>
+  </li>
 </ul>
 
       </div>
@@ -336,9 +350,8 @@ It will look something like this:</p>
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

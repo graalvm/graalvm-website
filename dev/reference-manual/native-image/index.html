@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -482,7 +481,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Native Image is a technology to compile Java code ahead-of-time to a binary—a <strong>native executable</strong>. 
+<p>Native Image is a technology to compile Java code ahead-of-time to a binary – a <strong>native executable</strong>. 
 A native executable includes only the code required at run time, that is the application classes, standard-library classes, the language runtime, and statically-linked native code from the JDK.</p>
 
 <p>An executable file produced by Native Image has several important advantages, in that it</p>
@@ -513,9 +512,7 @@ This entire process is called <strong>build time</strong> to clearly distinguish
       </h3>
 
 <ul>
-  <li><a href="#build-a-native-executable-using-maven-or-gradle">Build a Native Executable Using Maven or Gradle</a></li>
-  <li><a href="#build-a-native-executable-using-the-native-image-tool">Build a Native Executable Using the <code>native-image</code> Tool</a></li>
-  <li><a href="#build-configuration">Build Configuration</a></li>
+  <li><a href="#build-a-native-executable">Build a Native Executable</a></li>
   <li><a href="#configuring-native-image-with-third-party-libraries">Configuring Native Image with Third-Party Libraries</a></li>
   <li><a href="#further-reading">Further Reading</a></li>
 </ul>
@@ -531,235 +528,228 @@ This entire process is called <strong>build time</strong> to clearly distinguish
 <p>The <code>native-image</code> tool, available in the <code>bin</code> directory of your GraalVM installation, depends on the local toolchain (header files for the C library, <code>glibc-devel</code>, <code>zlib</code>, <code>gcc</code>, and/or <code>libstdc++-static</code>). 
 These dependencies can be installed (if not yet installed) using a package manager on your machine.
 Choose your operating system to find instructions to meet the prerequisites.</p>
-    
-      <h4 id="linux">
-        
-        
-          Linux
-        
-        
-      </h4>
 
-<p>On Oracle Linux use the <code>yum</code> package manager:</p>
-<pre><code class="language-shell">sudo yum install gcc glibc-devel zlib-devel
-</code></pre>
-<p>Some Linux distributions may additionally require <code>libstdc++-static</code>.
-You can install <code>libstdc++-static</code> if the optional repositories are enabled (<em>ol7_optional_latest</em> on Oracle Linux 7, <em>ol8_codeready_builder</em> on Oracle Linux 8, and <em>ol9_codeready_builder</em> on Oracle Linux 9).</p>
+<div class="tabs-below">
 
-<p>On Ubuntu Linux use the <code>apt-get</code> package manager:</p>
-<pre><code class="language-shell">sudo apt-get install build-essential zlib1g-dev
-</code></pre>
-<p>On other Linux distributions use the <code>dnf</code> package manager:</p>
-<pre><code class="language-shell">sudo dnf install gcc glibc-devel zlib-devel libstdc++-static
-</code></pre>
-    
-      <h4 id="macos">
-        
-        
-          MacOS
-        
-        
-      </h4>
+<div class="tab-content">
+  
+  <div id="Linux" class="tab-pane fade in active">
+    <div class="snippet-container">
 
-<p>On macOS use <code>xcode</code>:</p>
-<pre><code class="language-shell">xcode-select --install
-</code></pre>
-    
-      <h4 id="windows">
-        
-        
-          Windows
-        
-        
-      </h4>
+  
 
-<p>To use Native Image on Windows, install <a href="https://visualstudio.microsoft.com/vs/">Visual Studio 2022</a> version 17.6.0 or later, and Microsoft Visual C++ (MSVC). There are two installation options:</p>
-<ul>
-  <li>Install the Visual Studio Build Tools with the Windows 11 SDK (or later version)</li>
-  <li>Install Visual Studio with the Windows 11 SDK (or later version)</li>
+  
+<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">  // BEGIN-SNIPPET
+On Oracle Linux use the YUM package manager:
+
+<span class="p">```</span><span class="nl">shell</span>
+<span class="gp">$ </span>sudo yum install gcc glibc-devel zlib-devel
+<span class="p">```</span>
+
+Some Linux distributions may additionally require libstdc++-static.
+You can install libstdc++-static if the optional repositories are enabled (_ol7_optional_latest_ on Oracle Linux 7 and _ol8_codeready_builder_ on Oracle Linux 8).
+
+On Ubuntu Linux use the <span class="sb">`apt-get`</span> package manager:
+
+$ sudo apt-get install build-essential zlib1g-dev
+
+On other Linux distributions use the DNF package manager:
+
+$ sudo dnf install gcc glibc-devel zlib-devel libstdc++-static
+
+// END-SNIPPET
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  $(parent).find("figure > pre > code").each(function() {
+    var lines = this.textContent.split("\n");
+    var snippets = [];
+    var part = "";
+    for(var line of lines) {
+      if (line.includes(endPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+      part += line + "\n";
+      if (line.includes(beginPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+    }
+    snippets.push(part);
+    parent._snippets = snippets;
+    this.textContent = snippets.filter(function (_, index) { return index & 1; }).join("\n");
+  });
+  </script>
+</div>
+
+  </div>
+  
+  
+  <div id="macOS" class="tab-pane fade">
+    <div class="snippet-container">
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">  // BEGIN-SNIPPET
+On macOS use Xcode:
+
+$ xcode-select --install
+
+// END-SNIPPET
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  $(parent).find("figure > pre > code").each(function() {
+    var lines = this.textContent.split("\n");
+    var snippets = [];
+    var part = "";
+    for(var line of lines) {
+      if (line.includes(endPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+      part += line + "\n";
+      if (line.includes(beginPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+    }
+    snippets.push(part);
+    parent._snippets = snippets;
+    this.textContent = snippets.filter(function (_, index) { return index & 1; }).join("\n");
+  });
+  </script>
+</div>
+
+  </div>
+  
+  
+  <div id="Windows" class="tab-pane fade">
+    <div class="snippet-container">
+
+  
+
+  
+<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">  // BEGIN-SNIPPET
+To use Native Image on Windows, install Visual Studio 2022 version 17.6.0 or later, and Microsoft Visual C++ (MSVC). 
+There are two installation options:
+<span class="p">*</span> Install the Visual Studio Build Tools with the Windows 11 SDK (or later version)
+<span class="p">*</span> Install Visual Studio with the Windows 11 SDK (or later version)
+
+Native Image runs in both a PowerShell or Command Prompt and will automatically set up build environments on Windows, given that it can find a suitable Visual Studio installation.
+// END-SNIPPET
+  </code></pre></figure>
+
+
+  
+
+  <script>
+  var beginPattern = "BEGIN-SNIPPET";
+  var endPattern = "END-SNIPPET";
+  var parent = document.currentScript.parentElement;
+  $(parent).find("figure > pre > code").each(function() {
+    var lines = this.textContent.split("\n");
+    var snippets = [];
+    var part = "";
+    for(var line of lines) {
+      if (line.includes(endPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+      part += line + "\n";
+      if (line.includes(beginPattern)) {
+        snippets.push(part);
+        part = "";
+      }
+    }
+    snippets.push(part);
+    parent._snippets = snippets;
+    this.textContent = snippets.filter(function (_, index) { return index & 1; }).join("\n");
+  });
+  </script>
+</div>
+
+  </div>
+  
+  
+  
+</div>
+
+<ul class="nav nav-tabs">
+  
+  <li><a class="active" data-toggle="tab" href="#Linux">Linux</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#macOS">macOS</a></li>
+  
+  
+  <li><a data-toggle="tab" href="#Windows">Windows</a></li>
+  
+  
+  
+  
 </ul>
 
-<p>Native Image runs in both a PowerShell or Command Prompt and will automatically set up build environments on Windows, given that it can find a suitable Visual Studio installation.</p>
+</div>
 
-<p>For more information, see <a href="https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311">Using GraalVM and Native Image on Windows</a>.</p>
+<!-- #### Linux
+
+On Oracle Linux use the `yum` package manager:
+```shell
+sudo yum install gcc glibc-devel zlib-devel
+```
+Some Linux distributions may additionally require `libstdc++-static`.
+You can install `libstdc++-static` if the optional repositories are enabled (_ol7_optional_latest_ on Oracle Linux 7 and _ol8_codeready_builder_ on Oracle Linux 8).
+
+On  Ubuntu Linux use the `apt-get` package manager:
+```shell
+sudo apt-get install build-essential libz-dev zlib1g-dev
+```
+On other Linux distributions use the `dnf` package manager:
+```shell
+sudo dnf install gcc glibc-devel zlib-devel libstdc++-static
+```
+
+#### MacOS
+
+On macOS use `xcode`:
+```shell
+xcode-select --install
+```
+
+#### Windows
+
+To use Native Image on Windows, install [Visual Studio 2022](https://visualstudio.microsoft.com/vs/) version 17.1.0 or later, and Microsoft Visual C++ (MSVC). There are two installation options:
+* Install the Visual Studio Build Tools with the Windows 10 or later SDK
+* Install Visual Studio with the Windows 10 or later SDK
+
+Native Image runs in both a PowerShell or Command Prompt and will automatically set up build environments on Windows, given that it can find a suitable Visual Studio installation.
+
+For more information, see [Using GraalVM and Native Image on Windows 10](https://medium.com/graalvm/using-graalvm-and-native-image-on-windows-10-9954dc071311). -->
     
-      <h2 id="build-a-native-executable-using-maven-or-gradle">
+      <h2 id="build-a-native-executable">
         
         
-          Build a Native Executable Using Maven or Gradle <a href="#build-a-native-executable-using-maven-or-gradle" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Build a Native Executable <a href="#build-a-native-executable" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>We provide Maven and Gradle plugins for Native Image to automate building, testing, and configuring native executables.</p>
-    
-      <h3 id="maven">
-        
-        
-          Maven <a href="#maven" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>The <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">Maven plugin for Native Image</a> adds support for compiling a Java application into a native executable using <a href="https://maven.apache.org/">Apache Maven</a>.</p>
-
-<ol>
-  <li>Create a new Maven Java project named “helloworld” in your favorite IDE or from your terminal with the following structure:
-    <pre><code> ├── pom.xml
- └── src
-     ├── main
-     │   └── java
-     │       └── com
-     │           └── example
-     │               └── App.java
-</code></pre>
-    <p>For example, you can run this command to create a new Maven project using the quickstart archetype:</p>
-    <pre><code class="language-bash"> mvn archetype:generate -DgroupId=com.example -DartifactId=helloworld -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
-</code></pre>
-  </li>
-  <li>Add the regular Maven plugins for compiling and assembling the project into an executable JAR file to your <em>pom.xml</em> file:
-    <pre><code class="language-xml"> &lt;build&gt;
-     &lt;plugins&gt;
-         &lt;plugin&gt;
-             &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-             &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
-             &lt;version&gt;3.12.1&lt;/version&gt;
-             &lt;configuration&gt;
-                 &lt;fork&gt;true&lt;/fork&gt;
-             &lt;/configuration&gt;
-         &lt;/plugin&gt;
-         &lt;plugin&gt;
-             &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
-             &lt;artifactId&gt;maven-jar-plugin&lt;/artifactId&gt;
-             &lt;version&gt;3.3.0&lt;/version&gt;
-             &lt;configuration&gt;
-                 &lt;archive&gt;
-                     &lt;manifest&gt;
-                         &lt;mainClass&gt;com.example.App&lt;/mainClass&gt;
-                         &lt;addClasspath&gt;true&lt;/addClasspath&gt;
-                     &lt;/manifest&gt;
-                 &lt;/archive&gt;
-             &lt;/configuration&gt;
-         &lt;/plugin&gt;
-     &lt;/plugins&gt;
- &lt;/build&gt;
-</code></pre>
-  </li>
-  <li>Enable the Maven plugin for Native Image by adding the following profile to <em>pom.xml</em>:
-    <pre><code class="language-xml"> &lt;profiles&gt;
-   &lt;profile&gt;
-     &lt;id&gt;native&lt;/id&gt;
-     &lt;build&gt;
-       &lt;plugins&gt;
-         &lt;plugin&gt;
-           &lt;groupId&gt;org.graalvm.buildtools&lt;/groupId&gt;
-           &lt;artifactId&gt;native-maven-plugin&lt;/artifactId&gt;
-           &lt;version&gt;${native.maven.plugin.version}&lt;/version&gt;
-           &lt;extensions&gt;true&lt;/extensions&gt;
-           &lt;executions&gt;
-             &lt;execution&gt;
-             &lt;id&gt;build-native&lt;/id&gt;
-               &lt;goals&gt;
-                 &lt;goal&gt;compile-no-fork&lt;/goal&gt;
-               &lt;/goals&gt;
-               &lt;phase&gt;package&lt;/phase&gt;
-             &lt;/execution&gt;
-           &lt;/executions&gt;
-         &lt;/plugin&gt;
-       &lt;/plugins&gt;
-     &lt;/build&gt;
-   &lt;/profile&gt;
- &lt;/profiles&gt;
-</code></pre>
-    <p>Set the <code>version</code> property to the latest plugin version (for example, by specifying the version via <code>&lt;native.maven.plugin.version&gt;</code> in the <code>&lt;properties&gt;</code> element).</p>
-  </li>
-  <li>Compile the project and build a native executable at one step:
-    <pre><code class="language-bash"> mvn -Pnative package
-</code></pre>
-    <p>The native executable, named <code>helloworld</code>, is created in the <em>target/</em> directory of the project.</p>
-  </li>
-  <li>Run the executable:
-    <pre><code class="language-bash"> ./target/helloworld 
-</code></pre>
-    <p>That is it, you successfully created the native executable for your Java application using Maven.</p>
-  </li>
-</ol>
-
-<p>The Maven plugin for Native Image building offers many other features that may be required for an application with more complexity, such as resources autodetection, generating the required configuration, running JUnit Platform tests on a native executable, and so on, described in the <a href="https://graalvm.github.io/native-build-tools/latest/maven-plugin.html">plugin reference documentation</a>.</p>
-    
-      <h3 id="gradle">
-        
-        
-          Gradle <a href="#gradle" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>The <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Gradle plugin for Native Image</a> adds support for compiling a Java application into a native executable using the <a href="https://gradle.org/">Gradle build tool</a>.</p>
-
-<ol>
-  <li>Create a new Gradle Java project named “helloworld” in your favorite IDE or from your terminal with the following structure:
-    <pre><code> ├── app
- │   ├── build.gradle
- │   └── src
- │       ├── main
- │       │   ├── java
- │       │   │   └── org
- │       │   │       └── example
- │       │   │           └── App.java
- │       │   └── resources
-</code></pre>
-
-    <p>For example, initialize a new Gradle project with the <code>java</code> plugin:</p>
-    <ul>
-      <li>Create a new directory and enter it:
-        <pre><code class="language-bash">  mkdir helloworld &amp;&amp; cd helloworld
-</code></pre>
-      </li>
-      <li>Generate a project:
-        <pre><code class="language-bash">  gradle init --project-name helloworld --type java-application --test-framework junit-jupiter --dsl groovy
-</code></pre>
-        <p>Follow the prompts. 
-  This command sets up a new Java application with the necessary directory structure and build files.</p>
-
-        <blockquote>
-          <p>If caching was enabled by the project generator in the <em>gradle.properties</em> file, comment out or remove the <code>org.gradle.configuration-cache=true</code> line.</p>
-        </blockquote>
-      </li>
-    </ul>
-  </li>
-  <li>Enable the Gradle plugin for Native Image by adding the following to <code>plugins</code> section of your project’s <em>build.gradle</em> file:
-    <pre><code> plugins {
- // ...
- id 'org.graalvm.buildtools.native' version 'x.x.x'
- }
-</code></pre>
-    <p>Specify the latest plugin version for the <code>'x.x.x'</code> version value.</p>
-  </li>
-  <li>Build a native executable by running <code>./gradlew nativeCompile</code>:
-    <pre><code class="language-bash"> ./gradlew nativeCompile
-</code></pre>
-    <p>The native executable, named <code>app</code>, is created in the <em>app/build/native/nativeCompile/</em> directory of the project.</p>
-  </li>
-  <li>Run the native executable:
-    <pre><code class="language-bash"> ./app/build/native/nativeCompile/app 
-</code></pre>
-    <p>That is it, you successfully created the native executable for your Java application using Gradle.</p>
-  </li>
-</ol>
-
-<p>The Gradle plugin for Native Image building has many other features that may be required for an application with more complexity, such as resources autodetection, generating the required configuration, running JUnit Platform tests on a native executable, and so on, described in the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">plugin reference documentation</a>.</p>
-    
-      <h2 id="build-a-native-executable-using-the-native-image-tool">
-        
-        
-          Build a Native Executable Using the <code>native-image</code> Tool <a href="#build-a-native-executable-using-the-native-image-tool" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>The <code>native-image</code> tool takes Java bytecode as its input. 
-You can build a native executable from a class file, from a JAR file, or from a module (with Java 9 and higher).</p>
+<p>The <code>native-image</code> tool takes Java bytecode as its input. You can build a native executable from a class file, from a JAR file, or from a module (with Java 9 and higher).</p>
     
       <h3 id="from-a-class">
         
@@ -768,7 +758,6 @@ You can build a native executable from a class file, from a JAR file, or from a 
         
         
       </h3>
-
 <p>To build a native executable from a Java class file in the current working directory, use the following command:</p>
 <pre><code class="language-shell">native-image [options] class [imagename] [options]
 </code></pre>
@@ -788,12 +777,12 @@ You can build a native executable from a class file, from a JAR file, or from a 
     <pre><code class="language-shell"> javac HelloWorld.java
  native-image HelloWorld
 </code></pre>
-    <p>It will create a native executable, <code>helloworld</code>, in the current working directory.</p>
+    <p>It will create a native executable, <code>helloWorld</code>, in the current working directory.</p>
   </li>
   <li>
     <p>Run the application:</p>
 
-    <pre><code class="language-shell"> ./helloworld
+    <pre><code class="language-shell"> ./helloWorld
 </code></pre>
     <p>You can time it to see the resources used:</p>
 
@@ -836,6 +825,63 @@ You can build a native executable from a class file, from a JAR file, or from a 
 
 <p>For more information about how to produce a native executable from a modular Java application, see <a href="/dev/reference-manual/native-image/guides/build-java-modules-into-native-executable/">Building a HelloWorld Java Module into a Native Executable</a>.</p>
     
+      <h3 id="getting-notified-when-the-build-process-is-done">
+        
+        
+          Getting Notified When the Build Process Is Done <a href="#getting-notified-when-the-build-process-is-done" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Depending on the size of your application and the available resources of your build machine, it can take a few minutes to AOT-compile your Java application to a native executable.
+If you are building your project in the background, consider using a command that notifies you when the build process is completed.
+Below, example commands are listed per operating system:</p>
+    
+      <h4 id="linux">
+        
+        
+          Linux
+        
+        
+      </h4>
+<pre><code class="language-bash"># Ring the terminal bell
+native-image -jar App.jar ... ; printf '\a'
+
+# Use libnotify to create a desktop notification
+native-image -jar App.jar ... ; notify-send "GraalVM Native Image build completed with exit code $?"
+
+# Use Zenity to open an info dialog box with text
+native-image -jar App.jar ... ; zenity --info --text="GraalVM Native Image build completed with exit code $?"
+</code></pre>
+    
+      <h4 id="macos">
+        
+        
+          macOS
+        
+        
+      </h4>
+<pre><code class="language-bash"># Ring the terminal bell
+native-image -jar App.jar ... ; printf '\a'
+
+# Use Speech Synthesis
+native-image -jar App.jar ... ; say "GraalVM Native Image build completed"
+</code></pre>
+    
+      <h4 id="windows">
+        
+        
+          Windows
+        
+        
+      </h4>
+<pre><code class="language-bat">REM Ring the terminal bell (press Ctrl+G to enter ^G)
+native-image.exe -jar App.jar &amp; echo ^G
+
+REM Open an info dialog box with text
+native-image.exe -jar App.jar &amp; msg "%username%" GraalVM Native Image build completed
+</code></pre>
+    
       <h2 id="build-configuration">
         
         
@@ -844,15 +890,12 @@ You can build a native executable from a class file, from a JAR file, or from a 
         
       </h2>
 
-<p>There many options you can pass to the <code>native-image</code> tool to configure the build process. 
-Run <code>native-image --help</code> to see the full list.
+<p>There many options you can pass to the <code>native-image</code> builder to configure the build process. Run <code>native-image --help</code> to see the full list.
 The options passed to <code>native-image</code> are evaluated left-to-right.</p>
 
 <p>For different build tweaks and to learn more about build time configuration, see <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/">Native Image Build Configuration</a>.</p>
 
-<p>Native Image will output the progress and various statistics during the build. 
-To learn more about the output and the different build phases, see <a href="/dev/reference-manual/native-image/overview/BuildOutput/">Build Output</a>.
-For more detailed insights regarding the contents of a native executable, see <a href="/dev/reference-manual/native-image/overview/build-report/">Build Reports</a>.</p>
+<p>Native Image will output the progress and various statistics during the build. To learn more about the output and the different build phases, see <a href="/dev/reference-manual/native-image/overview/BuildOutput/">Build Output</a>.</p>
     
       <h2 id="native-image-and-third-party-libraries">
         
@@ -862,12 +905,12 @@ For more detailed insights regarding the contents of a native executable, see <a
         
       </h2>
 
-<p>For more complex applications that use external libraries, you must provide the <code>native-image</code> tool with metadata.</p>
+<p>For more complex applications that use external libraries, you must provide the <code>native-image</code> builder with metadata.</p>
 
-<p>Building a standalone binary with <code>native-image</code> takes place under a “closed world assumption”. 
-The <code>native-image</code> tool performs an analysis to see which classes, methods, and fields within your application are reachable and must be included in the native executable. 
+<p>Building a standalone binary with the <code>native-image</code> tool takes place under a “closed world assumption”. 
+The <code>native-image</code> tool performs an analysis to see which classes, methods, and fields within your application are reachable and must be included in the native image. 
 The analysis is static: it does not run your application.
-This means that all the bytecode in your application that can be called at runtime must be known (observed and analyzed) at build time.</p>
+This means that all the bytecode in your application that can be called at run time must be known (observed and analyzed) at build time.</p>
 
 <p>The analysis can determine some cases of dynamic class loading, but it cannot always exhaustively predict all usages of the Java Native Interface (JNI), Java Reflection, Dynamic Proxy objects, or class path resources. 
 To deal with these dynamic features of Java, you inform the analysis with details of the classes that use Reflection, Proxy, and so on, or what classes to be dynamically loaded.
@@ -876,11 +919,13 @@ To achieve this, you either provide the <code>native-image</code> tool with JSON
 <p>To learn more about metadata, ways to provide it, and supported metadata types, see <a href="/dev/reference-manual/native-image/metadata/">Reachability Metadata</a>.
 To automatically collect metadata for your application, see <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Automatic Collection of Metadata</a>.</p>
 
-<p>Some applications may need additional configuration to be compiled with Native Image.
+<p>There are also Maven and Gradle plugins for Native Image to automate building, testing and configuring native executables. Learn more <a href="https://graalvm.github.io/native-build-tools/latest/index.html">here</a>.</p>
+
+<p>Some applications may need additional configuration to be compiled with GraalVM Native Image.
 For more details, see <a href="/dev/reference-manual/native-image/metadata/Compatibility/">Native Image Compatibility Guide</a>.</p>
 
 <p>Native Image can also interop with native languages through a custom API.
-Using this API, you can specify custom native entry points into your Java application and build it into a native shared library.
+Using this API, you can specify custom native entry points into your Java application and build it into a nativw shared library.
 To learn more, see <a href="/dev/reference-manual/native-image/native-code-interoperability/">Interoperability with Native Code</a>.</p>
     
       <h3 id="further-reading">
@@ -891,10 +936,10 @@ To learn more, see <a href="/dev/reference-manual/native-image/native-code-inter
         
       </h3>
 
-<p>This getting started guide is intended for new users or those with little experience of using Native Image. 
+<p>This getting started guide is intended for new users or those with little experience of using GraalVM Native Image. 
 We strongly recommend these users to check the <a href="/dev/reference-manual/native-image/basics/">Basics of Native Image</a> page to better understand some key aspects before going deeper.</p>
 
-<p>Check <a href="/dev/guides/">user guides</a> to become more experienced with Native Image, find demo examples, and learn about potential usage scenarios.</p>
+<p>Check <a href="/dev/guides/">user guides</a> to become more experienced with GraalVM Native Image, find demo examples, and learn about potential usage scenarios.</p>
 
 <p>For a gradual learning process, check the Native Image <a href="/dev/reference-manual/native-image/overview/Build-Overview/">Build Overview</a> and <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/">Build Configuration</a> documentation.</p>
 
@@ -1019,9 +1064,8 @@ We strongly recommend these users to check the <a href="/dev/reference-manual/na
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

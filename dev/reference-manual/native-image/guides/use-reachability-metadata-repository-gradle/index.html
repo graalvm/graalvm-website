@@ -9,7 +9,7 @@
 
   <title>
     
-      Include Reachability Metadata Using the Native Image Gradle Plugin
+      Configure Native Image Using Shared Reachability Metadata
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
@@ -139,44 +139,42 @@
     <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
       <br>
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
-      <h1 id="include-reachability-metadata-using-the-native-image-gradle-plugin">Include Reachability Metadata Using the Native Image Gradle Plugin</h1>
+      <h1 id="configure-native-image-using-shared-reachability-metadata">Configure Native Image Using Shared Reachability Metadata</h1>
 
-<p>You can build a native executable from a Java application with <strong>Gradle</strong>. 
-For that, use the GraalVM Native Image Gradle plugin provided as part of the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Native Build Tools project</a>.</p>
+<p>With the Gradle plugin for GraalVM Native Image you can easily build a native executable from a Java application. The plugin is provided as part of the <a href="https://graalvm.github.io/native-build-tools/latest/index.html">Native Build Tools project</a> and uses the <a href="https://gradle.org/">Gradle build tool</a>.
+If the application does not dynamically load any classes at run time, then your workflow is just one command: <code>./gradlew nativeRun</code>.</p>
 
-<p>A “real-world” Java application likely requires some Java reflection objects, or it calls some native code, or accesses resources on the class path - dynamic features that the <code>native-image</code> tool must be aware of at build time, and provided in the form of <a href="/dev/reference-manual/native-image/metadata/">metadata</a>. 
-(Native Image loads classes dynamically at build time, and not at run time.)</p>
+<p>In the real-world, your application will, most likely, call either Java Reflection, Dynamic Proxy objects, or call some native code, or access resources on the class path - dynamic features that the <code>native-image</code> tool must be aware of at build time, and provided in the form of <a href="/dev/reference-manual/native-image/metadata/">metadata</a>. 
+Native Image loads classes dynamically at build time, and not at run time.</p>
 
 <p>Depending on your application dependencies, there are three ways to provide the metadata with the Native Image Gradle Plugin:</p>
 
 <ol>
-  <li><a href="#build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Using the GraalVM Reachability Metadata Repository</a></li>
-  <li><a href="#build-a-native-executable-with-the-tracing-agent">Using the Tracing Agent</a></li>
-  <li><a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#resources-autodetecting">Autodetecting</a> (if the required resources are directly available on the class path, in the <em>src/main/resources/</em> directory)</li>
+  <li><a href="#build-a-native-executable-with-the-agent">Using the Tracing Agent</a></li>
+  <li><a href="#build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Using the shared GraalVM Reachability Metadata Repository</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin-quickstart.html#build-a-native-executable-with-resources-autodetection">Autodetecting</a> (if the required resources are directly available on the classpath, in the <code>src/main/resources</code> directory)</li>
 </ol>
 
-<p>This guide demonstrates how to build a native executable using the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a>, and with the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#agent-support">Tracing Agent</a>.
-The goal of this guide is to illustrate the difference between the two approaches, and demonstrate how the use of reachability metadata can simplify your development tasks.</p>
+<p>For the Java application used in this guide the first two approaches are applicable. 
+This guide demonstrates how to build a native executable with the <a href="#build-a-native-executable-with-the-agent">Tracing agent</a> and using the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a>.
+The goal is to show users the difference, and prove how using shared metadata can simplify the work.</p>
 
-<p>We recommend that you follow the instructions and create the application step-by-step. 
-Alternatively, you can go right to the <a href="https://github.com/graalvm/native-build-tools/tree/master/samples/metadata-repo-integration">completed example</a>.</p>
+<p>We recommend that you follow the instructions and create the application step-by-step. Alternatively, you can go right to the <a href="https://github.com/graalvm/native-build-tools/tree/master/samples/metadata-repo-integration">completed example</a>.</p>
 
 <h2 id="prepare-a-demo-application">Prepare a Demo Application</h2>
 
-<blockquote>
-  <p>Note: A Java version between 17 and 21 is required to execute Gradle (see the <a href="https://docs.gradle.org/current/userguide/compatibility.html">Gradle Compatibility Matrix</a>). However, if you want to run your application with Java 23 (or higher), there is a workaround: set <code>JAVA_HOME</code> to a Java version between 17 and 21, and <code>GRAALVM_HOME</code> to GraalVM for JDK 23. See the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#_installing_graalvm_native_image_tool">Native Image Gradle Plugin documentation</a> for more details.</p>
-</blockquote>
-
-<h3 id="prerequisite">Prerequisite</h3>
-<p>Make sure you have installed a GraalVM JDK.
+<ol>
+  <li>
+    <p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-
-<ol>
+  </li>
   <li>
     <p>Create a new Java project with <strong>Gradle</strong> in your favorite IDE, called “H2Example”, in the <code>org.graalvm.example</code> package.</p>
   </li>
-  <li>Rename the default <em>app/</em> directory to <em>H2Example/</em>, then rename the default filename <em>App.java</em> to <em>H2Example.java</em> and replace its contents with the following:
+  <li>
+    <p>Rename the default <em>app</em> directory to <em>H2Example</em>, then rename the default filename <em>App.java</em> to <em>H2Example.java</em> and replace its contents with the following:</p>
+
     <pre><code class="language-java"> package org.graalvm.example;
 
  import java.sql.Connection;
@@ -195,6 +193,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
      public static final String JDBC_CONNECTION_URL = "jdbc:h2:./data/test";
 
      public static void main(String[] args) throws Exception {
+         // Cleanup
          withConnection(JDBC_CONNECTION_URL, connection -&gt; {
              connection.prepareStatement("DROP TABLE IF EXISTS customers").execute();
              connection.commit();
@@ -205,6 +204,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
          System.out.println("=== Inserting the following customers in the database: ");
          printCustomers(customers);
 
+         // Insert data
          withConnection(JDBC_CONNECTION_URL, connection -&gt; {
              connection.prepareStatement("CREATE TABLE customers(id INTEGER AUTO_INCREMENT, name VARCHAR)").execute();
              PreparedStatement statement = connection.prepareStatement("INSERT INTO customers(name) VALUES (?)");
@@ -220,6 +220,7 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
          System.out.println("");
 
          Set&lt;String&gt; savedCustomers = new HashSet&lt;&gt;();
+         // Read data
          withConnection(JDBC_CONNECTION_URL, connection -&gt; {
              try (ResultSet resultSet = connection.prepareStatement("SELECT * FROM customers").executeQuery()) {
                  while (resultSet.next()) {
@@ -255,49 +256,36 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
  }
 </code></pre>
   </li>
-  <li>Open the Gradle configuration file <em>build.gradle</em>, and replace its contents with the following:
-    <pre><code> plugins {
-     id 'application'
-     // 1. Native Image Gradle plugin
-     id 'org.graalvm.buildtools.native' version '0.10.3'
- }
-
- repositories {
-     mavenCentral()
- }
-    
- // 2. Application main class
- application {
+  <li>
+    <p>Delete the <code>H2Example/src/test/java</code> directory.</p>
+  </li>
+  <li>Open the Gradle configuration file <em>build.gradle</em>, and update the main class in the <code>application</code> section:
+    <pre><code class="language-xml"> application {
      mainClass.set('org.graalvm.example.H2Example')
  }
-
- dependencies {
-     // 3. H2 Database dependency
-     implementation("com.h2database:h2:2.2.220")
- }
-
- // 4. Native Image build configuration
- graalvmNative {
-     binaries {
-         main {
-             imageName.set('h2example')
-             buildArgs.add("-Ob")
-         }
-     }
+</code></pre>
+  </li>
+  <li>Add explicit dependency on <a href="https://www.h2database.com/html/main.html">H2 Database</a>, an open source SQL database for Java. The application interacts with this database through the JDBC driver. Insert the following line in the <code>dependencies</code> section of <em>build.gradle</em>:
+    <pre><code class="language-xml"> dependencies {
+     implementation("com.h2database:h2:2.1.210")
  }
 </code></pre>
+    <p>Also, in the dependencies section, remove the dependency on <code>guava</code> that will not be used.</p>
 
-    <p><strong>1</strong> Enable the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Native Image Gradle plugin</a>.
- The plugin discovers which JAR files it needs to pass to <code>native-image</code> and what the executable main class should be.</p>
-
-    <p><strong>2</strong> Specify the application main class explicitly.</p>
-
-    <p><strong>3</strong> Add a dependency on the <a href="https://www.h2database.com/html/main.html">H2 Database</a>, an open source SQL database for Java. The application interacts with this database through the JDBC driver.</p>
-
-    <p><strong>4</strong> You can pass parameters to the <code>native-image</code> tool in the <code>graalvmNative</code> plugin configuration. In individual <code>buildArgs</code> you can pass parameters exactly the same way as you do on the command line. The <code>-Ob</code> option to enable the quick build mode (recommended during development only) is used as an example. <code>imageName.set()</code> is used to specify the name for the resulting binary. Learn about other configuration options from the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration">plugin’s documentation</a>.</p>
+    <p>The next steps will be focused what you should do to enable the Native Image Gradle plugin.</p>
   </li>
-  <li>The plugin is not yet available on the Gradle Plugin Portal, so declare an additional plugin repository. Open the <em>settings.gradle</em> file and replace the default content with this:
-    <pre><code> pluginManagement {
+  <li>Register the Native Image Gradle plugin. Add the following to <code>plugins</code> section of your project’s <em>build.gradle</em> file:
+    <pre><code class="language-xml"> plugins {
+ // ...
+ id 'org.graalvm.buildtools.native' version '0.9.13'
+ }
+</code></pre>
+    <p>The plugin discovers which JAR files it needs to pass to the <code>native-image</code> builder and what the executable main class should be.</p>
+  </li>
+  <li>
+    <p>The plugin is not yet available on the Gradle Plugin Portal, so declare an additional plugin repository. Open the <em>settings.gradle</em> file and replace the default content with this:</p>
+
+    <pre><code class="language-xml"> pluginManagement {
      repositories {
          mavenCentral()
          gradlePluginPortal()
@@ -309,79 +297,143 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 </code></pre>
     <p>Note that the <code>pluginManagement {}</code> block must appear before any other statements in the file.</p>
   </li>
-  <li>(Optional) Build and run the application:
-    <pre><code class="language-shell">gradle run
-</code></pre>
-    <p>This generates a runnable JAR file that returns a list of customers stored in the H2 Database.</p>
-  </li>
 </ol>
 
-<h2 id="build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Build a Native Executable Using the GraalVM Reachability Metadata Repository</h2>
+<h2 id="build-a-native-executable-with-the-agent">Build a Native Executable with the Agent</h2>
 
-<p><a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a> provides GraalVM configuration for libraries which do not support GraalVM Native Image by default.
-One of these is the <a href="https://www.h2database.com/html/main.html">H2 Database</a> this application depends on.</p>
+<p>The Native Image Gradle plugin simplifies generation of the required metadata by injecting the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#agent-support">Tracing agent</a> (later <em>the agent</em>) automatically for you at compile time. 
+To enable the agent, just pass the <code>-Pagent</code> option to any Gradle tasks that extends <code>JavaForkOptions</code> (for example, <code>test</code> or <code>run</code>).</p>
 
-<p>The Native Image Gradle plugin <strong>automatically downloads the metadata from the repository at build time</strong>.</p>
-
-<p>With Gradle you can build a native executable and run it at one step:</p>
-<pre><code class="language-shell">gradle nativeRun
-</code></pre>
-<p>The native executable, named <em>h2example</em>, is created in the <em>build/native/nativeCompile</em> directory.
-The command also runs the application from that native executable.</p>
-
-<h2 id="build-a-native-executable-with-the-tracing-agent">Build a Native Executable with the Tracing Agent</h2>
-
-<p>The second way to provide the medatata configuration for <code>native-image</code> is by injecting the <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#agent-support">Tracing Agent</a> (later <em>the agent</em>) at compile time.</p>
-
-<p>The agent can run in three modes:</p>
+<p>The agent can run in multiple modes:</p>
 <ul>
-  <li><strong>Standard</strong>: Collects metadata without conditions. This is recommended if you are building a native executable.</li>
-  <li><strong>Conditional</strong>: Collects metadata with conditions. This is recommended if you are creating conditional metadata for a native shared library intended for further use.</li>
+  <li><strong>Standard</strong>: Collects metadata without conditions. This is recommended if you are building an executable.</li>
+  <li><strong>Conditional</strong>: Collects metadata with conditions. This is recommended if you are creating conditional metadata for a library intended for further use.</li>
   <li><strong>Direct</strong>: For advanced users only. This mode allows directly controlling the command line passed to the agent.</li>
 </ul>
 
-<p>You can configure the agent by either passing the options on the command line, or in the <em>build.gradle</em> file.
-See below how to collect metadata with the agent, and build a native executable.</p>
+<p>You can configure the agent either passing the options on the command line, or in the <em>build.gradle</em> file. See below how to configure the Native Image Gradle plugin, collect metadata with the tracing agent, and build a native executable applying the provided configuration.</p>
 
 <ol>
-  <li>Open the <em>build.gradle</em> file and add the agent configuration in the <code>graalvmNative</code> block:
-    <pre><code> agent {
-     defaultMode = "standard"
+  <li>
+    <p>(Optional) Instruct the agent to run in the standard mode. Insert this configuration block at the bottom of the <em>build.gradle</em> file:</p>
+
+    <pre><code class="language-xml"> graalvmNative {
+     agent {
+         defaultMode = "standard"
+     }
+     binaries {
+         main {
+             imageName.set('h2demo') 
+         }
+     }
+     toolchainDetection = false
  }
 </code></pre>
-    <p>It defines which mode the agent should run on.
- If you prefer the command-lime option, it is <code>-Pagent=standard</code>.</p>
+    <p>If you prefer the command-lime option, that will be <code>-Pagent=standard</code>.
+ The second part of the configuration shows how to specify a custom name for a final native executable.</p>
+
+    <p>Another thing to note here, the plugin may not be able to properly detect the GraalVM installation, because of limitations in Gradle. The workaround is to disable toolchain detection with this command: <code>toolchainDetection = false</code>. Learn more about selecting the GraalVM toolchain <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-toolchains">here</a>.</p>
   </li>
-  <li>Now run your application with the agent, on the JVM. To enable the agent with the Native Image Gradle plugin, pass the <code>-Pagent</code> option to any Gradle tasks that extends <code>JavaForkOptions</code> (for example, <code>test</code> or <code>run</code>):
-    <pre><code class="language-shell">gradle -Pagent run
+  <li>
+    <p>Now run your application with the agent enabled, on the JVM:</p>
+
+    <pre><code class="language-shell"> ./gradlew -Pagent run
 </code></pre>
-    <p>The agent captures and records calls to the H2 Database and all the dynamic features encountered during a test run into the JSON file(s) in the <em>/build/native/agent-output/run</em> directory.</p>
+    <p>The agent captures and writes down calls to the H2 Database and all the dynamic features encountered during a test run into multiple <em>*-config.json</em> files.</p>
   </li>
-  <li>Once the metadata is collected, copy it into the project’s <em>/META-INF/native-image/</em> directory using the <code>metadataCopy</code> task:
-    <pre><code class="language-shell"> gradle metadataCopy --task run --dir src/main/resources/META-INF/native-image
+  <li>
+    <p>Once the metadata is collected, copy it into the project’s <code>/META-INF/native-image</code> directory using the <code>metadataCopy</code> task:</p>
+
+    <pre><code class="language-shell"> ./gradlew metadataCopy --task run --dir src/main/resources/META-INF/native-image
 </code></pre>
 
-    <p>It is not required but recommended that the output directory is <em>/resources/META-INF/native-image/</em>. The <code>native-image</code> tool picks up metadata from that location automatically. For more information about how to collect metadata for your application automatically, see <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</p>
+    <p>The JSON files are stored in the <code>META-INF/native-image/&lt;group.id&gt;/&lt;artifact.id&gt;</code> project directory. It is not required but recommended that the output directory is <code>/resources/META-INF/native-image/</code>. The <code>native-image</code> tool will pick up metadata from that location automatically. For more information about how to collect metadata for your application automatically, see <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.
+ Here is the expected files tree after this step:</p>
+
+    <p><img src="/docs/reference-manual/native-image/guides/img/H2Example-json-configs.png" alt="Configuration Files Generated by the Agent" /></p>
   </li>
-  <li>Build a native executable using configuration collected by the agent:
-    <pre><code class="language-shell"> gradle nativeRun
+  <li>
+    <p>Build a native executable using metadata acquired by the agent:</p>
+
+    <pre><code class="language-shell"> ./gradlew nativeCompile
 </code></pre>
-    <p>The command also runs the application.</p>
+    <p>The native executable, named <em>h2demo</em>, is created in the <em>build/native/nativeCompile</em> directory.</p>
   </li>
-  <li>(Optional) To clean up the project, run <code>gradle clean</code>, and delete the directory <em>META-INF</em> with its contents.</li>
+  <li>
+    <p>Run the application from the native executable:</p>
+
+    <pre><code class="language-shell"> ./H2Example/build/native/nativeCompile/h2demo
+</code></pre>
+  </li>
 </ol>
+
+<p>Learn more about using the agent with the Native Image Gradle plugin <a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#agent-support">here</a>.</p>
+
+<blockquote>
+  <p>Important: To proceed to the next section, clean up the project: <code>./gradlew clean</code>. Make sure to delete <code>META-INF</code> and its contents.</p>
+</blockquote>
+
+<h2 id="build-a-native-executable-using-the-graalvm-reachability-metadata-repository">Build a Native Executable Using the GraalVM Reachability Metadata Repository</h2>
+
+<p>Since release 0.9.11, the Native Image Gradle plugin adds experimental support for the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a>. 
+This repository provides GraalVM configuration for libraries which do not support GraalVM Native Image by default. The support needs to be enabled explicitly.</p>
+
+<ol>
+  <li>
+    <p>Open the <em>build.gradle</em> file, and enable the GraalVM Reachability Metadata Repository in the <code>graalvmNative</code> plugin configuration:</p>
+
+    <pre><code class="language-xml"> metadataRepository {
+     enabled = true
+ }
+</code></pre>
+    <p>The whole configuration block should look like:</p>
+    <pre><code class="language-xml"> graalvmNative {
+     agent {
+         defaultMode = "standard"
+     }
+     binaries {
+         main {
+             imageName.set('h2demo') 
+         }
+     }
+     metadataRepository {
+         enabled = true
+     }
+     toolchainDetection = false
+ }
+</code></pre>
+    <p>The plugin will automatically download the metadata from the repository.</p>
+  </li>
+  <li>Now build a native executable re-using metadata from the shared repository:
+    <pre><code class="language-shell"> ./gradlew nativeRun
+</code></pre>
+  </li>
+  <li>
+    <p>Run the application from the native executable:</p>
+
+    <pre><code class="language-shell"> ./H2Example/build/native/nativeCompile/h2demo
+</code></pre>
+  </li>
+</ol>
+
+<p>You are reaching the same results in less steps. Using the shared GraalVM Reachability Metadata Repository enhances the usability of Native Image for Java applications depending on 3rd party libraries.</p>
 
 <h3 id="summary">Summary</h3>
 
-<p>This guide demonstrated how to build a native executable using the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a> and with the Tracing Agent. The goal was to show the difference, and prove how using the reachability metadata can simplify the work.
-Using the GraalVM Reachability Metadata Repository enhances the usability of Native Image for Java applications depending on 3rd party libraries.</p>
+<p>The <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a> enables Native Image users to share and reuse metadata for libraries and frameworks in the Java ecosystem, and, thus share the burden of maintaining third-party dependencies.</p>
+
+<p>Note that if your application does not call any dynamic features at run time, running the agent or enabling the GraalVM Reachability Metadata Repository is needless. 
+Your workflow in that case would just be:</p>
+<pre><code class="language-shell">./gradlew nativeRun
+</code></pre>
 
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
-  <li><a href="https://graalvm.github.io/native-build-tools/latest/index.html">Native Image Build Tools</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/#tracing-agent">Collect Metadata with the Tracing Agent</a></li>
+  <li><a href="https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html">Gradle plugin for GraalVM Native Image building</a></li>
+  <li><a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata Repository</a></li>
 </ul>
 
       </div>
@@ -491,9 +543,8 @@ Using the GraalVM Reachability Metadata Repository enhances the usability of Nat
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

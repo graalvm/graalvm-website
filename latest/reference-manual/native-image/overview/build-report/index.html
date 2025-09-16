@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -595,7 +594,7 @@ Here you will learn how to generate a Build Report and how to use each report se
         
       </h2>
 
-<p>A simple HelloWorld Micronaut application (available in the <a href="https://github.com/graalvm/graalvm-demos/tree/master/micronaut-hello-rest-maven">GraalVM Demos repository</a>) is used to demonstrate Build Report generation and its structure.</p>
+<p>A simple HelloWorld Micronaut application (available in the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/microservices/micronaut-hello-rest-maven">GraalVM Demos repository</a>) is used to demonstrate Build Report generation and its structure.</p>
 
 <p>A Build Report can simply be generated using the <code>--emit</code> option when running the <code>native-image</code> command:</p>
 
@@ -820,6 +819,37 @@ All the artifacts used in the build are listed in the table.</p>
 <p>The PGO Sampling Profile is a section that is only present in reports generated when building <a href="/latest/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">PGO-optimized binaries</a>.
 This section is described in detail in its dedicated PGO guide - <a href="/latest/reference-manual/native-image/optimizations-and-performance/PGO/build-reports/">Inspecting a Profile in a Build Report</a>.</p>
     
+      <h2 id="dynamic-access">
+        
+        
+          Dynamic Access <a href="#dynamic-access" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Dynamic access refers to all method calls and operations that require reachability metadata to function correctly in a native image. This includes reflection, resource access, serialization, and native calls. GraalVM 25 introduces an experimental reporting feature to help you identify dynamic access (such as reflection) before it causes runtime issues. When you build with both <code>-H:+ReportDynamicAccess</code> and <code>--emit=build-report</code>, the Native Image build report includes a <strong>Dynamic Access</strong> tab that highlights reflective usage present in the image.</p>
+
+<p>After building your application, open the generated report (for example, <em>target/[x]-build-report.html</em>) and navigate to the <strong>Dynamic Access</strong> tab to review dynamic access usage.</p>
+
+<p>This section of the report highlights code that may require review to ensure your application runs successfully as a native executable. For example, classes loaded via <code>Class.forName(...)</code> must be included in the executable.</p>
+
+<p><strong>Understanding the Dynamic Access tab:</strong></p>
+
+<ul>
+  <li>If no dynamic calls are detected for a class or module path entry, no further action is needed.</li>
+  <li>If the entry includes <code>native-image.properties</code> or <code>reachability-metadata.json</code>, or these files are provided externally, no further investigation is required.</li>
+  <li>If integrated configuration or external metadata (such as <code>reflect-config.json</code>) exists for each detected call type, no further investigation is required.</li>
+  <li>If none of the above apply, the entry may require further investigation.</li>
+</ul>
+
+<p>For each entry with detected dynamic calls, you can expand the entry in the report to see the specific methods and their call locations. The report also provides links to configuration files, whether they are packaged in JARs or available in directories.</p>
+
+<blockquote>
+  <p>Only dynamic calls found in reachable code are reported. Some entries may have existing metadata but no reported dynamic calls.</p>
+</blockquote>
+
+<p>For a practical demonstration of running and using the <code>-H:+ReportDynamicAccess</code> option, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
+    
       <h2 id="related-documentation">
         
         
@@ -950,9 +980,8 @@ This section is described in detail in its dedicated PGO guide - <a href="/lates
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

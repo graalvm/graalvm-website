@@ -9,7 +9,7 @@
 
   <title>
     
-      Migration Guide from Nashorn to GraalJS
+      Migration Guide from Nashorn to GraalVM JavaScript
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -238,7 +237,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            GraalJS
+            JavaScript and Node.js Reference
           </a>
         </li>
 
@@ -274,7 +273,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              GraalJS Compatibility
+              JavaScript Compatibility
             </a>
           </li>
 
@@ -307,7 +306,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalJS
+              Migration Guide from Nashorn to GraalVM JavaScript
             </a>
           </li>
 
@@ -334,7 +333,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalJS
+              Migration Guide from Rhino to GraalVM JavaScript
             </a>
           </li>
 
@@ -367,7 +366,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalJS on a Stock JDK
+              Run GraalVM JavaScript on a Stock JDK
             </a>
           </li>
 
@@ -460,25 +459,26 @@ $(document).ready(function(){
 
 
         
-        <h1 id="migration-guide-from-nashorn-to-graaljs">
+        <h1 id="migration-guide-from-nashorn-to-graalvm-javascript">
         
         
-          Migration Guide from Nashorn to GraalJS
+          Migration Guide from Nashorn to GraalVM JavaScript
         
         
       </h1>
 
 <p>This guide serves as a migration guide for code previously targeted to the Nashorn engine.
-See the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability guide</a> for an overview of supported Java interoperability features.</p>
+See the <a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a> guide for an overview of supported Java interoperability features.</p>
 
-<p>The Nashorn engine has been deprecated in JDK 11 as part of <a href="https://openjdk.java.net/jeps/335">JEP 335</a> and has been removed from JDK15 as part of <a href="https://openjdk.java.net/jeps/372">JEP 372</a>.</p>
+<p>The Nashorn engine has been deprecated in JDK 11 as part of <a href="https://openjdk.java.net/jeps/335">JEP 335</a> and
+and has been removed from JDK15 as part of <a href="https://openjdk.java.net/jeps/372">JEP 372</a>.</p>
 
-<p>GraalJS can step in as a replacement for JavaScript code previously executed on the Nashorn engine.
-GraalJS provides all the features for JavaScript previously provided by Nashorn.
-Many are available by default, some are behind options, and others require minor modifications to your source code.</p>
+<p>GraalVM can step in as a replacement for JavaScript code previously executed on the Nashorn engine.
+GraalVM provides all the features for JavaScript previously provided by Nashorn.
+Many are available by default, some are behind flags, and others require minor modifications to your source code.</p>
 
-<p>Both Nashorn and GraalJS support a similar set of syntax and semantics for Java interoperability.
-One notable difference is that GraalJS takes a <em>secure by default</em> approach, meaning some features need to be explicitly enabled that were available by default on Nashorn.
+<p>Both Nashorn and GraalVM JavaScript support a similar set of syntax and semantics for Java interoperability.
+One notable difference is that GraalVM JavaScript takes a <em>secure by default</em> approach, meaning some features need to be explicitly enabled that were available by default on Nashorn.
 The most important differences relevant for migration are listed here.</p>
 
 <p>Nashorn features available by default (dependent on <a href="#secure-by-default">security settings</a>):</p>
@@ -497,39 +497,35 @@ The most important differences relevant for migration are listed here.</p>
         
       </h2>
 
-<p>GraalJS provides a Nashorn compatibility mode.
+<p>GraalVM JavaScript provides a Nashorn compatibility mode.
 Some of the functionality necessary for Nashorn compatibility is only available when the <code>js.nashorn-compat</code> option is enabled.
-This is the case for Nashorn-specific extensions that GraalJS does not want to expose by default.</p>
+This is the case for Nashorn-specific extensions that GraalVM JavaScript does not want to expose by default.</p>
 
-<p>Note that you have to unlock <a href="/dev/reference-manual/js/Options/#stable-and-experimental-options">experimental features</a> to use this option.
-Further note that setting this option defeats the <a href="#secure-by-default">secure by default</a> approach of GraalJS in some cases, for example, when operating on a legacy <code>ScriptEngine</code>.</p>
+<p>Note that you have to enable <a href="/dev/reference-manual/js/Options/#stable-and-experimental-options">experimental options</a> to use this flag.
+Further note that setting this flag defeats the <a href="#secure-by-default">secure by default</a> approach of GraalVM JavaScript in some cases, e.g., when operating on a legacy <code>ScriptEngine</code>.</p>
 
 <p>When you use the Nashorn compatibility mode, by default, ECMAScript 5 is set as compatibility level.
-You can specify a different ECMAScript version using the <code>js.ecmascript-version</code> option. 
-Note that this might conflict with full Nashorn compatibility.
-A code example how to set the option is given near the end of this section.</p>
+You can specify a different ECMAScript version using the <code>js.ecmascript-version</code> flag; note that this might conflict with full Nashorn compatibilty.
+A code example how to set the flag is given near the end of this section.</p>
 
-<p>The <code>js.nashorn-compat</code> option can be set:</p>
-<ul>
-  <li>By using a command line option:
-    <pre><code class="language-shell">  js --experimental-options --js.nashorn-compat=true
+<p>The <code>js.nashorn-compat</code> option can be set:
+1. by using a command line option:</p>
+<pre><code class="language-shell">js --experimental-options --js.nashorn-compat=true
 </code></pre>
-  </li>
-  <li>By using the Polyglot API:
-    <pre><code class="language-java">  import org.graalvm.polyglot.Context;
 
-  try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("js.nashorn-compat", "true").build()) {
-      context.eval("js", "print(__LINE__)");
-  }
-</code></pre>
-  </li>
-  <li>By using a system property when starting a Java application (remember to enable <code>allowExperimentalOptions</code> on the <code>Context.Builder</code> in your application as well):
-    <pre><code class="language-shell">  java -Dpolyglot.js.nashorn-compat=true MyApplication
-</code></pre>
-  </li>
-</ul>
+<p>2. by using the Polyglot API:</p>
+<pre><code class="language-java">import org.graalvm.polyglot.Context;
 
-<p>Functionality only available under the <code>nashorn-compat</code> option includes:</p>
+try (Context context = Context.newBuilder().allowExperimentalOptions(true).option("js.nashorn-compat", "true").build()) {
+    context.eval("js", "print(__LINE__)");
+}
+</code></pre>
+
+<p>3. by using a system property when starting a Java application (remember to enable <code>allowExperimentalOptions</code> on the <code>Context.Builder</code> in your application as well):</p>
+<pre><code class="language-shell">java -Dpolyglot.js.nashorn-compat=true MyApplication
+</code></pre>
+
+<p>Functionality only available under the <code>nashorn-compat</code> flag includes:</p>
 <ul>
   <li><code>Java.isJavaFunction</code>, <code>Java.isJavaMethod</code>, <code>Java.isScriptObject</code>, <code>Java.isScriptFunction</code></li>
   <li><code>new Interface|AbstractClass(fn|obj)</code></li>
@@ -541,7 +537,8 @@ A code example how to set the option is given near the end of this section.</p>
 </ul>
 
 <p>The <code>js.ecmascript-version</code> option can be set in similar fashion.
-As this is a supported option, there is no need to provide the <code>experimental-options</code> option just for setting the <code>ecmascript-version</code>:</p>
+As this is a supported option, there is no need to provide the <code>experimental-options</code> flag just for setting the <code>ecmascript-version</code>:
+1. by using a command line option:</p>
 <pre><code class="language-shell">js --js.ecmascript-version=2020
 </code></pre>
     
@@ -556,15 +553,15 @@ As this is a supported option, there is no need to provide the <code>experimenta
 <p><a href="https://wiki.openjdk.java.net/display/Nashorn/Nashorn+extensions">Nashorn syntax extensions</a> can be enabled using the <code>js.syntax-extensions</code> experimental option.
 They are also enabled by default in the Nashorn compatibility mode (<code>js.nashorn-compat</code>).</p>
     
-      <h2 id="graaljs-vs-nashorn">
+      <h2 id="graalvm-javascript-vs-nashorn">
         
         
-          GraalJS vs Nashorn <a href="#graaljs-vs-nashorn" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          GraalVM JavaScript vs Nashorn <a href="#graalvm-javascript-vs-nashorn" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>GraalJS differs from Nashorn in some aspects that were intentional design decisions.</p>
+<p>GraalVM JavaScript differs from Nashorn in some aspects that were intentional design decisions.</p>
     
       <h3 id="secure-by-default">
         
@@ -573,26 +570,24 @@ They are also enabled by default in the Nashorn compatibility mode (<code>js.nas
         
         
       </h3>
-
-<p>GraalJS takes a <em>secure by default</em> approach.
+<p>GraalVM JavaScript takes a <em>secure by default</em> approach.
 Unless explicitly permitted by the embedder, JavaScript code cannot access Java classes or access the file system, among other restrictions.
-Several features of GraalJS, including Nashorn compatibility features, are only available when the relevant security settings are permissive enough.</p>
-
-<p>Make sure you <a href="/dev/security-guide/">understand the security implications</a> of any change that lifts the secure default limits to your application and the host system.</p>
+Several features of GraalVM JavaScript, including Nashorn compatibility features, are only available when the relevant security settings are permissive enough.
+Make sure you <a href="/dev/security-guide/">understand the security implications</a> of any change that lifts the secure default limits to your application and the host system.</p>
 
 <p>For a full list of available settings, see <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/Context.Builder.html"><code>Context.Builder</code></a>.
-Those options can be defined when building the context with the Polyglot API.</p>
+Those flags can be defined when building the context with GraalVM Polyglot API.</p>
 
-<p>Options frequently required to enable features of GraalJS are:</p>
+<p>Flags frequently required to enable features of GraalVM JavaScript are:</p>
 <ul>
-  <li><code>allowHostAccess()</code>: configure which public constructors, methods or fields of public classes are accessible by a guest application. Use <code>HostAccess.EXPLICIT</code> or a custom <code>HostAccess</code> policy to selectively enable access. Set to <code>HostAccess.ALL</code> to allow unrestricted access.</li>
-  <li><code>allowHostClassLookup()</code>: set a filter that specifies the Java host classes that can be looked up by a guest application. Set to the Predicate <code>className -&gt; true</code> to allow lookup of all classes.</li>
-  <li><code>allowIO()</code>: allow a guest language to perform unrestricted IO operations on the host system, required, for example, to <code>load()</code> from the file system. Set to <code>true</code> to enable IO.</li>
+  <li><code>allowHostAccess()</code>: configure which public constructors, methods or fields of public classes are accessible by guest applications. Use <code>HostAccess.EXPLICIT</code> or a custom <code>HostAccess</code> policy to selectively enable access. Set to <code>HostAccess.ALL</code> to allow unrestricted access.</li>
+  <li><code>allowHostClassLookup()</code>: set a filter that specifies the Java host classes that can be looked up by the guest application. Set to the Predicate <code>className -&gt; true</code> to allow lookup of all classes.</li>
+  <li><code>allowIO()</code>: allow the guest language to perform unrestricted IO operations on the host system, required, e.g., to <code>load()</code> from the file system. Set to <code>true</code> to enable IO.</li>
 </ul>
 
-<p>If you run code on the legacy <code>ScriptEngine</code>, see <a href="/dev/reference-manual/js/ScriptEngine/#setting-options-via-bindings">Setting Options via <code>Bindings</code></a> regarding how to set them there.</p>
+<p>If you run code on the legacy <code>ScriptEngine</code>, see <a href="https://github.com/graalvm/graaljs/blob/master/docs/user/ScriptEngine.md#setting-options-via-bindings">Setting options via <code>Bindings</code></a> regarding how to set them there.</p>
 
-<p>Finally, note that the <code>nashorn-compat</code> mode enables the relevant options when executing code on the <code>ScriptEngine</code> (but not on <code>Context</code>), to provide better compatibility with Nashorn in that setup.</p>
+<p>Finally, note that the <code>nashorn-compat</code> mode enables the relevant flags when executing code on the <code>ScriptEngine</code> (but not on <code>Context</code>), to provide better compatibilty with Nashorn in that setup.</p>
     
       <h3 id="launcher-name-js">
         
@@ -601,9 +596,8 @@ Those options can be defined when building the context with the Polyglot API.</p
         
         
       </h3>
-
-<p>GraalJS comes with a binary launcher named <code>js</code>.
-Note that, depending on the build environment, GraalJS might still ship Nashorn and its <code>jjs</code> launcher.</p>
+<p>GraalVM JavaScript comes with a binary launcher named <code>js</code>.
+Note that, depending on the build setup, GraalVM might still ship Nashorn and its <code>jjs</code> launcher.</p>
     
       <h3 id="scriptengine-name-graaljs">
         
@@ -612,11 +606,10 @@ Note that, depending on the build environment, GraalJS might still ship Nashorn 
         
         
       </h3>
-
-<p>GraalJS is shipped with support for <code>ScriptEngine</code>.
+<p>GraalVM JavaScript is shipped with support for <code>ScriptEngine</code>.
 It registers under several names, including “graal.js”, “JavaScript”, and “js”.
 Be sure to activate the Nashorn compatibility mode as described above if you need full Nashorn compatibility.
-Depending on the build setup, GraalJS might still ship Nashorn and provide it via <code>ScriptEngine</code>.
+Depending on the build setup, GraalVM might still ship Nashorn and provide it via ScriptEngine.
 For more details, see <a href="/dev/reference-manual/js/ScriptEngine/">ScriptEngine Implementation</a>.</p>
     
       <h3 id="classfilter">
@@ -626,8 +619,7 @@ For more details, see <a href="/dev/reference-manual/js/ScriptEngine/">ScriptEng
         
         
       </h3>
-
-<p>GraalJS provides a class filter when starting with a polyglot <code>Context</code>.
+<p>GraalVM JavaScript supports a class filter when starting with a polyglot <code>Context</code>.
 See <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Builder.html#hostClassFilter-java.util.function.Predicate-"><code>Context.Builder.hostClassFilter</code></a>.</p>
     
       <h3 id="fully-qualified-names">
@@ -637,11 +629,10 @@ See <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.Bui
         
         
       </h3>
-
-<p>GraalJS requires the use of <code>Java.type(typename)</code>.
-It does not support accessing classes just by their fully qualified class name by default. 
+<p>GraalVM Javascript requires the use of <code>Java.type(typename)</code>.
+It does not support accessing classes just by their fully qualified class name by default.
 <code>Java.type</code> brings more clarity and avoids the accidental use of Java classes in JavaScript code.
-For example, look at this pattern:</p>
+For instance, look at this pattern:</p>
 <pre><code class="language-js">var bd = new java.math.BigDecimal('10');
 </code></pre>
 
@@ -657,16 +648,14 @@ var bd = new BigDecimal('10');
         
         
       </h3>
-
-<p>GraalJS does not allow lossy conversions of arguments when calling Java methods.
+<p>GraalVM JavaScript does not allow lossy conversions of arguments when calling Java methods.
 This could lead to bugs with numeric values that are hard to detect.</p>
 
-<p>GraalJS always selects the overloaded method with the narrowest possible argument types that can be converted to without loss.
-If no such overloaded method is available, GraalJS throws a <code>TypeError</code> instead of lossy conversion.
+<p>GraalVM JavaScript will always select the overloaded method with the narrowest possible argument types that can be converted to without loss.
+If no such overloaded method is available, GraalVM JavaScript throws a <code>TypeError</code> instead of lossy conversion.
 In general, this affects which overloaded method is executed.</p>
 
-<p>Custom <code>targetTypeMapping</code>s can be used to customize behavior. 
-See <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#targetTypeMapping-java.lang.Class-java.lang.Class-java.util.function.Predicate-java.util.function.Function">HostAccess.Builder#targetTypeMapping</a>.</p>
+<p>Custom <code>targetTypeMapping</code>s can be used to customize behaviour. See <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/HostAccess.Builder.html#targetTypeMapping-java.lang.Class-java.lang.Class-java.util.function.Predicate-java.util.function.Function-">HostAccess.Builder#targetTypeMapping</a>.</p>
     
       <h3 id="scriptobjectmirror-objects">
         
@@ -675,8 +664,7 @@ See <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/HostAc
         
         
       </h3>
-
-<p>GraalJS does not provide objects of the class <code>ScriptObjectMirror</code>.
+<p>GraalVM JavaScript does not provide objects of the class <code>ScriptObjectMirror</code>.
 Instead, JavaScript objects are exposed to Java code as objects implementing Java’s <code>Map</code> interface.</p>
 
 <p>Code referencing <code>ScriptObjectMirror</code> instances can be rewritten by changing the type to either an interface (<code>Map</code> or <code>List</code>) or the polyglot <a href="http://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Value.html">Value</a> class which provides similar capabilities.</p>
@@ -694,12 +682,12 @@ Contexts can be shared between threads, but each context must be accessed by a s
 Multiple JavaScript engines can be created from a Java application, and can be safely executed in parallel on multiple threads:</p>
 <pre><code class="language-js">Context polyglot = Context.create();
 Value array = polyglot.eval("js", "[1,2,42,4]");
+
 </code></pre>
 
-<p>GraalJS does not allow the creation of threads from JavaScript with access to the current <code>Context</code>.
-Moreover, GraalJS does not allow concurrent threads to access the same <code>Context</code> at the same time.
-This could lead to unmanageable synchronization problems like data races in a language that is not prepared for multithreading. 
-For example:</p>
+<p>GraalVM JavaScript does not allow the creation of threads from JavaScript applications with access to the current <code>Context</code>.
+Moreover, GraalVM JavaScript does not allow concurrent threads to access the same <code>Context</code> at the same time.
+This could lead to unmanagable synchronization problems like data races in a language that is not prepared for multithreading. For example:</p>
 <pre><code class="language-js">new Thread(function() {
     print('printed from another thread'); // throws Exception due to potential synchronization problems
 }).start();
@@ -709,11 +697,10 @@ For example:</p>
 The child thread may not access the <code>Context</code> of the parent thread or of any other polyglot thread.
 In case of violations, an <code>IllegalStateException</code> will be thrown.
 A child thread may create a new <code>Context</code> instance, though.</p>
-<pre><code class="language-js">new Thread(aJavaRunnable).start(); // allowed on GraalJS
+<pre><code class="language-js">new Thread(aJavaRunnable).start(); // allowed on GraalVM JavaScript
 </code></pre>
 
-<p>With proper synchronization in place, multiple contexts can be shared between different threads. 
-The example Java applications using JavaScript <code>Context</code>s from multiple threads can be found <a href="https://github.com/graalvm/graaljs/tree/master/graal-js/src/com.oracle.truffle.js.test.threading/src/com/oracle/truffle/js/test/threading">here</a>.</p>
+<p>With proper synchronization in place, multiple contexts can be shared between different threads. The example Java applications using GraalVM JavaScript <code>Context</code>s from multiple threads can be found <a href="https://github.com/graalvm/graaljs/tree/master/graal-js/src/com.oracle.truffle.js.test.threading/src/com/oracle/truffle/js/test/threading">here</a>.</p>
     
       <h2 id="extensions-only-available-in-nashorn-compatibility-mode">
         
@@ -723,8 +710,8 @@ The example Java applications using JavaScript <code>Context</code>s from multip
         
       </h2>
 
-<p>The following JavaScript extensions available in Nashorn are deactivated in GraalJS by default.
-They are provided in the Nashorn compatibility mode.
+<p>The following extensions to JavaScript available in Nashorn are deactivated in GraalVM JavaScript by default.
+They are provided in GraalVM’s Nashorn compatibility mode.
 It is highly recommended not to implement new applications based on those features, but only to use it as a means to migrate existing applications to GraalVM.</p>
     
       <h3 id="string-length-property">
@@ -734,13 +721,12 @@ It is highly recommended not to implement new applications based on those featur
         
         
       </h3>
-
-<p>GraalJS does not treat the length property of a String specially.
+<p>GraalVM JavaScript does not treat the length property of a String specially.
 The canonical way of accessing the String length is reading the <code>length</code> property:</p>
 <pre><code class="language-js">myJavaString.length;
 </code></pre>
 
-<p>Nashorn enables users to access <code>length</code> as both a property and a function.
+<p>Nashorn allows users to access <code>length</code> as both a property and a function.
 Existing function calls <code>length()</code> should be expressed as property access.
 Nashorn behavior is mimicked in the Nashorn compatibility mode.</p>
     
@@ -751,8 +737,7 @@ Nashorn behavior is mimicked in the Nashorn compatibility mode.</p>
         
         
       </h3>
-
-<p>GraalJS requires the use of <code>Java.type</code> instead of fully qualified names.
+<p>GraalVM JavaScript requires the use of <code>Java.type</code> instead of fully qualified names.
 In the Nashorn compatibility mode, the following Java packages are added to the JavaScript global object: <code>java</code>, <code>javafx</code>, <code>javax</code>, <code>com</code>, <code>org</code>, and <code>edu</code>.</p>
     
       <h3 id="javaimporter">
@@ -762,7 +747,6 @@ In the Nashorn compatibility mode, the following Java packages are added to the 
         
         
       </h3>
-
 <p>The <code>JavaImporter</code> feature is available only in the Nashorn compatibility mode.</p>
     
       <h3 id="jsadapter">
@@ -772,7 +756,6 @@ In the Nashorn compatibility mode, the following Java packages are added to the 
         
         
       </h3>
-
 <p>The use of the non-standard <code>JSAdapter</code> feature is discouraged and should be replaced with the equivalent standard <code>Proxy</code> feature.
 For compatibility, <code>JSAdapter</code> is still available in the Nashorn compatibility mode.</p>
     
@@ -783,8 +766,7 @@ For compatibility, <code>JSAdapter</code> is still available in the Nashorn comp
         
         
       </h3>
-
-<p>Several methods provided by Nashorn on the <code>Java</code> global object are available only in the Nashorn compatibility mode, or currently not supported by GraalJS. 
+<p>Several methods provided by Nashorn on the <code>Java</code> global object are available only in the Nashorn compatibility mode, or currently not supported by GraalVM JavaScript.
 Available in the Nashorn compatibility mode are: <code>Java.isJavaFunction</code>, <code>Java.isJavaMethod</code>, <code>Java.isScriptObject</code>, and <code>Java.isScriptFunction</code>. <code>Java.asJSONCompatible</code> is currently not supported.</p>
     
       <h3 id="accessors">
@@ -794,8 +776,8 @@ Available in the Nashorn compatibility mode are: <code>Java.isJavaFunction</code
         
         
       </h3>
+<p>In the Nashorn compatibility mode, GraalVM JavaScript allows users to access getters and setters just by using the names as properties, while omitting <code>get</code>, <code>set</code>, or <code>is</code>:</p>
 
-<p>In the Nashorn compatibility mode, GraalJS allows users to access getters and setters just by using the names as properties, while omitting <code>get</code>, <code>set</code>, or <code>is</code>:</p>
 <pre><code class="language-js">var Date = Java.type('java.util.Date');
 var date = new Date();
 
@@ -803,13 +785,13 @@ var myYear = date.year; // calls date.getYear()
 date.year = myYear + 1; // calls date.setYear(myYear + 1);
 </code></pre>
 
-<p>GraalJS mimics the behavior of Nashorn regarding the ordering of the access:</p>
+<p>GraalVM JavaScript mimics the behavior of Nashorn regarding the ordering of the access:</p>
 <ul>
-  <li>In case of a read operation, GraalJS will first try to call a getter with the name <code>get</code> and the property name in camel case. If that is not available, a getter with the name <code>is</code> and the property name in camel case is called. In the second case, unlike Nashorn, the resulting value is returned even if it is not of type boolean. Only if both methods are not available, the property itself will be read.</li>
-  <li>In case of a write operation, GraalJS will try to call a setter with the name <code>set</code> and the property name in camel case, providing the value as argument to that function. If the setter is not available, the property itself will be written.</li>
+  <li>In case of a read operation, GraalVM JavaScript will first try to call a getter with the name <code>get</code> and the property name in camel case. If that is not available, a getter with the name <code>is</code> and the property name in camel case is called. In the second case, unlike Nashorn, the resulting value is returned even if it is not of type boolean. Only if both methods are not available, the property itself will be read.</li>
+  <li>In case of a write operation, GraalVM JavaScript will try to call a setter with the name <code>set</code> and the property name in camel case, providing the value as argument to that function. If the setter is not available, the property itself will be written.</li>
 </ul>
 
-<p>Note that Nashorn (and thus, GraalJS) makes a clear distinction between property read/writes and function calls.
+<p>Note that Nashorn (and thus, GraalVM JavaScript) makes a clear distinction between property read/writes and function calls.
 When the Java class has both a field and a method of the same name publicly available, <code>obj.property</code> will always read the field (or the getter as discussed above), while <code>obj.property()</code> will always call the respective method.</p>
     
       <h2 id="additional-aspects-to-consider">
@@ -820,15 +802,14 @@ When the Java class has both a field and a method of the same name publicly avai
         
       </h2>
     
-      <h3 id="features-of-graaljs">
+      <h3 id="features-of-graalvm-javascript">
         
         
-          Features of GraalJS <a href="#features-of-graaljs" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Features of GraalVM JavaScript <a href="#features-of-graalvm-javascript" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
-
-<p>GraalJS supports features of the newest ECMAScript specification and some extensions to it.
+<p>GraalVM JavaScript supports features of the newest ECMAScript specification and some extensions to it.
 See <a href="/dev/reference-manual/js/JavaScriptCompatibility/">JavaScript Compatibility</a>.
 Note that this example adds objects to the global scope that might interfere with existing source code unaware of those extensions.</p>
     
@@ -839,25 +820,11 @@ Note that this example adds objects to the global scope that might interfere wit
         
         
       </h3>
+<p>GraalVM JavaScript provides a <code>print</code> builtin function compatible with Nashorn.</p>
 
-<p>GraalJS provides a <code>print</code> builtin function compatible with Nashorn.</p>
-
-<p>Note that GraalJS also provides a <code>console.log</code> function.
+<p>Note that GraalVM JavaScript also provides a <code>console.log</code> function.
 This is an alias for <code>print</code> in pure JavaScript mode, but uses an implementation provided by Node.js when running in Node mode.
-The behavior around Java objects differs for <code>console.log</code> in Node mode as Node.js does not implement special treatment for such objects.</p>
-    
-      <h3 id="related-documentation">
-        
-        
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<ul>
-  <li><a href="/dev/reference-manual/js/RhinoMigrationGuide/">Migration Guide from Rhino to GraalJS</a></li>
-  <li><a href="/dev/reference-manual/js/JavaInteroperability/">Java Interoperability</a></li>
-</ul>
+The behaviour around Java objects differs for <code>console.log</code> in Node mode as Node.js does not implement special treatment for such objects.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -974,9 +941,8 @@ The behavior around Java objects differs for <code>console.log</code> in Node mo
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

@@ -145,27 +145,81 @@
 
 <h2 id="default-logging-configuration">Default Logging Configuration</h2>
 
-<p>The default logging configuration in a native executable is based on the <em>logging.properties</em> file found in the JDK.
+<p>The default logging configuration in a native executable is based on the <code>logging.properties</code> file found in the JDK.
 This file configures a <code>java.util.logging.ConsoleHandler</code> which will only show messages at the <code>INFO</code> level and above.
-Custom logging configuration can be loaded either at build time or at run time as described below.</p>
+Custom logging configuration can be loaded either at executable build time or at runtime as described below.</p>
 
 <p>If you require additional logging handlers, you must register the corresponding classes for reflection.
-For example, if you use <code>java.util.logging.FileHandler</code>, then provide the following reflection configuration in the <em>META-INF/native-image/reachability-metadata.json</em> file:</p>
+For example, if you use <code>java.util.logging.FileHandler</code> then provide the following reflection configuration:</p>
 <pre><code class="language-json">{
     "name" : "java.util.logging.FileHandler",
     "methods" : [
-      { "name" : "&lt;init&gt;", "parameterTypes" : [] }
+      { "name" : "&lt;init&gt;", "parameterTypes" : [] },
     ]
   }
 </code></pre>
+<p>For more details, see <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">Reflection Support</a>.</p>
 
-<p>For more details, see <a href="/dev/reference-manual/native-image/metadata/#reflection">Reflection Support</a>.</p>
+<h2 id="initializing-a-logger-at-build-time">Initializing a Logger at Build Time</h2>
 
-<p>The usage of the logger is shown in the following example:</p>
+<p>The logger can be initialized at executable build time with a custom <em>logging.properties</em> configuration file, as illustrated in following example.</p>
 
 <ol>
   <li>
-    <p>Save the following Java code into a file named <em>LoggerRunTimeInit.java</em>, and compile it:</p>
+    <p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+  </li>
+  <li>Save the following Java code into a file named <em>LoggerBuildTimeInit.java</em>, then compile it using <code>javac</code>:
+    <pre><code class="language-java"> import java.io.IOException;
+ import java.util.logging.Level;
+ import java.util.logging.LogManager;
+ import java.util.logging.Logger;
+
+ public class LoggerBuildTimeInit {
+     private static final Logger LOGGER;
+     static {
+         try {
+             LogManager.getLogManager().readConfiguration(LoggerBuildTimeInit.class.getResourceAsStream("/logging.properties"));
+         } catch (IOException | SecurityException | ExceptionInInitializerError ex) {
+             Logger.getLogger(LoggerBuildTimeInit.class.getName()).log(Level.SEVERE, "Failed to read logging.properties file", ex);
+         }
+         LOGGER = Logger.getLogger(LoggerBuildTimeInit.class.getName());
+     }
+
+     public static void main(String[] args) throws IOException {
+         LOGGER.log(Level.WARNING, "Danger, Will Robinson!");
+     }
+ } 
+</code></pre>
+  </li>
+  <li>
+    <p>Download the <a href="/docs/reference-manual/native-image/assets/logging.properties"><em>logging.properties</em></a> resource file and save it in the same directory as <em>LoggerBuildTimeInit.java</em>.</p>
+  </li>
+  <li>Build and run the native executable:
+    <pre><code class="language-shell"> native-image LoggerBuildTimeInit --initialize-at-build-time=LoggerBuildTimeInit
+</code></pre>
+    <pre><code class="language-shell"> ./loggerbuildtimeinit
+</code></pre>
+    <p>It should produce output that looks similar to:</p>
+    <pre><code class="language-shell"> WARNING: Danger, Will Robinson! [Wed May 18 17:20:39 BST 2022]
+</code></pre>
+
+    <p>This demonstrates that the <em>logging.properties</em> file is processed at when the executable is built.
+ The file does not need to be included in the native executable and reduces the size of the resulting executable file.</p>
+
+    <p><code>LoggerHolder.LOGGER</code> is also initialized at build time and is readily available at runtime, therefore improving the startup time. 
+Unless your application needs to process a custom <em>logging.properties</em> configuration file at runtime, this approach is recommended.</p>
+  </li>
+</ol>
+
+<h2 id="initializing-a-logger-at-run-time">Initializing a Logger at Run Time</h2>
+
+<p>The logger can also be initialized at run time, as shown in the following example.</p>
+
+<ol>
+  <li>
+    <p>Save the following Java code into a file named <em>LoggerRunTimeInit.java</em>, then compile it using <code>javac</code>:</p>
 
     <pre><code class="language-java"> import java.io.IOException;
  import java.util.logging.Level;
@@ -179,8 +233,6 @@ For example, if you use <code>java.util.logging.FileHandler</code>, then provide
          logger.log(Level.WARNING, "Danger, Will Robinson!");
      }
  }
-</code></pre>
-    <pre><code class="language-bash"> javac LoggerRunTimeInit.java
 </code></pre>
   </li>
   <li>
@@ -196,8 +248,7 @@ For example, if you use <code>java.util.logging.FileHandler</code>, then provide
     <pre><code> WARNING: Danger, Will Robinson! [Wed May 18 17:22:40 BST 2022]
 </code></pre>
 
-    <p>In this case, the <em>logging.properties</em> file must be available for runtime processing and therefore needs to be registered in the <em>META-INF/native-image/reachability-metadata.json</em> file.
- For more details on how to do this, see <a href="/dev/reference-manual/native-image/metadata/#resources">Use of Resources in a Native Executable</a>.</p>
+    <p>In this case, the <em>logging.properties</em> file needs to be available for runtime processing and it must be included in the executable via the <code>-H:IncludeResources=logging.properties</code> option. For more details on this option, see <a href="/dev/reference-manual/native-image/dynamic-features/Resources/">Use of Resources in a Native Executable</a>.</p>
   </li>
 </ol>
 
@@ -315,9 +366,8 @@ For example, if you use <code>java.util.logging.FileHandler</code>, then provide
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

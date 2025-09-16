@@ -189,8 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM for JDK 24 (Latest)', 'latest');">GraalVM for JDK 24 (Latest)</li>
-        <li class="select-option" onclick="selected('GraalVM for JDK 25 (Early Access)', 'jdk25');">GraalVM for JDK 25 (Early Access)</li>
+        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -332,6 +331,17 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/CloseOnGc/">
+              Automatic Close of Unreachable Context and Engine Objects in Polyglot API
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Languages/">
               Language Implementations
             </a>
@@ -354,8 +364,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
-              Truffle Languages and Instruments Migration to Java Modules
+            <a href="/truffle/docs/ModuleMigration.html">
+              Truffle Language Safepoint Tutorial
             </a>
           </li>
 
@@ -378,6 +388,17 @@ $(document).ready(function(){
             
             <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
               Optimizing Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">
+              Deoptimization Cycle Patterns
             </a>
           </li>
 
@@ -708,16 +729,6 @@ env.submitThreadLocal(null, new ThreadLocalAction(true /*side-effecting*/, true 
      protected void perform(Access access) {
          assert access.getThread() == Thread.currentThread();
      }
-
-    @Override
-    protected void notifyBlocked(Access access) {
-        assert access.getThread() == Thread.currentThread();
-    }
-
-    @Override
-    protected void notifyUnblocked(Access access) {
-        assert access.getThread() == Thread.currentThread();
-    }
 });
 
 </code></pre>
@@ -750,10 +761,10 @@ Currently the action will be performed on the next safepoint location when the n
 
 <p>There are several debug options available:</p>
     
-      <h3 id="exercise-safepoints-with-safepointalot">
+      <h3 id="excercise-safepoints-with-safepointalot">
         
         
-          Exercise safepoints with SafepointALot <a href="#exercise-safepoints-with-safepointalot" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Excercise safepoints with SafepointALot <a href="#excercise-safepoints-with-safepointalot" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
@@ -769,67 +780,20 @@ Currently the action will be performed on the next safepoint location when the n
 
 <p>Prints the following output to the log on context close:</p>
 
-<pre><code>DeltaBlue: 3037
-[engine] Safepoint Statistics 
-  ------------------------------------------------------------------------------------------------------------------------------------------------------- 
-   Thread Name         Safepoints | Interval     Avg              Min              Max      | Blocked Intervals   Avg              Min              Max
-  ------------------------------------------------------------------------------------------------------------------------------------------------------- 
-   main                  83187332 |            0,452 us           0,2 us      104938,8 us   |      18            6,536 us           0,9 us          36,8 us
-  ------------------------------------------------------------------------------------------------------------------------------------------------------- 
-   All threads           83187332 |            0,452 us           0,2 us      104938,8 us   |      18            6,536 us           0,9 us          36,8 us
+<pre><code>DeltaBlue: 540
+[engine] Safepoint Statistics
+  --------------------------------------------------------------------------------------
+   Thread Name         Safepoints | Interval     Avg              Min              Max
+  --------------------------------------------------------------------------------------
+   main                  48384054 |            0.425 us           0.1 us       44281.1 us
+  -------------------------------------------------------------------------------------
+   All threads           48384054 |            0.425 us           0.1 us       42281.1 us
 </code></pre>
 
 <p>It is recommended for guest language implementations to try to stay below 1ms on average.
 Note that precise timing can depend on CPU and interruptions by the GC.
 Since GC times are included in the safepoint interval times, it is expected that the maximum is close to the maximum GC interruption time.
 Future versions of this tool will be able to exclude GC interruption times from this statistic.</p>
-
-<p>The SafepointALot tool also does not interrupt blocking operations that typically wait for some resource to be available (e.g. IO, thread start).
-These blocked intervals are shown separately in the statistics. Ordinary thread local actions do interrupt blocking operations, and so the blocked intervals do not apply to them.</p>
-    
-      <h3 id="find-missing-safepoint-polls">
-        
-        
-          Find missing safepoint polls <a href="#find-missing-safepoint-polls" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>The option <code>TraceMissingSafepointPollInterval</code> helps to find missing safepoint polls, use it like:</p>
-
-<pre><code>$ bin/js --experimental-options --engine.TraceMissingSafepointPollInterval=20 -e 'print(6*7)'
-...
-42
-[engine] No TruffleSafepoint.poll() for 36ms on main (stacktrace 1ms after the last poll)
-	at java.base/java.lang.StringLatin1.replace(StringLatin1.java:312)
-	at java.base/java.lang.String.replace(String.java:2933)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.defineClass(BuiltinClassLoader.java:801)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.findClassInModuleOrNull(BuiltinClassLoader.java:741)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClassOrNull(BuiltinClassLoader.java:665)
-	at java.base/jdk.internal.loader.BuiltinClassLoader.loadClass(BuiltinClassLoader.java:639)
-	at java.base/jdk.internal.loader.ClassLoaders$AppClassLoader.loadClass(ClassLoaders.java:188)
-	at java.base/java.lang.ClassLoader.loadClass(ClassLoader.java:526)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotValueDispatch.createInteropValue(PolyglotValueDispatch.java:1694)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance$1.apply(PolyglotLanguageInstance.java:149)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance$1.apply(PolyglotLanguageInstance.java:147)
-	at java.base/java.util.concurrent.ConcurrentHashMap.computeIfAbsent(ConcurrentHashMap.java:1708)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance.lookupValueCacheImpl(PolyglotLanguageInstance.java:147)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageInstance.lookupValueCache(PolyglotLanguageInstance.java:137)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotLanguageContext.asValue(PolyglotLanguageContext.java:948)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotContextImpl.eval(PolyglotContextImpl.java:1686)
-	at org.graalvm.truffle/com.oracle.truffle.polyglot.PolyglotContextDispatch.eval(PolyglotContextDispatch.java:60)
-	at org.graalvm.polyglot/org.graalvm.polyglot.Context.eval(Context.java:402)
-	at org.graalvm.js.launcher/com.oracle.truffle.js.shell.JSLauncher.executeScripts(JSLauncher.java:365)
-	at org.graalvm.js.launcher/com.oracle.truffle.js.shell.JSLauncher.launch(JSLauncher.java:93)
-	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.launch(AbstractLanguageLauncher.java:296)
-	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.launch(AbstractLanguageLauncher.java:121)
-	at org.graalvm.launcher/org.graalvm.launcher.AbstractLanguageLauncher.runLauncher(AbstractLanguageLauncher.java:168)
-...
-</code></pre>
-
-<p>It prints host stacktraces when there was not a safepoint poll in the last N milliseconds, N being the argument to <code>TraceMissingSafepointPollInterval</code>.</p>
-
-<p>On HotSpot there can be long delays between guest safepoints due to classloading, so it makes sense to run this with a native image or focus on non-classloading stacktraces.</p>
     
       <h3 id="trace-thread-local-actions">
         
@@ -1045,9 +1009,8 @@ In Proceedings of the 10th Workshop on Implementation, Compilation, Optimization
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>

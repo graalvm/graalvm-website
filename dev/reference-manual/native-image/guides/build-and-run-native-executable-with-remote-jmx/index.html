@@ -141,13 +141,13 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="build-and-run-native-executables-with-remote-jmx">Build and Run Native Executables with Remote JMX</h1>
 
-<p>Remote management using <a href="https://www.oracle.com/java/technologies/javase/javamanagement.html">Java Management Extensions (JMX)</a> is possible in native applications built with GraalVM Native Image.</p>
+<p>Remote management using <a href="https://www.oracle.com/java/technologies/javase/javamanagement.html">Java Management Extensions (JMX)</a> is possible in executables built with GraalVM Native Image.</p>
 
 <blockquote>
   <p>Note: The feature is experimental.</p>
 </blockquote>
 
-<p>This guide covers the steps required to build, run, and interact with a native executable using JMX.
+<p>This guide covers the steps required to build, run, and interact with such a native executable using JMX.
 It also shows you how to register a custom managed bean (MBean) with the JMX server and the additional steps required for it to work with Native Image.</p>
 
 <h2 id="currently-supported-features-and-limitations">Currently Supported Features and Limitations</h2>
@@ -156,110 +156,126 @@ It also shows you how to register a custom managed bean (MBean) with the JMX ser
 The client, the server, or both may be a native executable.
 Only MXBeans, and standard user-defined MBeans, are supported. 
 Dynamic and model MBeans are not supported because their management interfaces are defined at run time. 
-Although remote management of MXBeans is supported, not all platform MXBean functionality is implemented or is applicable in a native executable. 
-Additionally, to define and use standard MBeans, you must specify metadata configuration. 
+Although remote management of MXBeans is supported, not all platform MXBean functionality is implemented or is applicable in Native Image. Additionally, to define and use standard MBeans, you must specify metadata configuration. 
 This is further explained in this guide.</p>
 
-<h2 id="run-a-demo">Run a Demo</h2>
+<h2 id="step-1-create-a-demo-application">Step 1: Create a Demo Application</h2>
 
-<h3 id="prerequisite">Prerequisite</h3>
-<p>Make sure you have installed a GraalVM JDK.
-The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
-For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+<p>Create a demo application in a directory named <em>demo</em>.
+Change your working directory to there and run the commands from that directory.</p>
+
+<p>Save the following code to a file named <em>SimpleJmx.java</em>.
+The <code>main()</code> method registers a custom MBean, then loop endlessly, so you have time to inspect the process using VisualVM.</p>
+
+<pre><code class="language-java">import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
+
+public class SimpleJmx {
+    public static void main(String args[]) throws Exception {
+        ObjectName objectName = new ObjectName("com.jmx.test.basic:name=simple");
+        Simple simple = new Simple();
+        simple.setName("someName");
+        MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        server.registerMBean(simple, objectName);
+        while (true) {
+            Thread.sleep(1000);
+            System.out.println("JMX server running...");
+        }
+    }
+
+    public static interface SimpleMBean {
+        String getName();
+
+        void setName(String name);
+
+        String print();
+    }
+
+    static class Simple implements SimpleMBean {
+        private String name;
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String print() {
+            return "Print output " + name;
+        }
+    }
+}
+</code></pre>
+
+<h2 id="step-2-compile-to-java-bytecode">Step 2: Compile to Java Bytecode</h2>
 
 <ol>
-  <li>Create and navigate to a directory named <em>jmx-test</em>. Save the following code to a file named <em>SimpleJmx.java</em>. The application <code>main()</code> method registers a custom MBean, then loops endlessly, so you have time to inspect the process using VisualVM.
-    <pre><code class="language-java"> import javax.management.MBeanServer;
- import javax.management.ObjectName;
- import java.lang.management.ManagementFactory;
-
- public class SimpleJmx {
-     public static void main(String args[]) throws Exception {
-         ObjectName objectName = new ObjectName("com.jmx.test.basic:name=simple");
-         Simple simple = new Simple();
-         simple.setName("someName");
-         MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-         server.registerMBean(simple, objectName);
-         while (true) {
-             Thread.sleep(1000);
-             System.out.println("JMX server running...");
-         }
-     }
-
-     public static interface SimpleMBean {
-         String getName();
-
-         void setName(String name);
-
-         String print();
-     }
-
-     static class Simple implements SimpleMBean {
-         private String name;
-
-         @Override
-         public String getName() {
-             return name;
-         }
-
-         @Override
-         public void setName(String name) {
-             this.name = name;
-         }
-
-         @Override
-         public String print() {
-             return "Print output " + name;
-         }
-     }
- }
-</code></pre>
+  <li>
+    <p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
   </li>
-  <li>Compile the application using the GraalVM JDK:
-    <pre><code class="language-shell"> javac SimpleJmx.java
+  <li>
+    <p>Compile the Java file using the GraalVM JDK:</p>
+    <pre><code class="language-shell"> $JAVA_HOME/bin/javac SimpleJmx.java
 </code></pre>
     <p>This creates <em>SimpleJmx.class</em>, <em>SimpleJmx$Simple.class</em>, and <em>SimpleJmx$SimpleMBean.class</em> files.</p>
   </li>
-  <li>Add dynamic proxy configuration. JMX uses dynamic proxies, a <a href="/dev/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans. To be able to interact with the custom <code>SimpleMBean</code> at run time, you need to provide Native Image with additional <a href="/dev/reference-manual/native-image/metadata/#reflection">dynamic-proxy metadata</a> for the MBean interface. For this, create the <em>META-INF/native-image</em> directory in the current working directory (<em>jmx-test</em>). In the <em>META-INF/native-image</em> directory create a <em>reachability-metadata.json</em> file with the following contents:
-    <pre><code class="language-json"> {
-   "reflection": [
-     {
-       "type": {
-         "proxy": ["SimpleJmx$SimpleMBean"]
-       }
-     }
-   ]
- }
-</code></pre>
-  </li>
-  <li>Build a native executable with the VM inspection enabled:
-    <pre><code class="language-shell"> native-image --enable-monitoring=jmxserver,jmxclient,jvmstat SimpleJmx
-</code></pre>
-
-    <p>The <code>--enable-monitoring=jmxserver</code> option enables the JMX Server feature (to accept incoming connections).
- The <code>--enable-monitoring=jmxclient</code> option enables the JMX Client feature (to make outgoing connections).
- Both features can be used together, comma-separated, for example, <code>--enable-monitoring=jmxserver,jmxclient</code>. 
- The <code>jvmstat</code> option should also be included if you want to enable discovery by VisualVM and other JVMs: <code>--enable-monitoring=jmxserver,jmxclient,jvmstat</code>.</p>
-  </li>
-  <li>Run your native executable with JMX properties:
-    <pre><code class="language-shell"> ./simplejmx -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=9996 -Dcom.sun.management.jmxremote.ssl=false
-</code></pre>
-
-    <p>This starts the application as a simple JMX server, without password authentication or SSL using port <code>9996</code>. 
- You can configure JMX to apply all the usual properties as shown in <a href="https://docs.oracle.com/javadb/10.10.1.2/adminguide/radminjmxenabledisable.html">this guide</a>, but this example uses a basic configuration for simplicity.</p>
-  </li>
 </ol>
 
-<p>Now that the JMX server is running, inspect MBeans using VisualVM.</p>
+<h2 id="step-3-make-a-dynamic-proxy-configuration">Step 3: Make a Dynamic Proxy Configuration</h2>
 
-<h2 id="inspect-mbeans-using-visualvm">Inspect MBeans Using VisualVM</h2>
+<p>JMX uses dynamic proxies, a <a href="/dev/reference-manual/native-image/dynamic-features/">dynamic feature</a> of Java, to access MBeans.
+To be able to interact with the custom <code>SimpleMBean</code> at run time, you need to provide Native Image with additional <a href="/dev/reference-manual/native-image/dynamic-features/DynamicProxy/">dynamic proxy configuration</a> for the MBean interface.
+For this, create a JSON file named <em>proxy-config.json</em> with the following contents:</p>
+
+<pre><code class="language-json">[
+  { "interfaces": [ "SimpleJmx$SimpleMBean"] }
+]
+</code></pre>
+
+<p>In the next step, we will pass this JSON file to the <code>native-image</code> builder.</p>
+
+<h2 id="step-4-build-a-native-executable-with-jmx-support">Step 4: Build a Native Executable with JMX Support</h2>
+
+<p>Build a native executable with VM monitoring enabled:</p>
+
+<pre><code class="language-shell">$JAVA_HOME/bin/native-image --enable-monitoring=jmxserver,jvmstat  -H:DynamicProxyConfigurationFiles=proxy-config.json SimpleJmx
+</code></pre>
+
+<p>The <code>--enable-monitoring=jmxserver</code> option enables the JMX Server feature which allows accepting incoming connections.
+The <code>--enable-monitoring=jmxclient</code> option enables the JMX Client feature which allows making outgoing connections.
+Both features can be used together, comma-separated, for example, <code>--enable-monitoring=jmxserver,jmxclient</code>. 
+The <code>jvmstat</code> option should also be included if you want to enable discovery by VisualVM and other JVMs: <code>--enable-monitoring=jmxserver,jmxclient,jvmstat</code>.</p>
+
+<h2 id="step-5-run-the-executable-with-jmx-properties">Step 5: Run the Executable with JMX Properties</h2>
+
+<p>Now run your native executable with JMX properties:</p>
+
+<pre><code class="language-shell">./simplejmx -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.port=9996 -Dcom.sun.management.jmxremote.ssl=false
+</code></pre>
+<p>This starts the application as a simple JMX server, without password authentication or SSL using port <code>9996</code>. 
+You can configure JMX to apply all the usual properties as shown in <a href="https://docs.oracle.com/javadb/10.10.1.2/adminguide/radminjmxenabledisable.html">this guide</a>, but this example uses a basic configuration for simplicity.</p>
+
+<h2 id="step-6-inspect-using-visualvm">Step 6: Inspect Using VisualVM</h2>
 
 <ol>
   <li>
-    <p>Start <a href="https://visualvm.github.io/">VisualVM</a> to view the managed beans in a user-friendly way.</p>
+    <p>Start <a href="https://visualvm.github.io/">VisualVM</a> to view the managed beans in a user-friendly way.
+Note that VisualVM is shipped separately and should be first added to GraalVM using <code>gu</code>, and then started:</p>
+
+    <pre><code class="language-shell"> $JAVA_HOME/bin/gu install visualvm
+ $JAVA_HOME/bin/visualvm
+</code></pre>
   </li>
   <li>
-    <p>Make sure you have the <strong>VisualVM-MBeans plugin</strong> installed (go to <strong>Tools</strong>, then <strong>Plugins</strong>, under <strong>Available Plugins</strong>, select <strong>VisualVM-MBeans</strong>, and click <strong>Install</strong>).</p>
+    <p>Make sure you have the “VisualVM-MBeans” plugin installed (<em>Tools</em> &gt; <em>Plugins</em> &gt; <em>Available Plugins</em> &gt; select “VisualVM-MBeans” and click <em>Install</em>).</p>
   </li>
   <li>
     <p>Go to the <strong>Applications</strong> tab and select the <strong>SimpleJmx</strong> process.
@@ -276,14 +292,14 @@ From there you can select the <strong>MBeans</strong> tab.</p>
   </li>
 </ol>
 
-<p>To conclude, Native Image provides support for remote management using <a href="https://www.oracle.com/java/technologies/javase/javamanagement.html">JMX</a>.
+<p>To conclude, Native Image now provides support for remote management using <a href="https://www.oracle.com/java/technologies/javase/javamanagement.html">JMX</a>.
 Users can enable the JMX agent in a native executable to monitor a client application running on a remote system.</p>
 
 <h3 id="related-documentation">Related Documentation</h3>
-
 <ul>
   <li><a href="https://docs.oracle.com/javadb/10.10.1.2/adminguide/radminjmxenabledisable.html">Enabling and disabling JMX</a></li>
   <li><a href="/dev/reference-manual/native-image/guides/create-heap-dump/">Create Heap Dumps with VisualVM</a></li>
+  <li><a href="/dev/reference-manual/native-image/dynamic-features/DynamicProxy/">Dynamic Proxy</a></li>
 </ul>
 
       </div>
@@ -393,9 +409,8 @@ Users can enable the JMX agent in a native executable to monitor a client applic
               <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
-                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a>,
-                <a href="https://www.graalvm.org/24.2/javadoc/sdk/" class="javadoc" target="_blank">24</a>,
-                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25EA</a>
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
               <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
