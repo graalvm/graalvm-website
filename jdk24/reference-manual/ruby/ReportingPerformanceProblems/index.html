@@ -1,11 +1,226 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
+
+  <head>
   <meta charset="utf-8">
-  <title>Redirecting&hellip;</title>
-  <link rel="canonical" href="https://www.graalvm.org/jdk24/reference-manual/ruby/">
-  <script>location="https://www.graalvm.org/jdk24/reference-manual/ruby/"</script>
-  <meta http-equiv="refresh" content="0; url=https://www.graalvm.org/jdk24/reference-manual/ruby/">
-  <meta name="robots" content="noindex">
-  <h1>Redirecting&hellip;</h1>
-  <a href="https://www.graalvm.org/jdk24/reference-manual/ruby/">Click here if you are not redirected.</a>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk24/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk24/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk24/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk24/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk24/assets/main.css'>
+  <script src='/jdk24/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk24/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk24/resources/lib/purl/purl.js'></script>
+  <script src='/jdk24/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk24/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk24/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk24/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/index.html" class="link-back"><i>&#9664;</i>Table of Contents</a>
+
+      <h1 id="reporting-performance-problems">Reporting Performance Problems</h1>
+
+<p>We are interested in hearing from you if you experience lower performance with TruffleRuby than with other implementations of Ruby.
+Please report any performance issues you might find on <a href="https://github.com/oracle/truffleruby/issues">GitHub</a>.</p>
+
+<p>The <a href="/jdk24/reference-manual/ruby/Compatibility/">Compatibility</a> guide lists some features which we know are slow and are unlikely to get faster.</p>
+
+<h2 id="common-problems-and-why">Common Problems and Why</h2>
+
+<p>TruffleRuby uses extremely sophisticated techniques to optimize your Ruby program.
+These optimizations take time to apply, so TruffleRuby is often a lot slower than other implementations <em>until it has had time to warm up.</em></p>
+
+<p>Also, TruffleRuby tries to find a “stable state” of your program and then automatically remove the dynamism of Ruby where it is not needed, but this then means that if the stable state is disturbed, performance lowers again until TruffleRuby can adapt to the new stable state.</p>
+
+<p>Another problem is that TruffleRuby is very good at removing unnecessary work, such as calculations that
+are not needed or loops that contain no work.</p>
+
+<p>All of these issues make it hard to benchmark TruffleRuby. This is not a problem that is unique to us - it applies to many sophisticated virtual machines - but most Ruby implementations are not yet performing optimizations powerful enough to show these problems, so they may be new to some people in the Ruby community.</p>
+
+<h2 id="using-oracle-graalvm">Using Oracle GraalVM</h2>
+
+<p>To experiment with how fast TruffleRuby can be, use <a href="/jdk24/reference-manual/ruby/InstallingTruffleRuby/#oracle-graalvm-and-graalvm-community-edition">Oracle GraalVM</a>.</p>
+
+<h2 id="using-the-jvm-configuration">Using the JVM Configuration</h2>
+
+<p>For the best peak performance, use the JVM configuration, using <code>--jvm</code>.
+The default native configuration starts faster but does not quite reach the same peak performance.
+However, you <em>must</em> then use a good benchmarking tool, like <code>benchmark-ips</code> described below, to run the benchmark, or the slower
+warmup time will mean that you do not see TruffleRuby’s true performance in the benchmark.
+If you want to write simpler benchmarks that just run a while loop with a simple timer (which we would not recommend anyway), then use the default native mode so that startup and warmup time is shorter.</p>
+
+<h2 id="how-to-check-for-basic-performance-problems">How to Check for Basic Performance Problems</h2>
+
+<p>If you are examining the performance of TruffleRuby, we would recommend that you always run with the <code>--engine.TraceCompilation</code> flag.
+If you see compilation failures or repeated compilation of the same methods, this is an indicator that something is not working as intended and you may need to examine why, or ask us to help you do so.
+If you do not run with this flag, TruffleRuby will try to work around errors and you will not see that there is a problem.</p>
+
+<h2 id="how-to-write-a-performance-benchmark">How to Write a Performance Benchmark</h2>
+
+<p>The TruffleRuby team recommends that you use <a href="https://github.com/evanphx/benchmark-ips"><code>benchmark-ips</code></a> to check the performance of TruffleRuby.
+It makes things easier for us if you report any potential performance problems using a report from <code>benchmark-ips</code>.</p>
+
+<p>A benchmark could look like this:</p>
+
+<pre><code class="language-ruby">require 'benchmark/ips'
+
+Benchmark.ips do |x|
+  x.iterations = 2
+
+  x.report("adding") do
+    14 + 2
+  end
+end
+</code></pre>
+
+<p>We use the <code>x.iterations =</code> extension in <code>benchmark-ips</code> to run the warmup and measurement cycles of <code>benchmark-ips</code> two times, to ensure the results are stable and that enough warmup was provided (which can be tweaked with <code>x.warmup = 5</code>).</p>
+
+<p>You should see something like this:</p>
+
+<pre><code class="language-bash">Warming up --------------------------------------
+              adding    20.933k i/100ms
+              adding     1.764M i/100ms
+Calculating -------------------------------------
+              adding      2.037B (±12.7%) i/s -      9.590B in   4.965741s
+              adding      2.062B (±11.5%) i/s -     10.123B in   4.989398s
+</code></pre>
+
+<p>We want to look at the last line, which says that TruffleRuby runs 2.062 billion iterations of this block per second, with a margin of error of ±11.5%.</p>
+
+<p>Compare that to an implementation like Rubinius:</p>
+
+<pre><code class="language-bash">Warming up --------------------------------------
+              adding    71.697k i/100ms
+              adding    74.983k i/100ms
+Calculating -------------------------------------
+              adding      2.111M (±12.2%) i/s -     10.302M
+              adding      2.126M (±10.6%) i/s -     10.452M
+</code></pre>
+
+<p>Here, TruffleRuby’s performance can be described as a thousand times faster than Rubinius.
+That seems like a lot - and what is actually happening here is that TruffleRuby is optimizing
+away your benchmark.
+The effect is less pronounced with complex code that cannot be optimized away.</p>
+
+<h3 id="final-technical-note-blackholes-and-value-profiling">Final Technical Note: Blackholes and Value Profiling</h3>
+
+<p>Some benchmarking tools for other languages have features called “blackholes.”
+These surround a value and make it appear to be a variable at runtime, even if it is in fact a constant, so that the optimizer does not remove it and actually performs any computations that use it.
+However, TruffleRuby uses extensive value profiling (caching of values and turning them into constants), so that even if you make a value appear to be a variable at its source, it is likely to be value-profiled at an intermediate stage.
+In general, more complex benchmarks that naturally defeat value profiling are preferable, rather than manually adding annotations to turn off important features.</p>
+
+      </div>
+  </div>
+</div>
+
+</div>
+
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk24/resources/js/main.js'></script>
+  </body>
+
 </html>

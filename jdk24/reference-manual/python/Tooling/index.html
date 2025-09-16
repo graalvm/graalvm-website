@@ -1,11 +1,496 @@
 <!DOCTYPE html>
-<html lang="en-US">
+<html lang="en">
+
+  <head>
   <meta charset="utf-8">
-  <title>Redirecting&hellip;</title>
-  <link rel="canonical" href="https://www.graalvm.org/jdk24/python/docs/">
-  <script>location="https://www.graalvm.org/jdk24/python/docs/"</script>
-  <meta http-equiv="refresh" content="0; url=https://www.graalvm.org/jdk24/python/docs/">
-  <meta name="robots" content="noindex">
-  <h1>Redirecting&hellip;</h1>
-  <a href="https://www.graalvm.org/jdk24/python/docs/">Click here if you are not redirected.</a>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/jdk24/resources/img/graalvm.png' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      GraalVM
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  <link rel="icon" id="favicon" href='/jdk24/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/jdk24/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/jdk24/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/jdk24/assets/main.css'>
+  <script src='/jdk24/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/jdk24/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/jdk24/resources/lib/purl/purl.js'></script>
+  <script src='/jdk24/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/jdk24/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+  <body class="preload">
+
+    <div>
+      <header  class="header header--content"  role="banner">
+
+  
+
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row">
+      <div class="col-12 col-sm-12 col-md-12 col-lg-10">
+        <div class="d-flex">
+          <a href="https://www.graalvm.org/">
+            <img src='/jdk24/resources/img/logo_header.svg' alt="GraalVM logo">
+          </a>  
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="row">
+      <div class="docsnote">
+        <div class="docsnote__body">
+          <div class="docsnote__column">
+            <div class="docsnote__card">
+              <div class="container">
+                <div class="rightside">
+                  <img src='/jdk24/resources/img/note-icon-docs-light.svg'>
+                  <p class="docsnote__subtitle">
+                    This documentation is for an old GraalVM version. See the 
+                    <a href="#" onclick="selected('latest', 'latest'); return false;">latest version</a>.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+      <main class="content content--home wrapper" aria-label="Content">
+        <div class="container-fluid container-fluid--custom-sm">
+  <div class="row">
+    <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1">
+      <br>
+      <a href="/jdk24/" class="link-back"><i>&#9664;</i>Table of Contents</a>
+      <h1 id="tooling-support-for-python">Tooling Support for Python</h1>
+
+<h2 id="debugging">Debugging</h2>
+
+<p>GraalPy provides the standard Python debugger <code>pdb</code>.
+Refer to the official <a href="https://docs.python.org/3/library/pdb.html">PDB documentation</a> for usage.
+The built-in <code>breakpoint()</code> function uses <code>pdb</code> by default.</p>
+
+<p>GraalPy also comes with built-in support for graphical debugging through Chrome’s developer tools.
+To enable the debugger, pass the <code>--inspect</code> command-line option.
+You can inspect variables, set watch expressions, interactively evaluate code snippets, and so on.</p>
+
+<ol>
+  <li>Run a Python script using the command-line option <code>--inspect</code>:
+    <pre><code class="language-bash"> graalpy --inspect my_script.py
+</code></pre>
+  </li>
+  <li>You should see output similar to:
+    <pre><code class="language-bash"> Debugger listening on ws://127.0.0.1:9229/VrhCaY7wR5tIqy2zLsdFr3f7ixY3QB6kVQ0S54_SOMo
+ For help, see: https://www.graalvm.org/tools/chrome-debugger
+ E.g. in Chrome open: devtools://devtools/bundled/js_app.html?ws=127.0.0.1:9229/VrhCaY7wR5tIqy2zLsdFr3f7ixY3QB6kVQ0S54_SOMo
+</code></pre>
+  </li>
+  <li>
+    <p>Open your Chrome browser and enter the URL provided. 
+Now you can inspect the stack, variables, evaluate variables, and selected expressions in a tooltip, and so on. For example:</p>
+
+    <p><img src="/jdk24/docs/reference-manual/python/assets/Chrome_Inspector.png" alt="Chrome Inspector" /></p>
+  </li>
+</ol>
+
+<h2 id="profiling">Profiling</h2>
+
+<p>GraalPy provides three main profiling capabilities: a CPU sampler, a CPU tracer, and a memory tracer.
+These are described below. (For details, use the <code>graalpy --help:tools</code> command.)</p>
+
+<h2 id="cpu-sampler">CPU Sampler</h2>
+
+<p>Use the <code>--cpusampler</code> command-line option to take a CPU sample. For example:</p>
+<pre><code class="language-bash">graalpy --cpusampler my_script.py
+</code></pre>
+
+<p>You should see output similar to:</p>
+
+<details>
+  <summary>CPU Sampler Output (Click to expand)</summary>
+  <pre><code>--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sampling Histogram. Recorded 564 samples with period 10ms. Missed 235 samples.
+  Self Time: Time spent on the top of the stack.
+  Total Time: Time spent somewhere on the stack.
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+Thread[main,5,main]
+ Name                                                                       ||             Total Time    ||              Self Time    || Location            
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+ parse_starttag                                                             ||             1090ms  19.3% ||              570ms  10.1% || &lt;install-dir&gt;/lib/python3.10/html/parser.py~300-347:11658-13539
+ match                                                                      ||              190ms   3.4% ||              190ms   3.4% || &lt;venv-dir&gt;/lib/python3.10/site-packages/soupsieve/css_parser.py~320-323:9862-10026
+ _replace_cdata_list_attribute_values                                       ||              190ms   3.4% ||              190ms   3.4% || &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/builder/__init__.py~295-331:11245-13031
+ goahead                                                                    ||             1430ms  25.4% ||              150ms   2.7% || &lt;install-dir&gt;/lib/python3.10/html/parser.py~133-250:4711-9678
+ check_for_whole_start_tag                                                  ||              130ms   2.3% ||              130ms   2.3% || &lt;install-dir&gt;/lib/python3.10/html/parser.py~351-382:13647-14758
+ &lt;module&gt;                                                                   ||              800ms  14.2% ||              130ms   2.3% || &lt;venv-dir&gt;/lib/python3.10/site-packages/soupsieve/css_parser.py~1-1296:0-47061
+ ...
+--------------------------------------------------------------------------------------------------------------------------------------------------------------
+</code></pre>
+</details>
+
+<h2 id="cpu-tracer">CPU Tracer</h2>
+
+<p>Use the <code>--cputracer --cputracer.TraceStatements</code> command-line options to trace CPU usage. For example:</p>
+<pre><code class="language-bash">graalpy --cputracer --cputracer.TraceStatements my_script.py
+</code></pre>
+
+<p>You should see output similar to:</p>
+
+<details>
+  <summary>CPU Tracer Output (Click to Expand)</summary>
+  <pre><code>--------------------------------------------------------------------------------------------------------------------
+Tracing Histogram. Counted a total of 1135 element executions.
+  Total Count: Number of times the element was executed and percentage of total executions.
+  Interpreted Count: Number of times the element was interpreted and percentage of total executions of this element.
+  Compiled Count: Number of times the compiled element was executed and percentage of total executions of this element.
+--------------------------------------------------------------------------------------------------------------------
+ Name                                |          Total Count |    Interpreted Count |       Compiled Count | Location
+--------------------------------------------------------------------------------------------------------------------
+ get_newfunc_typeid                  |           110   9.7% |           110 100.0% |             0   0.0% | capi.c~596:0
+ PyTruffle_PopulateType              |           110   9.7% |           110 100.0% |             0   0.0% | capi.c~721:0
+ PyTruffle_AllocMemory               |            86   7.6% |            86 100.0% |             0   0.0% | obmalloc.c~77:0
+ PyTruffle_AllocateType              |            66   5.8% |            66 100.0% |             0   0.0% | capi.c~874:0
+ PyMem_RawMalloc                     |            66   5.8% |            66 100.0% |             0   0.0% | obmalloc.c~170:0
+ initialize_type_structure           |            50   4.4% |            50 100.0% |             0   0.0% | capi.c~181:0
+ _Py_TYPE                            |            45   4.0% |            45 100.0% |             0   0.0% | object_shared.c~55:0
+ PyType_GetFlags                     |            41   3.6% |            41 100.0% |             0   0.0% | typeobject_shared.c~44:0
+ get_tp_name                         |            37   3.3% |            37 100.0% |             0   0.0% | capi.c~507:0
+ ...    
+--------------------------------------------------------------------------------------------------------------------
+</code></pre>
+</details>
+
+<h4 id="memory-tracer">Memory Tracer</h4>
+
+<p>Use the <code>--memtracer --memtracer.TraceStatements</code> command-line options to trace memory usage. For example:</p>
+<pre><code class="language-bash">graalpy --experimental-options --memtracer --memtracer.TraceStatements my_script.py
+</code></pre>
+
+<p>You should see output similar to:</p>
+
+<details>
+  <summary>Memory Tracer Output (Click to Expand)</summary>
+  <pre><code>----------------------------------------------------------------------------
+ Location Histogram with Allocation Counts. Recorded a total of 565 allocations.
+   Total Count: Number of allocations during the execution of this element.
+   Self Count: Number of allocations in this element alone (excluding sub calls).
+----------------------------------------------------------------------------
+ Name                         |      Self Count |     Total Count | Location
+----------------------------------------------------------------------------
+ PyTruffle_PopulateType       |      440  77.9% |      440  77.9% | capi.c~721:0
+ PyType_Ready                 |       61  10.8% |       68  12.0% | typeobject.c~463:0
+ _PyObject_MakeTpCall         |       20   3.5% |       24   4.2% | object.c~155:0
+ PyUnicode_FromString         |       11   1.9% |       11   1.9% | capi.c~2161:0
+ PyErr_NewException           |       11   1.9% |       11   1.9% | capi.c~1537:0
+ _PyUnicode_AsASCIIString     |        6   1.1% |        6   1.1% | capi.c~2281:0
+ PyDict_New                   |        4   0.7% |        4   0.7% | capi.c~1505:0
+ PyTuple_New                  |        4   0.7% |        4   0.7% | capi.c~2097:0
+ PyUnicode_FromStringAndSize  |        3   0.5% |        3   0.5% | unicodeobject.c~171:0
+ ...
+----------------------------------------------------------------------------
+</code></pre>
+</details>
+
+<h2 id="coverage">Coverage</h2>
+
+<p>GraalPy provides its own implementation of the <a href="https://pypi.org/project/coverage/">Coverage.py tool</a> to measure code coverage of Python programs.
+Enable it using the <code>--coverage</code> command-line option, as shown below.
+(For details, use the <code>graalpy --help:tools</code> command.)</p>
+
+<pre><code class="language-bash">graalpy --coverage my_script.py
+</code></pre>
+<p>You should see output similar to:</p>
+
+<details>
+  <summary>CPU Sampler Output (Click to expand)</summary>
+  <pre><code>------------------------------------------------------------------------------------------------------------------------------------------------
+Code coverage histogram.
+  Shows what percent of each element was covered during execution
+------------------------------------------------------------------------------------------------------------------------------------------------
+ Path                                                                          |  Statements |    Lines |    Roots
+------------------------------------------------------------------------------------------------------------------------------------------------
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/_distutils_hack/__init__.py           |       0.00% |    0.00% |    0.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/__init__.py                       |      56.10% |   56.14% |   55.26%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/builder/__init__.py               |      79.12% |   78.84% |   50.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/builder/_html5lib.py              |       2.41% |    2.46% |    2.38%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/builder/_htmlparser.py            |      69.08% |   68.67% |   83.33%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/builder/_lxml.py                  |       3.72% |    3.78% |    4.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/css.py                            |      32.73% |   31.48% |   15.38%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/dammit.py                         |      65.46% |   65.29% |   24.14%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/element.py                        |      44.15% |   43.13% |   31.08%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/bs4/formatter.py                      |      73.49% |   74.36% |   66.67%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/certifi/__init__.py                   |     100.00% |  100.00% |  100.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/certifi/core.py                       |      33.33% |   33.33% |   25.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/__init__.py        |     100.00% |  100.00% |  100.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/api.py             |      11.87% |   11.94% |   16.67%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/assets/__init__.py |     100.00% |  100.00% |  100.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/cd.py              |      12.81% |   13.54% |    4.35%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/constant.py        |     100.00% |  100.00% |  100.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/legacy.py          |      25.00% |   25.00% |   50.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/md.py              |      22.05% |   20.37% |   17.24%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/models.py          |      38.46% |   38.50% |    9.30%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/utils.py           |      26.79% |   26.89% |    3.33%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/charset_normalizer/version.py         |     100.00% |  100.00% |  100.00%
+ &lt;venv-dir&gt;/lib/python3.10/site-packages/idna/__init__.py                      |     100.00% |  100.00% |  100.00%
+ &lt;install-dir&gt;/lib/python3.10/collections/abc.py                               |     100.00% |  100.00% |  100.00%
+ &lt;install-dir&gt;/lib/python3.10/contextlib.py                                    |      40.80% |   37.99% |   31.71%
+ &lt;install-dir&gt;/lib/python3.10/copy.py                                          |      36.36% |   36.41% |   21.43%
+ &lt;install-dir&gt;/lib/python3.10/copyreg.py                                       |       3.20% |    3.20% |    7.69%
+ &lt;install-dir&gt;/lib/python3.10/csv.py                                           |      25.17% |   23.91% |   25.00%
+ &lt;install-dir&gt;/lib/python3.10/datetime.py                                      |      30.32% |   30.01% |   14.74%
+ &lt;install-dir&gt;/lib/python3.10/email/__init__.py                                |      42.86% |   42.86% |   20.00%
+ &lt;install-dir&gt;/lib/python3.10/email/_encoded_words.py                          |      35.11% |   34.44% |   14.29%
+ &lt;install-dir&gt;/lib/python3.10/email/_parseaddr.py                              |      12.64% |   12.15% |   10.71%
+ &lt;install-dir&gt;/lib/python3.10/email/_policybase.py                             |      55.22% |   54.69% |   39.29%
+ &lt;install-dir&gt;/lib/python3.10/email/base64mime.py                              |      35.00% |   35.00% |   20.00%
+ &lt;install-dir&gt;/lib/python3.10/typing.py                                        |      49.86% |   48.93% |   34.60%
+ &lt;install-dir&gt;/lib/python3.10/urllib/__init__.py                               |     100.00% |  100.00% |  100.00%
+ &lt;install-dir&gt;/lib/python3.10/warnings.py                                      |      21.29% |   20.77% |   25.00%
+ &lt;install-dir&gt;/lib/python3.10/weakref.py                                       |      37.93% |   36.78% |   23.68%
+ &lt;install-dir&gt;/lib/python3.10/zipfile.py                                       |      17.86% |   17.23% |   11.03%
+ &lt;src-dir&gt;/my_script.py                                                        |     100.00% |  100.00% |  100.00%
+------------------------------------------------------------------------------------------------------------------------------------------------
+</code></pre>
+</details>
+
+<h2 id="trace">Trace</h2>
+
+<p>The standard Python <code>trace</code> module is also provided.</p>
+<blockquote>
+  <p>Note: This works in the same way as CPython.
+The programmatic API also works, with some limitations: it does not currently track calls, only line counts and called functions.</p>
+</blockquote>
+
+<p>For example, the command</p>
+
+<pre><code class="language-bash">graalpy -m trace -c -s text_styler.py Welcome to GraalPy!
+</code></pre>
+
+<p>Give example output</p>
+
+<details>
+  <summary>CPU Sampler Output (Click to expand)</summary>
+  <pre><code>_       __     __                             __     
+| |     / /__  / /________  ____ ___  ___     / /_____
+| | /| / / _ \/ / ___/ __ \/ __ `__ \/ _ \   / __/ __ \
+| |/ |/ /  __/ / /__/ /_/ / / / / / /  __/  / /_/ /_/ /
+|__/|__/\___/_/\___/\____/_/ /_/ /_/\___/   \__/\____/
+                                                        
+   ______                 ______        __
+  / ____/________ _____ _/ / __ \__  __/ /
+ / / __/ ___/ __ `/ __ `/ / /_/ / / / / /
+/ /_/ / /  / /_/ / /_/ / / ____/ /_/ /_/ 
+\____/_/   \__,_/\__,_/_/_/    \__, (_)  
+                              /____/     
+ 
+lines   cov%   module   (path)
+    9   100%   __about__   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/__about__.py)
+   51   100%   __future__   (&lt;install-dir&gt;/lib/python3.10/__future__.py)
+    1   100%   __init__   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pyfiglet/fonts/__init__.py)
+   27   100%   _adapters   (&lt;install-dir&gt;/lib/python3.10/importlib/_adapters.py)
+   25   100%   _common   (&lt;install-dir&gt;/lib/python3.10/importlib/_common.py)
+   44   100%   _manylinux   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/_manylinux.py)
+   20   100%   _musllinux   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/_musllinux.py)
+   66   100%   _osx_support   (&lt;install-dir&gt;/lib/python3.10/_osx_support.py)
+   43   100%   _parseaddr   (&lt;install-dir&gt;/lib/python3.10/email/_parseaddr.py)
+   62   100%   _policybase   (&lt;install-dir&gt;/lib/python3.10/email/_policybase.py)
+   20   100%   _structures   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/_structures.py)
+  105   100%   abc   (&lt;install-dir&gt;/lib/python3.10/importlib/abc.py)
+   18   100%   actions   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/actions.py)
+   41   100%   appdirs   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/appdirs.py)
+   59   100%   base64   (&lt;install-dir&gt;/lib/python3.10/base64.py)
+   14   100%   base64mime   (&lt;install-dir&gt;/lib/python3.10/email/base64mime.py)
+   11   100%   bisect   (&lt;install-dir&gt;/lib/python3.10/bisect.py)
+  124   100%   calendar   (&lt;install-dir&gt;/lib/python3.10/calendar.py)
+   94   100%   charset   (&lt;install-dir&gt;/lib/python3.10/email/charset.py)
+  122   100%   common   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/common.py)
+   40   100%   context   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/jaraco/context.py)
+    3   100%   contextlib   (&lt;install-dir&gt;/lib/python3.10/contextlib.py)
+   91   100%   copy   (&lt;install-dir&gt;/lib/python3.10/copy.py)
+ 1497   100%   core   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/core.py)
+  108   100%   dataclasses   (&lt;install-dir&gt;/lib/python3.10/dataclasses.py)
+   31   100%   datetime   (&lt;install-dir&gt;/lib/python3.10/datetime.py)
+    9   100%   encoders   (&lt;install-dir&gt;/lib/python3.10/email/encoders.py)
+ 2493   100%   entities   (&lt;install-dir&gt;/lib/python3.10/html/entities.py)
+   58   100%   errors   (&lt;install-dir&gt;/lib/python3.10/email/errors.py)
+   49   100%   exceptions   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/exceptions.py)
+    5   100%   expat   (&lt;install-dir&gt;/lib/python3.10/xml/parsers/expat.py)
+   41   100%   feedparser   (&lt;install-dir&gt;/lib/python3.10/email/feedparser.py)
+   45   100%   functools   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/jaraco/functools.py)
+   69   100%   gettext   (&lt;install-dir&gt;/lib/python3.10/gettext.py)
+   56   100%   header   (&lt;install-dir&gt;/lib/python3.10/email/header.py)
+  162   100%   helpers   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/helpers.py)
+    1   100%   inspect   (&lt;install-dir&gt;/lib/python3.10/inspect.py)
+   47   100%   linecache   (&lt;install-dir&gt;/lib/python3.10/linecache.py)
+   95   100%   markers   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/markers.py)
+  192   100%   more   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/more_itertools/more.py)
+  204   100%   optparse   (&lt;install-dir&gt;/lib/python3.10/optparse.py)
+   14   100%   os   (&lt;install-dir&gt;/lib/python3.10/os.py)
+  167   100%   parse   (&lt;install-dir&gt;/lib/python3.10/urllib/parse.py)
+   19   100%   parser   (&lt;install-dir&gt;/lib/python3.10/email/parser.py)
+  242   100%   pathlib   (&lt;install-dir&gt;/lib/python3.10/pathlib.py)
+   66   100%   pkgutil   (&lt;install-dir&gt;/lib/python3.10/pkgutil.py)
+  137   100%   platform   (&lt;install-dir&gt;/lib/python3.10/platform.py)
+  102   100%   plistlib   (&lt;install-dir&gt;/lib/python3.10/plistlib.py)
+   79   100%   pprint   (&lt;install-dir&gt;/lib/python3.10/pprint.py)
+   54   100%   queue   (&lt;install-dir&gt;/lib/python3.10/queue.py)
+   21   100%   quopri   (&lt;install-dir&gt;/lib/python3.10/quopri.py)
+   32   100%   quoprimime   (&lt;install-dir&gt;/lib/python3.10/email/quoprimime.py)
+  101   100%   random   (&lt;install-dir&gt;/lib/python3.10/random.py)
+   43   100%   recipes   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/more_itertools/recipes.py)
+   51   100%   requirements   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/requirements.py)
+   46   100%   resources   (&lt;install-dir&gt;/lib/python3.10/importlib/resources.py)
+  155   100%   results   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/results.py)
+   79   100%   selectors   (&lt;install-dir&gt;/lib/python3.10/selectors.py)
+   30   100%   signal   (&lt;install-dir&gt;/lib/python3.10/signal.py)
+   94   100%   socket   (&lt;install-dir&gt;/lib/python3.10/socket.py)
+  143   100%   specifiers   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/specifiers.py)
+   50   100%   string   (&lt;install-dir&gt;/lib/python3.10/string.py)
+  118   100%   subprocess   (&lt;install-dir&gt;/lib/python3.10/subprocess.py)
+   96   100%   sysconfig   (&lt;install-dir&gt;/lib/python3.10/sysconfig.py)
+   67   100%   tags   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/tags.py)
+  119   100%   tempfile   (&lt;install-dir&gt;/lib/python3.10/tempfile.py)
+   35   100%   testing   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/testing.py)
+    7   100%   text_styler   (&lt;src-dir&gt;/text_styler.py)
+   51   100%   textwrap   (&lt;install-dir&gt;/lib/python3.10/textwrap.py)
+    2   100%   threading   (&lt;install-dir&gt;/lib/python3.10/threading.py)
+   32   100%   tokenize   (&lt;install-dir&gt;/lib/python3.10/tokenize.py)
+   43   100%   traceback   (&lt;install-dir&gt;/lib/python3.10/traceback.py)
+  703   100%   typing   (&lt;install-dir&gt;/lib/python3.10/typing.py)
+  238   100%   unicode   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/unicode.py)
+   76   100%   util   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/pyparsing/util.py)
+   20   100%   utils   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pkg_resources/_vendor/packaging/utils.py)
+    1   100%   version   (&lt;venv-dir&gt;/lib/python3.10/site-packages/pyfiglet/version.py)
+   16   100%   warnings   (&lt;install-dir&gt;/lib/python3.10/warnings.py)
+  127   100%   weakref   (&lt;install-dir&gt;/lib/python3.10/weakref.py)
+  432   100%   zipfile   (&lt;install-dir&gt;/lib/python3.10/zipfile.py)
+</code></pre>
+</details>
+
+<h2 id="using-pycharm-with-graalpy">Using PyCharm with GraalPy</h2>
+
+<p>You can use GraalPy in PyCharm to create a virtual environment, install packages, and develop and run your Python application.</p>
+
+<ol>
+  <li>
+    <p>Install <code>graalpy</code>. (For more information, see <a href="/jdk24/reference-manual/python/Python-Runtime/">Installing GraalPy</a>.)</p>
+  </li>
+  <li>
+    <p>Install PyCharm. (For more information, see <a href="https://www.jetbrains.com/help/pycharm/installation-guide.html">Install PyCharm</a>.)</p>
+  </li>
+  <li>
+    <p>Create, or open, a Python project.
+(For more information, see <a href="https://www.jetbrains.com/help/pycharm/creating-empty-project.html">Create a Python project</a>, or <a href="https://www.jetbrains.com/help/pycharm/open-projects.html">Open, reopen, and close projects</a>, respectively.)</p>
+  </li>
+  <li>
+    <p>Create a new <em>venv</em> virtual environment for your Python project.
+(For more information, see <a href="https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html#python_create_virtual_env">Create a virtualenv environment</a>.)</p>
+  </li>
+  <li>
+    <p>Install packages by following the PyCharm instructions.
+(For more information, see <a href="https://www.jetbrains.com/help/pycharm/installing-uninstalling-and-upgrading-packages.html">Install, uninstall, and upgrade packages</a>.)</p>
+  </li>
+  <li>
+    <p>Use the PyCharm menu items to <a href="https://www.jetbrains.com/help/pycharm/running-applications.html">run your Python application</a>. 
+Alternatively, use the terminal emulator to run the <code>graalpy</code> command.</p>
+  </li>
+</ol>
+
+<h2 id="using-visual-studio-code-with-graalpy">Using Visual Studio Code with GraalPy</h2>
+
+<p>You can use GraalPy in Visual Studio (VS) Code to create a virtual environment, install packages, and develop and run your Python application.</p>
+
+<ol>
+  <li>
+    <p>Install <code>graalpy</code>. (For more information, see <a href="/jdk24/reference-manual/python/Python-Runtime/">Installing GraalPy</a>.)</p>
+  </li>
+  <li>
+    <p>Install VS Code and the Python Extension, following the instructions here: <a href="https://code.visualstudio.com/docs/python/python-tutorial#_install-visual-studio-code-and-the-python-extension">Install Visual Studio Code and the Python Extension</a>.</p>
+  </li>
+  <li>
+    <p>Create, or open, a Python file.</p>
+  </li>
+  <li>
+    <p>Create a new <em>venv</em> virtual environment for your Python project.
+(For more information, see <a href="https://code.visualstudio.com/docs/python/environments#_creating-environments">Creating environments</a>.)</p>
+  </li>
+  <li>
+    <p>Install packages by following the VS Code instructions.
+(For more information, see <a href="https://code.visualstudio.com/docs/python/python-tutorial#_install-and-use-packages">Install and use packages</a>.)</p>
+  </li>
+  <li>
+    <p>Use the VS Code menu items to run your Python application. (For more information, see <a href="https://code.visualstudio.com/docs/python/python-tutorial#_run-hello-world">Run Hello World</a>.)
+Alternatively, use a VS Code terminal emulator to run the <code>graalpy</code> command.</p>
+  </li>
+  <li>
+    <p>You cannot use VS Code to debug your Python application.
+Instead, open a VS Code terminal emulator and follow these instructions: <a href="#debugging">Debugging a Python Application</a>.</p>
+  </li>
+</ol>
+
+
+      </div>
+  </div>
+</div>
+      </main>
+      <footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer">API Documentation</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://www.graalvm.org/sdk/javadoc/">GraalVM SDK Javadoc</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/truffle/javadoc/">GraalVM Truffle Javadoc</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer">Learn More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://github.com/oracle/graal/" target="_blank">Open Source Repository</a></li>
+              <li class="footer-list__item"><a href="https://www.graalvm.org/release-notes/" target="_blank">Release notes</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos/"
+                  target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2024, Oracle and/or its affiliates. All rights reserved. Oracle and Java are registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+    </div>
+
+    <div class="overlay"></div>
+
+    <script src='/jdk24/resources/js/main.js'></script>
+  </body>
+
 </html>
