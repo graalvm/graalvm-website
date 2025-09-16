@@ -128,7 +128,9 @@ curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk
 
 function updateDownloadButton(majorJavaVersion) {
   $("#selector-java-version").html(`Java ${majorJavaVersion}`);
-  $("#selector-platform").html(platforms[currentPlatform]);
+  $("#selector-platform").html(platforms[currentPlatform])
+  .toggleClass("dropdown--empty", currentPlatform === "empty-choice")
+  .attr("aria-invalid", currentPlatform === "empty-choice" ? "true" : "false");
 
   const isValid = currentPlatform !== "empty-choice";
 
