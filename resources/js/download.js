@@ -110,7 +110,8 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
-  $("#dl-snippet-sdkman").text(`sdk install java ${fullJavaVersion}-graal`);
+  const comment = majorJavaVersion === "25" ? ' <span class="no-strip"># coming soon</span>' : '';
+  $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal${comment}`);
 }
 
 function updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension) {
@@ -148,17 +149,24 @@ function updateDownloadButton(majorJavaVersion) {
 
 
 function toggleJDK17Banner(majorJavaVersion) {
-  const banner = document.getElementById("jdk17-banner");
+  const jdk17Banner = document.getElementById("jdk17-banner");
+  const allJdkBanner = document.getElementById("all-jdk-banner");
   const optionTabs = document.querySelector(".downloads__option-tabs");
 
   if (majorJavaVersion === "17") {
-    banner.style.display = "block";
-    setTimeout(() => banner.classList.add("visible"), 10);
-    optionTabs.classList.add("disabled");
+    jdk17Banner.style.display = "block";
+    allJdkBanner.style.display = "block";
+    setTimeout(() => {
+      jdk17Banner.classList.add("visible");
+      allJdkBanner.classList.add("visible");
+    }, 10);
+    optionTabs.style.display = "none";
   } else {
-    banner.classList.remove("visible");
-    setTimeout(() => (banner.style.display = "none"), 500);
-    optionTabs.classList.remove("disabled");
+    jdk17Banner.classList.remove("visible");
+    jdk17Banner.style.display = "none";
+    allJdkBanner.style.display = "block";
+    setTimeout(() => allJdkBanner.classList.add("visible"), 10);
+    optionTabs.style.display = "";
   }
 }
 
