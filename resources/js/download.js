@@ -127,7 +127,17 @@ curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk
 
 
 function updateDownloadButton(majorJavaVersion) {
-  $("#selector-java-version").html(`Java ${majorJavaVersion}`);
+  let versionLabel = '';
+  if (majorJavaVersion === "25") {
+    versionLabel = "GraalVM 25";
+  } else if (majorJavaVersion === "21") {
+    versionLabel = "GraalVM for JDK 21";
+  } else if (majorJavaVersion === "17") {
+    versionLabel = "GraalVM for JDK 17";
+  } else {
+    versionLabel = `Java ${majorJavaVersion}`;
+  }
+  $("#selector-java-version").html(versionLabel);
   $("#selector-platform").html(platforms[currentPlatform])
   .toggleClass("dropdown--empty", currentPlatform === "empty-choice")
   .attr("aria-invalid", currentPlatform === "empty-choice" ? "true" : "false");
