@@ -118,8 +118,15 @@
         <h2 id="getting-started-with-graalpy-on-the-jvm"><a href="#getting-started-with-graalpy-on-the-jvm" class="anchor-link">Getting Started with GraalPy on the JVM</a></h2>
 
 <p>You can use GraalPy with GraalVM JDK, Oracle JDK, or OpenJDK.
-You can easily add GraalPy to your Java application using Maven or Gradle build tools as shown below.
-Other build systems (Ant, Make, CMake, and so on) can also be used with a bit more manual work.</p>
+To add GraalPy to your Java application, use Maven or Gradle as shown below.
+For other build systems (like Ant, Make, CMake, etc.), manual configuration may be required.</p>
+
+<h4 id="platform-support"><a href="#platform-support" class="anchor-link">Platform support</a></h4>
+
+<p>GraalPy is mostly written in Java and Python, but the Python package ecosystem is rich in native packages that need platform specific support via native libraries that expose platform-specific APIs.
+Our main operating system is Oracle Linux, the CPU architectures we focus on are AMD64 and ARM, and the main JDK we test is Oracle GraalVM.
+Windows and macOS with GraalVM JDK are less well tested, and outside of those combinations we target only basic test coverage.
+See <a href="#detailed-test-tier-breakdown">below</a> for a detailed breakdown.</p>
 
 <h3 id="maven"><a href="#maven" class="anchor-link">Maven</a></h3>
 
@@ -238,7 +245,7 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
 </code></pre></div>        </div>
       </li>
       <li>configure the GraalPy Gradle plugin:
-        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalPy <span class="o">{</span> 
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalPy <span class="o">{</span>
  packages <span class="o">=</span> <span class="o">[</span><span class="s2">"termcolor==2.2"</span><span class="o">]</span>
 <span class="o">}</span>
 </code></pre></div>        </div>
@@ -248,17 +255,17 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
     <p>5.2. In <em>settings.gradle</em>, add the following <code>pluginManagement</code> configuration.</p>
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pluginManagement <span class="o">{</span>
    repositories <span class="o">{</span>
-      gradlePluginPortal<span class="o">()</span>        
+      gradlePluginPortal<span class="o">()</span>
    <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div>    </div>
 
     <p>5.3. Update the file named <em>App.java</em> as follows:</p>
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="kn">package</span> <span class="nn">interop</span><span class="o">;</span>
-   
+
    <span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
    <span class="kn">import</span> <span class="nn">org.graalvm.python.embedding.GraalPyResources</span><span class="o">;</span>
-   
+
    <span class="kd">class</span> <span class="nc">App</span> <span class="o">{</span>
    <span class="o">...</span>
    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
@@ -3197,6 +3204,120 @@ matching the GraalPy Maven artifacts version.</p>
 
 <p>you are probably missing the python langauge dependency in your Maven of Gradle configuration file.
 You need to add either <code>org.graalvm.polyglot:python</code> or <code>org.graalvm.polyglot:python-community</code> to your dependencies.</p>
+
+<h2 id="detailed-test-tier-breakdown"><a href="#detailed-test-tier-breakdown" class="anchor-link">Detailed Test Tier Breakdown</a></h2>
+
+<p>GraalPy test tiers are similar to <a href="https://peps.python.org/pep-0011/">CPython Platform Support Tiers</a>, but do not constitute or imply any commitment to support.</p>
+
+<p>Generally, running pure Python code on GraalPy without JIT is compatible with any recent JDK.
+However, support for native extensions, platform-specific APIs, and just-in-time compilation is more limited.</p>
+
+<p>Platform testing is organized into Tiers, each with specific goals.
+Tiers are identified by a “target tuple”: <code>[CPU architecture]-[Operating System]-[libc]-[JDK]-[Java version]</code>.
+JDK names correspond to those used by <a href="https://sdkman.io/">SDKMAN!</a>.
+The term “graal” is used to refer to testing on both Oracle GraalVM and GraalVM Community Edition, including GraalVM Native Image.
+The following tables list tested platforms by tier.
+Platforms not listed are untested.</p>
+
+<p><strong>Tier 1</strong></p>
+
+<ul>
+  <li>CI failures block releases.</li>
+  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or reverted immediately.</li>
+  <li>All core developers are responsible to keep main, and thus these platforms, working.</li>
+  <li>Platform-specific Python APIs and Python C extensions are fully tested.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>amd64-linux-glibc-graal-latest</td>
+      <td>Oracle Linux 8 or similar.</td>
+    </tr>
+    <tr>
+      <td>aarch64-linux-glibc-graal-latest</td>
+      <td>Oracle Linux 8 or similar.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Tier 2</strong></p>
+
+<ul>
+  <li>CI failures block releases.</li>
+  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
+  <li>Circa 10% of tests running on Tier 1 platforms may be skipped on Tier 2 platforms.</li>
+  <li>Platform-specific Python APIs are fully tested; Python C extensions may have more issues than on Tier 1 platforms.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>aarch64-macos-darwin-graal-latest</td>
+      <td>macOS on M-series CPUs.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Tier 3</strong></p>
+
+<ul>
+  <li>CI failures block releases.</li>
+  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
+  <li>Circa 25% of tests running on Tier 1 platforms may be skipped on Tier 3.</li>
+  <li>Tests for platform-specific Python APIs and Python C extension are run, but not prioritized.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>amd64-macos-darwin-graal-latest</td>
+      <td>macOS on Intel CPUs running BigSur or newer.</td>
+    </tr>
+    <tr>
+      <td>amd64-windows-msvc-graal-latest</td>
+      <td>Windows 11, Windows Server 2025, or newer.</td>
+    </tr>
+    <tr>
+      <td>amd64-linux-glibc-oracle-21</td>
+      <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+    <tr>
+      <td>aarch64-linux-glibc-oracle-21</td>
+      <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+    <tr>
+      <td>aarch64-macos-darwin-oracle-21</td>
+      <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+    <tr>
+      <td>amd64-macos-darwin-oracle-21</td>
+      <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+    <tr>
+      <td>amd64-windows-msvc-oracle-21</td>
+      <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+  </tbody>
+</table>
 
 
       </div>
