@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.1.0-dev</b><br>7e1ac7e88dcb927d9d510cd70d8bd66cd50d0528</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.1.0-dev</b><br>02954466d0d957b8c743160513a182fa9ed21bbe</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -60,6 +60,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#method-detail" tabindex="0">Method Details</a>
 <ol class="toc-list">
 <li><a href="#inInterpreterFastPath()" tabindex="0">inInterpreterFastPath()</a></li>
+<li><a href="#markThreadedSwitch(int)" tabindex="0">markThreadedSwitch(int)</a></li>
 </ol>
 </li>
 </ol>
@@ -139,6 +140,11 @@ be a good place for a cutoff when performing host inlining.</div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Indicates whether a branch is executed only in the interpreter.</div>
 </div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static int</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#markThreadedSwitch(int)" class="member-name-link">markThreadedSwitch</a><wbr>(int&nbsp;input)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Marks a switch statement within a loop as a candidate for threaded switch optimization.</div>
+</div>
 </div>
 </div>
 </div>
@@ -177,6 +183,72 @@ branch as a slow-path branch.</div>
 <dd><code>true</code> if executed in the interpreter, <code>false</code> in compiled code.</dd>
 <dt>Since:</dt>
 <dd>23.0</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="markThreadedSwitch(int)">
+<h3>markThreadedSwitch</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">markThreadedSwitch</span><wbr><span class="parameters">(int&nbsp;input)</span></div>
+<div class="block">Marks a switch statement within a loop as a candidate for threaded switch optimization.
+Threaded switch replicates the switch statement at the end of each case, improving branch
+prediction at the processor level.
+
+Usage example:
+
+<pre>
+while (cond) {
+  input = inlinedNextOpcode();
+  switch (markThreadedSwitch(input)) {
+    case op1: { body1; }
+    case op2: { body2; }
+  }
+}
+</pre>
+
+The compiler recognizes the code blocks from the loop header up to the switch and duplicates
+them into each case that continues the while loop. This effectively transforms the structure
+as follows:
+
+<pre>
+if (cond) {
+  input = inlinedNextOpcode();
+  switch (markThreadedSwitch(input)) {
+    case op1: {
+        body1;
+        if (cond) {
+          input = inlinedNextOpcode();
+          switch (markThreadedSwitch(input)) // go to matching case of outer switch
+        }
+    }
+    case op2: {
+        body2;
+        if (cond) {
+          input = inlinedNextOpcode();
+          switch (markThreadedSwitch(input)) // go to matching case of outer switch
+        }
+    }
+  }
+}
+</pre>
+
+When additional statements follow the switch block within a loop, the compiler may trigger an
+optimization to duplicate these statements into each case block. If this duplication does not
+occur, the compiler can still identify the loop as a candidate for threaded switch
+optimization and apply relevant optimizations to minimize overhead in the loop header, such
+as postponing register spilling from the loop header to cases with actual register pressure,
+even at the cost of code bloat. However, due to the presence of these tail statements, the
+loop has only one back edge, which effectively disables threading.
+
+The compiler may also reject candidates for threaded switch optimization if the identified
+code blocks, after inlining, contain complex control flow or operations beyond memory reads.
+To log decisions related to threaded switch optimization, use the Graal option
+<code>TraceThreadedSwitchOptimization</code>.</div>
+<dl class="notes">
+<dt>Since:</dt>
+<dd>25.1</dd>
 </dl>
 </div>
 </section>
