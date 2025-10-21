@@ -88,8 +88,8 @@ const platforms = {
 
 const fullJavaVersions = {
   "17": "17.0.12",
-  "21": "21.0.8",
-  "25": "25",
+  "21": "21.0.9",
+  "25": "25.0.1",
 }
 
 function updateGHASnippet(majorJavaVersion) {
@@ -111,7 +111,7 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
   // const comment = majorJavaVersion === "25" ? ' <span class="no-strip"># coming soon</span>' : '';
-  $("#dl-snippet-sdkman").html(`sdk install java ${majorJavaVersion}-graal$`);
+  $("#dl-snippet-sdkman").html(`sdk install java ${majorJavaVersion}-graal`);
 }
 
 function updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension) {
@@ -188,14 +188,10 @@ function toggleInteractivityForJava17(majorJavaVersion) {
 
   if (majorJavaVersion === "17") {
     platformSelector.disabled = true;
-    downloadButton.disabled = true;
     platformSelector.classList.add("disabled");
-    downloadButton.classList.add("disabled");
   } else {
     platformSelector.disabled = false;
-    downloadButton.disabled = false;
     platformSelector.classList.remove("disabled");
-    downloadButton.classList.remove("disabled");
   }
 }
 
@@ -217,6 +213,12 @@ function changeVersion(majorJavaVersion, platform) {
 
 
 function downloadGraalVMJDK() {
+  // Special handling for Java 17 - redirect to Oracle support
+  if (currentMajorJavaVersion === "17") {
+    window.open("https://support.oracle.com/knowledge/Oracle%20Linux%20and%20Virtualization/2605759_1.html", "_blank");
+    return;
+  }
+
   if (!currentDownloadLink) {
     return;
   }
