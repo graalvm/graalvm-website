@@ -732,7 +732,7 @@ For example:</p>
 <p>You can use <code>-H:Preserve</code> in the following ways:</p>
 
 <ul>
-  <li><code>-H:Preserve=all</code>: preserves all elements from the JDK and from the classpath</li>
+  <li><code>-H:Preserve=all</code>: preserves all elements from the entire JDK and classpath. This creates larger images but ensures all code is included, which can help resolve missing metadata issues.</li>
   <li><code>-H:Preserve=module=&lt;module&gt;</code>: preserves all elements from a given module</li>
   <li><code>-H:Preserve=module=ALL-UNNAMED</code>: preserves all elements from the classpath (provided with <code>-cp</code>).</li>
   <li><code>-H:Preserve=package=&lt;package&gt;</code>: preserves all elements from a given package</li>
@@ -744,7 +744,29 @@ For example:</p>
 
 <p>If you get errors related to <code>--initialize-at-build-time</code>, follow the suggestions in the error messages.</p>
 
+<blockquote>
+  <p><strong>Note:</strong> Using <code>-H:Preserve=all</code> requires significant memory and will result in much larger native images. Use the <code>-Os</code> flag to reduce image size. For more information, see <a href="/jdk25/reference-manual/native-image/optimizations-and-performance/">Optimizations and Performance</a>.</p>
+</blockquote>
+
 <p>For a practical demonstration, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
+    
+      <h4 id="memory-requirements">
+        
+        
+          Memory Requirements
+        
+        
+      </h4>
+
+<p>Native Image compilation is memory-intensive, particularly when building large projects or when using -<code>H:Preserve=all</code> or <code>--pgo-instrument</code>.</p>
+
+<p>If you encounter <code>OutOfMemoryError: Java heap space</code> you can:</p>
+
+<ul>
+  <li>use the <code>-Os</code> flag to reduce image size. For more information, see <a href="/jdk25/reference-manual/native-image/optimizations-and-performance/">Optimizations and Performance</a></li>
+  <li>use more specific preservation options like <code>-H:Preserve=package=&lt;package&gt;</code> instead of <code>-H:Preserve=all</code></li>
+  <li>use more RAM by increasing the heap size with <code>-J-Xmx&lt;n&gt;g</code> where <code>&lt;n&gt;</code> varies based on your machine’s available memory and build requirements</li>
+</ul>
     
       <h2 id="system-properties">
         
