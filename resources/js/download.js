@@ -215,7 +215,7 @@ function changeVersion(majorJavaVersion, platform) {
 function downloadGraalVMJDK() {
   // Special handling for Java 17 - redirect to Oracle support
   if (currentMajorJavaVersion === "17") {
-    window.open("https://support.oracle.com/knowledge/Oracle%20Linux%20and%20Virtualization/2605759_1.html", "_blank");
+    window.open("https://www.oracle.com/downloads/graalvm-downloads.html", "_blank");
     return;
   }
 
