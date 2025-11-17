@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.1.0-dev</b><br>e9feeebc22bc4e738ad0ea8897a96fb52fe54e64</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.1.0-dev</b><br>da130d21d8b8d151a23db7f8d2607536f1b69423</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -54,7 +54,15 @@ loadScripts(document, 'script');</script>
 <nav role="navigation" class="toc" aria-label="Table of contents">
 <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" disabled placeholder="Filter contents (type .)" aria-label="Filter table of contents" autocomplete="off" spellcheck="false"><input type="reset" class="reset-filter" disabled tabindex="-1" value="Reset"></div>
 <ol class="toc-list" tabindex="-1">
-<li><a href="#" tabindex="0">Description</a></li>
+<li><a href="#" tabindex="0">Description</a>
+<ol class="toc-list">
+<li><a href="#using-dynamicobject-nodes-heading" tabindex="0">Using DynamicObject nodes</a>
+<ol class="toc-list">
+<li><a href="#usage-examples--heading" tabindex="0">Usage examples:</a></li>
+</ol>
+</li>
+</ol>
+</li>
 <li><a href="#nested-class-summary" tabindex="0">Nested Class Summary</a></li>
 <li><a href="#constructor-summary" tabindex="0">Constructor Summary</a></li>
 <li><a href="#method-summary" tabindex="0">Method Summary</a></li>
@@ -91,12 +99,13 @@ loadScripts(document, 'script');</script>
 implements <a href="../interop/TruffleObject.html" title="interface in com.oracle.truffle.api.interop">TruffleObject</a></span></div>
 <div class="block">Represents a dynamic object, members of which can be dynamically added and removed at run time.
 
-To use it, extend <a href="DynamicObject.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject</code></a> and use <a href="DynamicObjectLibrary.html" title="class in com.oracle.truffle.api.object"><code>DynamicObjectLibrary</code></a> for object accesses.
+To use it, extend <a href="DynamicObject.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject</code></a> and use nodes nested under DynamicObject such as
+<a href="DynamicObject.GetNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetNode</code></a> for object accesses.
 
 When <a href="#%3Cinit%3E(com.oracle.truffle.api.object.Shape)">constructing</a> a <a href="DynamicObject.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject</code></a>, it has
 to be initialized with an empty initial shape. Initial shapes are created using
-<a href="Shape.html#newBuilder()"><code>Shape.newBuilder()</code></a> and should ideally be shared per TruffleLanguage instance to allow
-shape caches to be shared across contexts.
+<a href="Shape.html#newBuilder()"><code>Shape.newBuilder()</code></a> and should ideally be shared per <a href="../TruffleLanguage.html" title="class in com.oracle.truffle.api"><code>TruffleLanguage</code></a> instance to
+allow shape caches to be shared across contexts.
 
 Subclasses can provide in-object dynamic field slots using the <a href="DynamicObject.DynamicField.html" title="annotation interface in com.oracle.truffle.api.object"><code>DynamicObject.DynamicField</code></a> annotation
 and <a href="Shape.Builder.html#layout(java.lang.Class,java.lang.invoke.MethodHandles.Lookup)"><code>Shape.Builder.layout</code></a>.
@@ -104,29 +113,148 @@ and <a href="Shape.Builder.html#layout(java.lang.Class,java.lang.invoke.MethodHa
 <p>
 Example:
 
-<pre>
-<code>
-public class MyObject extends DynamicObject implements TruffleObject {
-    public MyObject(Shape shape) {
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-com.oracle.truffle.api.object.DynamicObject1"><code class="language-java">public class MyObject extends DynamicObject implements TruffleObject {
+    MyObject(Shape shape) {
         super(shape);
     }
+
+    static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 }
 
-Shape initialShape = Shape.newBuilder().layout(MyObject.class).build();
+public abstract class MyTruffleLanguage extends TruffleLanguage&lt;MyContext&gt; {
+    final Shape initialShape = Shape.newBuilder().build();
+
+    public MyObject newObject() {
+        return new MyObject(initialShape);
+    }
+}
+</code></pre>
+</div>
+
+
+<h2 id="using-dynamicobject-nodes-heading">Using DynamicObject nodes</h2>
+
+DynamicObject nodes is the central interface for accessing and mutating properties and other
+state (flags, dynamic type) of <a href="DynamicObject.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject</code></a>s. All nodes provide cached and uncached
+variants.
+
+<p>
+Note: Property keys are always compared using object identity (<code>==</code>), never with <code>
+equals</code>, for efficiency reasons. If the node is not used with a fixed key, and some keys might be
+<code>equals</code> but not have the same identity (<code>==</code>), you must either intern the keys
+first, or cache the key by equality using an inline cache and use the cached key with the
+DynamicObject node to ensure equal keys with different identity will use the same cache entry and
+not overflow the cache:
+
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-com.oracle.truffle.api.object.DynamicObject2"><code class="language-java">abstract static class GetStringKeyNode extends Node {
+    abstract Object execute(DynamicObject receiver, Object key);
+
+    @Specialization(guards = "equalNode.execute(key, cachedKey, UTF_16)", limit = "3")
+    static Object doCached(MyDynamicObjectSubclass receiver, TruffleString key,
+                    @Cached("key") TruffleString cachedKey,
+                    @Cached TruffleString.EqualNode equalNode,
+                    @Cached DynamicObject.GetNode getNode) {
+        return getNode.execute(receiver, cachedKey, NULL_VALUE);
+    }
+}
+</code></pre>
+</div>
+
+
+<h3 id="usage-examples--heading">Usage examples:</h3>
+
+<h4 id="simple-use-of-getnode-with-a-pre-interned-symbol-key--heading">Simple use of <a href="DynamicObject.GetNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetNode</code></a> with a pre-interned symbol key.</h4>
+
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-com.oracle.truffle.api.object.DynamicObject3"><code class="language-java">abstract static class GetSimpleNode extends Node {
+    abstract Object execute(DynamicObject receiver, Object key);
+
+    @Specialization
+    static Object doCached(MyDynamicObjectSubclass receiver, Symbol key,
+                    @Cached DynamicObject.GetNode getNode) {
+        return getNode.execute(receiver, key, NULL_VALUE);
+    }
+}
+</code></pre>
+</div>
+
+
+<h4 id="implementing-interoplibrary-messages-using-dynamicobject-access-nodes--heading">Implementing InteropLibrary messages using DynamicObject access nodes:</h4>
+
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-com.oracle.truffle.api.object.DynamicObject4"><code class="language-java">@ExportLibrary(InteropLibrary.class)
+static class MyDynamicObjectSubclass extends DynamicObject {
+    MyDynamicObjectSubclass(Shape shape) {
+        super(shape);
+    }
+
+    @ExportMessage
+    Object readMember(String member,
+                    @Cached DynamicObject.GetNode getNode) throws UnknownIdentifierException {
+        Object result = getNode.execute(this, member, null);
+        if (result == null) {
+            throw UnknownIdentifierException.create(member);
+        }
+        return result;
+    }
+</code></pre>
+</div>
+
+
+Member name equality check omitted for brevity.
+
+<h4 id="adding-extra-dynamic-fields-to-a-dynamicobject-subclass--heading">Adding extra dynamic fields to a DynamicObject subclass:</h4>
+
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-com.oracle.truffle.api.object.DynamicObject5"><code class="language-java">public class MyObjectWithFields extends DynamicObject implements TruffleObject {
+    @DynamicField private Object extra1;
+    @DynamicField private Object extra2;
+    @DynamicField private long extraLong1;
+    @DynamicField private long extraLong2;
+
+    MyObjectWithFields(Shape shape) {
+        super(shape);
+    }
+
+    static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+}
+
+Shape initialShape = Shape.newBuilder().layout(MyObject.class, MyObject.LOOKUP).build();
 
 MyObject obj = new MyObject(initialShape);
-</code>
-</pre></div>
+</code></pre>
+</div>
+</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>0.8 or earlier</dd>
 <dt>See Also:</dt>
 <dd>
-<ul class="tag-list">
+<ul class="tag-list-long">
 <li><a href="#%3Cinit%3E(com.oracle.truffle.api.object.Shape)"><code>DynamicObject(Shape)</code></a></li>
-<li><a href="DynamicObjectLibrary.html" title="class in com.oracle.truffle.api.object"><code>DynamicObjectLibrary</code></a></li>
 <li><a href="Shape.html" title="class in com.oracle.truffle.api.object"><code>Shape</code></a></li>
 <li><a href="Shape.html#newBuilder()"><code>Shape.newBuilder()</code></a></li>
+<li><a href="DynamicObject.GetNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetNode</code></a></li>
+<li><a href="DynamicObject.ContainsKeyNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.ContainsKeyNode</code></a></li>
+<li><a href="DynamicObject.PutNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.PutNode</code></a></li>
+<li><a href="DynamicObject.GetPropertyNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetPropertyNode</code></a></li>
+<li><a href="DynamicObject.GetPropertyFlagsNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetPropertyFlagsNode</code></a></li>
+<li><a href="DynamicObject.SetPropertyFlagsNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.SetPropertyFlagsNode</code></a></li>
+<li><a href="DynamicObject.CopyPropertiesNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.CopyPropertiesNode</code></a></li>
+<li><a href="DynamicObject.GetKeyArrayNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetKeyArrayNode</code></a></li>
+<li><a href="DynamicObject.GetPropertyArrayNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetPropertyArrayNode</code></a></li>
+<li><a href="DynamicObject.RemoveKeyNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.RemoveKeyNode</code></a></li>
+<li><a href="DynamicObject.PutConstantNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.PutConstantNode</code></a></li>
+<li><a href="DynamicObject.GetDynamicTypeNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetDynamicTypeNode</code></a></li>
+<li><a href="DynamicObject.SetDynamicTypeNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.SetDynamicTypeNode</code></a></li>
+<li><a href="DynamicObject.GetShapeFlagsNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.GetShapeFlagsNode</code></a></li>
+<li><a href="DynamicObject.SetShapeFlagsNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.SetShapeFlagsNode</code></a></li>
+<li><a href="DynamicObject.UpdateShapeNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.UpdateShapeNode</code></a></li>
+<li><a href="DynamicObject.ResetShapeNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.ResetShapeNode</code></a></li>
+<li><a href="DynamicObject.IsSharedNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.IsSharedNode</code></a></li>
+<li><a href="DynamicObject.MarkSharedNode.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject.MarkSharedNode</code></a></li>
 </ul>
 </dd>
 </dl>
@@ -143,11 +271,107 @@ MyObject obj = new MyObject(initialShape);
 <div class="table-header col-first">Modifier and Type</div>
 <div class="table-header col-second">Class</div>
 <div class="table-header col-last">Description</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.ContainsKeyNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.ContainsKeyNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Checks if this object contains a property with the given key.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.CopyPropertiesNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.CopyPropertiesNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Copies all properties of a DynamicObject to another, preserving property flags.</div>
+</div>
 <div class="col-first even-row-color"><code>protected static @interface&nbsp;</code></div>
 <div class="col-second even-row-color"><code><a href="DynamicObject.DynamicField.html" class="type-name-link" title="annotation interface in com.oracle.truffle.api.object">DynamicObject.DynamicField</a></code></div>
 <div class="col-last even-row-color">
 <div class="block">Using this annotation, subclasses can define additional dynamic fields to be used by the
 object layout.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.GetDynamicTypeNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetDynamicTypeNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Gets the language-specific dynamic type identifier currently associated with this object.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.GetKeyArrayNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetKeyArrayNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Gets a snapshot of the object's property keys, in insertion order.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.GetNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Gets the value of a property or returns a default value if no such property exists.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.GetPropertyArrayNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetPropertyArrayNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Gets a snapshot of the object's <a href="Property.html" title="class in com.oracle.truffle.api.object">properties</a>, in insertion order.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.GetPropertyFlagsNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetPropertyFlagsNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Gets the property flags associated with the requested property key.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.GetPropertyNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetPropertyNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Gets a <a href="Property.html" title="class in com.oracle.truffle.api.object">property descriptor</a> for the requested property key or
+<code>null</code> if no such property exists.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.GetShapeFlagsNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.GetShapeFlagsNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Gets the language-specific object shape flags.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.IsSharedNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.IsSharedNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Checks whether this object is marked as shared.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.MarkSharedNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.MarkSharedNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Marks this object as shared.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.PutConstantNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.PutConstantNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Sets the value of an existing property or adds a new property if no such property exists.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.PutNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.PutNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Sets the value of an existing property or adds a new property if no such property exists.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.RemoveKeyNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.RemoveKeyNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Removes the property with the given key from the object.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.ResetShapeNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.ResetShapeNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Empties and resets the object to the given root shape.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.SetDynamicTypeNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.SetDynamicTypeNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Sets the language-specific dynamic type identifier.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.SetPropertyFlagsNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.SetPropertyFlagsNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Sets the property flags associated with the requested property key.</div>
+</div>
+<div class="col-first even-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second even-row-color"><code><a href="DynamicObject.SetShapeFlagsNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.SetShapeFlagsNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Sets language-specific object shape flags.</div>
+</div>
+<div class="col-first odd-row-color"><code>static class&nbsp;</code></div>
+<div class="col-second odd-row-color"><code><a href="DynamicObject.UpdateShapeNode.html" class="type-name-link" title="class in com.oracle.truffle.api.object">DynamicObject.UpdateShapeNode</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Ensures the object's shape is up-to-date.</div>
 </div>
 </div>
 </section>
