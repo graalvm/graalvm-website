@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.1.0-dev</b><br>660209a672735ca25071e9593e490283ff8f5480</div>
+<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.1.0-dev</b><br>b662816155a7d87bc248c6008752a74ee56f3789</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -69,6 +69,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#typeof()" tabindex="0">typeof()</a></li>
 <li><a href="#stringValue()" tabindex="0">stringValue()</a></li>
 <li><a href="#get(java.lang.Object)" tabindex="0">get(Object)</a></li>
+<li><a href="#get(java.lang.Object,java.lang.Class)" tabindex="0">get(Object, Class)</a></li>
 <li><a href="#set(java.lang.Object,java.lang.Object)" tabindex="0">set(Object, Object)</a></li>
 <li><a href="#keys()" tabindex="0">keys()</a></li>
 <li><a href="#invoke(java.lang.Object...)" tabindex="0">invoke(Object...)</a></li>
@@ -240,9 +241,9 @@ rather than Java values, so bridge methods are generated that are called for eac
 and that convert native JavaScript values to their Java counterparts. The conversion rules are
 the same as in a <a href="JS.html" title="annotation interface in org.graalvm.webimage.api"><code>JS</code></a>-annotated method. Furthermore, note that JavaScript code can violate
 the Java type-safety by storing into some property a value that is not compatible with the
-corresponding Java field. For this reason, the bridge methods also generate check-casts on every
-access: if the JavaScript property that corresponds to the Java field does not contain a
-compatible value, a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> is thrown.
+corresponding Java field. For this reason, reading a Java field in a subclass of <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a>
+may result in a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> being throwns if the JavaScript property that
+corresponds to the Java field does not contain a compatible value.
 <p>
 There are several restrictions imposed on <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> subclasses:
 <ul>
@@ -312,7 +313,7 @@ System.out.println(p.x); // Throws a ClassCastException.
 When an object of the <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> subclass is passed from Java to JavaScript code using the
 <a href="JS.html" title="annotation interface in org.graalvm.webimage.api"><code>JS</code></a> annotation, the object is converted from its Java representation to its JavaScript
 representation. Changes in the JavaScript representation are reflected in the Java representation
-and vice-versa.
+and vice versa.
 
 <b>Example:</b> the following code resets the <code>Point</code> object in JavaScript by calling the
 <code>reset</code> method, and then prints <code>0, 0</code>:
@@ -343,6 +344,36 @@ System.out.println(p1.x + ", " + p1.y);
 Note that creating an object in JavaScript and passing it to Java several times does not
 guarantee that the same mirror instance is returned each time -- each time a JavaScript object
 becomes a Java mirror, a different instance of the mirror may be returned.
+<p>
+When doing type coercion (see <a href="JSValue.html#as(java.lang.Class)"><code>JSValue.as(Class)</code></a> JavaScript objects can be converted to
+any subtype of <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a>. This works because <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> is just a wrapper around the
+JS object that maps field accesses to JavaScript property accesses, the underlying JS object can
+be wrapped by any <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> subtype.
+
+Note that if the underlying JS property does not exist, reading the Java field may cause a
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link"><code>ClassCastException</code></a> because it is treated as containing a value of <code>undefined</code>,
+which is not compatible with any other Java type (though if the field type is compatible with
+<a href="JSUndefined.html" title="class in org.graalvm.webimage.api"><code>JSUndefined</code></a>, this works and an instance of <a href="JSUndefined.html" title="class in org.graalvm.webimage.api"><code>JSUndefined</code></a> is returned when reading
+the field).
+
+<b>Example:</b> the following code creates an anonymous JavaScript object in JavaScript and then
+coerces it to the Java <code>Point</code> type:
+
+<pre>
+&#64;JS.Coerce
+&#64;JS("return {x: 12, y: 13};")
+public static Point create1();
+
+&#64;JS.Coerce
+&#64;JS("return {a: 12, b: 13};")
+public static Point create2();
+
+Point p1 = create1();
+Point p2 = create2();
+System.out.println(p1.x + ", " + p1.y);
+// These field reads throw a ClassCastException
+System.out.println(p2.x + ", " + p2.y);
+</pre>
 
 
 <h3 id="importing-existing-javascript-classes-heading">Importing existing JavaScript classes</h3>
@@ -357,7 +388,7 @@ annotation.
 <p>
 The name of the declared class Java must match the name of the JavaScript class that is being
 imported. The package name of the Java class is not taken into account -- the same JavaScript
-class can be imported multiple times from within separate packages.
+class can be imported multiple times.
 <p>
 The exposed JavaScript fields must be declared as <code>protected</code> or <code>public</code>. The
 constructor parameters must match those of the JavaScript class, and its body must be empty.
@@ -475,7 +506,9 @@ GraalVM.run([]).then(vm =&gt; {
 <div class="table-header col-last">Description</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;T&gt;&nbsp;T</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#as(java.lang.Class)" class="member-name-link">as</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;cls)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Implements the logic for coercing from <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> to one of its subtypes.</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean[]</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#asBooleanArray()" class="member-name-link">asBooleanArray</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
@@ -550,107 +583,113 @@ in the function, if this object is callable.</div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the value of the key passed as the argument in the JavaScript object.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getOwnPropertyDescriptor(org.graalvm.webimage.api.JSObject,java.lang.String)" class="member-name-link">getOwnPropertyDescriptor</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>&lt;R&gt;&nbsp;R</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#get(java.lang.Object,java.lang.Class)" class="member-name-link">get</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;key,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;R&gt;&nbsp;type)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Same as <a href="#get(java.lang.Object)"><code>get(Object)</code></a> but the returned values is coerced to the given type.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getOwnPropertyDescriptor(org.graalvm.webimage.api.JSObject,java.lang.String)" class="member-name-link">getOwnPropertyDescriptor</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prop)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getOwnPropertyNames(org.graalvm.webimage.api.JSObject)" class="member-name-link">getOwnPropertyNames</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#getOwnPropertyNames(org.graalvm.webimage.api.JSObject)" class="member-name-link">getOwnPropertyNames</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#groupBy(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSValue)" class="member-name-link">groupBy</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;items,
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#groupBy(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSValue)" class="member-name-link">groupBy</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;items,
  <a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a>&nbsp;callback)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,java.lang.String)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
- <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prop)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSString)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
- <a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a>&nbsp;prop)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,java.lang.String)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prop)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSSymbol)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
- <a href="JSSymbol.html" title="class in org.graalvm.webimage.api">JSSymbol</a>&nbsp;prop)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSString)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
+ <a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a>&nbsp;prop)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#invoke(java.lang.Object...)" class="member-name-link">invoke</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>...&nbsp;args)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#hasOwn(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSSymbol)" class="member-name-link">hasOwn</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
+ <a href="JSSymbol.html" title="class in org.graalvm.webimage.api">JSSymbol</a>&nbsp;prop)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#invoke(java.lang.Object...)" class="member-name-link">invoke</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>...&nbsp;args)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Invoke the underlying JavaScript function, if this object is callable.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#is(org.graalvm.webimage.api.JSValue,org.graalvm.webimage.api.JSValue)" class="member-name-link">is</a><wbr>(<a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a>&nbsp;value1,
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#is(org.graalvm.webimage.api.JSValue,org.graalvm.webimage.api.JSValue)" class="member-name-link">is</a><wbr>(<a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a>&nbsp;value1,
  <a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a>&nbsp;value2)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isExtensible(org.graalvm.webimage.api.JSObject)" class="member-name-link">isExtensible</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isExtensible(org.graalvm.webimage.api.JSObject)" class="member-name-link">isExtensible</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isFrozen(org.graalvm.webimage.api.JSObject)" class="member-name-link">isFrozen</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isFrozen(org.graalvm.webimage.api.JSObject)" class="member-name-link">isFrozen</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isPrototypeOf(org.graalvm.webimage.api.JSObject)" class="member-name-link">isPrototypeOf</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;object)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isSealed(org.graalvm.webimage.api.JSObject)" class="member-name-link">isSealed</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#keys()" class="member-name-link">keys</a>()</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#isPrototypeOf(org.graalvm.webimage.api.JSObject)" class="member-name-link">isPrototypeOf</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;object)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#isSealed(org.graalvm.webimage.api.JSObject)" class="member-name-link">isSealed</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#keys()" class="member-name-link">keys</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Returns the array of property keys for this object.</div>
 </div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#keys(org.graalvm.webimage.api.JSObject)" class="member-name-link">keys</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#preventExtensions(org.graalvm.webimage.api.JSObject)" class="member-name-link">preventExtensions</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#keys(org.graalvm.webimage.api.JSObject)" class="member-name-link">keys</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#preventExtensions(org.graalvm.webimage.api.JSObject)" class="member-name-link">preventExtensions</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(java.lang.String)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prop)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(java.lang.String)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a>&nbsp;prop)</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(org.graalvm.webimage.api.JSString)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a>&nbsp;prop)</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(org.graalvm.webimage.api.JSString)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a>&nbsp;prop)</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(org.graalvm.webimage.api.JSSymbol)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="JSSymbol.html" title="class in org.graalvm.webimage.api">JSSymbol</a>&nbsp;prop)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>boolean</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#propertyIsEnumerable(org.graalvm.webimage.api.JSSymbol)" class="member-name-link">propertyIsEnumerable</a><wbr>(<a href="JSSymbol.html" title="class in org.graalvm.webimage.api">JSSymbol</a>&nbsp;prop)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#seal(org.graalvm.webimage.api.JSObject)" class="member-name-link">seal</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#set(java.lang.Object,java.lang.Object)" class="member-name-link">set</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;key,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#seal(org.graalvm.webimage.api.JSObject)" class="member-name-link">seal</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#set(java.lang.Object,java.lang.Object)" class="member-name-link">set</a><wbr>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;key,
  <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;newValue)</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Sets the value of the key passed as the argument in the JavaScript object.</div>
 </div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#setPrototypeOf(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSObject)" class="member-name-link">setPrototypeOf</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#setPrototypeOf(org.graalvm.webimage.api.JSObject,org.graalvm.webimage.api.JSObject)" class="member-name-link">setPrototypeOf</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj,
  <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;proto)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#stringValue()" class="member-name-link">stringValue</a>()</code></div>
-<div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toLocaleString()" class="member-name-link">toLocaleString</a>()</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>protected <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#stringValue()" class="member-name-link">stringValue</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#typeof()" class="member-name-link">typeof</a>()</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#toLocaleString()" class="member-name-link">toLocaleString</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#typeofString()" class="member-name-link">typeofString</a>()</code></div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/String.html" title="class or interface in java.lang" class="external-link">String</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#typeof()" class="member-name-link">typeof</a>()</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a></code></div>
-<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#valueOf()" class="member-name-link">valueOf</a>()</code></div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="JSString.html" title="class in org.graalvm.webimage.api">JSString</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#typeofString()" class="member-name-link">typeofString</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
-<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
-<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#values(org.graalvm.webimage.api.JSObject)" class="member-name-link">values</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
-<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#valueOf()" class="member-name-link">valueOf</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">&nbsp;</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static <a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a></code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#values(org.graalvm.webimage.api.JSObject)" class="member-name-link">values</a><wbr>(<a href="JSObject.html" title="class in org.graalvm.webimage.api">JSObject</a>&nbsp;obj)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">&nbsp;</div>
 </div>
 </div>
 </div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-org.graalvm.webimage.api.JSValue">Methods inherited from class&nbsp;<a href="JSValue.html#method-summary" title="class in org.graalvm.webimage.api">JSValue</a></h3>
-<code><a href="JSValue.html#asBigInteger()" title="asBigInteger()">asBigInteger</a>, <a href="JSValue.html#asBoolean()" title="asBoolean()">asBoolean</a>, <a href="JSValue.html#asByte()" title="asByte()">asByte</a>, <a href="JSValue.html#asChar()" title="asChar()">asChar</a>, <a href="JSValue.html#asDouble()" title="asDouble()">asDouble</a>, <a href="JSValue.html#asFloat()" title="asFloat()">asFloat</a>, <a href="JSValue.html#asInt()" title="asInt()">asInt</a>, <a href="JSValue.html#asLong()" title="asLong()">asLong</a>, <a href="JSValue.html#asShort()" title="asShort()">asShort</a>, <a href="JSValue.html#asString()" title="asString()">asString</a>, <a href="JSValue.html#checkedCoerce(java.lang.Object,java.lang.Class)" title="checkedCoerce(Object, Class)">checkedCoerce</a>, <a href="JSValue.html#isUndefined()" title="isUndefined()">isUndefined</a>, <a href="JSValue.html#isUndefined(org.graalvm.webimage.api.JSValue)" title="isUndefined(JSValue)">isUndefined</a>, <a href="JSValue.html#toString()" title="toString()">toString</a>, <a href="JSValue.html#undefined()" title="undefined()">undefined</a></code></div>
+<code><a href="JSValue.html#asBigInteger()" title="asBigInteger()">asBigInteger</a>, <a href="JSValue.html#asBoolean()" title="asBoolean()">asBoolean</a>, <a href="JSValue.html#asByte()" title="asByte()">asByte</a>, <a href="JSValue.html#asChar()" title="asChar()">asChar</a>, <a href="JSValue.html#asDouble()" title="asDouble()">asDouble</a>, <a href="JSValue.html#asFloat()" title="asFloat()">asFloat</a>, <a href="JSValue.html#asInt()" title="asInt()">asInt</a>, <a href="JSValue.html#asLong()" title="asLong()">asLong</a>, <a href="JSValue.html#asShort()" title="asShort()">asShort</a>, <a href="JSValue.html#asString()" title="asString()">asString</a>, <a href="JSValue.html#checkedCoerce(java.lang.Object,java.lang.Class)" title="checkedCoerce(Object, Class)">checkedCoerce</a>, <a href="JSValue.html#isUndefined()" title="isUndefined()">isUndefined</a>, <a href="JSValue.html#isUndefined(java.lang.Object)" title="isUndefined(Object)">isUndefined</a>, <a href="JSValue.html#isUndefined(org.graalvm.webimage.api.JSValue)" title="isUndefined(JSValue)">isUndefined</a>, <a href="JSValue.html#toString()" title="toString()">toString</a>, <a href="JSValue.html#undefined()" title="undefined()">undefined</a></code></div>
 <div class="inherited-list">
 <h3 id="methods-inherited-from-class-java.lang.Object">Methods inherited from class&nbsp;<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#method-summary" title="class or interface in java.lang" class="external-link">Object</a></h3>
 <code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#clone()" title="class or interface in java.lang" class="external-link">clone</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link">equals</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#finalize()" title="class or interface in java.lang" class="external-link">finalize</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#getClass()" title="class or interface in java.lang" class="external-link">getClass</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#hashCode()" title="class or interface in java.lang" class="external-link">hashCode</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notify()" title="class or interface in java.lang" class="external-link">notify</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#notifyAll()" title="class or interface in java.lang" class="external-link">notifyAll</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait()" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long)" title="class or interface in java.lang" class="external-link">wait</a>, <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#wait(long,int)" title="class or interface in java.lang" class="external-link">wait</a></code></div>
@@ -737,6 +776,27 @@ in the function, if this object is callable.</div>
 <dd><code>key</code> - the object under which the returned value is placed in the JavaScript object</dd>
 <dt>Returns:</dt>
 <dd>the value of the key passed as the argument in the JavaScript object</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="get(java.lang.Object,java.lang.Class)">
+<h3>get</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;R&gt;</span>&nbsp;<span class="return-type">R</span>&nbsp;<span class="element-name">get</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;key,
+ <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;R&gt;&nbsp;type)</span></div>
+<div class="block">Same as <a href="#get(java.lang.Object)"><code>get(Object)</code></a> but the returned values is coerced to the given type.</div>
+<dl class="notes">
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/ClassCastException.html" title="class or interface in java.lang" class="external-link">ClassCastException</a></code> - If the returned value is not of the given type and can't be
+            coerced to it.</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="JSValue.html#checkedCoerce(java.lang.Object,java.lang.Class)"><code>JSValue.checkedCoerce(Object, Class)</code></a></li>
+</ul>
+</dd>
 </dl>
 </div>
 </section>
@@ -905,9 +965,24 @@ in the function, if this object is callable.</div>
 <h3>as</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="type-parameters">&lt;T&gt;</span>&nbsp;<span class="return-type">T</span>&nbsp;<span class="element-name">as</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Class.html" title="class or interface in java.lang" class="external-link">Class</a>&lt;T&gt;&nbsp;cls)</span></div>
+<div class="block">Implements the logic for coercing from <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> to one of its subtypes.
+<p>
+Any <a href="JSObject.html" title="class in org.graalvm.webimage.api"><code>JSObject</code></a> instance can be unconditionally coerced to any of its subtypes because
+they are only a light wrapper around the underlying JavaScript object and coercion simply
+rewraps the JS object with the new wrapper type.</div>
 <dl class="notes">
 <dt>Overrides:</dt>
 <dd><code><a href="JSValue.html#as(java.lang.Class)">as</a></code>&nbsp;in class&nbsp;<code><a href="JSValue.html" title="class in org.graalvm.webimage.api">JSValue</a></code></dd>
+<dt>Parameters:</dt>
+<dd><code>cls</code> - The Java type to coerce to.</dd>
+<dt>Returns:</dt>
+<dd>The non-null coerced value of the requested type.</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list">
+<li><a href="JSValue.html#as(java.lang.Class)"><code>JSValue.as(Class)</code></a></li>
+</ul>
+</dd>
 </dl>
 </div>
 </section>
