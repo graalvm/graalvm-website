@@ -945,7 +945,12 @@ These reference each other and any methods that are declared in Python that over
 The created object does not behave like a Python object but instead in the same way as a foreign Java object.
 The reason for this is that when you create an instance of your new class, you get a reference to the <em>Java</em> object.</p>
 
-<p>To call Python methods that do <em>not</em> override or implement methods that already existed on the superclass, you need to use the special <code>this</code> attribute.
+<h5 id="inheritance-behavior-up-to-graalpy-version-251"><a href="#inheritance-behavior-up-to-graalpy-version-251" class="anchor-link">Inheritance behavior up to GraalPy version 25.1</a></h5>
+
+<p>When inheriting from a Java class, you can pass the keyword <code>new_style=False</code>.
+This is the default up to and including GraalPy version 25.1.
+The generated class is a Java object and no forwarding to the Python-side happens by default.
+To call Python methods that do <em>not</em> override or implement methods that already existed on the superclass, you need to use the special <code>this</code> attribute.
 Once you are in a Python method, your <code>self</code> refers to the Python object, and to get back from a Python method to Java, use the special attribute <code>__super__</code>.
 And since we do not expose static members on the instance side, if you need to call a static method from an instance on the Java side, use <code>getClass().static</code> to get to the meta-object holding the static members.</p>
 
@@ -983,6 +988,52 @@ You will have to create a factory method if you want to achieve this.</p>
 </code></pre></div></div>
 
 <p>For more information about how the generated Java subclass behaves, see the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/TruffleLanguage.Env.html#createHostAdapter(java.lang.Object%5B%5D)">Truffle documentation</a>.</p>
+
+<h5 id="inheritance-behavior-from-graalpy-251"><a href="#inheritance-behavior-from-graalpy-251" class="anchor-link">Inheritance behavior from GraalPy 25.1</a></h5>
+
+<p>When inheriting from a Java class, you can pass the keyword <code>new_style=True</code>.
+This is the default after GraalPy version 25.1.
+The generated class is a Java object, but attribute lookup is dispatched to the Python object as needed.</p>
+
+<p>Multiple levels of inheritance are supported, and <code>super()</code> calls both in the constructor override via <code>__new__</code> as well as in Java method overrides work as expected.
+The <code>self</code> in a method refers to the Java object, but any access that does not refer to a field or method on the Java class is transparently dispatched to the Python side.
+Static methods can be called both from the instance as well as the class.</p>
+
+<p>For example:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="n">java.util.logging</span> <span class="kn">import</span> <span class="n">Level</span>
+
+<span class="k">class</span> <span class="nc">PythonLevel</span><span class="p">(</span><span class="n">Level</span><span class="p">,</span> <span class="n">new_style</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sh">"</span><span class="s">default name</span><span class="sh">"</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">Provide a default constructor that modifies
+        the construction of the Java instance</span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="nf">super</span><span class="p">().</span><span class="nf">__new__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwarg</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">After the instance is created, initialize the
+        misc_value field</span><span class="sh">"""</span>
+        <span class="n">self</span><span class="p">.</span><span class="n">misc_value</span> <span class="o">=</span> <span class="mi">42</span>
+
+    <span class="k">def</span> <span class="nf">getName</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">This overrides the Java method on
+        java.util.logging.Level</span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="nf">super</span><span class="p">().</span><span class="nf">getName</span><span class="p">()</span> <span class="o">+</span> <span class="sh">"</span><span class="s"> from Python with super()</span><span class="sh">"</span>
+
+    <span class="k">def</span> <span class="nf">pythonName</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">This adds a method that is only visible from Python,
+        but self and super calls work as expected</span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="sh">"</span><span class="s">PythonName for Level </span><span class="si">{</span><span class="n">self</span><span class="p">.</span><span class="nf">intValue</span><span class="p">()</span><span class="si">}</span><span class="s"> named </span><span class="si">{</span><span class="nf">super</span><span class="p">().</span><span class="nf">getName</span><span class="p">()</span><span class="si">}</span><span class="sh">"</span>
+
+    <span class="k">def</span> <span class="nf">callStaticFromPython</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sh">"""</span><span class="s">Java static methods can be called from the
+        instance as well as the class</span><span class="sh">"""</span>
+        <span class="k">return</span> <span class="n">self</span><span class="p">.</span><span class="nf">parse</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+
+<span class="n">pl</span> <span class="o">=</span> <span class="nc">PythonLevel</span><span class="p">()</span>
+<span class="k">assert</span> <span class="nf">issubclass</span><span class="p">(</span><span class="n">PythonLevel</span><span class="p">,</span> <span class="n">Level</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">PythonLevel</span><span class="p">.</span><span class="nf">parse</span><span class="p">(</span><span class="sh">"</span><span class="s">INFO</span><span class="sh">"</span><span class="p">).</span><span class="nf">getName</span><span class="p">()</span> <span class="o">==</span> <span class="sh">"</span><span class="s">INFO</span><span class="sh">"</span>
+</code></pre></div></div>
 
 <h3 id="embedding-python-into-java"><a href="#embedding-python-into-java" class="anchor-link">Embedding Python into Java</a></h3>
 
@@ -1541,6 +1592,27 @@ This interoperability works in both directions. Python can call other languages,
 <p>The <em>polyglot</em> API allows non-JVM specific interactions with other languages from Python scripts.
 This includes all interactions with dynamic languages supported via the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>, including JavaScript and Ruby.</p>
 
+<h3 id="multi-threading-and-other-languages"><a href="#multi-threading-and-other-languages" class="anchor-link">Multi-threading and other languages</a></h3>
+
+<p>GraalPy implements the Python global interpreter lock (GIL), which prevents any two threads from executing Python code at the same instant.
+When methods in other languages are called from Python, no Python code is running while the other language executes.
+To give other Python threads a chance to run at this point in time, GraalPy releases the GIL around such foreign method calls by default.
+This (un)locking of the GIL can impact performance negatively if the foreign code runs only for a very short while, however, so this behavior can be controlled per dynamic scope using Python context managers.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">JavaFile</span><span class="p">(</span><span class="n">io</span><span class="p">.</span><span class="n">FileIO</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="n">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
+        <span class="c1"># Unlock the GIL when doing IO in Java
+</span>        <span class="k">with</span> <span class="n">polyglot</span><span class="p">.</span><span class="nf">gil_locked_during_interop</span><span class="p">(</span><span class="bp">False</span><span class="p">):</span>
+            <span class="n">self</span><span class="p">.</span><span class="n">java_file</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">polyglot</span><span class="p">.</span><span class="nf">gil_locked_during_interop</span><span class="p">(</span><span class="bp">True</span><span class="p">):</span>
+    <span class="c1"># Keep the GIL locked when accessing Java maps, because those method calls will return very quickly
+</span>    <span class="n">some_file</span><span class="p">.</span><span class="nf">write</span><span class="p">(</span><span class="n">java_map</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">key1</span><span class="p">)</span> <span class="o">+</span> <span class="n">java_map</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="n">key2</span><span class="p">))</span>
+</code></pre></div></div>
+
+<p>Beware of always keeping the GIL locked.
+That may lead to deadlocks if the foreign language attempts to wait on another thread of execution, and that thread tries to call back into Python.</p>
+
 <h4 id="installing-other-dynamic-languages"><a href="#installing-other-dynamic-languages" class="anchor-link">Installing other dynamic languages</a></h4>
 
 <p>To use other languages, like JavaScript, you need to add their Maven dependencies to your project.</p>
@@ -1952,7 +2024,7 @@ This lets you add Python methods to foreign objects, and map foreign functionali
 <span class="kd">class</span> <span class="nc">MyJavaClass</span> <span class="o">{</span>
       <span class="kd">private</span> <span class="kt">int</span> <span class="n">x</span><span class="o">;</span>
       <span class="kd">private</span> <span class="kt">int</span> <span class="n">y</span><span class="o">;</span>
-      
+
       <span class="kd">public</span> <span class="nf">MyJavaClass</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">)</span> <span class="o">{</span>
          <span class="k">this</span><span class="o">.</span><span class="na">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span>
          <span class="k">this</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">;</span>
@@ -1971,7 +2043,7 @@ This lets you add Python methods to foreign objects, and map foreign functionali
 <p>The following snippet sets up the Java environment and makes the object available to Python:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">org.example.MyJavaClass</span><span class="o">;</span>
-        
+
 <span class="kd">class</span> <span class="nc">Main</span> <span class="o">{</span>
 
    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
@@ -2009,11 +2081,11 @@ This lets you add Python methods to foreign objects, and map foreign functionali
 <span class="k">class</span> <span class="nc">MyPythonClassTwo</span><span class="p">:</span>
    <span class="k">def</span> <span class="nf">get_tuple</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
       <span class="nf">return </span><span class="p">(</span><span class="n">self</span><span class="p">.</span><span class="nf">getY</span><span class="p">(),</span> <span class="n">self</span><span class="p">.</span><span class="nf">getX</span><span class="p">())</span>
-   
+
    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="n">self</span><span class="p">):</span>
       <span class="k">return</span> <span class="sa">f</span><span class="sh">"</span><span class="s">MyJavaInstance(x=</span><span class="si">{</span><span class="n">self</span><span class="p">.</span><span class="nf">getX</span><span class="p">()</span><span class="si">}</span><span class="s">, y=</span><span class="si">{</span><span class="n">self</span><span class="p">.</span><span class="nf">getY</span><span class="p">()</span><span class="si">}</span><span class="s">)</span><span class="sh">"</span>
 
-<span class="c1"># If 'allow_method_overwrites=True' is not given, this would lead to an error due to the method conflict of 'get_tuple'  
+<span class="c1"># If 'allow_method_overwrites=True' is not given, this would lead to an error due to the method conflict of 'get_tuple'
 </span><span class="nf">register_interop_type</span><span class="p">(</span><span class="n">foreign_class</span><span class="p">,</span> <span class="n">MyPythonClassTwo</span><span class="p">,</span> <span class="n">allow_method_overwrites</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
 <span class="c1"># A newly registered class will be before already registered classes in the mro.
@@ -2713,37 +2785,40 @@ allowing full use of pip’s native dependency format.</p>
 
 <h2 id="permissions-for-python-embeddings"><a href="#permissions-for-python-embeddings" class="anchor-link">Permissions for Python Embeddings</a></h2>
 
-<h3 id="access-control-and-security-limits-for-python-scripts"><a href="#access-control-and-security-limits-for-python-scripts" class="anchor-link">Access Control and Security Limits for Python Scripts</a></h3>
+<p>When embedding GraalPy in Java applications, you need to understand how Python scripts access system resources and what security limitations apply.</p>
 
-<p>Embedding GraalPy into Java works with the <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#controlling-access-to-host-functions">GraalVM Polyglot Sandbox</a>.</p>
+<p>GraalPy integrates with the <a href="https://www.graalvm.org/latest/reference-manual/embed-languages/#controlling-access-to-host-functions">GraalVM Polyglot Sandbox</a> to provide configurable access control for embedded Python code.</p>
 
 <h3 id="pythons-posix-interface"><a href="#pythons-posix-interface" class="anchor-link">Python</a>’s POSIX Interface</h3>
 
-<p>The way the operating system interface is exposed to Python scripts is GraalPy-specific.
-By default all access is routed through Java interfaces, but some packages rely on details of POSIX APIs and require direct native access.</p>
+<p>GraalPy exposes the operating system interface to Python scripts in a GraalPy-specific way.
+By default, all access is routed through Java interfaces, but some packages rely on POSIX API details and require direct native access.</p>
 
-<p>Graal languages (those implemented on the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>) usually implement system-related functions using the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/README.md">Truffle abstraction layer</a>, which is OS independent and provides extension points for the users when embedding GraalPy or other Graal languages into Java applications.
-See, for example, the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">Truffle FileSystem service-provider</a>.</p>
+<p>Graal languages (implemented on the <a href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/">Truffle framework</a>) typically implement system-related functions using the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/README.md">Truffle abstraction layer</a>. This layer is OS-independent and provides extension points when embedding GraalPy or other Graal languages into Java applications. For example, see the <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">Truffle FileSystem service-provider</a>.</p>
 
 <p>The standard Python library also provides an OS abstraction, but exposes lower level interfaces. For example, the <code>os</code> module directly exposes some POSIX functions.
 On non-POSIX platforms, this interface is emulated to a degree.</p>
 
-<p>GraalPy provides two alternative implementations (each referred to as a “backend”) of system-related functionality offered by built-in Python modules such as <code>os</code>.
-The <code>PosixModuleBackend</code> option determines which backend is used: valid values are <code>native</code> and <code>java</code>.</p>
+<p>GraalPy provides two alternative implementations (“backends”) of system-related functionality for built-in Python modules such as <code>os</code>. The <code>PosixModuleBackend</code> option determines which backend is used: <code>native</code> or <code>java</code>.</p>
 
 <h4 id="native-backend"><a href="#native-backend" class="anchor-link">Native Backend</a></h4>
 
-<p>This backend directly calls the POSIX API in mostly the same way as CPython (the reference Python implementation).</p>
+<p>The native backend directly calls the POSIX API in mostly the same way as CPython (the reference Python implementation).</p>
 
-<p>This approach is the most compatible with CPython and provides bare access to the underlying OS interface without an intermediate  emulation layer.</p>
+<p>This approach is the most compatible with CPython and provides bare access to the underlying OS interface without an intermediate emulation layer.</p>
 
-<p>By default, this implementation bypasses the Truffle abstraction layer, and therefore it is not sandboxed and does not support custom implementations of <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">Truffle FileSystem service-provider</a>, and other Polyglot API providers related to system interfaces.</p>
+<p>However, this implementation bypasses the Truffle abstraction layer by default. This means:</p>
+<ul>
+  <li><strong>No sandboxing</strong> protection</li>
+  <li><strong>No support</strong> for custom <a href="https://www.graalvm.org/truffle/javadoc/org/graalvm/polyglot/io/FileSystem.html">Truffle FileSystem service-provider</a> implementations</li>
+  <li><strong>No support</strong> for other Polyglot API providers related to system interfaces</li>
+</ul>
 
-<p>The native backend is chosen by default when GraalPy is started via the <code>graalpy</code> or any other Python related launcher.</p>
+<p>The native backend is chosen by default when GraalPy is started via the <code>graalpy</code> launcher or any other Python-related launcher.</p>
 
 <h5 id="limitations-of-the-native-backend"><a href="#limitations-of-the-native-backend" class="anchor-link">Limitations of the Native Backend</a></h5>
 
-<p>Known limitations are:</p>
+<p>Known limitations:</p>
 
 <ul>
   <li><code>os.fork</code> is not supported</li>
@@ -2752,43 +2827,51 @@ The <code>PosixModuleBackend</code> option determines which backend is used: val
 
 <h4 id="java-backend"><a href="#java-backend" class="anchor-link">Java Backend</a></h4>
 
-<p>This backend uses the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/README.md">Truffle abstraction layer</a> and therefore supports custom Polyglot API providers related to system interfaces and sandboxing.
-Because this abstraction is POSIX agnostic, it does not expose all the necessary functionality. Some functionality is emulated, and some functionality is unsupported.</p>
+<p>The Java backend uses the <a href="https://github.com/oracle/graal/blob/master/truffle/docs/README.md">Truffle abstraction layer</a>, which provides:</p>
 
-<p>The Java backend is the default when GraalPy is run via the <code>Context</code> API, that is, <a href="https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md">embedded in Java applications</a>.</p>
+<ul>
+  <li><strong>Sandboxing support</strong> for security</li>
+  <li><strong>Custom Polyglot API providers</strong> for system interfaces</li>
+  <li><strong>Cross-platform compatibility</strong></li>
+</ul>
+
+<p>Because this abstraction is POSIX-agnostic, it cannot expose all necessary functionality. Some functionality is emulated, and some is unsupported.</p>
+
+<p>The Java backend is the default when <a href="https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md">embedding GraalPy in Java applications</a> using the <code>Context</code> API.</p>
 
 <h5 id="limitations-of-the-java-backend"><a href="#limitations-of-the-java-backend" class="anchor-link">Limitations of the Java Backend</a></h5>
 
-<p>GraalPy can log information about known incompatibility of functions executed at runtime, which includes the OS interface-related functions.
-To turn on this logging, use the command-line option <code>--log.python.compatibility.level=FINE</code> (or other desired logging level).</p>
+<p>To help identify compatibility issues, GraalPy can log information about known incompatibilities of functions executed at runtime. To enable this logging, use: <code>--log.python.compatibility.level=FINE</code></p>
 
 <p>Known limitations of the Java backend are:</p>
 
+<p><strong>State Isolation:</strong></p>
+
+<p>The Java backend’s state is disconnected from the actual OS state:</p>
+
 <ul>
-  <li>Its state is disconnected from the actual OS state, which applies especially to:
+  <li><strong>File descriptors:</strong> Python-level file descriptors are not usable in native code</li>
+  <li><strong>Current working directory:</strong> Initialized to the startup directory but maintained separately. For example, <code>os.chdir()</code> in Python does not change the actual process working directory</li>
+  <li><strong>umask:</strong> Same limitation as working directory, but always initialized to <code>0022</code> regardless of the actual system value</li>
+</ul>
+
+<p><strong>Other Limitations:</strong></p>
+
+<ul>
+  <li><strong>File timestamps:</strong> Resolution depends on the JDK. The Java backend can only guarantee seconds resolution</li>
+  <li><strong>File access checks:</strong> <code>os.access()</code> and functionality based on the <code>faccessat</code> POSIX function do not support:
     <ul>
-      <li><em>file descriptors</em>: Python-level file descriptors are not usable in native code.</li>
-      <li><em>current working directory</em>: is initialized to the current working
-directory at the startup, but is then maintained separately. So, for example, <code>chdir</code> in Python
-does not change the actual current working directory of the process.</li>
-      <li><em>umask</em>: has the same limitation as that of the current working directory, but it is always initialized
-to <code>0022</code> regardless of the actual system value at startup.</li>
-    </ul>
-  </li>
-  <li>Resolution of file access/modification times depends on the JDK.
-The best the Java backend can guarantee is seconds resolution.</li>
-  <li><code>os.access</code> and any other functionality based on <code>faccessat</code> POSIX function does not support:
-    <ul>
-      <li>effective IDs.</li>
-      <li><code>follow_symlinks=False</code> unless the mode is only <code>F_OK</code>.</li>
+      <li>Effective IDs</li>
+      <li><code>follow_symlinks=False</code> unless the mode is only <code>F_OK</code></li>
     </ul>
   </li>
 </ul>
 
 <h3 id="python-native-extensions"><a href="#python-native-extensions" class="anchor-link">Python Native Extensions</a></h3>
 
-<p>Python native extensions run by default as native binaries, with full access to the underlying system.
-See <a href="#embedding-limitations">Embedding limitations</a></p>
+<p>Python native extensions run by default as native binaries with full access to the underlying system. This means they bypass the security controls described above.</p>
+
+<p>For more information about limitations when embedding native extensions, see <a href="#embedding-limitations">Embedding limitations</a>.</p>
 
 <h2 id="tooling-support-for-python"><a href="#tooling-support-for-python" class="anchor-link">Tooling Support for Python</a></h2>
 
@@ -2803,19 +2886,32 @@ To enable the debugger, pass the <code>--inspect</code> command-line option.
 You can inspect variables, set watch expressions, interactively evaluate code snippets, and so on.</p>
 
 <ol>
-  <li>Run a Python script using the command-line option <code>--inspect</code>:
+  <li>
+    <p>Run a Python script using the command-line option <code>--inspect</code>:</p>
+
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> graalpy <span class="nt">--inspect</span> my_script.py
 </code></pre></div>    </div>
   </li>
-  <li>You should see output similar to:
+  <li>
+    <p>You should see output similar to:</p>
+
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Debugger listening on ws://127.0.0.1:9229/VrhCaY7wR5tIqy2zLsdFr3f7ixY3QB6kVQ0S54_SOMo
  For <span class="nb">help</span>, see: https://www.graalvm.org/tools/chrome-debugger
  E.g. <span class="k">in </span>Chrome open: devtools://devtools/bundled/js_app.html?ws<span class="o">=</span>127.0.0.1:9229/VrhCaY7wR5tIqy2zLsdFr3f7ixY3QB6kVQ0S54_SOMo
 </code></pre></div>    </div>
   </li>
   <li>
-    <p>Open your Chrome browser and enter the URL provided. 
-Now you can inspect the stack, variables, evaluate variables, and selected expressions in a tooltip, and so on. For example:</p>
+    <p>Open Chrome browser and enter the provided URL.</p>
+
+    <p>You can now:</p>
+    <ul>
+      <li>Inspect the call stack and variables</li>
+      <li>Set breakpoints and step through code</li>
+      <li>Evaluate expressions in the console</li>
+      <li>View variable values in tooltips</li>
+    </ul>
+
+    <p>For example:</p>
 
     <p><img src="/python/assets/Chrome_Inspector.png" alt="Chrome Inspector" /></p>
   </li>
@@ -2823,10 +2919,11 @@ Now you can inspect the stack, variables, evaluate variables, and selected expre
 
 <h3 id="profiling"><a href="#profiling" class="anchor-link">Profiling</a></h3>
 
-<p>GraalPy provides three main profiling capabilities: a CPU sampler, a CPU tracer, and a memory tracer.
-These are described below. (For details, use the <code>graalpy --help:tools</code> command.)</p>
+<p>GraalPy provides three main profiling capabilities: CPU sampling, CPU tracing, and memory tracing. Each tool is described below.</p>
 
-<h3 id="cpu-sampler"><a href="#cpu-sampler" class="anchor-link">CPU Sampler</a></h3>
+<p>For complete options, use: <code>graalpy --help:tools</code></p>
+
+<h4 id="cpu-sampler"><a href="#cpu-sampler" class="anchor-link">CPU Sampler</a></h4>
 
 <p>Use the <code>--cpusampler</code> command-line option to take a CPU sample. For example:</p>
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalpy <span class="nt">--cpusampler</span> my_script.py
@@ -2836,6 +2933,7 @@ These are described below. (For details, use the <code>graalpy --help:tools</cod
 
 <details>
   <summary>CPU Sampler Output (Click to expand)</summary>
+
   <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">--------------------------------------------------------------------------------------------------------------------------------------------------------------</span>
 Sampling Histogram. Recorded 564 samples with period 10ms. Missed 235 samples.
   Self Time: Time spent on the top of the stack.
@@ -2853,18 +2951,21 @@ Thread[main,5,main]
  ...
 <span class="nt">--------------------------------------------------------------------------------------------------------------------------------------------------------------</span>
 </code></pre></div>  </div>
+
 </details>
 
-<h3 id="cpu-tracer"><a href="#cpu-tracer" class="anchor-link">CPU Tracer</a></h3>
+<h4 id="cpu-tracer"><a href="#cpu-tracer" class="anchor-link">CPU Tracer</a></h4>
 
 <p>Use the <code>--cputracer --cputracer.TraceStatements</code> command-line options to trace CPU usage. For example:</p>
+
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalpy <span class="nt">--cputracer</span> <span class="nt">--cputracer</span>.TraceStatements my_script.py
 </code></pre></div></div>
 
 <p>You should see output similar to:</p>
 
 <details>
-  <summary>CPU Tracer Output (Click to Expand)</summary>
+  <summary>CPU Tracer Output (Click to expand)</summary>
+
   <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">--------------------------------------------------------------------------------------------------------------------</span>
 Tracing Histogram. Counted a total of 1135 element executions.
   Total Count: Number of <span class="nb">times </span>the element was executed and percentage of total executions.
@@ -2885,18 +2986,21 @@ Tracing Histogram. Counted a total of 1135 element executions.
  ...    
 <span class="nt">--------------------------------------------------------------------------------------------------------------------</span>
 </code></pre></div>  </div>
+
 </details>
 
-<h5 id="memory-tracer"><a href="#memory-tracer" class="anchor-link">Memory Tracer</a></h5>
+<h4 id="memory-tracer"><a href="#memory-tracer" class="anchor-link">Memory Tracer</a></h4>
 
 <p>Use the <code>--memtracer --memtracer.TraceStatements</code> command-line options to trace memory usage. For example:</p>
+
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>graalpy <span class="nt">--experimental-options</span> <span class="nt">--memtracer</span> <span class="nt">--memtracer</span>.TraceStatements my_script.py
 </code></pre></div></div>
 
 <p>You should see output similar to:</p>
 
 <details>
-  <summary>Memory Tracer Output (Click to Expand)</summary>
+  <summary>Memory Tracer Output (Click to expand)</summary>
+
   <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">----------------------------------------------------------------------------</span>
  Location Histogram with Allocation Counts. Recorded a total of 565 allocations.
    Total Count: Number of allocations during the execution of this element.
@@ -2916,6 +3020,7 @@ Tracing Histogram. Counted a total of 1135 element executions.
  ...
 <span class="nt">----------------------------------------------------------------------------</span>
 </code></pre></div>  </div>
+
 </details>
 
 <h3 id="coverage"><a href="#coverage" class="anchor-link">Coverage</a></h3>
@@ -2929,7 +3034,8 @@ Enable it using the <code>--coverage</code> command-line option, as shown below.
 <p>You should see output similar to:</p>
 
 <details>
-  <summary>CPU Sampler Output (Click to expand)</summary>
+  <summary>Coverage Output (Click to expand)</summary>
+
   <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">------------------------------------------------------------------------------------------------------------------------------------------------</span>
 Code coverage histogram.
   Shows what percent of each element was covered during execution
@@ -2978,15 +3084,17 @@ Code coverage histogram.
  &lt;src-dir&gt;/my_script.py                                                        |     100.00% |  100.00% |  100.00%
 <span class="nt">------------------------------------------------------------------------------------------------------------------------------------------------</span>
 </code></pre></div>  </div>
+
 </details>
 
 <h3 id="trace"><a href="#trace" class="anchor-link">Trace</a></h3>
 
 <p>The standard Python <code>trace</code> module is also provided.</p>
 <blockquote>
-  <p>Note: This works in the same way as CPython.
-The programmatic API also works, with some limitations: it does not currently track calls, only line counts and called functions.</p>
+  <p>Note: This works in the same way as CPython.</p>
 </blockquote>
+
+<p>The programmatic API also works but with limitations: it currently tracks only line counts and called functions, not calls themselves.</p>
 
 <p>For example, running this command:</p>
 
@@ -2996,7 +3104,8 @@ The programmatic API also works, with some limitations: it does not currently tr
 <p>You should see output similar to:</p>
 
 <details>
-  <summary>CPU Tracer Output (Click to Expand)</summary>
+  <summary>CPU Tracer Output (Click to expand)</summary>
+
   <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>_       __     __                             __     
 | |     / /__  / /________  ____ ___  ___     / /_____
 | | /| / / _ <span class="se">\/</span> / ___/ __ <span class="se">\/</span> __ <span class="sb">`</span>__ <span class="se">\/</span> _ <span class="se">\ </span>  / __/ __ <span class="se">\</span>
@@ -3092,6 +3201,7 @@ lines   cov%   module   <span class="o">(</span>path<span class="o">)</span>
   127   100%   weakref   <span class="o">(</span>&lt;install-dir&gt;/lib/python3.10/weakref.py<span class="o">)</span>
   432   100%   zipfile   <span class="o">(</span>&lt;install-dir&gt;/lib/python3.10/zipfile.py<span class="o">)</span>
 </code></pre></div>  </div>
+
 </details>
 
 <h3 id="using-pycharm-with-graalpy"><a href="#using-pycharm-with-graalpy" class="anchor-link">Using PyCharm with GraalPy</a></h3>
@@ -3109,18 +3219,19 @@ lines   cov%   module   <span class="o">(</span>path<span class="o">)</span>
     <p>Create, or open, a Python project.
 (For more information, see <a href="https://www.jetbrains.com/help/pycharm/creating-empty-project.html">Create a Python project</a>, or <a href="https://www.jetbrains.com/help/pycharm/open-projects.html">Open, reopen, and close projects</a>, respectively.)</p>
   </li>
-  <li>
-    <p>Create a new <code>venv</code> virtual environment for your Python project.
-(For more information, see <a href="https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html#python_create_virtual_env">Create a virtualenv environment</a>.)</p>
+  <li>Create a new virtual environment using GraalPy:
+    <ul>
+      <li>In PyCharm settings, set the interpreter to your GraalPy installation</li>
+      <li>Create a new <code>venv</code> virtual environment
+(For more information, see <a href="https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html#python_create_virtual_env">Create a virtualenv environment</a>.)</li>
+    </ul>
   </li>
   <li>
-    <p>Install packages by following the PyCharm instructions.
+    <p>Install packages using pip or PyCharm’s package manager.
 (For more information, see <a href="https://www.jetbrains.com/help/pycharm/installing-uninstalling-and-upgrading-packages.html">Install, uninstall, and upgrade packages</a>.)</p>
   </li>
-  <li>
-    <p>Use the PyCharm menu items to <a href="https://www.jetbrains.com/help/pycharm/running-applications.html">run your Python application</a>. 
-Alternatively, use the terminal emulator to run the <code>graalpy</code> command.</p>
-  </li>
+  <li>Use the PyCharm menu items to <a href="https://www.jetbrains.com/help/pycharm/running-applications.html">run your Python application</a>. 
+Alternatively, use the terminal emulator to run the <code>graalpy</code> command.</li>
 </ol>
 
 <h3 id="using-visual-studio-code-with-graalpy"><a href="#using-visual-studio-code-with-graalpy" class="anchor-link">Using Visual Studio Code with GraalPy</a></h3>
@@ -3150,84 +3261,93 @@ Alternatively, use the terminal emulator to run the <code>graalpy</code> command
 Alternatively, use a VS Code terminal emulator to run the <code>graalpy</code> command.</p>
   </li>
   <li>
-    <p>You cannot use VS Code to debug your Python application.
-Instead, open a VS Code terminal emulator and follow these instructions: <a href="#debugging">Debugging a Python Application</a>.</p>
+    <p>You can use VS Code’s built-in Python debugger to set breakpoints, inspect variables, and step through your code just like with standard Python.</p>
   </li>
 </ol>
 
 <h2 id="graalpy-troubleshooting"><a href="#graalpy-troubleshooting" class="anchor-link">GraalPy Troubleshooting</a></h2>
 
-<h3 id="graalpy-embedding"><a href="#graalpy-embedding" class="anchor-link">GraalPy Embedding</a></h3>
+<p>This guide helps you resolve common issues when using GraalPy, whether running it standalone or embedded in Java applications.</p>
 
-<h4 id="virtualfilesystem-cannot-load-a-file"><a href="#virtualfilesystem-cannot-load-a-file" class="anchor-link">VirtualFileSystem cannot load a file</a></h4>
+<h3 id="virtual-filesystem-issues"><a href="#virtual-filesystem-issues" class="anchor-link">Virtual FileSystem Issues</a></h3>
 
-<p>There are situations where a file cannot be loaded even though it is part of the Virtual Filesystem resources.
-GraalPy tries to prevent such situations by automatically <a href="#extracting-files-from-virtual-filesystem">extracting</a>
-some well known files to the real filesystem, but if you see an error like:</p>
+<h4 id="virtualfilesystem-cannot-load-files"><a href="#virtualfilesystem-cannot-load-files" class="anchor-link">VirtualFileSystem Cannot Load Files</a></h4>
+
+<p>Some files may fail to load from the Virtual Filesystem even though they’re included as resources. GraalPy automatically <a href="#extracting-files-from-virtual-filesystem">extracts certain file types</a> to the real filesystem, but you may still encounter errors.</p>
+
+<p>Example error:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ImportError: cannot load /graalpy_vfs/venv/lib/python3.11/site-packages/_cffi_backend.graalpy250dev09433ef706-311-native-aarch64-darwin.so:
 NFIUnsatisfiedLinkError: dlopen<span class="o">(</span>/graalpy_vfs/venv/lib/python3.11/site-packages/_cffi_backend.graalpy250dev09433ef706-311-native-aarch64-darwin.so, 0x0002<span class="o">)</span>:
 </code></pre></div></div>
 
-<p>then the default behavior did not work as intended.</p>
+<p>This indicates that the native extension requires access to the real filesystem.</p>
 
-<p>Depending on how you <a href="#deployment">deploy Python resources</a> in your application, you can try one of the following:</p>
-<ul>
-  <li>if you need to package resources within your Jar or Native Image executable:
-    <ul>
-      <li>if the problematic file is not one of the following types: <code>.so</code>, <code>.dylib</code>, <code>.pyd</code>, <code>.dll</code>, or <code>.ttf</code>, which are extracted to
-the real filesystem by default, you can simply attempt to add it to the extraction filter using:</li>
-    </ul>
+<p><strong>Solution</strong>: Depending on how you <a href="#deployment">deploy Python resources</a>, choose one of these approaches:</p>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">VirtualFileSystem</span><span class="o">.</span><span class="na">Builder</span><span class="o">.</span><span class="na">extractFilter</span><span class="o">(</span><span class="n">filter</span><span class="o">);</span>
-</code></pre></div>    </div>
+<h5 id="option-1-package-resources-in-jarexecutable"><a href="#option-1-package-resources-in-jarexecutable" class="anchor-link">Option 1: Package Resources in JAR/Executable</a></h5>
 
-    <ul>
-      <li>if the previous does not help, it is also possible to extract all Python resources into a user-defined directory before creating a GraalPy
-context, and then configure the context to use that directory:</li>
-    </ul>
+<p>If the problematic file is not automatically extracted (files other than <code>.so</code>, <code>.dylib</code>, <code>.pyd</code>, <code>.dll</code>, or <code>.ttf</code>), add it to the extraction filter:</p>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// extract the Python resources from the jar or native image into a given directory</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">VirtualFileSystem</span> <span class="n">vfs</span> <span class="o">=</span> <span class="nc">VirtualFileSystem</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">extractFilter</span><span class="o">(</span><span class="n">filename</span> <span class="o">-&gt;</span> <span class="n">filename</span><span class="o">.</span><span class="na">endsWith</span><span class="o">(</span><span class="s">".your_extension"</span><span class="o">))</span>
+    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</code></pre></div></div>
+
+<p>If that doesn’t resolve the issue, extract all resources to an external directory:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Extract the Python resources from the jar or native image into a directory</span>
 <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">extractVirtualFileSystemResources</span><span class="o">(</span><span class="nc">VirtualFileSystem</span><span class="o">.</span><span class="na">create</span><span class="o">(),</span> <span class="n">externalResourceDirectoryPath</span><span class="o">);</span>
-<span class="c1">// create a GraalPy context configured with an external Python resource directory</span>
+<span class="c1">// Create a GraalPy context configured with the external directory</span>
 <span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">(</span><span class="n">externalResourceDirectoryPath</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
-</code></pre></div>    </div>
-  </li>
-  <li>
-    <p>or if you’re able to ship resources in a separate directory, you have to set the <code>externalDirectory</code> tag in
-<a href="#graalpy-maven-plugin">Maven</a> or <code>externalDirectory</code> field in <a href="#graalpy-gradle-plugin">Gradle</a>
-and also configure the GraalPy context to use that directory as well:</p>
+</code></pre></div></div>
 
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// create a Context configured with an external Python resource directory</span>
-<span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">(</span><span class="n">externalResourceDirectoryPath</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
-</code></pre></div>    </div>
+<h5 id="option-2-use-external-directory"><a href="#option-2-use-external-directory" class="anchor-link">Option 2: Use External Directory</a></h5>
 
-    <p>Please <strong>note</strong>, that if switching from Virtual FileSystem to an external directory, also all <strong>user files</strong> from the previous
-Virtual FileSystem resource root have to be moved into that directory as well.</p>
-  </li>
+<p>Configure your build tool to use an external directory by setting:</p>
+
+<ul>
+  <li><strong>Maven</strong>: <code>externalDirectory</code> tag in <a href="#graalpy-maven-plugin">Maven plugin</a></li>
+  <li><strong>Gradle</strong>: <code>externalDirectory</code> field in <a href="#graalpy-gradle-plugin">Gradle plugin</a></li>
 </ul>
+
+<p>Then configure your context:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Create a context configured with an external Python resource directory</span>
+<span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">(</span><span class="n">externalResourceDirectoryPath</span><span class="o">).</span><span class="na">build</span><span class="o">();</span>
+</code></pre></div></div>
+
+<blockquote>
+  <p><strong>Important</strong>: When switching from Virtual FileSystem to external directory, move all user files from the previous Virtual FileSystem resource root to the new directory.</p>
+</blockquote>
 
 <p>For more details about the Python resources in GraalPy Embedding please refer to the <a href="#embedding-build-tools">Embedding Build Tools</a> documentation.</p>
 
 <p>For more details about GraalPy context and Virtual FileSystem configuration please refer to <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/GraalPyResources.java">GraalPyResources</a> and
 <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/VirtualFileSystem.java">VirtualFileSystem</a> javadoc.</p>
 
-<h4 id="issues-with-graalpy-java-posix-backend"><a href="#issues-with-graalpy-java-posix-backend" class="anchor-link">Issues with GraalPy </a>‘java’ posix backend</h4>
+<h3 id="posix-backend-issues"><a href="#posix-backend-issues" class="anchor-link">POSIX Backend Issues</a></h3>
 
-<p>The Virtual FileSystem is built on the Truffle filesystem and relies on the GraalPy Java POSIX backend.
-Unfortunately, certain Python packages bypass Python’s I/O and directly access files through their
-native extensions. If you encounter an error like:</p>
-<pre><code>NotImplementedError: 'PyObject_AsFileDescriptor' not supported when using 'java' posix backend
-</code></pre>
-<p>then you have to override the default <code>java</code> GraalPy backend option byt setting the <code>native</code> POSIX backend
-and completely omit the Virtual FileSystem at runtime.</p>
+<h4 id="issues-with-java-posix-backend"><a href="#issues-with-java-posix-backend" class="anchor-link">Issues with Java POSIX Backend</a></h4>
 
-<p>Depending on how you <a href="#deployment">deploy Python resources</a> in your application,
-you can do one of the following:</p>
+<p>The Virtual FileSystem relies on GraalPy’s Java POSIX backend. Some Python packages bypass Python’s I/O and directly access files through native extensions.</p>
+
+<p>Example error:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>NotImplementedError: <span class="s1">'PyObject_AsFileDescriptor'</span> not supported when using <span class="s1">'java'</span> posix backend
+</code></pre></div></div>
+
+<p>This indicates that a Python package requires direct file descriptor access which is not supported by the Java POSIX backend.</p>
+
+<p><strong>Solution</strong>: Override the default Java backend by setting the native POSIX backend and extract resources from the Virtual FileSystem.</p>
+
+<p>Depending on how you <a href="#deployment">deploy Python resources</a> in your application, you can do one of the following:</p>
 
 <ul>
-  <li>if you need to package Python resources within your Jar or Native Image executable, then:
-    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// extract the Python resources from the jar or native image into a given directory</span>
+  <li>
+    <p>if you need to package Python resources within your Jar or Native Image executable, then:</p>
+
+    <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Extract resources and configure native backend</span>
 <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">extractVirtualFileSystemResources</span><span class="o">(</span><span class="nc">VirtualFileSystem</span><span class="o">.</span><span class="na">create</span><span class="o">(),</span> <span class="n">externalResourceDirectoryPath</span><span class="o">);</span>
 <span class="c1">// create a Context.Builder configured with an external python resource directory</span>
 <span class="nc">Builder</span> <span class="n">builder</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">(</span><span class="n">externalResourceDirectoryPath</span><span class="o">);</span>
@@ -3237,9 +3357,11 @@ you can do one of the following:</p>
 <span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">build</span><span class="o">();</span>
 </code></pre></div>    </div>
   </li>
-  <li>or if you’re able to ship Python resources in a separate directory, you have to set the <code>externalDirectory</code> tag in
+  <li>
+    <p>or if you’re able to ship Python resources in a separate directory, you have to set the <code>externalDirectory</code> tag in
 <a href="#graalpy-maven-plugin">Maven</a> or <code>externalDirectory</code> field in <a href="#graalpy-gradle-plugin">Gradle</a>
-and configure the GraalPy context accordingly:
+and configure the GraalPy context accordingly:</p>
+
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// create a Context.Builder configured with an external python resource directory</span>
 <span class="nc">Builder</span> <span class="n">builder</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">(</span><span class="n">externalResourceDirectoryPath</span><span class="o">);</span>
 <span class="c1">// override the python.PosixModuleBackend option with "native"</span>
@@ -3247,72 +3369,103 @@ and configure the GraalPy context accordingly:
 <span class="c1">// create a context</span>
 <span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="na">build</span><span class="o">();</span>
 </code></pre></div>    </div>
-    <p>Please <strong>note</strong>, that if switching from Virtual FileSystem to an external directory, also all <strong>user files</strong> from the previous
-Virtual FileSystem resource root have to be moved into that directory as well.</p>
   </li>
 </ul>
+
+<blockquote>
+  <p><strong>Important</strong>: When switching from Virtual FileSystem to external directory, move all user files from the previous Virtual FileSystem resource root to the new directory.</p>
+</blockquote>
 
 <p>For more details about the Python resources in GraalPy Embedding please refer to the <a href="#embedding-build-tools">Embedding Build Tools</a> documentation.</p>
 
 <p>For more details about GraalPy context and Virtual FileSystem configuration please refer to <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/GraalPyResources.java">GraalPyResources</a> and
 <a href="https://github.com/oracle/graalpython/blob/master/graalpython/org.graalvm.python.embedding/src/org/graalvm/python/embedding/VirtualFileSystem.java">VirtualFileSystem</a> javadoc.</p>
 
-<h4 id="importerror-reports-unknown-location"><a href="#importerror-reports-unknown-location" class="anchor-link">ImportError reports </a>“unknown location”</h4>
+<h3 id="import-and-compatibility-issues"><a href="#import-and-compatibility-issues" class="anchor-link">Import and Compatibility Issues</a></h3>
 
-<p>A possible cause of an <code>ImportError</code> ending with <code>(unknown location)</code> when running a GraalPy Java Embedding project might be
-that an embedded Python package was built for a different operating system. If you see an error like the following:</p>
+<h4 id="importerror-reports-unknown-location"><a href="#importerror-reports-unknown-location" class="anchor-link">ImportError Reports </a>“Unknown Location”</h4>
+
+<p>An <code>ImportError</code> ending with <code>(unknown location)</code> typically occurs when an embedded Python package was built for a different operating system.</p>
+
+<p>Example error:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ImportError: cannot import name <span class="s1">'exceptions'</span> from <span class="s1">'cryptography.hazmat.bindings._rust'</span> <span class="o">(</span>unknown location<span class="o">)</span>
 </code></pre></div></div>
 
-<p>You probably need to rebuild your project on the correct operating system before running it.</p>
+<p>This indicates that the Python package contains platform-specific native extensions that are incompatible with your current operating system.</p>
+
+<p><strong>Solution</strong>: Rebuild your project on the target operating system before running it.</p>
+
+<h3 id="dependency-and-build-issues"><a href="#dependency-and-build-issues" class="anchor-link">Dependency and Build Issues</a></h3>
 
 <h4 id="graalvm-jdk-compatibility"><a href="#graalvm-jdk-compatibility" class="anchor-link">GraalVM JDK Compatibility</a></h4>
 
-<p>To enable runtime compilation when running GraalPy from a Maven or Gradle application,
-you must use versions of GraalPy and the Polyglot API dependencies that are compatible
-with the specified GraalVM JDK version. If you see errors like the following:</p>
+<p>To enable runtime compilation when running GraalPy from a Maven or Gradle application, you must use compatible versions of GraalPy and Polyglot API dependencies with your GraalVM JDK version.</p>
+
+<p>Example error:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Your Java runtime <span class="s1">'23.0.1+11-jvmci-b01'</span> with compiler version <span class="s1">'24.1.1'</span> is incompatible with polyglot version <span class="s1">'24.1.0'</span><span class="nb">.</span>
 </code></pre></div></div>
 
-<p>You need to keep the versions of your GraalPy and Polyglot dependencies according to the error message,
-so either upgrade the version of your JDK or your polyglot and GraalPy dependencies.</p>
+<p>This indicates version misalignment between your GraalVM JDK, compiler, and Polyglot dependencies.</p>
 
-<p>Note, this can also apply to cases when your dependencies are transitively pulled in by another artifact,
-e.g. micronaut-graalpy.</p>
+<p><strong>Solution</strong>: Align the versions of your GraalPy and Polyglot dependencies according to the error message:</p>
 
-<h4 id="the-following-artifacts-could-not-be-resolved-orggraalvmpythonpython-language-enterprise"><a href="#the-following-artifacts-could-not-be-resolved-orggraalvmpythonpython-language-enterprise" class="anchor-link">The following artifacts could not be resolved: org.graalvm.python:python-language-enterprise</a></h4>
+<ul>
+  <li>Upgrade your JDK version, or</li>
+  <li>Update your Polyglot and GraalPy dependencies</li>
+</ul>
 
-<p><code>python-language-enterprise</code> was discontinued, use <code>org.graalvm.polyglot:python</code> instead.</p>
+<p>Note: This can also apply when dependencies are transitively pulled in by other artifacts, for example, <code>micronaut-graalpy</code>.</p>
 
-<h4 id="issues-with-meson-build-system-when-installing-python-packages-on-osx-with-maven-or-gradle-graalpy-plugin"><a href="#issues-with-meson-build-system-when-installing-python-packages-on-osx-with-maven-or-gradle-graalpy-plugin" class="anchor-link">Issues with Meson build system when installing Python packages on OSX with Maven or Gradle GraalPy plugin</a></h4>
+<h4 id="deprecated-dependencies"><a href="#deprecated-dependencies" class="anchor-link">Deprecated Dependencies</a></h4>
 
-<p>Errors like the following:</p>
+<p>You may encounter issues when using outdated or discontinued dependency artifacts in your project configuration.</p>
+
+<p>Example error:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Could not find artifact org.graalvm.python:python-language-enterprise
+</code></pre></div></div>
+
+<p>This indicates you’re trying to use a deprecated or discontinued dependency.</p>
+
+<p><strong>Solution</strong>: Replace <code>python-language-enterprise</code> with <code>org.graalvm.polyglot:python</code>.</p>
+
+<h4 id="macos-build-system-issues-mesoncython"><a href="#macos-build-system-issues-mesoncython" class="anchor-link">macOS Build System Issues (Meson/Cython)</a></h4>
+
+<p>On macOS, you may encounter build system errors when installing Python packages that use Meson or Cython.</p>
+
+<p>Example error:</p>
 
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>../meson.build:1:0: ERROR: Failed running <span class="s1">'cython'</span>, binary or interpreter not executable.
 </code></pre></div></div>
 
-<p>could be caused by the GraalPy launcher used internally by the Maven or Gradle GraalPy plugin
-for installing Python packages. Currently, there is no straightforward solution. However,
-a workaround is to set the Java system property graalpy.vfs.venvLauncher to a launcher from
-a downloaded <a href="https://github.com/oracle/graalpython/releases/">GraalPy</a> distribution with a version
-matching the GraalPy Maven artifacts version.</p>
+<p>This is caused by the GraalPy launcher used internally by the Maven or Gradle GraalPy plugin for installing Python packages.</p>
 
-<p>e.g.</p>
+<p><strong>Solution</strong>: Set the Java system property <code>graalpy.vfs.venvLauncher</code> to a launcher from a downloaded <a href="https://github.com/oracle/graalpython/releases/">GraalPy</a> distribution with a version matching your GraalPy Maven artifacts version.</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn package <span class="nt">-Dgraalpy</span>.vfs.venvLauncher<span class="o">={</span>graalpy_directroy<span class="o">}</span>/Contents/Home/bin/graalpy
+<p>Example command:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn package <span class="nt">-Dgraalpy</span>.vfs.venvLauncher<span class="o">={</span>graalpy_directory<span class="o">}</span>/Contents/Home/bin/graalpy
 </code></pre></div></div>
 
-<h4 id="no-language-and-polyglot-implementation-was-found-on-the-module-path"><a href="#no-language-and-polyglot-implementation-was-found-on-the-module-path" class="anchor-link">No language and polyglot implementation was found on the module-path.</a></h4>
+<h4 id="missing-language-dependencies"><a href="#missing-language-dependencies" class="anchor-link">Missing Language Dependencies</a></h4>
 
-<p>If you see an error like:</p>
+<p>When running GraalPy applications, you may encounter runtime errors indicating missing language implementations.</p>
 
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java.lang.IllegalStateException: No language and polyglot implementation was found on the module-path. Make sure at last one language is added to the module-path.
+<p>Example error:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java.lang.IllegalStateException: No language and polyglot implementation was found on the module-path. Make sure at least one language is added to the module-path.
 </code></pre></div></div>
 
-<p>you are probably missing the python langauge dependency in your Maven of Gradle configuration file.
-You need to add either <code>org.graalvm.polyglot:python</code> or <code>org.graalvm.polyglot:python-community</code> to your dependencies.</p>
+<p>This indicates that the Python language dependency is missing from your Maven or Gradle configuration.</p>
+
+<p><strong>Solution</strong>: Add one of these dependencies to your project:</p>
+
+<ul>
+  <li><code>org.graalvm.polyglot:python</code> (Oracle GraalVM)</li>
+  <li><code>org.graalvm.polyglot:python-community</code> (Community Edition)</li>
+</ul>
 
 <h2 id="detailed-test-tier-breakdown"><a href="#detailed-test-tier-breakdown" class="anchor-link">Detailed Test Tier Breakdown</a></h2>
 
@@ -3503,7 +3656,7 @@ Platforms not listed are untested.</p>
       <div class="row">
         <div class="col-sm-12">
           <p class="copyright">
-            Copyright © 2025. All rights reserved.
+            Copyright © 2026. All rights reserved.
         </div>
       </div>
     </div>
