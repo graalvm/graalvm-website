@@ -833,11 +833,18 @@ This section is described in detail in its dedicated PGO guide - <a href="/jdk25
 <p>After building your application, open the generated report (for example, <em>target/[x]-build-report.html</em>) and navigate to the <strong>Dynamic Access</strong> tab to review dynamic access usage.</p>
 
 <p>This section of the report highlights code that may require review to ensure your application runs successfully as a native executable. For example, classes loaded via <code>Class.forName(...)</code> must be included in the executable.</p>
-
-<p><strong>Understanding the Dynamic Access tab:</strong></p>
+    
+      <h3 id="understanding-the-dynamic-access-tab">
+        
+        
+          Understanding the Dynamic Access Tab <a href="#understanding-the-dynamic-access-tab" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
 
 <ul>
   <li>If no dynamic calls are detected for a class or module path entry, no further action is needed.</li>
+  <li>If another entry provides metadata for this entry, no further investigation is needed.</li>
   <li>If the entry includes <code>native-image.properties</code> or <code>reachability-metadata.json</code>, or these files are provided externally, no further investigation is required.</li>
   <li>If integrated configuration or external metadata (such as <code>reflect-config.json</code>) exists for each detected call type, no further investigation is required.</li>
   <li>If none of the above apply, the entry may require further investigation.</li>
@@ -848,6 +855,27 @@ This section is described in detail in its dedicated PGO guide - <a href="/jdk25
 <blockquote>
   <p>Only dynamic calls found in reachable code are reported. Some entries may have existing metadata but no reported dynamic calls.</p>
 </blockquote>
+    
+      <h3 id="dynamic-access-metadata">
+        
+        
+          Dynamic Access Metadata <a href="#dynamic-access-metadata" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>The Dynamic Access tab uses a <code>dynamic-access-metadata.json</code> file that maps which classpath entries provide reachability metadata for other entries. Place this file on your classpath for the Build Report to automatically discover metadata relationships between different classpath entries.</p>
+
+<p>The schema includes the following keys:</p>
+
+<ul>
+  <li><code>metadataProvider</code>: The absolute path to the JAR or directory that provides reachability metadata</li>
+  <li><code>providesFor</code>: An array of classpath entries that receive metadata from this provider</li>
+</ul>
+
+<p>For the complete JSON schema specification, see the <a href="/docs/reference-manual/native-image/assets/dynamic-access-metadata-schema-v1.0.0.json" target="_blank"><em>dynamic-access-metadata-v1.0.0.json</em> file</a>.</p>
+
+<p>The Build Report uses this information to create a comprehensive view of metadata relationships and highlight potential coverage gaps.</p>
 
 <p>For a practical demonstration of running and using the <code>-H:+ReportDynamicAccess</code> option, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
     

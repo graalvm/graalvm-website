@@ -1398,7 +1398,11 @@ and then clicking the <code>Search in following phases</code> button.</p>
 <p>Since the version 25, Truffle has an automatic deoptimization cycle detection feature. This feature is available and enabled by default when running optimized on JDK 25 and later.
 Whenever a deoptimization cycle is detected, the compilation fails with a permanent bailout that contains the Java stacktrace of the location, if available.</p>
 
-<p>Compilation failures are not printed by default. One way of printing compilation failures is to set the option <code>engine.CompilationFailureAction</code> to <code>Print</code>. To also print an approximated stack trace of the deoptimization location, <code>compiler.NodeSourcePositions</code> has to be enabled.</p>
+<p>Compilation failures are not printed by default. One way of printing compilation failures is to set the option <code>engine.CompilationFailureAction</code> to <code>Print</code>. This also prints an approximated stack trace of the deoptimization location.</p>
+
+<blockquote>
+  <p>Note: To get the approximated stack trace of the deoptimization location in a native image, the image has to be built with <code>-H:+IncludeNodeSourcePositions</code>.</p>
+</blockquote>
 
 <p>Deoptimization cycle detection can be completely disabled by setting <code>compiler.DeoptCycleDetectionThreshold</code> to <code>-1</code>.</p>
 
@@ -1440,7 +1444,7 @@ Whenever a deoptimization cycle is detected, the compilation fails with a perman
 <p>In general, when no new code to compile is introduced, Truffle compilations should eventually stabilize and no new compilations/deoptimizations should be produced. However, the above root node
 <code>InvalidArgumentProfilingNode</code> contains a bug which causes a deoptimization cycle. When the root node is executed repeatedly and the argument keeps changing, the number of deoptimizations/recompilations is unlimited.
 The following command executes the program with the default deoptimization cycle detection and a deopt stacktrace printing for any detected repeated deoptimization.</p>
-<pre><code class="language-commandline">java -Dpolyglot.engine.AllowExperimentalOptions=true -Dpolyglot.compiler.NodeSourcePositions=true -Dpolyglot.engine.CompilationFailureAction=Print DeoptCycleDetectionTest
+<pre><code class="language-commandline">java -Dpolyglot.engine.CompilationFailureAction=Print DeoptCycleDetectionTest
 </code></pre>
 <p>The expected output is</p>
 <pre><code>[engine] opt fail     DeoptCycleDetectionTest.InvalidArgumentProfilingNode@761490b0|AST      1
@@ -1478,6 +1482,81 @@ Use <code>--engine.TraceAssumptions</code> to trace those with more details.</li
 </ul>
 
 <p>The <code>--engine.TraceCompilation</code> option also shows CallTarget invalidations with an <code>[engine] opt inv.</code> prefix.</p>
+    
+      <h2 id="uncovering-optimization-barriers-compiler-level-insights-for-truffle-apps">
+        
+        
+          Uncovering Optimization Barriers: Compiler-Level Insights for Truffle Apps <a href="#uncovering-optimization-barriers-compiler-level-insights-for-truffle-apps" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Once you are comfortable profiling Truffle applications and analyzing results (see <a href="/latest/graalvm-as-a-platform/language-implementation-framework/Profiling/">Profiling</a>), you may reach a point where you wonder, “Why is this benchmark slower than expected?” 
+After determining that the majority of execution time is spent in compiled code, the next step is a deeper analysis of the generated machine code.</p>
+
+<p>Start by identifying “hot” compilation units and addressing any Truffle performance warnings (see Step 4 of this document). 
+However, you may still encounter limitations in performance even after resolving these.</p>
+
+<p>In such cases, reviewing compiler-level performance warnings can be insightful. 
+While in-depth knowledge of Graal compiler internals is not required here, some warnings surfaced at the compiler level can be actionable by Truffle developers.</p>
+
+<p>The Graal compiler offers a compiler analysis phase that emits performance warnings during code compilation. 
+These are similar to Truffle performance warnings but may surface later in the pipeline and are not always directly actionable.</p>
+    
+      <h3 id="enabling-compiler-level-metrics">
+        
+        
+          Enabling Compiler-Level Metrics <a href="#enabling-compiler-level-metrics" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>To enable reporting of these metrics, launch your application with:</p>
+<pre><code>--vm.Djdk.graal.ReportHotMetrics=&lt;method filter&gt;
+</code></pre>
+<p>This prints warnings and hot spots to <code>stdout</code> for all compilation units.</p>
+
+<p>To narrow the output to specific methods or functions, use known method names like <code>*wasm-function:5311*</code>:</p>
+<pre><code>--vm.Djdk.graal.ReportHotMetrics='*wasm-function:5311*'
+</code></pre>
+<p>To improve the quality of the generated data, run with node source position tracking <code>--vm.Djdk.graal.TrackNodeSourcePosition=true</code>.</p>
+    
+      <h3 id="example-output">
+        
+        
+          Example Output <a href="#example-output" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<pre><code>Reporting hot metrics before HighTierLoweringPhase during compilation of wasm-function:5311
+[Hot Code Warning] Unknown profile for 704|If with f=241.99984874999717 in hot loop Loop (depth=1) 4951258|LoopBegin, node source position is 
+        at org.graalvm.wasm.nodes.WasmFunctionNode.executeBodyFromOffset(WasmFunctionNode.java:363) [bci: 1654]
+        at org.graalvm.wasm.nodes.WasmFunctionNode.execute(WasmFunctionNode.java:241) [bci: 15]
+        [...cut for brevity...]
+        Potential Action Item: Add profile to the top-of-stack source location.
+</code></pre>
+    
+      <h3 id="interpreting-results">
+        
+        
+          Interpreting Results: <a href="#interpreting-results" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<ul>
+  <li><code>[Hot Code Info]</code> lines highlight the hottest basic blocks and loops.
+    <ul>
+      <li>“Local frequency” is the number of times the block is executed per loop iteration.</li>
+      <li>“Global frequency” is across the entire method. A value of 1 means the basic block executes once per method invocation.</li>
+    </ul>
+  </li>
+  <li><code>[Hot Code Warning]</code> denotes locations or IR patterns that may inhibit optimization.
+    <ul>
+      <li>Warnings include, for example, missing profile data in hot paths (for example, <code>unknown profile for 704|If …</code>), which is a common actionable warning.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Some warnings may be actionable, while others are for informational purposes. If you encounter frequent or unexplained compiler warnings in your hottest methods and are unsure how to proceed, please reach out to the Truffle community via our Slack channels for advice.</p>
     
       <h2 id="ideal-graph-visualizer">
         

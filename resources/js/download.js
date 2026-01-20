@@ -60,11 +60,12 @@ async function getCPUArchitecture() {
       const platformInfo = await navigator.userAgentData.getHighEntropyValues(["architecture"]);
       if (platformInfo.architecture === "arm") {
         return "aarch64";
-      } else if (platformInfo.architecture === "x86") {
-        return "x64";
       }
+      // x86 macOS - not supported
     } catch (error) {
     }
+    // Fallback: assume aarch64 for Mac if detection fails
+    return "aarch64";
   }
 
   const platform = navigator.platform.toLowerCase();
@@ -80,7 +81,6 @@ async function getCPUArchitecture() {
 const platforms = {
   "empty-choice": "Choose a platform",
   "macos-aarch64": "macOS M1/AArch64",
-  "macos-x64": "macOS x64",
   "linux-aarch64": "Linux AArch64",
   "linux-x64": "Linux x64",
   "windows-x64": "Windows x64",
@@ -88,8 +88,8 @@ const platforms = {
 
 const fullJavaVersions = {
   "17": "17.0.12",
-  "21": "21.0.9",
-  "25": "25.0.1",
+  "21": "21.0.10",
+  "25": "25.0.2",
 }
 
 function updateGHASnippet(majorJavaVersion) {
