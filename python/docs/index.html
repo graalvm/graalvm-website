@@ -121,11 +121,42 @@
 To add GraalPy to your Java application, use Maven or Gradle as shown below.
 For other build systems (like Ant, Make, CMake, etc.), manual configuration may be required.</p>
 
+<h3 id="version-compatibility"><a href="#version-compatibility" class="anchor-link">Version Compatibility</a></h3>
+
+<p>The following table shows which Python versions are supported by each GraalPy release:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>GraalPy Version</th>
+      <th>Python Version</th>
+      <th>GraalVM Platform</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>25.x</td>
+      <td>Python 3.12.8</td>
+      <td>Oracle GraalVM 25.x, GraalVM Community Edition 25.x</td>
+    </tr>
+    <tr>
+      <td>23.x</td>
+      <td>Python 3.10.8</td>
+      <td>Oracle GraalVM for JDK 21.x, Oracle GraalVM for JDK 17.x</td>
+    </tr>
+    <tr>
+      <td>22.x</td>
+      <td>Python 3.8.5</td>
+      <td>GraalVM Enterprise Edition 21.3.x</td>
+    </tr>
+  </tbody>
+</table>
+
 <h4 id="platform-support"><a href="#platform-support" class="anchor-link">Platform support</a></h4>
 
 <p>GraalPy is mostly written in Java and Python, but the Python package ecosystem is rich in native packages that need platform specific support via native libraries that expose platform-specific APIs.
-Our main operating system is Oracle Linux, the CPU architectures we focus on are AMD64 and ARM, and the main JDK we test is Oracle GraalVM.
-Windows and macOS with GraalVM JDK are less well tested, and outside of those combinations we target only basic test coverage.
+The main operating system is Oracle Linux, the CPU architectures are AMD64 and ARM, and the primary JDK is Oracle GraalVM.
+<strong>Linux is recommended for getting started with GraalPy.</strong> Windows and macOS with GraalVM JDK are less well tested, and outside of those combinations only basic test coverage is provided. As macOS and other platforms are not prioritized, some GraalPy features may not work on these platforms.
 See <a href="#detailed-test-tier-breakdown">below</a> for a detailed breakdown.</p>
 
 <h3 id="maven"><a href="#maven" class="anchor-link">Maven</a></h3>
@@ -137,7 +168,7 @@ See <a href="#detailed-test-tier-breakdown">below</a> for a detailed breakdown.<
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn archetype:generate <span class="se">\</span>
   <span class="nt">-DarchetypeGroupId</span><span class="o">=</span>org.graalvm.python <span class="se">\</span>
   <span class="nt">-DarchetypeArtifactId</span><span class="o">=</span>graalpy-archetype-polyglot-app <span class="se">\</span>
-  <span class="nt">-DarchetypeVersion</span><span class="o">=</span>25.0.1
+  <span class="nt">-DarchetypeVersion</span><span class="o">=</span>25.0.2
 </code></pre></div>    </div>
   </li>
   <li>Build a native executable using the <a href="https://www.graalvm.org/latest/reference-manual/native-image/">GraalVM Native Image “tool”</a> plugin that was added for you automatically:
@@ -206,8 +237,8 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
   <li>Open your project configuration file, <em>app/build.gradle</em>, and modify it as follows.
     <ul>
       <li>Include the GraalPy support and the <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/package-summary.html">GraalVM Polyglot API</a> in the <code>dependencies</code> section:
-        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  implementation<span class="o">(</span><span class="s2">"org.graalvm.polyglot:polyglot:25.0.1"</span><span class="o">)</span>
-  implementation<span class="o">(</span><span class="s2">"org.graalvm.polyglot:python:25.0.1"</span><span class="o">)</span>
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  implementation<span class="o">(</span><span class="s2">"org.graalvm.polyglot:polyglot:25.0.2"</span><span class="o">)</span>
+  implementation<span class="o">(</span><span class="s2">"org.graalvm.python:python-embedding:25.0.2"</span><span class="o">)</span>
 </code></pre></div>        </div>
       </li>
     </ul>
@@ -216,10 +247,11 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="kn">package</span> <span class="nn">interop</span><span class="o">;</span>
 
  <span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
+ <span class="kn">import</span> <span class="nn">org.graalvm.python.embedding.GraalPyResources</span><span class="o">;</span>
 
  <span class="kd">class</span> <span class="nc">App</span> <span class="o">{</span>
      <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-         <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+         <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">createContext</span><span class="o">())</span> <span class="o">{</span>
              <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"'Hello Python!'"</span><span class="o">).</span><span class="na">asString</span><span class="o">());</span>
          <span class="o">}</span>
      <span class="o">}</span>
@@ -241,7 +273,7 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
     <p>5.1. In <em>app/build.gradle</em>:</p>
     <ul>
       <li>add the graalpy-gradle-plugin to the <code>plugins</code> section:
-        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">id</span> <span class="s2">"org.graalvm.python"</span> version <span class="s2">"25.0.1"</span>
+        <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">id</span> <span class="s2">"org.graalvm.python"</span> version <span class="s2">"25.0.2"</span>
 </code></pre></div>        </div>
       </li>
       <li>configure the GraalPy Gradle plugin:
@@ -269,7 +301,7 @@ Finally, create a new <em>combined.jar</em> from the combination of all files an
    <span class="kd">class</span> <span class="nc">App</span> <span class="o">{</span>
    <span class="o">...</span>
    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-       <span class="k">try</span> <span class="o">(</span><span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">createContext</span><span class="o">())</span> <span class="o">{</span>
+       <span class="k">try</span> <span class="o">(</span><span class="nc">Context</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">contextBuilder</span><span class="o">().</span><span class="na">build</span><span class="o">())</span> <span class="o">{</span>
            <span class="nc">String</span> <span class="n">src</span> <span class="o">=</span> <span class="sh">"""
            from termcolor import colored
            colored_text = colored("hello java", "red", attrs=["reverse", "blink"])
@@ -307,12 +339,12 @@ Then, as appropriate for your system, run one of the following commands:</p>
 
     <p>In a POSIX shell:</p>
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">export </span><span class="nv">GRAALPY_HOME</span><span class="o">=</span><span class="si">$(</span>graalpy <span class="nt">-c</span> <span class="s1">'print(__graalpython__.home)'</span><span class="si">)</span>
- <span class="s2">"</span><span class="k">${</span><span class="nv">GRAALPY_HOME</span><span class="k">}</span><span class="s2">/libexec/graalpy-polyglot-get"</span> <span class="nt">-a</span> python <span class="nt">-o</span> lib <span class="nt">-v</span> <span class="s2">"25.0.1"</span>
+ <span class="s2">"</span><span class="k">${</span><span class="nv">GRAALPY_HOME</span><span class="k">}</span><span class="s2">/libexec/graalpy-polyglot-get"</span> <span class="nt">-a</span> python <span class="nt">-o</span> lib <span class="nt">-v</span> <span class="s2">"25.0.2"</span>
 </code></pre></div>    </div>
 
     <p>In PowerShell:</p>
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nv">$GRAALPY_HOME</span> <span class="o">=</span> graalpy <span class="nt">-c</span> <span class="s2">"print(__graalpython__.home)"</span>
- &amp; <span class="s2">"</span><span class="nv">$GRAALPY_HOME</span><span class="s2">/libexec/graalpy-polyglot-get"</span> <span class="nt">-a</span> python <span class="nt">-o</span> lib <span class="nt">-v</span> <span class="s2">"25.0.1"</span>
+ &amp; <span class="s2">"</span><span class="nv">$GRAALPY_HOME</span><span class="s2">/libexec/graalpy-polyglot-get"</span> <span class="nt">-a</span> python <span class="nt">-o</span> lib <span class="nt">-v</span> <span class="s2">"25.0.2"</span>
 </code></pre></div>    </div>
 
     <p>These commands download all GraalPy dependencies into the <em>lib</em> directory.</p>
@@ -452,10 +484,10 @@ Redistribution is permitted as long as it is not for a fee.</p>
 <h4 id="linux"><a href="#linux" class="anchor-link">Linux</a></h4>
 
 <p>The easiest way to install GraalPy on Linux is to use <a href="https://github.com/pyenv/pyenv">Pyenv</a> (the Python version manager).
-To install version 25.0.1 using Pyenv, run the following commands:</p>
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv <span class="nb">install </span>graalpy-25.0.1
+To install version 25.0.2 using Pyenv, run the following commands:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv <span class="nb">install </span>graalpy-25.0.2
 </code></pre></div></div>
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv shell graalpy-25.0.1
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv shell graalpy-25.0.2
 </code></pre></div></div>
 <blockquote>
   <p>Before running <code>pyenv install</code>, you may need to update <code>pyenv</code> to include the latest GraalPy versions.</p>
@@ -471,10 +503,10 @@ To install version 25.0.1 using Pyenv, run the following commands:</p>
 <h4 id="macos"><a href="#macos" class="anchor-link">macOS</a></h4>
 
 <p>The easiest way to install GraalPy on macOS is to use <a href="https://github.com/pyenv/pyenv">Pyenv</a> (the Python version manager).
-To install version 25.0.1 using Pyenv, run the following commands:</p>
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv <span class="nb">install </span>graalpy-25.0.1
+To install version 25.0.2 using Pyenv, run the following commands:</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv <span class="nb">install </span>graalpy-25.0.2
 </code></pre></div></div>
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv shell graalpy-25.0.1
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pyenv shell graalpy-25.0.2
 </code></pre></div></div>
 <blockquote>
   <p>Before running <code>pyenv install</code>, you may need to update <code>pyenv</code> to include the latest GraalPy versions.</p>
@@ -483,15 +515,15 @@ To install version 25.0.1 using Pyenv, run the following commands:</p>
 <p>Alternatively, you can download a compressed GraalPy installation file from <a href="https://github.com/oracle/graalpython/releases">GitHub releases</a>.</p>
 
 <ol>
-  <li>Find the download that matches the pattern <em>graalpy-XX.Y.Z-macos-amd64.tar.gz</em> or <em>graalpy-XX.Y.Z-macos-aarch64.tar.gz</em> (depending on your platform) and download.</li>
+  <li>Find the download that matches the pattern <em>graalpy-XX.Y.Z-macos-aarch64.tar.gz</em> and download.</li>
   <li>Remove the quarantine attribute.
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">sudo </span>xattr <span class="nt">-r</span> <span class="nt">-d</span> com.apple.quarantine /path/to/graalpy
 </code></pre></div>    </div>
     <p>For example:</p>
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">sudo </span>xattr <span class="nt">-r</span> <span class="nt">-d</span> com.apple.quarantine ~/.pyenv/versions/graalpy-25.0.1
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">sudo </span>xattr <span class="nt">-r</span> <span class="nt">-d</span> com.apple.quarantine ~/.pyenv/versions/graalpy-25.0.2
 </code></pre></div>    </div>
   </li>
-  <li>Uncompress the file and update your <code>PATH</code> environment variable to include to the <em>graalpy-XX.Y.Z-macos-amd64/bin</em> (or <em>graalpy-XX.Y.Z-macos-aarch64/bin</em>) directory.</li>
+  <li>Uncompress the file and update your <code>PATH</code> environment variable to include to the <em>graalpy-XX.Y.Z-macos-aarch64/bin</em> directory.</li>
 </ol>
 
 <h4 id="windows"><a href="#windows" class="anchor-link">Windows</a></h4>
@@ -531,14 +563,14 @@ This generates wrapper scripts and makes the implementation usable from a shell 
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> graalpy <span class="nt">-m</span> venv &lt;venv-dir&gt;
 </code></pre></div>    </div>
     <p>For example:</p>
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> graalpy <span class="nt">-m</span> venv ~/.virtualenvs/graalpy-25.0.1
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> graalpy <span class="nt">-m</span> venv ~/.virtualenvs/graalpy-25.0.2
 </code></pre></div>    </div>
   </li>
   <li>Activate the environment in your shell session:
     <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">source</span> &lt;venv-dir&gt;/bin/activate
 </code></pre></div>    </div>
     <p>For example:</p>
-    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">source</span> ~/.virtualenvs/graalpy-25.0.1/bin/activate
+    <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="nb">source</span> ~/.virtualenvs/graalpy-25.0.2/bin/activate
 </code></pre></div>    </div>
   </li>
 </ol>
@@ -1622,7 +1654,7 @@ That may lead to deadlocks if the foreign language attempts to wait on another t
 <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;dependency&gt;</span>
     <span class="nt">&lt;groupId&gt;</span>org.graalvm.polyglot<span class="nt">&lt;/groupId&gt;</span>
     <span class="nt">&lt;artifactId&gt;</span>js<span class="nt">&lt;/artifactId&gt;</span>
-    <span class="nt">&lt;version&gt;</span>25.0.1<span class="nt">&lt;/version&gt;</span>
+    <span class="nt">&lt;version&gt;</span>25.0.2<span class="nt">&lt;/version&gt;</span>
 <span class="nt">&lt;/dependency&gt;</span>
 </code></pre></div></div>
 
@@ -1715,10 +1747,11 @@ That may lead to deadlocks if the foreign language attempts to wait on another t
 
     <p>Then use it, for example, from Java code:</p>
     <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">org.graalvm.polyglot.*</span><span class="o">;</span>
-
+<span class="kn">import</span> <span class="nn">org.graalvm.python.embedding.GraalPyResources</span><span class="o">;</span>
+   
 <span class="kd">class</span> <span class="nc">Main</span> <span class="o">{</span>
     <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">createContext</span><span class="o">())</span> <span class="o">{</span>
             <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"file:///python_script.py"</span><span class="o">).</span><span class="na">build</span><span class="o">());</span>
 
             <span class="nc">String</span> <span class="n">result</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span>
@@ -1998,10 +2031,11 @@ The static method names must match the keyword argument names used by <code>regi
 <span class="kn">import</span> <span class="nn">java.nio.file.Path</span><span class="o">;</span>
 
 <span class="kn">import</span> <span class="nn">org.graalvm.polyglot.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.python.embedding.GraalPyResources</span><span class="o">;</span>
 
 <span class="kd">class</span> <span class="nc">Main</span> <span class="o">{</span>
     <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
-        <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">createContext</span><span class="o">())</span> <span class="o">{</span>
             <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="nc">Files</span><span class="o">.</span><span class="na">readString</span><span class="o">(</span><span class="nc">Path</span><span class="o">.</span><span class="na">of</span><span class="o">(</span><span class="s">"path/to/interop/behavior/script.py"</span><span class="o">)));</span>
             <span class="k">assert</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"numpy.float64(12)"</span><span class="o">).</span><span class="na">asDouble</span><span class="o">()</span> <span class="o">==</span> <span class="mf">12.0</span><span class="o">;</span>
             <span class="k">assert</span> <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"numpy.int32(12)"</span><span class="o">).</span><span class="na">asByte</span><span class="o">()</span> <span class="o">==</span> <span class="mi">12</span><span class="o">;</span>
@@ -2043,12 +2077,13 @@ This lets you add Python methods to foreign objects, and map foreign functionali
 <p>The following snippet sets up the Java environment and makes the object available to Python:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">org.example.MyJavaClass</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">org.graalvm.python.embedding.GraalPyResources</span><span class="o">;</span>
 
 <span class="kd">class</span> <span class="nc">Main</span> <span class="o">{</span>
 
    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
       <span class="nc">MyJavaClass</span> <span class="n">myJavaObject</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">MyJavaClass</span><span class="o">(</span><span class="mi">42</span><span class="o">,</span> <span class="mi">17</span><span class="o">);</span>
-      <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">Context</span><span class="o">.</span><span class="na">create</span><span class="o">())</span> <span class="o">{</span>
+      <span class="k">try</span> <span class="o">(</span><span class="kt">var</span> <span class="n">context</span> <span class="o">=</span> <span class="nc">GraalPyResources</span><span class="o">.</span><span class="na">createContext</span><span class="o">())</span> <span class="o">{</span>
          <span class="c1">// myJavaObject will be globally available in example.py as my_java_object</span>
          <span class="n">context</span><span class="o">.</span><span class="na">getBindings</span><span class="o">(</span><span class="s">"python"</span><span class="o">).</span><span class="na">putMember</span><span class="o">(</span><span class="s">"my_java_object"</span><span class="o">,</span> <span class="n">myJavaObject</span><span class="o">);</span>
          <span class="n">context</span><span class="o">.</span><span class="na">eval</span><span class="o">(</span><span class="nc">Source</span><span class="o">.</span><span class="na">newBuilder</span><span class="o">(</span><span class="s">"python"</span><span class="o">,</span> <span class="s">"example.py"</span><span class="o">));</span>
@@ -2726,7 +2761,7 @@ allowing full use of pip’s native dependency format.</p>
 <p>Add the plugin configuration to your <em>build.gradle</em> file:</p>
 
 <div class="language-groovy highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">plugins</span> <span class="o">{</span>
-    <span class="n">id</span> <span class="s1">'org.graalvm.python'</span> <span class="n">version</span> <span class="s1">'25.0.1'</span>
+    <span class="n">id</span> <span class="s1">'org.graalvm.python'</span> <span class="n">version</span> <span class="s1">'25.0.2'</span>
 <span class="o">}</span>
 
 <span class="n">graalPy</span> <span class="o">{</span>
@@ -3469,25 +3504,28 @@ and configure the GraalPy context accordingly:</p>
 
 <h2 id="detailed-test-tier-breakdown"><a href="#detailed-test-tier-breakdown" class="anchor-link">Detailed Test Tier Breakdown</a></h2>
 
-<p>GraalPy test tiers are similar to <a href="https://peps.python.org/pep-0011/">CPython Platform Support Tiers</a>, but do not constitute or imply any commitment to support.</p>
-
-<p>Generally, running pure Python code on GraalPy without JIT is compatible with any recent JDK.
-However, support for native extensions, platform-specific APIs, and just-in-time compilation is more limited.</p>
-
-<p>Platform testing is organized into Tiers, each with specific goals.
-Tiers are identified by a “target tuple”: <code>[CPU architecture]-[Operating System]-[libc]-[JDK]-[Java version]</code>.
-JDK names correspond to those used by <a href="https://sdkman.io/">SDKMAN!</a>.
-The term “graal” is used to refer to testing on both Oracle GraalVM and GraalVM Community Edition, including GraalVM Native Image.
-The following tables list tested platforms by tier.
-Platforms not listed are untested.</p>
-
-<p><strong>Tier 1</strong></p>
+<p>GraalPy organizes platform testing into tiers that indicate the level of testing rigor and support you can expect for different platform configurations. This tiering system helps you understand:</p>
 
 <ul>
-  <li>CI failures block releases.</li>
-  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or reverted immediately.</li>
-  <li>All core developers are responsible to keep main, and thus these platforms, working.</li>
-  <li>Platform-specific Python APIs and Python C extensions are fully tested.</li>
+  <li>How thoroughly your platform is tested</li>
+  <li>What level of stability to expect</li>
+  <li>Which features are fully supported vs. experimental</li>
+</ul>
+
+<p>Platforms are identified using the target tuple format: <code>[CPU architecture]-[Operating System]-[libc]-[JDK]-[Java version]</code>. JDK names follow <a href="https://sdkman.io/">SDKMAN!</a> conventions, and “graal” refers to both Oracle GraalVM and GraalVM Community Edition (including Native Image).</p>
+
+<blockquote>
+  <p><strong>Important:</strong> GraalPy test tiers are similar to <a href="https://peps.python.org/pep-0011/">CPython Platform Support Tiers</a>, but do not constitute or imply any commitment to support.</p>
+</blockquote>
+
+<p>Pure Python code runs reliably on GraalPy with recent JDKs when JIT compilation is disabled. However, advanced features like native extensions, platform-specific APIs, and JIT compilation have varying support depending on your platform tier.</p>
+
+<h3 id="tier-1"><a href="#tier-1" class="anchor-link">Tier 1</a></h3>
+
+<ul>
+  <li><strong>Stability:</strong> CI failures block releases. Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or reverted immediately.</li>
+  <li><strong>Responsibility:</strong> All core developers are responsible to keep main, and thus these platforms, working.</li>
+  <li><strong>Coverage:</strong> Platform-specific Python APIs and Python C extensions are fully tested.</li>
 </ul>
 
 <table>
@@ -3509,13 +3547,12 @@ Platforms not listed are untested.</p>
   </tbody>
 </table>
 
-<p><strong>Tier 2</strong></p>
+<h3 id="tier-2"><a href="#tier-2" class="anchor-link">Tier 2</a></h3>
 
 <ul>
-  <li>CI failures block releases.</li>
-  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
-  <li>Circa 10% of tests running on Tier 1 platforms may be skipped on Tier 2 platforms.</li>
-  <li>Platform-specific Python APIs are fully tested; Python C extensions may have more issues than on Tier 1 platforms.</li>
+  <li><strong>Stability:</strong> CI failures block releases. Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
+  <li><strong>Test Coverage:</strong> Circa 10% of tests running on Tier 1 platforms may be skipped on Tier 2 platforms.</li>
+  <li><strong>Feature Support:</strong> Platform-specific Python APIs are fully tested; Python C extensions may have more issues than on Tier 1 platforms.</li>
 </ul>
 
 <table>
@@ -3533,13 +3570,12 @@ Platforms not listed are untested.</p>
   </tbody>
 </table>
 
-<p><strong>Tier 3</strong></p>
+<h3 id="tier-3"><a href="#tier-3" class="anchor-link">Tier 3</a></h3>
 
 <ul>
-  <li>CI failures block releases.</li>
-  <li>Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
-  <li>Circa 25% of tests running on Tier 1 platforms may be skipped on Tier 3.</li>
-  <li>Tests for platform-specific Python APIs and Python C extension are run, but not prioritized.</li>
+  <li><strong>Stability:</strong> CI failures block releases. Changes which would break the main or release branches are not allowed to be merged; any breakage should be fixed or tests marked as skipped.</li>
+  <li><strong>Test Coverage:</strong> Circa 25% of tests running on Tier 1 platforms may be skipped on Tier 3.</li>
+  <li><strong>Feature Support:</strong> Tests for platform-specific Python APIs and Python C extension are run, but not prioritized.</li>
 </ul>
 
 <table>
@@ -3550,10 +3586,6 @@ Platforms not listed are untested.</p>
     </tr>
   </thead>
   <tbody>
-    <tr>
-      <td>amd64-macos-darwin-graal-latest</td>
-      <td>macOS on Intel CPUs running BigSur or newer.</td>
-    </tr>
     <tr>
       <td>amd64-windows-msvc-graal-latest</td>
       <td>Windows 11, Windows Server 2025, or newer.</td>
@@ -3577,6 +3609,37 @@ Platforms not listed are untested.</p>
     <tr>
       <td>amd64-windows-msvc-oracle-21</td>
       <td>JDK 21 is tested without JIT compilation.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="tier-4"><a href="#tier-4" class="anchor-link">Tier 4</a></h3>
+
+<ul>
+  <li><strong>Stability:</strong> CI failures do not block releases. Tests may be broken on the main and release branches.</li>
+  <li><strong>Test Coverage:</strong> Smoke tests with platform-agnostic pure Python workloads are run on a regular schedule.</li>
+  <li><strong>Feature Support:</strong> Only basic pure Python functionality is tested; platform-specific features and extensions are not prioritized.</li>
+</ul>
+
+<table>
+  <thead>
+    <tr>
+      <th>Platform</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>amd64-linux-musl-graal-latest</td>
+      <td>Ensures GraalPy can be built for and used on musl libc platforms such as Alpine Linux.</td>
+    </tr>
+    <tr>
+      <td>amd64-linux-glibc-j9-17</td>
+      <td>Ensures that non-Oracle JVMs work for pure Python code without JIT.</td>
+    </tr>
+    <tr>
+      <td>ppc64le-linux-glibc-oracle-17</td>
+      <td>Ensures that other architectures (ppc64le, s390x, risc-v) work for pure Python code without JIT.</td>
     </tr>
   </tbody>
 </table>
