@@ -109,6 +109,10 @@
                     <img src="/resources/img/header-navigation/java-navi.svg">
                     <a href='/reference-manual/java-on-truffle/' class="item-line">Espresso</a>
                   </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/webimage-logo.svg">
+                    <a href='/reference-manual/web-image/' class="item-line">Web Image</a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -432,6 +436,23 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
+          <a href="/latest/reference-manual/web-image/">
+            Web Image
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
           <a href="/latest/reference-manual/native-image/workshops/">
             Workshops and Labs
           </a>
@@ -516,6 +537,7 @@ Small binaries allow fast application startup and low memory footprint, however 
 Providing the builder with correct and exhaustive reachability metadata guarantees application correctness and ensures compatibility with third-party libraries at runtime.</p>
 
 <p>You can provide reachability metadata to the <code>native-image</code> builder using the following methods:</p>
+
 <ul>
   <li><a href="#computing-metadata-in-code">Compute metadata in code</a> <a href="/latest/reference-manual/native-image/basics/#build-time-vs-run-time">when the native binary is built</a> and store the required elements in the <a href="/latest/reference-manual/native-image/basics/#native-image-heap">initial heap of the native binary</a>.</li>
   <li>Place one or more <a href="#specifying-metadata-with-json"><em>reachability-metadata.json</em> files</a> in the <em>META-INF/native-image/&lt;groupId&gt;/&lt;artifactId&gt;/</em> directory on the classpath. For more information about how to collect metadata for your application automatically, see <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collecting Metadata Automatically</a>.</li>
@@ -546,8 +568,9 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 <ul>
   <li><a href="#computing-metadata-in-code">Computing Metadata in Code</a></li>
   <li><a href="#specifying-metadata-with-json">Specifying Metadata with JSON</a></li>
+  <li><a href="#reachability-metadata-json-format-reference">Reachability Metadata JSON Format Reference</a></li>
   <li><a href="#metadata-types">Metadata Types</a></li>
-  <li><a href="#reflection">Reflection (Including Dynamic Proxies)</a></li>
+  <li><a href="#reflection">Reflection</a></li>
   <li><a href="#java-native-interface">Java Native Interface</a></li>
   <li><a href="#foreign-function-and-memory-api">Foreign Function and Memory API</a></li>
   <li><a href="#resources">Resources</a></li>
@@ -577,6 +600,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
      }
  }
 </code></pre>
+
     <p>Here, <code>Class.forName("Foo")</code> is evaluated into a constant at build time. When the native binary is built, this value is stored in its <a href="/latest/reference-manual/native-image/basics/#native-image-heap">initial heap</a>.
  If the class <code>Foo</code> does not exist, the call to <code>Class#forName</code> will be transformed into <code>throw ClassNotFoundException("Foo")</code>.</p>
 
@@ -647,10 +671,11 @@ This is necessary in cases when:</p>
       </h2>
 
 <p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;group.Id&gt;\/&lt;artifactId&gt;\/</em>.
-The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.2.0.json">reachability-metadata-schema-v1.2.0.json</a>.</p>
+The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.2.0.json"><em>reachability-metadata-schema-v1.2.0.json</em></a>.</p>
 
 <p>A sample <em>reachability-metadata.json</em> file can be found <a href="#sample-reachability-metadata">in the sample section</a>.
 The <em>reachability-metadata.json</em> configuration contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of <em>metadata entries</em>:</p>
+
 <pre><code class="language-json">{
   "reflection":[],
   "resources":[]
@@ -658,6 +683,7 @@ The <em>reachability-metadata.json</em> configuration contains a single object w
 </code></pre>
 
 <p>For example, Java reflection metadata is specified under <code>reflection</code>, and an example entry looks like:</p>
+
 <pre><code class="language-json">{
   "reflection": [
     {
@@ -677,6 +703,7 @@ The <em>reachability-metadata.json</em> configuration contains a single object w
 
 <p>Each entry in JSON-based metadata should be <em>conditional</em> to avoid unnecessary growth of the native binary size.
 A conditional entry is specified by adding a <code>condition</code> field to the entry in the following way:</p>
+
 <pre><code class="language-json">{
   "condition": {
     "typeReached": "&lt;fully-qualified-class-name&gt;"
@@ -691,6 +718,7 @@ This means that those dynamic accesses will throw a missing-registration error.<
 
 <p>A type is reached at run time, right before the <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-5.html#jvms-5.5">class-initialization routine</a> starts for that type (class or interface), or any of the type’s subtypes are reached.
 For <code>"typeReached": "ConditionType"</code> that guards a metadata entry in the following example, the type is considered reached:</p>
+
 <pre><code class="language-java">class SuperType {
     static {
         // ConditionType reached (subtype reached) =&gt; metadata entry available
@@ -724,6 +752,346 @@ This entry affects the image size, and it will be available at run time only whe
 
 <p>You can find more examples of the metadata files in the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a>.</p>
     
+      <h2 id="reachability-metadata-json-format-reference">
+        
+        
+          Reachability Metadata JSON Format Reference <a href="#reachability-metadata-json-format-reference" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>The <em>reachability-metadata.json</em> file contains three main sections: <code>reflection</code>, <code>jni</code>, and <code>resources</code>. Each section contains arrays of metadata entries with specific field configurations.</p>
+    
+      <h3 id="common-fields">
+        
+        
+          Common Fields <a href="#common-fields" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>These fields are available in all sections (<code>reflection</code>, <code>jni</code>, and <code>resources</code>):</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>condition</code></td>
+      <td>Object</td>
+      <td>Conditional registration based on type reachability</td>
+      <td><code>"condition": {"typeReached": "com.example.Type"}</code></td>
+    </tr>
+    <tr>
+      <td><code>condition.typeReached</code></td>
+      <td>String</td>
+      <td>Fully qualified class name that must be reached</td>
+      <td><code>"com.example.ConditionClass"</code></td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="reflection-metadata">
+        
+        
+          Reflection Metadata <a href="#reflection-metadata" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Use these fields in the <code>"reflection": [...]</code> section to configure Java reflection access for your application:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code></td>
+      <td>String/Object</td>
+      <td>Class name, proxy definition, or lambda definition</td>
+      <td><code>"com.example.MyClass"</code></td>
+    </tr>
+    <tr>
+      <td><code>type.proxy</code></td>
+      <td>Array</td>
+      <td>Ordered list of interfaces for proxy classes</td>
+      <td><code>{"proxy": ["java.lang.Runnable", "java.io.Serializable"]}</code></td>
+    </tr>
+    <tr>
+      <td><code>type.lambda</code></td>
+      <td>Object</td>
+      <td>Lambda class definition</td>
+      <td><code>{"lambda": {...}}</code></td>
+    </tr>
+    <tr>
+      <td><code>type.lambda.declaringClass</code></td>
+      <td>String</td>
+      <td>Class where lambda is declared</td>
+      <td><code>"com.example.LambdaHost"</code></td>
+    </tr>
+    <tr>
+      <td><code>type.lambda.declaringMethod</code></td>
+      <td>Object</td>
+      <td>Method where lambda is declared (optional)</td>
+      <td><code>{"name": "methodName", "parameterTypes": [...]}</code></td>
+    </tr>
+    <tr>
+      <td><code>type.lambda.interfaces</code></td>
+      <td>Array</td>
+      <td>Interfaces implemented by lambda</td>
+      <td><code>["java.util.function.Function"]</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredConstructors</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared constructors</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicConstructors</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public constructors</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredMethods</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared methods</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicMethods</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public methods (including inherited)</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredFields</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared fields</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicFields</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public fields (including inherited)</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>methods</code></td>
+      <td>Array</td>
+      <td>List of specific methods to enable access to</td>
+      <td><code>[{"name": "methodName", "parameterTypes": [...]}]</code></td>
+    </tr>
+    <tr>
+      <td><code>methods[].name</code></td>
+      <td>String</td>
+      <td>Method name</td>
+      <td><code>"toString"</code></td>
+    </tr>
+    <tr>
+      <td><code>methods[].parameterTypes</code></td>
+      <td>Array</td>
+      <td>Fully qualified parameter type names</td>
+      <td><code>["java.lang.String", "int"]</code></td>
+    </tr>
+    <tr>
+      <td><code>fields</code></td>
+      <td>Array</td>
+      <td>List of specific fields to enable access to</td>
+      <td><code>[{"name": "fieldName"}]</code></td>
+    </tr>
+    <tr>
+      <td><code>fields[].name</code></td>
+      <td>String</td>
+      <td>Field name</td>
+      <td><code>"value"</code></td>
+    </tr>
+    <tr>
+      <td><code>unsafeAllocated</code></td>
+      <td>Boolean</td>
+      <td>Enable unsafe allocation via <code>Unsafe.allocateInstance()</code></td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>serializable</code></td>
+      <td>Boolean</td>
+      <td>Register type for Java serialization</td>
+      <td><code>true</code></td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="jni-metadata">
+        
+        
+          JNI Metadata <a href="#jni-metadata" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Use these fields in the <code>"jni": [...]</code> section to configure Java Native Interface access from native code:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>type</code></td>
+      <td>String</td>
+      <td>Fully qualified class name</td>
+      <td><code>"com.example.NativeClass"</code></td>
+    </tr>
+    <tr>
+      <td><code>jniAccessible</code></td>
+      <td>Boolean</td>
+      <td>Make type accessible from JNI code</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredConstructors</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared constructors</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicConstructors</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public constructors</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredMethods</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared methods</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicMethods</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public methods (including inherited)</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allDeclaredFields</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all declared fields</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>allPublicFields</code></td>
+      <td>Boolean</td>
+      <td>Enable access to all public fields (including inherited)</td>
+      <td><code>true</code></td>
+    </tr>
+    <tr>
+      <td><code>methods</code></td>
+      <td>Array</td>
+      <td>List of specific methods to enable access to</td>
+      <td><code>[{"name": "methodName", "parameterTypes": [...]}]</code></td>
+    </tr>
+    <tr>
+      <td><code>methods[].name</code></td>
+      <td>String</td>
+      <td>Method name</td>
+      <td><code>"processData"</code></td>
+    </tr>
+    <tr>
+      <td><code>methods[].parameterTypes</code></td>
+      <td>Array</td>
+      <td>Fully qualified parameter type names</td>
+      <td><code>["java.lang.String", "int"]</code></td>
+    </tr>
+    <tr>
+      <td><code>fields</code></td>
+      <td>Array</td>
+      <td>List of specific fields to enable access to</td>
+      <td><code>[{"name": "fieldName"}]</code></td>
+    </tr>
+    <tr>
+      <td><code>fields[].name</code></td>
+      <td>String</td>
+      <td>Field name</td>
+      <td><code>"nativeHandle"</code></td>
+    </tr>
+    <tr>
+      <td><code>unsafeAllocated</code></td>
+      <td>Boolean</td>
+      <td>Enable unsafe allocation via <code>AllocObject</code></td>
+      <td><code>true</code></td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="resource-metadata">
+        
+        
+          Resource Metadata <a href="#resource-metadata" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Use these fields in the <code>"resources": [...]</code> section to configure classpath resources and resource bundles:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Field</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>glob</code></td>
+      <td>String</td>
+      <td>Glob pattern for matching resource files</td>
+      <td><code>"META-INF/**/*.properties"</code></td>
+    </tr>
+    <tr>
+      <td><code>bundle</code></td>
+      <td>String</td>
+      <td>Resource bundle base name</td>
+      <td><code>"com.example.messages.Bundle"</code></td>
+    </tr>
+    <tr>
+      <td><code>module</code></td>
+      <td>String</td>
+      <td>Java module name (optional)</td>
+      <td><code>"com.example.app"</code></td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="usage-examples">
+        
+        
+          Usage Examples <a href="#usage-examples" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>For comprehensive examples of reachability metadata configuration, see the <a href="#sample-reachability-metadata">Sample Reachability Metadata</a> section.</p>
+    
       <h2 id="metadata-types">
         
         
@@ -733,6 +1101,7 @@ This entry affects the image size, and it will be available at run time only whe
       </h2>
 
 <p>Native Image accepts the following types of reachability metadata:</p>
+
 <ul>
   <li><a href="#reflection">Java reflection</a> (the <code>java.lang.reflect.*</code> API) enables Java code to examine its own classes, methods, fields, and their properties at run time.</li>
   <li><a href="#java-native-interface">JNI</a> allows native code to access classes, methods, fields and their properties at run time.</li>
@@ -753,8 +1122,9 @@ This entry affects the image size, and it will be available at run time only whe
 <p>For all methods in this section Native Image will compute reachability at build time given that all the call arguments are constant. 
 Providing constant arguments in code is a preferred way to provide metadata as it requires no duplication of information in external JSON files.</p>
 
-<p>Reflection in Java starts with <code>java.lang.Class</code> that allows fetching further reflective elements such as methods and fields. 
+<p>Reflection in Java starts with <code>java.lang.Class</code> that allows fetching further reflective elements such as methods and fields.
 The class can be fetched reflectively via the following static functions on <code>java.lang.Class</code>:</p>
+
 <ul>
   <li><code>java.lang.Class forName(java.lang.String) throws java.lang.ClassNotFoundException</code></li>
   <li><code>java.lang.Class forName(java.lang.String, boolean, java.lang.ClassLoader) throws java.lang.ClassNotFoundException</code></li>
@@ -764,6 +1134,7 @@ The classes can be also fetched reflectively loading a class from a name with <c
 </ul>
 
 <p>To provide metadata for the calls that fetch a <code>Class</code> reflectively, the following entry must be added to the <code>reflection</code> array in <em>reachability-metadata.json</em>:</p>
+
 <pre><code class="language-json">{
   "type": "FullyQualifiedReflectivelyAccessedType"
 }
@@ -776,6 +1147,7 @@ The classes can be also fetched reflectively loading a class from a name with <c
 </ul>
 
 <p>Metadata, for proxy classes, is in the form an ordered collection of interfaces that defines a proxy:</p>
+
 <pre><code class="language-json">{
   "type": {
     "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"]
@@ -820,6 +1192,7 @@ classes.</p>
 should not be handled. Note that even if a type does not exist on the classpath, the methods above will throw a <code>MissingReflectionRegistrationError</code>.</p>
 
 <p>The following methods on <code>java.lang.Class</code> will throw a <code>MissingRegistrationError</code> if the metadata is not provided for a given type:</p>
+
 <ul>
   <li><code>Constructor getConstructor(Class[]) throws NoSuchMethodException,SecurityException</code></li>
   <li><code>Constructor getDeclaredConstructor(Class[]) throws NoSuchMethodException,SecurityException</code></li>
@@ -854,7 +1227,8 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
         
       </h3>
 
-<p>To reflectively invoke methods, the method signature must be added to the <code>type</code> metadata:</p>
+<p>To reflectively invoke methods, specify the method signature in the metadata. See the <a href="#reflection-metadata">Reflection Metadata</a> reference table for complete field documentation.</p>
+
 <pre><code class="language-json">{
   "type": "TypeWhoseMethodsAreInvoked",
   "methods": [
@@ -864,7 +1238,8 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
 }
 </code></pre>
 
-<p>As a convenience, one can allow method invocation for groups of methods by adding the following in <em>reachability-metadata.json</em>:</p>
+<p>For convenience, you can enable access to groups of methods using the <code>allDeclared*</code> and <code>allPublic*</code> fields:</p>
+
 <pre><code class="language-json">{
   "type": "TypeWhoseMethodsAreInvoked",
   "allDeclaredConstructors": true,
@@ -873,10 +1248,9 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
   "allPublicMethods": true
 }
 </code></pre>
-<p><code>allDeclaredConstructors</code> and <code>allDeclaredMethods</code> allow calls invocations of methods declared on a given type. 
-<code>allPublicConstructors</code> and <code>allPublicMethods</code> allow invocations of all public methods defined on a type and all of its supertypes.</p>
 
 <p>In case the method-invocation metadata is missing, the following methods will throw a <code>MissingReflectionRegistrationError</code>:</p>
+
 <ul>
   <li><code>java.lang.reflect.Method#invoke(Object, Object...)</code></li>
   <li><code>java.lang.reflect.Constructor#newInstance(Object...)</code></li>
@@ -892,23 +1266,25 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
         
       </h3>
 
-<p>To reflectively access (get or set) field values, metadata about field names must be added to the type:</p>
+<p>To reflectively access (get or set) field values, specify field names in the metadata. See the <a href="#reflection-metadata">Reflection Metadata</a> reference table for field configuration options.</p>
+
 <pre><code class="language-json">{
   "type": "TypeWhoseFieldValuesAreAccessed",
   "fields": [{"name": "&lt;fieldName1&gt;"}, {"name": "&lt;fieldNameI&gt;"}, {"name": "&lt;fieldNameN&gt;"}]
 }
 </code></pre>
 
-<p>As a convenience one can allow field-value access for all fields by adding the following in <em>reachability-metadata.json</em>:</p>
+<p>For convenience, use <code>allDeclaredFields</code> and <code>allPublicFields</code> to enable access to all fields:</p>
+
 <pre><code class="language-json">{
   "type": "TypeWhoseFieldValuesAreAccessed",
   "allDeclaredFields": true,
   "allPublicFields": true
 }
 </code></pre>
-<p><code>allDeclaredFields</code> allow access to all fields declared on a given type, and <code>allPublicFields</code> allows access to all public fields of the given type and all of its supertypes.</p>
 
 <p>In case the field-value-access metadata is missing, the following methods will throw a <code>MissingReflectionRegistrationError</code>:</p>
+
 <ul>
   <li><code>java.lang.reflect.Field#get(Object)</code></li>
   <li><code>java.lang.reflect.Field#set(Object, Object)</code></li>
@@ -924,11 +1300,13 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
       </h3>
 
 <p>For unsafe allocation of a type via <code>sun.misc.Unsafe#allocateInstance(Class&lt;?&gt;)</code>, or from native code via <code>AllocObject(jClass)</code>, we must provide the following metadata:</p>
+
 <pre><code class="language-json">{
   "type": "FullyQualifiedUnsafeAllocatedType",
   "unsafeAllocated": true
 }
 </code></pre>
+
 <p>Otherwise, these methods will throw a <code>MissingReflectionRegistrationError</code>.</p>
     
       <h3 id="reflection-metadata-summary">
@@ -940,6 +1318,7 @@ This is a <a href="https://github.com/oracle/graal/issues/7476">known issue</a> 
       </h3>
 
 <p>The overall definition of a type in JSON can have the following values:</p>
+
 <pre><code class="language-json">{
   "condition": {
     "typeReached": "&lt;condition-class&gt;"
@@ -974,12 +1353,15 @@ Native Image cannot predict what such native code will lookup, write to or invok
 To build a native binary for a Java application that uses JNI to access Java values, JNI metadata is required.</p>
 
 <p>For example, the following <code>C</code> code:</p>
+
 <pre><code class="language-C">jclass clazz = FindClass(env, "jni/accessed/Type");
 </code></pre>
+
 <p>looks up the <code>jni.accessed.Type</code> class, which can then be used to instantiate <code>jni.accessed.Type</code>, invoke its methods or access its fields.</p>
 
 <p>The metadata entry for the above call can <em>only</em> be provided via <em>reachability-metadata.json</em>. Specify
 the <code>jniAccessible</code> field in the <code>type</code> entry in the <code>reflection</code> section:</p>
+
 <pre><code class="language-json">{
   "reflection": [
     {
@@ -992,14 +1374,17 @@ the <code>jniAccessible</code> field in the <code>type</code> entry in the <code
 
 <p>Adding the metadata for a type does not allow to fetch all of its fields and methods with <code>GetFieldID</code>, <code>GetStaticFieldID</code>, <code>GetStaticMethodID</code>, and <code>GetMethodID</code>.</p>
 
-<p>To access field values, we need to provide field names:</p>
+<p>To access field values, provide field names. See the <a href="#jni-metadata">JNI Metadata</a> reference table for complete configuration options:</p>
+
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
   "jniAccessible": true,
   "fields": [{"name": "value"}]
 }
 </code></pre>
-<p>To access all fields one can use the following attributes:</p>
+
+<p>For comprehensive access, use the convenience fields:</p>
+
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
   "jniAccessible": true,
@@ -1007,9 +1392,9 @@ the <code>jniAccessible</code> field in the <code>type</code> entry in the <code
   "allPublicFields": true
 }
 </code></pre>
-<p><code>allDeclaredFields</code> allow access to all fields declared on a given type, and <code>allPublicFields</code> allows access to all public fields of the given type and all of its supertypes.</p>
 
-<p>To call Java methods from JNI, we must provide metadata for the method signatures:</p>
+<p>To call Java methods from JNI, specify method signatures:</p>
+
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
   "jniAccessible": true,
@@ -1019,7 +1404,9 @@ the <code>jniAccessible</code> field in the <code>type</code> entry in the <code
   ]
 }
 </code></pre>
-<p>As a convenience, one can allow method invocation for groups of methods by adding the following:</p>
+
+<p>For groups of methods, use the <code>allDeclared*</code> and <code>allPublic*</code> convenience fields:</p>
+
 <pre><code class="language-json">{
   "type": "jni.accessed.Type",
   "jniAccessible": true,
@@ -1029,11 +1416,10 @@ the <code>jniAccessible</code> field in the <code>type</code> entry in the <code
   "allPublicMethods": true
 }
 </code></pre>
-<p><code>allDeclaredConstructors</code> and <code>allDeclaredMethods</code> allow calls invocations of methods declared on a given type.
-<code>allPublicConstructors</code> and <code>allPublicMethods</code> allow invocations of all public methods defined on a type and all of its supertypes.</p>
 
 <p>To allocate objects of a type with <code>AllocObject</code>, the <code>unsafeAllocated</code> field must be set, but the <code>jniAccessible</code> field
 is not required:</p>
+
 <pre><code class="language-json">{
   "reflection": [
     {
@@ -1061,6 +1447,7 @@ is not required:</p>
 <p>The <a href="/latest/reference-manual/native-image/native-code-interoperability/ffm-api/">Foreign Function and Memory (FFM) API</a> is an interface that enables Java code to interact with native code and vice versa.</p>
 
 <p>In particular, it allows you to create <em>downcall handles</em> and <em>upcall stubs</em>.</p>
+
 <ul>
   <li>A downcall handle is a method handle that refers to a native function. Invoking it results in a call to the native function.</li>
   <li>An upcall stub is executable code generated at run time that can be passed as a function pointer to native code. Calling this function pointer results in the execution of a Java method handle.</li>
@@ -1084,24 +1471,25 @@ Resource metadata instructs the <code>native-image</code> builder to include spe
 A consequence of this approach is that some parts of the application that use resources for configuration (such as logging) are effectively configured at build time.</p>
 
 <p>Native Image will detect calls to <code>java.lang.Class#getResource</code> and <code>java.lang.Class#getResourceAsStream</code> in which:</p>
+
 <ul>
   <li>The class on which these methods are called is constant</li>
-  <li>The first argument (<code>name</code>) is a constant
-and automatically register such resources.</li>
+  <li>The first argument (<code>name</code>) is a constant and automatically register such resources.</li>
 </ul>
 
 <p>The code below will work out of the box, because:</p>
+
 <ul>
   <li>It uses a class literal (<code>Example.class</code>) as the receiver</li>
-  <li>It uses a string literal as the <code>name</code> parameter
-    <pre><code class="language-java">class Example {
- public void conquerTheWorld() {
-     InputStream plan = Example.class.getResourceAsStream("plans/v2/conquer_the_world.txt");
- }
+  <li>It uses a string literal as the <code>name</code> parameter</li>
+</ul>
+
+<pre><code class="language-java">class Example {
+    public void conquerTheWorld() {
+        InputStream plan = Example.class.getResourceAsStream("plans/v2/conquer_the_world.txt");
+    }
 }
 </code></pre>
-  </li>
-</ul>
     
       <h3 id="resource-metadata-in-json">
         
@@ -1111,8 +1499,8 @@ and automatically register such resources.</li>
         
       </h3>
 
-<p>Resource metadata is specified in the <code>resources</code> field of the <em>reachability-metadata.json</em> file. 
-Here is the example of resource metadata:</p>
+<p>Resource metadata is specified in the <code>resources</code> field. See the <a href="#resource-metadata">Resource Metadata</a> reference table for complete configuration options.</p>
+
 <pre><code class="language-json">{
   "resources": [
     {
@@ -1121,30 +1509,26 @@ Here is the example of resource metadata:</p>
   ]
 }
 </code></pre>
+    
+      <h4 id="glob-pattern-rules">
+        
+        
+          Glob Pattern Rules
+        
+        
+      </h4>
 
-<p>The <code>glob</code> field uses a subset of <a href="https://en.wikipedia.org/wiki/Glob_(programming)">glob-pattern</a> rules for specifying resources. 
-There are several rules to be observed when specifying a resource path:</p>
+<p>The <code>glob</code> field uses a subset of <a href="https://en.wikipedia.org/wiki/Glob_(programming)">glob-pattern</a> rules:</p>
+
 <ul>
-  <li>The <code>native-image</code> tool supports only <em>star</em> (<code>*</code>) and <em>globstar</em> (<code>**</code>) wildcard patterns.
-    <ul>
-      <li>Per definition, <em>star</em> can match any number of any characters on one level while <em>globstar</em> can match any number of characters at any level.</li>
-      <li>If there is a need to treat a star literally (without special meaning), it can be escaped using <code>\</code> (for example, <code>\*</code>).</li>
-    </ul>
-  </li>
-  <li>In the glob, a <em>level</em> represents a part of the pattern separated with <code>/</code>.</li>
-  <li>When writing glob patterns the following rules must be observed:
-    <ul>
-      <li>Glob cannot be empty (for example, <code>""</code> )</li>
-      <li>Glob cannot end with a trailing slash (<code>/</code>) (for example, <code>"foo/bar/"</code>)</li>
-      <li>Glob cannot contain more than two consecutive (non-escaped) <code>*</code> characters on one level (for example, <code>"foo/***/"</code> )</li>
-      <li>Glob cannot contain empty levels (for example, <code>"foo//bar"</code>)</li>
-      <li>Glob cannot contain two consecutive globstar wildcards (example, <code>"foo/**/**"</code>)</li>
-      <li>Glob cannot have other content on the same level as globstar wildcard (for example, <code>"foo/**bar/x"</code>)</li>
-    </ul>
-  </li>
+  <li>Supports only <em>star</em> (<code>*</code>) and <em>globstar</em> (<code>**</code>) wildcards</li>
+  <li><em>Star</em> matches any characters on one level; <em>globstar</em> matches at any level</li>
+  <li>Escape literal stars with <code>\*</code></li>
+  <li>Key restrictions: no empty patterns, trailing slashes, consecutive stars, or content mixed with globstars</li>
 </ul>
 
 <p>Given the following project structure:</p>
+
 <pre><code>app-root
 └── src
     └── main
@@ -1152,7 +1536,9 @@ There are several rules to be observed when specifying a resource path:</p>
             ├── Resource0.txt
             └── Resource1.txt
 </code></pre>
+
 <p>You can:</p>
+
 <ul>
   <li>Include all resources with glob <code>**/Resource*.txt</code> (<code>{ "glob":}</code>)</li>
   <li>Include <em>Resource0.txt</em> with glob <code>**/Resource0.txt</code></li>
@@ -1185,8 +1571,10 @@ If other modules or the classpath containing resources that match the pattern <e
 Native Image will also ensure that the modules are guaranteed to be accessible at runtime.</p>
 
 <p>Take the following code pattern:</p>
+
 <pre><code class="language-java">InputStream resource = ModuleLayer.boot().findModule("library.module").getResourceAsStream(resourcePath);
 </code></pre>
+
 <p>It will always work as expected for resources registered as described above (even if the module does not contain any code that is considered reachable by static analysis).</p>
     
       <h3 id="embedded-resources-information">
@@ -1198,6 +1586,7 @@ Native Image will also ensure that the modules are guaranteed to be accessible a
       </h3>
 
 <p>There are two ways to see which resources were included in a native executable:</p>
+
 <ol>
   <li>Use the option <code>--emit build-report</code> to generate a build report for your native executable.
 There you can find information about all included resources under the <code>Resources</code> tab.</li>
@@ -1205,6 +1594,7 @@ There you can find information about all included resources under the <code>Reso
 </ol>
 
 <p>For each registered resource you get:</p>
+
 <ul>
   <li><strong>Module</strong> (or <code>unnamed</code> if a resource does not belong to any module)</li>
   <li><strong>Name</strong> (resource path)</li>
@@ -1224,10 +1614,10 @@ There you can find information about all included resources under the <code>Reso
         
         
       </h2>
-<p>Java localization support (<code>java.util.ResourceBundle</code>) enables to load L10N resources and show messages localized for a specific <em>locale</em>.
-Native Image needs knowledge of the resource bundles that your application uses so that it can include appropriate resources and program elements to the application.</p>
 
-<p>A simple bundle can be specified in the <code>resources</code> section of <em>reachability-metadata.json</em>:</p>
+<p>Java localization support (<code>java.util.ResourceBundle</code>) enables loading L10N resources for specific locales. See the <a href="#resource-metadata">Resource Metadata</a> reference table for bundle configuration options.</p>
+
+<p>Specify bundles in the <code>resources</code> section:</p>
 
 <pre><code class="language-json">{
   "resources": [
@@ -1242,7 +1632,7 @@ Native Image needs knowledge of the resource bundles that your application uses 
 <pre><code class="language-json">{
   "resources": [
     {
-      "module": "app.module"
+      "module": "app.module",
       "bundle": "your.pkg.Bundle"
     }
   ]
@@ -1261,8 +1651,10 @@ Native Image needs knowledge of the resource bundles that your application uses 
 
 <p>It is also possible to specify which locales should be included in a native executable and which should be the default.
 For example, to switch the default locale to Swiss German and also include French and English, use the following options:</p>
+
 <pre><code class="language-shell">native-image -Duser.country=CH -Duser.language=de -H:IncludeLocales=fr,en
 </code></pre>
+
 <p>The locales are specified using <a href="https://docs.oracle.com/javase/tutorial/i18n/locale/matching.html">language tags</a>.
 You can include all locales via <code>-H:+IncludeAllLocales</code>, but note that it increases the size of the resulting executable.</p>
     
@@ -1288,22 +1680,27 @@ This is necessary because serialization usually requires reflective accesses to 
 
 <p>Native Image detects calls to <code>ObjectInputFilter.Config#createFilter(String pattern)</code> and if the <code>pattern</code> argument is constant, the exact classes mentioned in the pattern will be registered for serialization. 
 For example, the following pattern will register the class <code>pkg.SerializableClass</code> for serialization:</p>
+
 <pre><code class="language-java">  var filter = ObjectInputFilter.Config.createFilter("pkg.SerializableClass;!*;")
   objectInputStream.setObjectInputFilter(proof);
 </code></pre>
-<p>Using this pattern has a positive side effect of improving security on the JVM as only <code>pkg.SerializableClass</code> can be received by the 
-<code>objectInputStream</code>.</p>
+
+<p>Using this pattern has a positive side effect of improving security on the JVM as only <code>pkg.SerializableClass</code> can be received by the <code>objectInputStream</code>.</p>
 
 <p>Wildcard patterns do the serialization registration only for lambda-proxy classes of an enclosing class. For example, to register lambda serialization in an enclosing class <code>pkg.LambdaHolder</code> use:</p>
+
 <pre><code class="language-java">  ObjectInputFilter.Config.createFilter("pkg.LambdaHolder$$Lambda*;")
 </code></pre>
 
 <p>Patterns like <code>"pkg.**"</code> and <code>"pkg.Prefix*"</code> will not perform serialization registration as they are too general and would increase image size significantly.</p>
 
 <p>For calls to the <code>sun.reflect.ReflectionFactory#newConstructorForSerialization(java.lang.Class)</code> and <code>sun.reflect.ReflectionFactory#newConstructorForSerialization(java.lang.Class, )</code> native image detects calls to these functions when all arguments and the receiver are constant. For example, the following call will register <code>SerializlableClass</code> for serialization:</p>
+
 <pre><code class="language-java">  ReflectionFactory.getReflectionFactory().newConstructorForSerialization(SerializableClass.class);
 </code></pre>
+
 <p>To create a custom constructor for serialization use:</p>
+
 <pre><code class="language-java">  var constructor = SuperSuperClass.class.getDeclaredConstructor();
   var newConstructor = ReflectionFactory.getReflectionFactory().newConstructorForSerialization(BaseClass.class, constructor);
 </code></pre>
@@ -1317,9 +1714,11 @@ For example, the following pattern will register the class <code>pkg.Serializabl
         
         
       </h3>
-<p>Serialization metadata is specified in the <code>reflection</code> section of <em>reachability-metadata.json</em>.</p>
 
-<p>To specify a regular <code>serialized.Type</code> use</p>
+<p>Serialization metadata is specified in the <code>reflection</code> section. See the <a href="#reflection-metadata">Reflection Metadata</a> reference table for the <code>serializable</code> field documentation.</p>
+
+<p>For regular classes:</p>
+
 <pre><code class="language-json">{
   "reflection": [
     {
@@ -1330,7 +1729,8 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 }
 </code></pre>
 
-<p>To specify a proxy class for serialization, use the following entry:</p>
+<p>For proxy classes:</p>
+
 <pre><code class="language-json">{
   "reflection": [
     {
@@ -1344,8 +1744,10 @@ For example, the following pattern will register the class <code>pkg.Serializabl
 </code></pre>
 
 <p>In rare cases an application might explicitly make calls to:</p>
+
 <pre><code class="language-java">    ReflectionFactory.newConstructorForSerialization(Class&lt;?&gt; cl, Constructor&lt;?&gt; constructorToCall);
 </code></pre>
+
 <p>The specified <code>constructorToCall</code> differs from the one that would be automatically used during regular serialization of <code>cl</code>.
 When a class is registered for run-time serialization, all potential custom constructors are automatically registered.
 As a result, this use case does not require any additional metadata.</p>
@@ -1451,6 +1853,7 @@ As a result, this use case does not require any additional metadata.</p>
 
 <p>Java has support for loading new classes from bytecode at run time, which is not possible in Native Image as all classes must be known at build time (the “closed-world assumption”).
 To overcome this issue there are the following options:</p>
+
 <ol>
   <li>Modify or reconfigure your application (or a third-party library) so that it does not generate classes at runtime or load them via non-built-in class loaders.</li>
   <li>If the classes must be generated, try to generate them at build time in a static initializer of a dedicated class.
@@ -1462,7 +1865,8 @@ At runtime, if there is an attempt to load a class with the same name and byteco
 
 <p>Predefined classes metadata is specified in a <em>predefined-classes-config.json</em> file and conform to the JSON schema defined in
 <a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.
-The schema also includes further details and explanations how this configuration works. Here is the example of the predefined-classes-config.json:</p>
+The schema also includes further details and explanations how this configuration works. Here is the example of the <em>predefined-classes-config.json</em>:</p>
+
 <pre><code class="language-json">[
   {
     "type": "agent-extracted",
@@ -1475,6 +1879,7 @@ The schema also includes further details and explanations how this configuration
   }
 ]
 </code></pre>
+
 <blockquote>
   <p>Note: Predefined classes metadata is not meant to be manually written.
 Note: Predefined classes are the best-effort approach for legacy projects, and they are not guaranteed to work.</p>
