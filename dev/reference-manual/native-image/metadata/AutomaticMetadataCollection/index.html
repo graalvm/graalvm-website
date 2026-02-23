@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -452,6 +452,23 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
+          <a href="/reference-manual/web-image/">
+            Web Image
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
           <a href="/dev/reference-manual/native-image/workshops/">
             Workshops and Labs
           </a>
@@ -534,8 +551,8 @@ $(document).ready(function(){
       </h1>
 
 <p>The Native Image tool relies on the static analysis of an application’s reachable code at runtime. 
-However, the analysis cannot always completely predict all usages of the Java Native Interface (JNI), Java Reflection, Dynamic Proxy objects, or class path resources. 
-Undetected usages of these dynamic features must be provided to the <code>native-image</code> tool in the form of <a href="/dev/reference-manual/native-image/metadata/">metadata</a> (precomputed in code or as JSON configuration files).</p>
+However, the analysis cannot always completely predict all usages of the Java Native Interface (JNI), Foreign Function and Memory (FFM) API, Java Reflection, Dynamic Proxy objects, or class path resources. 
+Undetected usages of these dynamic features must be provided to the <code>native-image</code> tool in the form of <a href="/dev/reference-manual/native-image/metadata/">metadata</a> (precomputed in code or as JSON configuration files). For a complete reference of JSON field configurations, see <a href="/dev/reference-manual/native-image/metadata/#reachability-metadata-json-format-reference">Reachability Metadata JSON Format Reference</a>.</p>
 
 <p>Here you will find information how to automatically collect metadata for an application and write JSON configuration files.
 To learn how to compute dynamic feature calls in code, see <a href="/dev/reference-manual/native-image/metadata/#computing-metadata-in-code">Reachability Metadata</a>.</p>
@@ -552,7 +569,7 @@ To learn how to compute dynamic feature calls in code, see <a href="/dev/referen
   <li><a href="#tracing-agent">Tracing Agent</a></li>
   <li><a href="#conditional-metadata-collection">Conditional Metadata Collection</a></li>
   <li><a href="#agent-advanced-usage">Agent Advanced Usage</a></li>
-  <li><a href="#native-image-configure-tool">Native Image Configure Tool</a></li>
+  <li><a href="#native-image-utils-tool">Native Image Utils Tool</a></li>
 </ul>
     
       <h2 id="tracing-agent">
@@ -598,7 +615,7 @@ The <code>config-merge-dir</code> option adds to an existing set of configuratio
 Because the agent observes only executed code, the application input should cover as many code paths as possible.</p>
 
 <p>The generated configuration files can be supplied to the <code>native-image</code> tool by placing them in a <code>META-INF/native-image/</code> directory on the class path. 
-This directory (or any of its subdirectories) is searched for files with the names <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code>, <code>resource-config.json</code>, <code>predefined-classes-config.json</code>, <code>serialization-config.json</code> which are then automatically included in the build process. 
+This directory (or any of its subdirectories) is searched for the file named <em>reachability-metadata.json</em> that is then automatically included in the build process. 
 Not all of those files must be present. 
 When multiple files with the same name are found, all of them are considered.</p>
 
@@ -703,7 +720,7 @@ The option can be specified more than once to add multiple filter files and can 
       </h3>
 
 <p>A directory containing configuration files that is not part of the class path can be specified to <code>native-image</code> via <code>-H:ConfigurationFileDirectories=/path/to/config-dir/</code>.
-This directory must directly contain all files: <code>jni-config.json</code>, <code>reflect-config.json</code>, <code>proxy-config.json</code> and <code>resource-config.json</code>.
+This directory must directly contain <em>reachability-metadata.json</em> or the formerly-used individual metadata files (<em>jni-config.json</em>, <em>reflect-config.json</em>, <em>proxy-config.json</em>, <em>serialization-config.json</em>, and <em>resource-config.json</em>).
 A directory with the same metadata files that is on the class path, but not in <code>META-INF/native-image/</code>, can be provided via <code>-H:ConfigurationResourceRoots=path/to/resources/</code>.
 Both <code>-H:ConfigurationFileDirectories</code> and <code>-H:ConfigurationResourceRoots</code> can also take a comma-separated list of directories.</p>
     
@@ -739,9 +756,9 @@ However, for a better understanding of the execution, the agent can also write a
 <pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=trace-output=/path/to/trace-file.json ...
 </code></pre>
 
-<p>The <code>native-image-configure</code> tool can transform trace files to configuration files.
+<p>The <code>native-image-utils</code> tool can transform trace files to configuration files.
 The following command reads and processes <code>trace-file.json</code> and generates a set of configuration files in the directory <code>/path/to/config-dir/</code>:</p>
-<pre><code class="language-shell">native-image-configure generate --trace-input=/path/to/trace-file.json --output-dir=/path/to/config-dir/
+<pre><code class="language-shell">native-image-utils generate --trace-input=/path/to/trace-file.json --output-dir=/path/to/config-dir/
 </code></pre>
     
       <h3 id="interoperability">
@@ -768,26 +785,21 @@ In this case, it is necessary to provide the absolute path of the agent:</p>
 <p>The agent has options which are currently experimental and might be enabled in future releases, but can also be changed or removed entirely.
 See the <a href="/dev/reference-manual/native-image/metadata/ExperimentalAgentOptions/">ExperimentalAgentOptions.md</a> guide.</p>
     
-      <h2 id="native-image-configure-tool">
+      <h2 id="native-image-utils-tool">
         
         
-          Native Image Configure Tool <a href="#native-image-configure-tool" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Native Image Utils Tool <a href="#native-image-utils-tool" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
 <p>When using the agent in multiple processes at the same time as described in the previous section, <code>config-output-dir</code> is a safe option, but it results in multiple sets of configuration files.
-The <code>native-image-configure</code> tool can be used to merge these configuration files.
-This tool must first be built with:</p>
-<pre><code class="language-shell">native-image --macro:native-image-configure-launcher
-</code></pre>
-
-<p>Then, the tool can be used to merge sets of configuration files as follows:</p>
-<pre><code class="language-shell">native-image-configure generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
+The <code>native-image-utils</code> tool can be used to merge these configuration files:</p>
+<pre><code class="language-shell">native-image-utils generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
 </code></pre>
 
 <p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>.
-An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure help</code> for all options.</p>
+An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-utils help</code> for all options.</p>
     
       <h3 id="further-reading">
         
@@ -801,6 +813,7 @@ An arbitrary number of <code>--input-dir</code> arguments with sets of configura
   <li><a href="/dev/reference-manual/native-image/guides/configure-with-tracing-agent/">Build a Native Executable with Reflection</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/ExperimentalAgentOptions/">Experimental Agent Options</a></li>
+  <li><a href="/dev/reference-manual/native-image/native-code-interoperability/ffm-api/">Foreign Function and Memory API in Native Image</a></li>
 </ul>
 
       </div>
@@ -914,16 +927,14 @@ An arbitrary number of <code>--input-dir</code> arguments with sets of configura
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -931,15 +942,9 @@ An arbitrary number of <code>--input-dir</code> arguments with sets of configura
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -947,12 +952,11 @@ An arbitrary number of <code>--input-dir</code> arguments with sets of configura
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

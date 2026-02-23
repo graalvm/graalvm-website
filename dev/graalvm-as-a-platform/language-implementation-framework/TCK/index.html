@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/TCK/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/TCK/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -368,8 +368,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/truffle/docs/ModuleMigration.html">
-              Truffle Language Safepoint Tutorial
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
             </a>
           </li>
 
@@ -736,41 +736,90 @@ For example, to run a test for SimpleLanguage <code>+</code> operator with Simpl
 
 <p><code>mx tck -Dtck.verbose=false -Dtck.ErrorTypeTest.verbose=true</code></p>
     
-      <h2 id="running-tck-tests-without-mx">
+      <h2 id="running-tck-tests-with-apache-maven">
         
         
-          Running TCK Tests without <code>mx</code> <a href="#running-tck-tests-without-mx" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Running TCK Tests with Apache Maven <a href="#running-tck-tests-with-apache-maven" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
+<p>The Apache Maven can be used to execute Truffle TCK tests. First, create a Maven module (project) containing the language
+TCK provider. Ensure that this module has a test dependency on the language being tested and TCK tests <code>org.graalvm.truffle:truffle-tck-tests</code>.
+Configure the <code>maven-surefire-plugin</code> to identify tests in the <code>org.graalvm.truffle:truffle-tck-tests</code> artifact.
+This can be achieved using the following snippet within the <build> section of your project's pom.xml:</build></p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;dependenciesToScan&gt;
+                    &lt;dependency&gt;org.graalvm.truffle:truffle-tck-tests&lt;/dependency&gt;
+                &lt;/dependenciesToScan&gt;
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+<p>To include additional languages in the TCK execution add their TCK providers as test dependencies. For example, adding <code>org.graalvm.js:js-truffle-tck</code> will include JavaScript in the testing process.
+You can utilize the SimpleLanguage TCK provider <a href="https://github.com/oracle/graal/blob/master/truffle/external_repos/simplelanguage/tck/pom.xml">pom.xml</a> as a template to get started.
+To test the runtime optimizations set the <code>JAVA_HOME</code> environment variable to the GraalVM location before running <code>mvn package</code>.</p>
+    
+      <h3 id="customize-tck-tests">
+        
+        
+          Customize TCK Tests <a href="#customize-tck-tests" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+<p>To restrict the TCK tests to test a certain language, use the <code>tck.language</code> property.
+The following example tests JavaScript with data types from all available languages.</p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;argLine&gt;
+                    -Dtck.language=js
+                &lt;/argLine&gt;
+                [...]
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
 
-<p>The Python <a href="https://github.com/oracle/graal/blob/master/truffle/mx.truffle/tck.py">TCK runner</a> can be used to execute the Truffle TCK on top of GraalVM. The script requires Maven for downloading the TCK artifacts.</p>
+<p>To restrict the data types to a certain language, use the <code>tck.values</code> property.
+The following example tests JavaScript with Java types.</p>
+<pre><code>&lt;build&gt;
+    &lt;plugins&gt;
+        [...]
+        &lt;plugin&gt;
+            &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+            &lt;artifactId&gt;maven-surefire-plugin&lt;/artifactId&gt;
+            &lt;version&gt;3.1.2&lt;/version&gt;
+            &lt;configuration&gt;
+                &lt;argLine&gt;
+                    -Dtck.values=java-host
+                    -Dtck.language=js
+                &lt;/argLine&gt;
+                [...]
+            &lt;/configuration&gt;
+        &lt;/plugin&gt;
+        [...]
+    &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
 
-<p>To execute TCK tests on GraalVM use:</p>
-
-<p><code>python tck.py -g &lt;path_to_graalvm&gt;</code></p>
-
-<p>To include your own language and TCK provider use:</p>
-
-<p><code>python tck.py -g &lt;path_to_graalvm&gt; -cp &lt;path_to_tck_provider_jars&gt; -lp &lt;path_to_language_jars&gt;</code></p>
-
-<p>To restrict tests to a certain language, use the language ID as a first unnamed option.
-The following example executes tests only for the JavaScript language:</p>
-
-<p><code>python tck.py -g &lt;path_to_graalvm&gt; js</code></p>
-
-<p>To execute the tests under debugger use the <code>-d</code> or <code>--dbg &lt;port&gt;</code> option:</p>
-
-<p><code>python tck.py -d -g &lt;path_to_graalvm&gt;</code></p>
-
-<p>The TCK tests can be filtered by test names. To execute just the <code>ScriptTest</code> for the JavaScript TCK provider use:</p>
-
-<p><code>python tck.py -g &lt;path_to_graalvm&gt; js default ScriptTest</code></p>
-
-<p>The TCK tests can be executed in <code>compile</code> mode in which all calltargets are compiled before they are executed.
-To execute JavaScript tests in <code>compile</code> mode use:</p>
-
-<p><code>python tck.py -g &lt;path_to_graalvm&gt; js compile</code></p>
+<p>To execute a specific TCK test you can use the test parameter along with the <code>-Dtest</code> option.
+For example: <code>mvn test -Dtest=ScriptTest</code></p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -883,16 +932,14 @@ To execute JavaScript tests in <code>compile</code> mode use:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -900,15 +947,9 @@ To execute JavaScript tests in <code>compile</code> mode use:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -916,12 +957,11 @@ To execute JavaScript tests in <code>compile</code> mode use:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

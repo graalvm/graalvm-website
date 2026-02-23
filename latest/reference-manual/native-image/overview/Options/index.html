@@ -472,7 +472,7 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="/latest/reference-manual/web-image/">
+          <a href="/reference-manual/web-image/">
             Web Image
           </a>
         </li>
@@ -628,7 +628,19 @@ $(document).ready(function(){
   <li><code>--exact-reachability-metadata</code>: enables exact and user-friendly handling of reflection, resources, JNI, and serialization</li>
   <li><code>--exact-reachability-metadata-path</code>: trigger exact handling of reflection, resources, JNI, and serialization from all types in the given class-path or module-path entries</li>
   <li><code>--features</code>: a comma-separated list of fully qualified <a href="https://www.graalvm.org/sdk/javadoc/index.html?org/graalvm/nativeimage/hosted/Feature.html">Feature implementation classes</a></li>
-  <li><code>--future-defaults</code>: enable options that are planned to become defaults in future releases. A comma-separated list can contain <code>all</code>, <code>run-time-initialized-jdk</code>, <code>none</code>.</li>
+  <li><code>--future-defaults</code>: enable options that are planned to become defaults in future releases. A comma-separated list can contain <code>all</code>, <code>none</code>, <code>run-time-initialize-jdk</code>, <code>class-for-name-respects-class-loader</code>, <code>run-time-initialize-file-system-providers</code>, <code>run-time-initialize-security-providers</code>, <code>run-time-initialize-resource-bundles</code>. The preferred usage is <code>--future-defaults=all</code>.
+    <ul>
+      <li><code>all</code>: enables all other future default behaviors (preferred option)</li>
+      <li><code>none</code>: forcefully disables all enabled options (can only be used from the command line to override choices taken by inaccessible parts of the build process)</li>
+      <li><code>run-time-initialize-jdk</code>: enables all behaviors related to run-time initialization of the JDK (includes <code>run-time-initialize-security-providers</code>, <code>run-time-initialize-file-system-providers</code>, <code>run-time-initialize-resource-bundles</code>)</li>
+      <li><code>class-for-name-respects-class-loader</code>: <code>Class#forName</code> and <code>ClassLoader#loadClass</code> respect their class loader argument. Instead of one flat namespace, each class loader has its own namespace and may delegate to other class loaders</li>
+      <li><code>run-time-initialize-security-providers</code>: shifts away from build-time initialization for <code>java.security.Provider</code>. Unless you store <code>java.security.Provider</code>-related classes in the image heap, this option should not affect you</li>
+      <li><code>run-time-initialize-file-system-providers</code>: shifts away from build-time initialization for <code>java.nio.file.spi.FileSystemProvider</code>. Unless you store <code>FileSystemProvider</code>-related classes in the image heap, this option should not affect you</li>
+      <li><code>run-time-initialize-resource-bundles</code>: shifts away from build-time initialization for <code>java.util.ResourceBundle</code>. Unless you store <code>ResourceBundle</code>-related classes in the image heap, this option should not affect you</li>
+    </ul>
+
+    <p>Test your application with <code>--future-defaults=all</code> to make sure it is compatible with future releases of GraalVM and upcoming semantic changes.</p>
+  </li>
   <li><code>--gc=&lt;value&gt;</code>: select a Native Image garbage collector implementation. Allowed options for <code>&lt;value&gt;</code> are: <code>G1</code> for G1 garbage collector (not available in GraalVM Community Edition); <code>epsilon</code> for Epsilon garbage collector; <code>serial</code> for Serial garbage collector (default).</li>
   <li><code>--initialize-at-build-time</code>: a comma-separated list of packages and classes (and implicitly all of their superclasses) that are initialized during generation of a native executable. An empty string designates all packages.</li>
   <li><code>--initialize-at-run-time</code>: a comma-separated list of packages and classes (and implicitly all of their subclasses) that must be initialized at run time and not during generation. An empty string is currently not supported.</li>
@@ -1019,16 +1031,14 @@ However, JDK system properties are included in generated executables and are vis
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -1036,15 +1046,9 @@ However, JDK system properties are included in generated executables and are vis
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -1052,12 +1056,11 @@ However, JDK system properties are included in generated executables and are vis
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/overview/Build-Overview/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/overview/Build-Overview/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -324,8 +324,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/overview/build-report/">
+              Build Report
             </a>
           </li>
 
@@ -357,8 +357,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/native-image/overview/BuildOptions/">
-              Build Options
+            <a href="/dev/reference-manual/native-image/overview/Options/">
+              Command-line Options
             </a>
           </li>
 
@@ -441,6 +441,23 @@ $(document).ready(function(){
           
           <a href="/dev/reference-manual/native-image/native-code-interoperability/">
             Interoperability with Native Code
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/reference-manual/web-image/">
+            Web Image
           </a>
         </li>
 
@@ -542,23 +559,70 @@ $(document).ready(function(){
 <p>The syntax of the <code>native-image</code> command is:</p>
 
 <ul>
-  <li><code>native-image [options] &lt;mainclass&gt; [imagename] [options]</code> to build a native binary from <code>&lt;mainclass&gt;</code> class in the current working directory. The classpath may optionally be provided with the <code>-cp &lt;classpath&gt;</code> option where <code>&lt;classpath&gt;</code> is a colon-separated (on Windows, semicolon-separated) list of paths to directories and jars.</li>
-  <li><code>native-image [options] -jar jarfile [imagename] [options]</code> to build native binary from a JAR file.</li>
+  <li><code>native-image [options] &lt;mainclass&gt; [imagename] [options]</code> to build a native binary from the main class in the current working directory. The class path may optionally be provided with the <code>-cp &lt;classpath&gt;</code> option where <code>&lt;classpath&gt;</code> is a colon-separated (on Windows, semicolon-separated) list of paths to directories and JAR files.</li>
+  <li><code>native-image [options] -jar jarfile [imagename] [options]</code> to build a native binary from a JAR file.</li>
   <li><code>native-image [options] -m &lt;module&gt;/&lt;mainClass&gt; [imagename] [options]</code> to build a native binary from a Java module.</li>
 </ul>
 
-<p>The options passed to <code>native-image</code> are evaluated from left to right.</p>
+<p>The options passed to <code>native-image</code> are evaluated from left to right.
+For an overview of options that can be passed to <code>native-image</code>, see <a href="/dev/reference-manual/native-image/overview/Options/">here</a>.</p>
+    
+      <h2 id="getting-notified-when-the-build-process-is-done">
+        
+        
+          Getting Notified When the Build Process Is Done <a href="#getting-notified-when-the-build-process-is-done" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
 
-<p>The options fall into three categories:</p>
-<ul>
-  <li><a href="/dev/reference-manual/native-image/overview/BuildOptions/#native-image-build-options">Image generation options</a> - for the full list, run <code>native-image --help</code></li>
-  <li><a href="/dev/reference-manual/native-image/overview/BuildOptions/#macro-options">Macro options</a></li>
-  <li><a href="/dev/reference-manual/native-image/overview/BuildOptions/#non-standard-options">Non-standard options</a> - subject to change through a deprecation cycle, run <code>native-image --help-extra</code> for the full list.</li>
-</ul>
+<p>Depending on the size of your application and the available resources of your build machine, it can take a few minutes to compile your Java application into a native executable.
+If you are building your application in the background, consider using a command that notifies you when the build process is completed.
+Below, example commands are listed per operating system:</p>
+    
+      <h4 id="linux">
+        
+        
+          Linux
+        
+        
+      </h4>
+<pre><code class="language-bash"># Ring the terminal bell
+native-image -jar App.jar ... ; printf '\a'
 
-<p>Find a complete list of options for the <code>native-image</code> tool <a href="/dev/reference-manual/native-image/overview/BuildOptions/">here</a>.</p>
+# Use libnotify to create a desktop notification
+native-image -jar App.jar ... ; notify-send "GraalVM Native Image build completed with exit code $?"
 
-<p>There are some expert level options that a Native Image developer may find useful or needed, for example, the option to dump graphs of the <code>native-image</code> builder or enable assertions at image run time. This information can be found in <a href="/dev/reference-manual/native-image/overview/HostedvsRuntimeOptions/">Native Image Hosted and Runtime Options</a>.</p>
+# Use Zenity to open an info dialog box with text
+native-image -jar App.jar ... ; zenity --info --text="GraalVM Native Image build completed with exit code $?"
+</code></pre>
+    
+      <h4 id="macos">
+        
+        
+          macOS
+        
+        
+      </h4>
+<pre><code class="language-bash"># Ring the terminal bell
+native-image -jar App.jar ... ; printf '\a'
+
+# Use Speech Synthesis
+native-image -jar App.jar ... ; say "GraalVM Native Image build completed"
+</code></pre>
+    
+      <h4 id="windows">
+        
+        
+          Windows
+        
+        
+      </h4>
+<pre><code class="language-bash"># Ring the terminal bell (press Ctrl+G to enter ^G)
+native-image.exe -jar App.jar &amp; echo ^G
+
+# Open an info dialog box with text
+native-image.exe -jar App.jar &amp; msg "%username%" GraalVM Native Image build completed
+</code></pre>
     
       <h3 id="further-reading">
         
@@ -572,7 +636,9 @@ $(document).ready(function(){
 
 <p>For more tweaks and how to properly configure the <code>native-image</code> tool, see <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/#order-of-arguments-evaluation">Build Configuration</a>.</p>
 
-<p>Native Image will output the progress and various statistics when building the native binary. To learn more about the output, and the different build phases, see <a href="/dev/reference-manual/native-image/overview/BuildOutput/">Build Output</a>.</p>
+<p>Native Image outputs the progress and various statistics when building a native binary. To learn more about the output, and the different build phases, see <a href="/dev/reference-manual/native-image/overview/BuildOutput/">Build Output</a>.</p>
+
+<p>For more detailed information about the build process, its phases, and the contents of a produced native binary, see <a href="/dev/reference-manual/native-image/overview/build-report/">Build Report</a>.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -685,16 +751,14 @@ $(document).ready(function(){
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -702,15 +766,9 @@ $(document).ready(function(){
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -718,12 +776,11 @@ $(document).ready(function(){
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

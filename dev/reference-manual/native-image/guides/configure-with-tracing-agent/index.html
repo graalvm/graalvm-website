@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/configure-with-tracing-agent/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/configure-with-tracing-agent/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -145,24 +145,26 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="configure-native-image-with-the-tracing-agent">Configure Native Image with the Tracing Agent</h1>
 
-<p>To build a native executable for a Java application that uses Java reflection, dynamic proxy objects, JNI, or class path resources, you should either provide the <code>native-image</code> tool with JSON-formatted configuration files or pre-compute metadata in the code.</p>
+<p>To build a native executable for a Java application that uses Java reflection, dynamic proxy objects, JNI, or class path resources, you should either provide the <code>native-image</code> tool with a JSON-formatted metadata file or precompute metadata in the code.</p>
 
-<p>You can create configuration file(s) by hand, but a more convenient approach is to generate the configuration using the Tracing agent (from now on, the agent). 
-This guide demonstrates how to configure <code>native-image</code> with the agent. The agent generates the configuration for you automatically when you run an application on a JVM.</p>
+<p>You can create configuration file(s) by hand, but a more convenient approach is to generate the configuration using the Tracing Agent (from now on, the agent). 
+This guide demonstrates how to configure <code>native-image</code> with the agent. 
+The agent generates the configuration for you automatically when you run an application on a JVM.</p>
 
-<p>To learn how to build a native executable with the metadata pre-computed in the code, <a href="/dev/reference-manual/native-image/guides/use-reachability-metadata-repository-gradle/">follow this guide</a>.</p>
+<p>To learn how to build a native executable with the metadata precomputed in the code, <a href="/dev/reference-manual/native-image/metadata/">see the documentation</a>.</p>
 
-<p>The example application in this guide uses Java reflection. The <code>native-image</code> tool only partially detects application elements that are accessed using the Java Reflection API. So, you need to provide it with details about reflectively accessed classes, methods, and fields.</p>
+<p>The example application in this guide makes use of reflection.
+The <code>native-image</code> tool can only partially detect application elements accessed through the Java Reflection API.
+Therefore, you need to explicitly provide details about the classes, methods, and fields accessed reflectively.</p>
+
 <h2 id="example-with-no-configuration">Example with No Configuration</h2>
 
-<p>The following application demonstrates the use of Java reflection.</p>
-
-<ol>
-  <li>
-    <p>Make sure you have installed a GraalVM JDK.
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
+
+<ol>
   <li>Save the following source code in a file named <em>ReflectionExample.java</em>:
     <pre><code class="language-java"> import java.lang.reflect.Method;
     
@@ -198,32 +200,28 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <p>This Java application uses command-line arguments to determine the operation to be performed.</p>
   </li>
   <li>Compile the example and then run each command below.
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac ReflectionExample.java
+    <pre><code class="language-shell"> javac ReflectionExample.java
 </code></pre>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/java ReflectionExample StringReverser reverse "hello"
+    <pre><code class="language-shell"> java ReflectionExample StringReverser reverse "hello"
 </code></pre>
-    <pre><code class="language-shell"> $JAVA_HOME/bin/java ReflectionExample StringCapitalizer capitalize "hello"
+    <pre><code class="language-shell"> java ReflectionExample StringCapitalizer capitalize "hello"
 </code></pre>
     <p>The output of each command should be <code>"olleh"</code> and <code>"HELLO"</code>, respectively. (An exception is thrown if you provide any other string to identify the class or method.)</p>
   </li>
-  <li>Use the <code>native-image</code> utility to create a native executable, as follows:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --no-fallback ReflectionExample
+  <li>Create a native executable, as follows:
+    <pre><code class="language-shell"> native-image ReflectionExample
 </code></pre>
-    <blockquote>
-      <p><strong>NOTE:</strong> The <code>--no-fallback</code> option to <code>native-image</code> causes the utility to fail if it can not create an executable file.</p>
-    </blockquote>
   </li>
   <li>Run the resulting native executable, using the following command:
     <pre><code class="language-bash"> ./reflectionexample StringReverser reverse "hello"
 </code></pre>
-    <p>You’ll see an exception, similar to:</p>
+    <p>You should see an exception, similar to:</p>
     <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringReverser
-     at java.lang.Class.forName(DynamicHub.java:1338)
-     at java.lang.Class.forName(DynamicHub.java:1313)
-     at ReflectionExample.main(ReflectionExample.java:25)
+     at org.graalvm.nativeimage.builder/com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:190)
+     ...
+     at ReflectionExample.main(ReflectionExample.java:68)
 </code></pre>
-    <p>This shows that, from its static analysis, the <code>native-image</code> tool was unable to determine that class <code>StringReverser</code>
- is used by the application and therefore did not include it in the native executable.</p>
+    <p>This shows that, from its static analysis, the <code>native-image</code> tool was unable to determine that class <code>StringReverser</code> is used by the application and therefore did not include it in the native executable.</p>
   </li>
 </ol>
 
@@ -232,27 +230,36 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 <p>The following steps demonstrate how to use the agent, and its output, to create a native executable that relies on reflection and requires configuration.</p>
 
 <ol>
-  <li>Create a directory named <em>META-INF/native-image</em> in the working directory:
+  <li>Create a directory named <em>META-INF/native-image/</em> in the working directory:
     <pre><code class="language-shell"> mkdir -p META-INF/native-image
 </code></pre>
   </li>
   <li>Run the application with the agent enabled, as follows:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/java -agentlib:native-image-agent=config-output-dir=META-INF/native-image ReflectionExample StringReverser reverse "hello"
+    <pre><code class="language-shell"> java -agentlib:native-image-agent=config-output-dir=META-INF/native-image ReflectionExample StringReverser reverse "hello"
 </code></pre>
-    <p>This command creates a file named <em>reflect-config.json</em> containing the name of the class <code>StringReverser</code> and its <code>reverse()</code> method.</p>
-    <pre><code class="language-json"> [
+    <p>This command creates a file named <em>rechability-metadata.json</em> containing the name of the class <code>StringReverser</code> and its <code>reverse()</code> method.</p>
+    <pre><code class="language-json"> {
+ "reflection": [
      {
-     "name":"StringReverser",
-     "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
+       "type": "StringReverser",
+       "methods": [
+         {
+           "name": "reverse",
+           "parameterTypes": [
+               "java.lang.String"
+           ]
+         }
+       ]
      }
- ]
+   ]
+ }
 </code></pre>
   </li>
   <li>Build a native executable:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image ReflectionExample
+    <pre><code class="language-shell"> native-image ReflectionExample
 </code></pre>
-    <p>The <code>native-image</code> tool automatically uses configuration files in the <em>META-INF/native-image</em> directory.
- However, we recommend that the <em>META-INF/native-image</em> directory is on the class path, either via a JAR file or using the <code>-cp</code> flag. (This avoids confusion for IDE users where a directory structure is defined by the IDE itself.)</p>
+    <p>The <code>native-image</code> tool automatically uses the metadata file in the <em>META-INF/native-image/</em> directory.
+ However, we recommend that the <em>META-INF/native-image/</em> directory is on the class path, either via a JAR file or using the <code>-cp</code> option. (This avoids confusion for IDE users where a directory structure is defined by the IDE itself.)</p>
   </li>
   <li>Test your executable.
     <pre><code class="language-shell"> ./reflectionexample StringReverser reverse "hello"
@@ -261,35 +268,52 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <pre><code class="language-shell"> ./reflectionexample StringCapitalizer capitalize "hello"
 </code></pre>
 
-    <p>You’ll see again an exception, similar to:</p>
+    <p>You should see again an exception, similar to:</p>
     <pre><code> Exception in thread "main" java.lang.ClassNotFoundException: StringCapitalizer
-     at java.lang.Class.forName(DynamicHub.java:1338)
-     at java.lang.Class.forName(DynamicHub.java:1313)
-     at ReflectionExample.main(ReflectionExample.java:25)
+     at org.graalvm.nativeimage.builder/com.oracle.svm.core.hub.ClassForNameSupport.forName(ClassForNameSupport.java:190)
+     ...
+     at ReflectionExample.main(ReflectionExample.java:68)
 </code></pre>
-    <p>Neither the tracing agent nor the <code>native-image</code> tool can ensure that the configuration file is complete.
- The agent observes and records which program elements are accessed using reflection when you run the program. In this case, the <code>native-image</code> tool has not been configured to include references to class <code>StringCapitalizer</code>.</p>
+    <p>Neither the Tracing Agent nor the <code>native-image</code> tool can ensure that the configuration file is complete.
+ The agent observes and records which program elements are accessed using reflection when you run the application. 
+ In this case, the <code>native-image</code> tool has not been configured to include references to class <code>StringCapitalizer</code>.</p>
   </li>
   <li>Update the configuration to include class <code>StringCapitalizer</code>.
- You can manually edit the <em>reflect-config.json</em> file or re-run the tracing agent to update the existing configuration file using the <code>config-merge-dir</code> option, as follows:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/java -agentlib:native-image-agent=config-merge-dir=META-INF/native-image ReflectionExample StringCapitalizer capitalize "hello"
+ You can manually edit the <em>reachability-metadata.json</em> file or re-run the Tracing Agent to update the existing configuration file using the <code>config-merge-dir</code> option, as follows:
+    <pre><code class="language-shell"> java -agentlib:native-image-agent=config-merge-dir=META-INF/native-image ReflectionExample StringCapitalizer capitalize "hello"
 </code></pre>
 
-    <p>This command updates the <em>reflect-config.json</em> file to include the name of the class <code>StringCapitalizer</code> and its <code>capitalize()</code> method.</p>
-    <pre><code class="language-json"> [
+    <p>This command updates the <em>reachability-metadata.json</em> file to include the name of the class <code>StringCapitalizer</code> and its <code>capitalize()</code> method.</p>
+    <pre><code class="language-json"> {
+   "reflection": [
      {
-     "name":"StringCapitalizer",
-     "methods":[{"name":"capitalize","parameterTypes":["java.lang.String"] }]
+       "type": "StringCapitalizer",
+       "methods": [
+         {
+           "name": "capitalize",
+           "parameterTypes": [
+             "java.lang.String"
+           ]
+         }
+       ]
      },
      {
-     "name":"StringReverser",
-     "methods":[{"name":"reverse","parameterTypes":["java.lang.String"] }]
+       "type": "StringReverser",
+       "methods": [
+         {
+           "name": "reverse",
+           "parameterTypes": [
+             "java.lang.String"
+           ]
+         }
+       ]
      }
- ]
+   ]
+ }
 </code></pre>
   </li>
   <li>Rebuild the native executable and run it.
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image ReflectionExample
+    <pre><code class="language-shell"> native-image ReflectionExample
 </code></pre>
     <pre><code class="language-shell"> ./reflectionexample StringCapitalizer capitalize "hello"
 </code></pre>
@@ -303,7 +327,6 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
 <ul>
   <li><a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/#tracing-agent">Assisted Configuration with Tracing Agent</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/#reflection">Reachability Metadata: Reflection</a></li>
-  <li><a href="https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/lang/reflect/package-summary.html">java.lang.reflect Javadoc</a></li>
 </ul>
 
       </div>
@@ -409,16 +432,14 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -426,15 +447,9 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -442,12 +457,11 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -368,8 +368,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/truffle/docs/ModuleMigration.html">
-              Truffle Language Safepoint Tutorial
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
             </a>
           </li>
 
@@ -695,7 +695,7 @@ You can find more information on how to correctly report polymorphic specializat
         
       </h2>
 
-<p>Detecting of suitable splitting candidates relies on the languages reporting polymorphic specializations.
+<p>Detection of suitable splitting candidates relies on the languages reporting polymorphic specializations.
 Once the specialization is reported, you can assume that the polymorphism is coming from somewhere in the caller chain of the call target hosting the newly polymorphic node, and that by splitting the right call target (or call targets) you can return this node to a monomorphic state.</p>
 
 <p>You then identify the call targets for which the splitting could result in monomorphization and mark them as “needs split”. During further execution, if the interpreter is about to execute a direct call to a call target that is marked as “needs split”, that call target will be split (provided there are no outstanding factors preventing it such as the <a href="http://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/nodes/RootNode.html#isCloningAllowed">root node not being allowed to be split</a>,
@@ -705,7 +705,7 @@ re-profiled specifically for this call site, since it is the only call site call
 
 <p>Following recursive algorithm (expressed as pseudo code) is a simplified version of the approach used to decide which call targets need to be marked “needs split”.
 This algorithm is applied to every call target once one of its nodes reports a polymorphic specialization.
-The full implementation can be found in <code>org.graalvm.compiler.truffle.runtime.OptimizedCallTarget#maybeSetNeedsSplit</code>.</p>
+The full implementation can be found in <code>com.oracle.truffle.runtime.OptimizedCallTarget#maybeSetNeedsSplit</code>.</p>
 
 <pre><code class="language-java">setNeedsSplit(callTarget)
     if callTarget.needsSplit
@@ -724,9 +724,9 @@ The full implementation can be found in <code>org.graalvm.compiler.truffle.runti
 </code></pre>
 
 <p>At the very beginning of the pseudo code you can have early termination conditions.
-If the call target is already marked as “needs split”, there is need to continue.
-Also, if the call targets has no known callers (e.g., it is the “main” of the execution) splitting is not applicable since splitting is inherently tied to duplicating ASTs for a particular call site.
-Finally, if this is happening during the first execution of call target, splitting is pointless since the polymorphic nature of the node is inevitable (i.e., not coming from the callers, but rather an integral property of that call target).</p>
+If the call target is already marked as “needs split”, there is no need to continue.
+Also, if the call target has no known callers (e.g., it is the “main” of the execution) splitting is not applicable since splitting is inherently tied to duplicating ASTs for a particular call site.
+Finally, if this is happening during the first execution of a call target, splitting is pointless since the polymorphic nature of the node is inevitable (i.e., not coming from the callers, but rather an integral property of that call target).</p>
 
 <p>In the second part of the pseudo code two cases are differentiated:</p>
 
@@ -791,10 +791,10 @@ function main() {
 }
 </code></pre>
 
-<p>As you can see, the source of the polymorphism was split, but that did not solve the issue, since both slits still call the same <code>add</code> function and the polymorphism remains.
+<p>As you can see, the source of the polymorphism was split, but that did not solve the issue, since both splits still call the same <code>add</code> function and the polymorphism remains.
 This is where the algorithms return value comes in to play.
-If the algorithm was successful in finding a target to mark than all the transitive callee’s of that target need to be marked “needs split” as well.
-With this final step in place, the final run time result of our splitting approach for the previous example can be represent as the following source code:</p>
+If the algorithm was successful in finding a target to mark then all the transitive callee’s of that target need to be marked “needs split” as well.
+With this final step in place, the final run time result of our splitting approach for the previous example can be represented as the following source code:</p>
 
 <pre><code>function add(arg1, arg2) {
     return arg1 + arg2; // + is polymorphic
@@ -847,7 +847,7 @@ Consider if the <code>main</code> of the previous example looked as follows.</p>
 </code></pre>
 
 <p>Once the execution reaches the newly added line you do not want it to call the <code>add</code> function with the polymorphic <code>+</code> since the arguments here do not merit the polymorphism.
-Luckily, since add was already marked as “needs split”, it will remain so during the entire execution, and this final call to <code>add</code> with cause another split of the <code>add</code> functions.</p>
+Luckily, since <code>add</code> was already marked as “needs split”, it will remain so during the entire execution, and this final call to <code>add</code> will cause another split of the <code>add</code> function.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -960,16 +960,14 @@ Luckily, since add was already marked as “needs split”, it will remain so du
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -977,15 +975,9 @@ Luckily, since add was already marked as “needs split”, it will remain so du
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -993,12 +985,11 @@ Luckily, since add was already marked as “needs split”, it will remain so du
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

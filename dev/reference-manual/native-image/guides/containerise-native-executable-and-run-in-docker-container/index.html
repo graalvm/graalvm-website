@@ -9,13 +9,13 @@
 
   <title>
     
-      Containerise a Native Executable and Run in a Docker Container
+      Containerize a Native Executable and Run in a Container
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/containerise-native-executable-and-run-in-docker-container/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/containerise-native-executable-and-run-in-docker-container/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -143,50 +143,42 @@
     <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
       <br>
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
-      <h1 id="containerise-a-native-executable-and-run-in-a-docker-container">Containerise a Native Executable and Run in a Docker Container</h1>
+      <h1 id="containerize-a-native-executable-and-run-in-a-container">Containerize a Native Executable and Run in a Container</h1>
 
-<p>Docker containers provide the flexibility of development environments to match a production environment, to help isolate your application, and to minimize overhead. 
+<p>Containers provide the flexibility of development environments to match a production environment, to help isolate your application, and to minimize overhead. 
 For self-contained executables, generated with GraalVM Native Image, containers are an obvious deployment choice.</p>
 
 <p>To support container-based development, there are several GraalVM container images available, depending on the platform, the architecture, the Java version, and the edition:</p>
 
 <ul>
-  <li>Oracle GraalVM container images, available in <a href="https://container-registry.oracle.com">Oracle Container Registry (OCR)</a> under the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC) license</a>.</li>
+  <li>Oracle GraalVM container images, available in <a href="https://container-registry.oracle.com/ords/ocr/ba/graalvm">Oracle Container Registry (OCR)</a> under the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC) license</a>.</li>
   <li>GraalVM Community Edition container images published in the <a href="https://github.com/orgs/graalvm/packages">GitHub Container Registry</a>.</li>
 </ul>
 
-<p>This guide shows how to containerise a native executable for your Java application.
+<p>This guide shows how to containerize a native executable for your Java application.
 You will use a GraalVM container image with Native Image to compile a Java application ahead-of-time into a native executable.</p>
 
-<h3 id="sample-application">Sample Application</h3>
+<h2 id="download-a-sample-application">Download a Sample Application</h2>
 
-<p>This guide uses the <a href="https://github.com/graalvm/graalvm-demos/blob/master/spring-native-image/README.md">Spring Boot 3 Native Image Microservice example</a>. 
+<p>This guide uses the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/spring-boot-microservice-jibber/src/main/java/com/example/benchmarks/jibber">Spring Boot 3 Native Image Microservice example</a>.
 The example is a minimal REST-based API application, built on top of Spring Boot 3.
 If you call the HTTP endpoint <code>/jibber</code>, it will return some nonsense verse generated in the style of the Jabberwocky poem, by Lewis Carroll.</p>
 
-<h2 id="prerequisites">Prerequisites</h2>
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
   <li>
-    <p>Download and install the latest Oracle GraalVM from <a href="https://www.graalvm.org/downloads/">Downloads</a>.
-The easiest option is to use <a href="https://sdkman.io">SDKMAN!</a>. Run the following command to install Oracle GraalVM for JDK 17:</p>
-
-    <pre><code class="language-bash"> sdk install java 17.0.8-graal 
-</code></pre>
-  </li>
-  <li>
     <p>Install and run a Docker-API compatible container runtime such as <a href="https://docs.rancherdesktop.io/getting-started/installation/">Rancher Desktop</a>, <a href="https://www.docker.io/gettingstarted/">Docker</a>, or <a href="https://podman.io/docs/installation">Podman</a>.</p>
   </li>
-  <li>
-    <p>Clone the GraalVM Demos repository:</p>
-
-    <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos
+  <li>Clone the GraalVM Demos repository:
+    <pre><code class="language-shell"> git clone https://github.com/graalvm/graalvm-demos.git
 </code></pre>
   </li>
-  <li>
-    <p>Change directory to the demo directory:</p>
-
-    <pre><code class="language-shell"> cd spring-native-image
+  <li>Navigate to the demo directory:
+    <pre><code class="language-shell"> cd graalvm-demos/native-image/spring-boot-microservice-jibber
 </code></pre>
   </li>
 </ol>
@@ -196,97 +188,76 @@ The easiest option is to use <a href="https://sdkman.io">SDKMAN!</a>. Run the fo
 <p>With the built-in support for GraalVM Native Image in Spring Boot 3, it has become much easier to compile a Spring Boot 3 application into a native executable.</p>
 
 <ol>
-  <li>
-    <p>Build a native executable:</p>
-
+  <li>Build a native executable:
     <pre><code class="language-shell"> ./mvnw native:compile -Pnative
 </code></pre>
 
     <p>The <code>-Pnative</code> profile is used to generate a native executable for your platform.
- This will generate a native executable called <em>benchmark-jibber</em> in the <em>target</em> directory.</p>
+ This will generate a native executable called <em>benchmark-jibber</em> in the <em>target/</em> directory.</p>
   </li>
-  <li>
-    <p>Run the native executable and put it into the background by appending <code>&amp;</code>:</p>
-
+  <li>Run the native executable and put it into the background by appending <code>&amp;</code>:
     <pre><code class="language-shell"> ./target/benchmark-jibber &amp;
 </code></pre>
   </li>
-  <li>
-    <p>Call the endpoint using <code>curl</code>:</p>
-
+  <li>Call the endpoint using <code>curl</code>:
     <pre><code class="language-shell"> curl http://localhost:8080/jibber
 </code></pre>
 
     <p>You should get a random nonsense verse.</p>
   </li>
-  <li>
-    <p>Bring the application to the foreground using <code>fg</code>, and then enter <code>&lt;CTRL-c&gt;</code> to terminate the application.</p>
-  </li>
+  <li>Bring the application to the foreground using <code>fg</code>, and then enter <code>&lt;CTRL-c&gt;</code> to stop the application.</li>
 </ol>
 
-<h2 id="containerise-the-native-executable">Containerise the Native Executable</h2>
+<h2 id="containerize-the-native-executable">Containerize the Native Executable</h2>
 
 <p>The generated native executable is platform-dependent.</p>
 
 <ol>
   <li>
-    <p>Containerise the native executable using the following command:</p>
+    <p>Containerize the native executable using the following commands.</p>
 
     <ul>
-      <li>
-        <p>On Linux, containerise the native executable generated in the previous step using the following command:</p>
-
+      <li>On Linux, containerize the native executable generated in the previous step:
         <pre><code class="language-shell">  docker build -f Dockerfiles/Dockerfile.native --build-arg APP_FILE=benchmark-jibber -t jibber-benchmark:native.0.0.1-SNAPSHOT .
 </code></pre>
       </li>
-      <li>
-        <p>On MacOS, Windows, or Linux, use multistage Docker builds to build a native executable inside a container, and package the native executable in a lightweight container image:</p>
-
+      <li>On MacOS, Windows, or Linux, use multistage Docker builds to build a native executable inside a container, and package the native executable in a lightweight container image:
         <pre><code class="language-shell">  docker build -f Dockerfiles/Dockerfile -t jibber-benchmark:native.0.0.1-SNAPSHOT .
 </code></pre>
       </li>
     </ul>
   </li>
-  <li>
-    <p>Run the application:</p>
-
+  <li>Run the application:
     <pre><code class="language-shell"> docker run --rm --name native -p 8080:8080 jibber-benchmark:native.0.0.1-SNAPSHOT
 </code></pre>
   </li>
-  <li>
-    <p>From a new terminal window, call the endpoint using <code>curl</code>:</p>
-
+  <li>From a new terminal window, call the endpoint using <code>curl</code>:
     <pre><code class="language-shell"> curl http://localhost:8080/jibber
 </code></pre>
 
     <p>It should generate a random nonsense verse.</p>
   </li>
-  <li>
-    <p>To stop the application, first get the container id using <code>docker ps</code>, and then run:</p>
-
+  <li>To stop the application, first get the container id using <code>docker ps</code>, and then run:
     <pre><code class="language-shell"> docker rm -f &lt;container_id&gt;
 </code></pre>
   </li>
-  <li>
-    <p>To delete the container images, first get the image id using <code>docker images</code>, and then run:</p>
-
+  <li>To delete the container images, first get the image id using <code>docker images</code>, and then run:
     <pre><code class="language-shell"> docker rmi -f &lt;image_1_id&gt; &lt;image_n_id&gt;
 </code></pre>
   </li>
 </ol>
 
-<h2 id="summary">Summary</h2>
+<h3 id="summary">Summary</h3>
 
 <p>In this guide, you saw how to use GraalVM container images to containerize a native executable for your Java application.</p>
 
-<p>With GraalVM Native Image you can build a statically linked native executable by packaging the native executable directly into tiny containers such as scratch or distroless images. 
-Continue to <a href="/dev/reference-manual/native-image/guides/build-static-executables/">Build a Static or Mostly-Static Native Executable guide</a> to learn more.</p>
+<p>With GraalVM Native Image you can also <a href="/dev/reference-manual/native-image/guides/build-static-executables/">build fully static native executables</a> and package them directly into tiny containers such as scratch or distroless containers.</p>
 
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
-  <li><a href="/dev/reference-manual/native-image/guides/build-static-executables/">Build a Static or Mostly-Static Native Executable</a></li>
-  <li><a href="https://docs.oracle.com/en/graalvm/jdk/17/docs/getting-started/container-images/" target="_blank">Oracle GraalVM Container Images</a></li>
+  <li><a href="/dev/reference-manual/native-image/guides/build-spring-boot-app-into-native-executable/">Build a Native Executable from a Spring Boot Application</a></li>
+  <li><a href="https://docs.oracle.com/en/graalvm/jdk/23/docs/getting-started/container-images/" target="_blank">Oracle GraalVM Container Images</a></li>
   <li><a href="https://luna.oracle.com/lab/fdfd090d-e52c-4481-a8de-dccecdca7d68" target="_blank">Hands-on Lab: GraalVM Native Image, Spring and Containerisation</a></li>
 </ul>
 
@@ -393,16 +364,14 @@ Continue to <a href="/dev/reference-manual/native-image/guides/build-static-exec
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -410,15 +379,9 @@ Continue to <a href="/dev/reference-manual/native-image/guides/build-static-exec
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -426,12 +389,11 @@ Continue to <a href="/dev/reference-manual/native-image/guides/build-static-exec
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

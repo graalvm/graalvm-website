@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -368,8 +368,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/truffle/docs/ModuleMigration.html">
-              Truffle Language Safepoint Tutorial
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
             </a>
           </li>
 
@@ -682,7 +682,7 @@ This document gives motivation and an overview of this approach.</p>
 
 <p>During execution of guest code each Truffle call target counts how many times it was executed as well as how many loop iterations happened during those executions (i.e. the target’s “call and loop count”).
 Once this counter reaches a certain threshold the call target is deemed “hot” and scheduled for compilation.
-In order to minimize the impact this has on the execution of the guest code the notion that the target should be compiled is made concrete as a <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/hotspot/CompilationTask.java">compilation task</a> and placed into a <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/truffle/runtime/BackgroundCompileQueue.java">compilation queue</a> to await compilation.
+In order to minimize the impact this has on the execution of the guest code the notion that the target should be compiled is made concrete as a <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/CompilationTask.java">compilation task</a> and placed into a <a href="https://github.com/oracle/graal/blob/master/compiler/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/BackgroundCompileQueue.java">compilation queue</a> to await compilation.
 The Truffle runtime spawns several compiler threads (<code>--engine.CompilerThreads</code>) that take tasks from the queue and compile the specified call targets.</p>
 
 <p>The initial implementation of the compilation queue in Truffle was a straightforward FIFO queue.
@@ -722,10 +722,10 @@ Using a FIFO queue, we would compile the <code>lowUsage</code> function first, e
         
       </h2>
 
-<p>The new compilation queue in Truffle, colloquially called <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/truffle/runtime/TraversingBlockingQueue.java">“Traversing Compilation Queue”</a>, takes a more dynamic approach to selecting the order in which targets are compiled.
+<p>The new compilation queue in Truffle, colloquially called <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/TraversingBlockingQueue.java">“Traversing Compilation Queue”</a>, takes a more dynamic approach to selecting the order in which targets are compiled.
 Every time a compiler thread requests the next compilation task the queue will traverse all the entries in the queue and pick the one with the highest priority.</p>
 
-<p>A task’s priority is <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/hotspot/CompilationTask.java#L209">determined based on several factors</a>.</p>
+<p>A task’s priority is <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/CompilationTask.java#L209">determined based on several factors</a>.</p>
 
 <p>For starters, targets scheduled for <a href="https://medium.com/graalvm/multi-tier-compilation-in-graalvm-5fbc65f92402">first-tier compilation</a> (i.e. first-tier tasks) always have higher priority than second-tier tasks.
 The rational behind this is that performance difference between executing code in the interpreter and executing it in first-tier compiled code is much greater then the difference between tier-one and tier-two compiled code, meaning that we get more benefit from compiling these targets sooner.
@@ -758,7 +758,7 @@ This gives a priority boost to targets that are currently “very hot” when co
 This does not have a significant performance impact as long as the size of the queue remains reasonable.
 This means that in order to always choose the highest priority task in a reasonable about of time we need to ensure that the queue does not grow indefinitely.</p>
 
-<p>This is achieved by an approach we call <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/truffle/runtime/DynamicThresholdsQueue.java">“dynamic compilation thresholds”</a>.
+<p>This is achieved by an approach we call <a href="https://github.com/oracle/graal/blob/master/truffle/src/com.oracle.truffle.runtime/src/com/oracle/truffle/runtime/DynamicThresholdsQueue.java">“dynamic compilation thresholds”</a>.
 Simply put, dynamic compilation thresholds means that the compilation threshold (the one each call target’s call and loop count is compared against when determining whether to compile it) may change over time depending on the state of the queue.
 If the queue is overloaded we aim to increase the compilation thresholds to reduce the number of incoming compilation tasks, i.e. targets need to be “more hot” to get scheduled for compilation.
 On the other hand, if the queue is close to empty, we can reduce the compilation thresholds to allow more targets to get scheduled for compilation, i.e. the compilation threads are in danger of idling so let’s give them even “less hot” targets to compile.</p>
@@ -928,16 +928,14 @@ They can be disabled with <code>--engine.DynamicCompilationThresholds=false</cod
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -945,15 +943,9 @@ They can be disabled with <code>--engine.DynamicCompilationThresholds=false</cod
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -961,12 +953,11 @@ They can be disabled with <code>--engine.DynamicCompilationThresholds=false</cod
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

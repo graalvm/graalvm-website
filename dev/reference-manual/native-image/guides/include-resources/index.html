@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/include-resources/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/include-resources/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -145,17 +145,24 @@
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
       <h1 id="include-resources-in-a-native-executable">Include Resources in a Native Executable</h1>
 
-<p>The following steps illustrate how to include a resource in a native executable. The application <code>fortune</code> simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>).</p>
+<p>By default, the <code>native-image</code> tool does not integrate any resource files into a native executable.
+You must specify resources that should be accessible by your application at run time.</p>
 
-<ol>
-  <li>
-    <p>Make sure you have installed a GraalVM JDK.
+<p>This guide demonstrates how to register resources to be included in a native executable by providing a resource configuration file.
+See <a href="/dev/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a> for more ways to include resources.</p>
+
+<h3 id="prerequisite">Prerequisite</h3>
+
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-  </li>
-  <li>
-    <p>Save the following Java source code as a file named <em>Fortune.java</em>:</p>
 
+<h2 id="run-a-demo">Run a Demo</h2>
+
+<p>In the following example, you run a “fortune teller” application that simulates the traditional <code>fortune</code> Unix program (for more information, see <a href="https://en.wikipedia.org/wiki/Fortune_(Unix)">fortune</a>).</p>
+
+<ol>
+  <li>Save the following Java source code as a file named <em>Fortune.java</em>:
     <pre><code class="language-java"> import java.io.BufferedReader;
  import java.io.InputStreamReader;
  import java.util.ArrayList;
@@ -178,8 +185,8 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
      }
         
      private void printRandomFortune() throws InterruptedException {
-         int r = RANDOM.nextInt(fortunes.size()); //Pick a random number
-         String f = fortunes.get(r);  //Use the random number to pick a random fortune
+         int r = RANDOM.nextInt(fortunes.size()); // Pick a random number
+         String f = fortunes.get(r);  // Use the random number to pick a random fortune
          for (char c: f.toCharArray()) {  // Print out the fortune
            System.out.print(c);
              Thread.sleep(100); 
@@ -196,24 +203,47 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
   <li>
     <p>Download the <a href="https://github.com/oracle/graal/blob/3ed4a7ebc5004c51ae310e48be3828cd7c7802c2/docs/reference-manual/native-image/assets/fortunes.u8"><em>fortunes.u8</em></a> resource file and save it in the same directory as <em>Fortune.java</em>.</p>
   </li>
-  <li>Compile the Java source code:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/javac Fortune.java
+  <li>Create a configuration file, named <em>reachability-metadata.json</em>, and save it in the <em>META-INF/native-image/</em> subdirectory. Register the resource using a <a href="/dev/reference-manual/native-image/metadata/#resources">glob pattern</a>:
+    <pre><code class="language-json"> {
+   "resources": [
+     {
+       "glob": "fortunes.u8"
+     }
+   ]
+ }
+</code></pre>
+    <p>The <code>native-image</code> tool picks up all configuration files that it finds in the <em>META-INF/native-image/</em> directory automatically.</p>
+  </li>
+  <li>Compile the application:
+    <pre><code class="language-shell"> javac Fortune.java
 </code></pre>
   </li>
-  <li>Build a native executable by specifying the resource path:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image Fortune -H:IncludeResources=".*u8$"
+  <li>Build a native executable:
+    <pre><code class="language-shell"> native-image Fortune
 </code></pre>
   </li>
-  <li>Run the executable image:
+  <li>Run the fortune teller application to test:
     <pre><code class="language-shell"> ./fortune
 </code></pre>
   </li>
 </ol>
 
+<p>To see which resources were included in your native executable, pass the option <code>--emit build-report</code> to the <code>native-image</code> tool at build time.
+It generates an HTML file that can be examined with a regular web browser.
+The information about all included resources will be under the <strong>Resources</strong> tab.</p>
+
+<p>In this demo the path to the resource file is straightforward, but it may be more complex in a real-world use case.
+A resource or resource bundle may come from a module.
+Learn more how to specify it in <a href="/dev/reference-manual/native-image/metadata/#resources-in-java-modules">Resources in Java Modules</a>.</p>
+
+<p>For more advanced use-cases, you can register resources using the API methods (see <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/nativeimage/hosted/RuntimeResourceAccess.html">class RuntimeResourceAccess</a>).
+Learn more about specifying a resource path using a glob and some syntax rules to be observed from <a href="/dev/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a>.</p>
+
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
-  <li><a href="/dev/reference-manual/native-image/dynamic-features/Resources/">Accessing Resources in Native Image</a></li>
+  <li><a href="/dev/reference-manual/native-image/metadata/#resources">Accessing Resources in Native Image</a></li>
+  <li><a href="/dev/reference-manual/native-image/metadata/#resource-metadata-in-json">Resource Metadata in JSON</a></li>
 </ul>
 
       </div>
@@ -319,16 +349,14 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -336,15 +364,9 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -352,12 +374,11 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

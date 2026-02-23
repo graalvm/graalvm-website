@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/dynamic-features/JNI/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/dynamic-features/JNI/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -471,6 +471,23 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
+          <a href="/reference-manual/web-image/">
+            Web Image
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
           <a href="/dev/reference-manual/native-image/workshops/">
             Workshops and Labs
           </a>
@@ -547,10 +564,11 @@ $(document).ready(function(){
 <p>Java Native Interface (JNI) is a native API that enables Java code to interact with native code and vice versa.
 This page gives an overview of the JNI implementation in Native Image.</p>
 
-<p>JNI support is enabled by default and built into Native Image. Individual classes, methods, and fields that should be accessible via JNI must be specified at image build time in a configuration file (read below).</p>
+<p>JNI support is enabled by default and built into Native Image. 
+Individual classes, methods, and fields that should be accessible via JNI must be specified at image build time in a configuration file (read below).</p>
 
 <p>Java code can load native code from a shared object with <code>System.loadLibrary()</code>.
-Alternatively, native code can load the JVM’s native library and attach to its Java environment using JNI’s Invocation API.
+Alternatively, native code can load the JVM’s native library and attach to its Java environment using the Invocation API.
 The Native Image JNI implementation supports both approaches.</p>
     
       <h3 id="table-of-contents">
@@ -582,9 +600,8 @@ The Native Image JNI implementation supports both approaches.</p>
         
       </h2>
 
-<p>When loading native libraries using <code>System.loadLibrary()</code> (and related APIs), the native image will search the
-directory containing the native image before searching the Java library path. So as long as the native libraries
-to be loaded are in the same directory as the native image, no other settings should be necessary.</p>
+<p>When loading native libraries using <code>System.loadLibrary()</code> (and related APIs), the native image will search the directory containing the native image before searching the Java library path. 
+So as long as the native libraries to be loaded are in the same directory as the native image, no other settings should be necessary.</p>
     
       <h2 id="reflection-metadata">
         
@@ -597,17 +614,15 @@ to be loaded are in the same directory as the native image, no other settings sh
 <p>JNI supports looking up classes by their names, and looking up methods and fields by their names and signatures.
 This requires keeping the necessary metadata for these lookups around.
 The <code>native-image</code> builder must know beforehand which items will be looked up in case they might not be reachable otherwise and therefore would not be included in a native image.
-Moreover, <code>native-image</code> must generate call wrapper code ahead-of-time for any method that can be called via JNI.
+Moreover, <code>native-image</code> must generate wrapper code ahead-of-time for any method that can be called via JNI.
 Therefore, specifying a concise list of items that need to be accessible via JNI guarantees their availability and allows for a smaller footprint.
-Such a list can be specified with the following image build argument:</p>
-<pre><code class="language-shell">-H:JNIConfigurationFiles=/path/to/jniconfig
-</code></pre>
-<p>Here, <code>jniconfig</code> is a JSON configuration file.
-Check the JSON schema for specifing JNI metadata <a href="/dev/reference-manual/native-image/metadata/#specifying-metadata-with-json">here</a>.</p>
+Such a list should be specified in the <a href="/dev/reference-manual/native-image/metadata/#java-native-interface"><em>reachability-metadata.json</em> file</a>.</p>
 
-<p>The <code>native-image</code> builder generates JNI reflection metadata for all classes, methods, and fields referenced in the configuration file.
-More than one JNI configuration can be used by specifying multiple paths for <code>JNIConfigurationFiles</code> and separating them with <code>,</code>.
-Also, <code>-H:JNIConfigurationResources</code> can be specified to load one or several configuration files from the image build’s class path, such as from a JAR file.</p>
+<p>The JNI configuration can be collected automatically using the <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Tracing Agent</a> from the GraalVM JDK. 
+The agent tracks all usages of dynamic features during application execution on a regular Java VM. 
+When the application completes and the JVM exits, the agent writes configuration to JSON files in the specified output directory.
+If you move the generated configuration files from that output directory to <em>META-INF/native-image/</em> on the class path, they are then automatically used at build time. 
+The <code>native-image</code> builder searches for <em>META-INF/native-image/</em> and its subdirectories for file named <em>reachability-metadata.json</em>, or legacy files such as <em>reflect-config.json</em> and others.</p>
 
 <p>Alternatively, a custom <code>Feature</code> implementation can register program elements before and during the analysis phase of the image build using the <code>JNIRuntimeAccess</code> class. For example:</p>
 <pre><code class="language-java">class JNIRegistrationFeature implements Feature {
@@ -625,7 +640,7 @@ Also, <code>-H:JNIConfigurationResources</code> can be specified to load one or 
   }
 }
 </code></pre>
-<p>To activate the custom feature <code>--features=&lt;fully qualified name of JNIRegistrationFeature class&gt;</code> needs to be passed to native-image.
+<p>To activate the custom feature, pass <code>--features=&lt;fully qualified name of JNIRegistrationFeature class&gt;</code> to the <code>native-image</code> builder.
 <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/#embed-a-configuration-file">Native Image Build Configuration</a> explains how this can be automated with a <code>native-image.properties</code> file in <code>META-INF/native-image</code>.</p>
     
       <h3 id="javalangreflect-support">
@@ -635,9 +650,10 @@ Also, <code>-H:JNIConfigurationResources</code> can be specified to load one or 
         
         
       </h3>
+
 <p>The JNI functions <code>FromReflectedMethod</code> and <code>ToReflectedMethod</code> can be used to obtain the corresponding <code>jmethodID</code> to a <code>java.lang.reflect.Method</code>, or to a <code>java.lang.reflect.Constructor</code> object, and vice versa.
 The functions <code>FromReflectedField</code> and <code>ToReflectedField</code> convert between <code>jfieldID</code> and <code>java.lang.reflect.Field</code>.
-In order to use these functions, <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/">reflection support</a> must be enabled and the methods and fields in question must be included in the reflection configuration, which is specified with <code>-H:ReflectionConfigurationFiles=</code>.</p>
+In order to use these functions, <a href="/dev/reference-manual/native-image/metadata/#reflection">reflection support</a> must be enabled and the methods and fields in question must be included in the reflection metadata.</p>
     
       <h2 id="object-handles">
         
@@ -805,6 +821,7 @@ For that reason, it can be beneficial to wrap synchronization in Java code.</p>
   <li><a href="/dev/reference-manual/native-image/native-code-interoperability/">Interoperability with Native Code</a></li>
   <li><a href="/dev/reference-manual/native-image/native-code-interoperability/JNIInvocationAPI/">JNI Invocation API</a></li>
   <li><a href="/dev/reference-manual/native-image/metadata/#java-native-interface">Reachability Metadata: Java Native Interface</a></li>
+  <li><a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/">Collect Metadata with the Tracing Agent</a></li>
 </ul>
 
       </div>
@@ -918,16 +935,14 @@ For that reason, it can be beneficial to wrap synchronization in Java code.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -935,15 +950,9 @@ For that reason, it can be beneficial to wrap synchronization in Java code.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -951,12 +960,11 @@ For that reason, it can be beneficial to wrap synchronization in Java code.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

@@ -9,13 +9,13 @@
 
   <title>
     
-      Optimize a Native Executable with Profile-Guided Optimizations
+      Optimize a Native Executable with Profile-Guided Optimization
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/optimize-native-executable-with-pgo/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -143,18 +143,29 @@
     <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
       <br>
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
-      <h1 id="optimize-a-native-executable-with-profile-guided-optimizations">Optimize a Native Executable with Profile-Guided Optimizations</h1>
+      <h1 id="optimize-a-native-executable-with-profile-guided-optimization">Optimize a Native Executable with Profile-Guided Optimization</h1>
 
 <p>GraalVM Native Image offers quick startup and less memory consumption for a Java application, running as a native executable, by default. 
-You can optimize this native executable even more for additional performance gain and higher throughput by applying Profile-Guided Optimizations (PGO).</p>
+You can optimize this native executable even more for additional performance gain and higher throughput by applying Profile-Guided Optimization (PGO).</p>
 
-<p>With PGO you can collect the profiling data in advance and then feed it to the <code>native-image</code> tool, which will use this information to optimize the performance of the resulting binary.</p>
+<p>With PGO you can collect the profiling data in advance, and then feed it to the <code>native-image</code> tool, which will use this information to optimize the performance of a native application.
+The general workflow is:</p>
+<ol>
+  <li>Build an instrumented native executable by passing the <code>--pgo-instrument</code> option to <code>native-image</code>.</li>
+  <li>Run the instrumented executable to generate a profile file. By default, the <em>default.iprof</em> file is generated in the current working directory and on application shutdown.</li>
+  <li>Build an optimized executable. The profile file with the default name and location will be picked up automatically. Alternatively, you can pass it to the <code>native-image</code> builder by specifying the file path: <code>--pgo=myprofile.iprof</code>.</li>
+</ol>
+
+<p>You can specify where to collect the profiles when running an instrumented native executable by passing the <code>-XX:ProfilesDumpFile=YourFileName</code> option at run time. 
+You can also collect multiple profile files by specifying different filenames, and pass them to <code>native-image</code> at build time.</p>
+
+<p>Note that executing all relevant application code paths and giving the application enough time to collect profiles are essential for having complete profiling information and therefore the best performance.</p>
 
 <blockquote>
   <p>Note: PGO is not available in GraalVM Community Edition.</p>
 </blockquote>
 
-<p>This guide shows how to apply PGO and transform your Java application into an optimized native executable.</p>
+<p>Find more information on this topic in the <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">Profile-Guided Optimization reference documentation</a>.</p>
 
 <h3 id="run-a-demo">Run a Demo</h3>
 
@@ -173,13 +184,14 @@ You can optimize this native executable even more for additional performance gai
 
 <p>Follow these steps to build an optimized native executable using PGO.</p>
 
-<blockquote>
-  <p>Note: Make sure you have installed a GraalVM JDK. The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>. For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
-</blockquote>
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
+The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
+For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
 <ol>
   <li>
-    <p>Save <a href="https://github.com/graalvm/graalvm-demos/blob/master/streams/Streams.java">the following code</a> to the file named <em>Streams.java</em>:</p>
+    <p>Save <a href="https://github.com/graalvm/graalvm-demos/blob/master/native-image/optimize-with-pgo/Streams.java">the following code</a> to the file named <em>Streams.java</em>:</p>
 
     <pre><code class="language-java">import java.util.Arrays;
 import java.util.Random;
@@ -274,51 +286,37 @@ class Person {
 </code></pre>
   </li>
   <li>Compile the application:
-    <pre><code class="language-shell">$JAVA_HOME/bin/javac Streams.java
+    <pre><code class="language-shell">javac Streams.java
 </code></pre>
     <p>(Optional) Run the demo application, providing some arguments to observe performance.</p>
-    <pre><code class="language-shell">$JAVA_HOME/bin/java Streams 100000 200
+    <pre><code class="language-shell">java Streams 100000 200
 </code></pre>
   </li>
   <li>Build a native executable from the class file, and run it to compare the performance:
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image Streams
+    <pre><code class="language-shell"> native-image Streams
 </code></pre>
-    <p>An executable file, <code>streams</code>, is created in the current working directory. 
+    <p>An executable file, <em>streams</em>, is created in the current working directory. 
  Now run it with the same arguments to see the performance:</p>
-
     <pre><code class="language-shell"> ./streams 100000 200
 </code></pre>
     <p>This version of the program is expected to run slower than on GraalVM’s or any regular JDK.</p>
   </li>
-  <li>
-    <p>Build an instrumented native executable by passing the <code>--pgo-instrument</code> option to <code>native-image</code>:</p>
-
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --pgo-instrument Streams
+  <li>Build an instrumented native executable by passing the <code>--pgo-instrument</code> option to <code>native-image</code>:
+    <pre><code class="language-shell"> native-image --pgo-instrument Streams
 </code></pre>
   </li>
-  <li>
-    <p>Run it to collect the code-execution-frequency profiles:</p>
-
+  <li>Run it to collect the code-execution-frequency profiles:
     <pre><code class="language-shell"> ./streams 100000 20
 </code></pre>
 
     <p>Notice that you can profile with a much smaller data size.
  Profiles collected from this run are stored by default in the <em>default.iprof</em> file.</p>
-
-    <blockquote>
-      <p>Note: You can specify where to collect the profiles when running an instrumented native executable by passing the <code>-XX:ProfilesDumpFile=YourFileName</code> option at run time.</p>
-    </blockquote>
   </li>
-  <li>
-    <p>Finally, build an optimized native executable by specifying the path to the collected profiles:</p>
-
-    <pre><code class="language-shell"> $JAVA_HOME/bin/native-image --pgo=default.iprof Streams
+  <li>Finally, build an optimized native executable. The profile file has the default name and location, so it will be picked up automatically:
+    <pre><code class="language-shell"> native-image --pgo Streams
 </code></pre>
-    <blockquote>
-      <p>Note: You can also collect multiple profile files, by specifying different filenames, and pass them to the <code>native-image</code> tool at build time.</p>
-    </blockquote>
-
-    <p>Run this optimized native executable timing the execution to see the system resources and CPU usage:</p>
+  </li>
+  <li>Run this optimized native executable timing the execution to see the system resources and CPU usage:
     <pre><code> time ./streams 100000 200
 </code></pre>
     <p>You should get the performance comparable to, or faster, than the Java version of the program. For example, on a machine with 16 GB of memory and 8 cores, the <code>TOTAL time</code> for 10 iterations reduced from ~2200 to ~270 milliseconds.</p>
@@ -326,12 +324,13 @@ class Person {
 </ol>
 
 <p>This guide showed how you can optimize native executables for additional performance gain and higher throughput.
-Oracle GraalVM offers extra benefits for building native executables, such as Profile-Guided Optimizations (PGO). 
+Oracle GraalVM offers extra benefits for building native executables, such as Profile-Guided Optimization (PGO). 
 With PGO you “train” your application for specific workloads and significantly improve the performance.</p>
 
 <h3 id="related-documentation">Related Documentation</h3>
 
 <ul>
+  <li><a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">Profile-Guided Optimization reference documentation</a></li>
   <li><a href="https://luna.oracle.com/lab/3f0b7c86-6105-4b7a-9a3b-eb73b251a1aa">Optimize Cloud Native Java Apps with Oracle GraalVM PGO</a></li>
 </ul>
 
@@ -438,16 +437,14 @@ With PGO you “train” your application for specific workloads and significant
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -455,15 +452,9 @@ With PGO you “train” your application for specific workloads and significant
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -471,12 +462,11 @@ With PGO you “train” your application for specific workloads and significant
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

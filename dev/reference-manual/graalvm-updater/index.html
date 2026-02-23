@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/graalvm-updater/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/graalvm-updater/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -222,8 +222,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="">
-            
+          <a href="/dev/getting-started/">
+            Getting Started
           </a>
         </li>
 
@@ -271,7 +271,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/java/">
-              Java and JVM
+              GraalVM as a Java Virtual Machine
             </a>
           </li>
 
@@ -293,7 +293,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/embed-languages/">
-              Embedding Reference
+              Embedding Languages
             </a>
           </li>
 
@@ -315,7 +315,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/tools/">
-              Tools for GraalVM Languages
+              Tools for Graal Languages
             </a>
           </li>
 
@@ -430,347 +430,7 @@ $(document).ready(function(){
 
 
         
-        <h1 id="graalvm-updater">
-        
-        
-          GraalVM Updater
-        
-        
-      </h1>
-
-<ul>
-  <li><a href="#check-available-components">Check Available Components</a></li>
-  <li><a href="#install-components">Install Components</a></li>
-  <li><a href="#install-components-manually">Install Components Manually</a></li>
-  <li><a href="#install-components-from-local-collection">Install Components from Local Collection</a></li>
-  <li><a href="#uninstall-components">Uninstall Components</a></li>
-  <li><a href="#rebuild-images">Rebuild Images</a></li>
-  <li><a href="#replace-components-and-files">Replace Components and Files</a></li>
-  <li><a href="#configure-proxies">Configure Proxies</a></li>
-  <li><a href="#configure-installation">Configure Installation</a></li>
-  <li><a href="#graalvm-updater-commands-overview">GraalVM Updater Commands Overview</a></li>
-</ul>
-
-<p>GraalVM Updater, <code>gu</code>, is a command-line tool for installing and managing optional GraalVM language runtimes and utilities. 
-It is available in the GraalVM JDK.
-To assist you with the installation, language runtimes and utilities are pre-packaged as JAR files and referenced in the documentation as “components”.
-GraalVM Updater can be also used to update your local GraalVM installation to a newer version or upgrade from GraalVM Community Edition to Oracle GraalVM.
-Read more in <a href="#graalvm-updater-commands-overview">Upgrade GraalVM</a>.</p>
-    
-      <h2 id="check-available-components">
-        
-        
-          Check Available Components <a href="#check-available-components" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>To check what components are already shipped with your GraalVM installation or what you have already installed, run the <code>list</code> command:</p>
-<pre><code class="language-shell">gu list
-</code></pre>
-
-<p>To check what components are available for your GraalVM version to install, run the <code>gu available</code> command:</p>
-<pre><code class="language-shell">gu available
-Downloading: Component catalog from ...
-ComponentId              Version            Component name                
------------------------------------------------------------------------------
-espresso                 &lt;version&gt;          Java on Truffle               
-espresso-llvm            &lt;version&gt;          Java on Truffle LLVM Java library
-js                       &lt;version&gt;          JavaScript
-llvm                     &lt;version&gt;          LLVM
-llvm-toolchain           &lt;version&gt;          LLVM.org toolchain                  
-nodejs                   &lt;version&gt;          Graal.nodejs                  
-python                   &lt;version&gt;          Graal.Python                  
-R                        &lt;version&gt;          FastR                         
-ruby                     &lt;version&gt;          TruffleRuby                   
-wasm                     &lt;version&gt;          GraalWasm                     
-</code></pre>
-
-<p>Note down the <code>ComponentId</code> value for the component you would like to install.</p>
-
-<p>GraalVM Updater verifies whether or not the version of a component is appropriate for your current GraalVM installation. 
-A component may require other components as prerequisites for its operation.
-GraalVM Updater verifies such requirements and will either attempt to download the required dependencies, or abort the installation if the component’s requirements are not met.
-Components intended for Oracle GraalVM cannot be installed on GraalVM Community Edition.</p>
-
-<p>Generic support for Node.js, R, Ruby, Python, and WebAssembly will work out of the box in most cases.
-It is recommended to fine-tune system-dependent configurations, following the recommendations in the component post-installation messages.</p>
-    
-      <h2 id="install-components">
-        
-        
-          Install Components <a href="#install-components" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>You can install a component <strong>by component’s ID</strong> using GraalVM Updater: <code>gu install ComponentId</code>.</p>
-
-<ol>
-  <li>Get a list of components available for your GraalVM version and their descriptive names:
-    <pre><code class="language-shell"> gu available
-</code></pre>
-  </li>
-  <li>Install a component package using the <code>ComponentId</code> value. For example, <code>js</code>:
-    <pre><code class="language-shell"> gu install js
-</code></pre>
-    <p>The installation starts, displaying progress.</p>
-  </li>
-</ol>
-
-<p>To see more verbose output during the installation, as the download progress bar, print versions, and dependency information, use the <code>-v</code> (<code>--verbose</code>) switch.</p>
-
-<p>If a component is installed that depends on another component, GraalVM Updater will search for the appropriate dependency and install it as well.
-If a required component cannot be found, the installation will fail.</p>
-    
-      <h2 id="install-components-manually">
-        
-        
-          Install Components Manually <a href="#install-components-manually" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>You can install a component <strong>from a local file</strong>, in other words, manually.</p>
-
-<ol>
-  <li>
-    <p>Download a component in consideration of the operating system, the Java version, and architecture (if applicable) from:</p>
-
-    <ul>
-      <li><a href="https://www.oracle.com/downloads/graalvm-downloads.html">Oracle GraalVM Downloads</a> for Oracle GraalVM</li>
-      <li><a href="https://github.com/graalvm/graalvm-ce-builds/releases/">GitHub</a> for GraalVM Community Edition</li>
-    </ul>
-  </li>
-  <li>
-    <p>Having downloaded the appropriate JAR file, install it with this command:</p>
-
-    <pre><code class="language-shell"> gu -L install component.jar
-</code></pre>
-    <p>The <code>-L</code> option, equivalent to <code>--local-file</code> or <code>--file</code>, installs a component from a downloaded JAR.
- However, a component may depend on other components (e.g., Ruby depends on the LLVM toolchain).
- For example, <code>gu -L install component.jar</code> will fail if the required components are not yet installed.
- If all dependencies are downloaded into the same directory, you can run:</p>
-
-    <pre><code class="language-shell"> gu -L install -D
-</code></pre>
-  </li>
-</ol>
-    
-      <h2 id="install-components-from-local-collection">
-        
-        
-          Install Components from Local Collection <a href="#install-components-from-local-collection" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>Components can be downloaded manually in advance to a local file folder, or to a folder shared on the local network.
-GraalVM Updater can then use that folder instead of the catalog. 
-Specify the directory to use for the components collection:</p>
-<pre><code class="language-shell">gu install -C /path/to/downloads/directory ComponentId
-</code></pre>
-    
-      <h2 id="uninstall-components">
-        
-        
-          Uninstall Components <a href="#uninstall-components" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>Components may be uninstalled from GraalVM when no longer needed.
-To uninstall a specific component, use its <code>ComponentId</code>. Run <code>gu list</code> to find out the exact <code>ComponentId</code>.</p>
-
-<p>The command to uninstall the component is:</p>
-<pre><code class="language-shell">gu remove ComponentId
-</code></pre>
-
-<p>If more components end with, for example, <code>ruby</code>, the installer will print an error message that a component’s full name is required (<code>org.graalvm.ruby</code>).</p>
-
-<p>Note that the LLVM toolchain component may fail uninstallation if its dependent component(s) remains installed. In this case, remove the dependent component first, or add the <code>-D</code> option, which would remove dependent components in addition to those explicitly selected:</p>
-<pre><code class="language-shell">gu -D remove llvm-toolchain
-</code></pre>
-    
-      <h2 id="rebuild-images">
-        
-        
-          Rebuild Images <a href="#rebuild-images" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>Language runtime components for GraalVM may change. For example:</p>
-<ul>
-  <li>polyglot native libraries become out of sync;</li>
-  <li>removed languages runtimes may cause the native binary to fail on missing resources or libraries.</li>
-</ul>
-
-<p>To rebuild and refresh the native binaries (language launchers), use the following command:</p>
-<pre><code class="language-shell">gu rebuild-images [--verbose] polyglot|libpolyglot|js|llvm|python|ruby|R... [custom native-image args]...
-</code></pre>
-    
-      <h2 id="replace-components-and-files">
-        
-        
-          Replace Components and Files <a href="#replace-components-and-files" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>A component may be only installed once. 
-GraalVM Updater refuses to install a component if a component with the same ID is already installed.
-However, the installed component can be replaced. 
-GraalVM Updater first uninstalls the component, and then installs a new one.</p>
-
-<p>To replace a component, use the <code>-r</code> option and the <code>-L</code> (<code>--local-file</code> or <code>--file</code>) option to treat parameters as the local filename of a packaged component:</p>
-<pre><code class="language-shell">gu install -L -r component.jar
-gu install -r ruby
-</code></pre>
-
-<p>The process is the same as if <code>gu remove</code> is run first and <code>gu install</code> next.</p>
-
-<p>GraalVM Updater also refuses to overwrite existing files if the to-be-installed and existing versions differ.
-There are cases when refreshing file contents may be needed, such as if they were modified or damaged.
-In this case, use the <code>-o</code> option:</p>
-<pre><code class="language-shell">gu install -L -o component.jar
-gu install -o ruby
-</code></pre>
-
-<p>GraalVM Updater will then instruct the user to replace the contained files of a component.
-By default, it will not alter anything. 
-Alternatively, use the <code>-f</code> (<code>--force</code>) option, which disables most of the checks and allows the user to install non-matching versions.</p>
-    
-      <h2 id="configure-proxies">
-        
-        
-          Configure Proxies <a href="#configure-proxies" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>If GraalVM Updater needs to reach the component catalog, or download a component, it may need to pass through the HTTP/HTTPS proxy, if the network uses one.
-On macOS, the proxy settings are automatically obtained from the OS.
-On Linux, ensure that the <code>http_proxy</code> and <code>https_proxy</code> environment variables are set appropriately before launching the <code>gu</code> tool.
-Refer to the distribution and/or desktop environment documentation for the details.</p>
-
-<p>GraalVM Updater intentionally does not support an option to disable certificate or hostname verification, for security reasons.
-A user may try to add a proxy’s certificate to the GraalVM default security trust store.
-You can also download a component manually to a directory, and then run <code>gu -L install /path/to/file</code> to install from a local filesystem (see <a href="#install-components-manually">Install Components Manually</a>).</p>
-    
-      <h3 id="working-without-internet-access">
-        
-        
-          Working without Internet Access <a href="#working-without-internet-access" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>If your machine cannot access and download the catalog and components from the Internet, GraalVM Updater can install components from a local directory, or a directory on an accessible network share.</p>
-
-<p>You need to prepare a directory, download all components that you want to install and their dependencies (in case they require other GraalVM components to work) into that directory.</p>
-
-<p>Then you can use <code>gu -L install /path/to/file</code> (where the <code>-L</code> option instructs to use local files, equivalent to <code>--local-file</code> or <code>--file</code>).
-Adding the <code>-D</code> option will instruct GraalVM Updater to look for potential dependencies in the directory next to the installable file.
-Additionally, <code>gu -C /path/to/download/dir install component</code> can be used, with the specified directory contents acting as a catalog of components.</p>
-
-<p>Note that with <code>gu -L</code> you need to specify the component’s file name, but when using <code>gu -C &lt;dir&gt;</code>, you need to specify a component ID (<code>ComponentId</code>):</p>
-<pre><code class="language-shell"># Specify file location
-gu -LD install /tmp/installables/ruby.jar
-
-# Specify component name
-gu -C /tmp/instalables install ruby
-</code></pre>
-    
-      <h2 id="configure-installation">
-        
-        
-          Configure Installation <a href="#configure-installation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>The installation command of GraalVM Updater accepts multiple options and parameters:
-    <code>shell
-    gu install [-0CcDfiLMnosruvyxY] param [param ...]
-   </code></p>
-
-<p>The following options are currently supported:</p>
-<ul>
-  <li><code>-0, --dry-run</code>: dry run, do not change anything</li>
-  <li><code>-c, --catalog</code>: treat parameters as component IDs from the GraalVM components catalog. This is the default</li>
-  <li><code>-C, --custom-catalog &lt;url&gt;</code>: use a specific catalog URL to locate components</li>
-  <li><code>-L, --local-file</code>: treat parameters as local filenames of packaged components</li>
-  <li><code>-M</code>: force <code>gu</code> to ignore dependencies of installed components</li>
-  <li><code>-f, --force</code>: force overwrite, bypass version checks</li>
-  <li><code>-i, --fail-existing</code>: fail on an existing component</li>
-  <li><code>-n, --no-progress</code>: do not display the downloading progress</li>
-  <li><code>-o, --overwrite</code>: overwrite different files</li>
-  <li><code>-r, --replace</code>: replace existing components</li>
-  <li><code>-s, --no-verify-jars</code>: skip integrity verification of component archives</li>
-  <li><code>-u, --url</code>: interpret parameters as URLs of packaged components</li>
-  <li><code>-v, --verbose</code>: be verbose. Prints versions and dependency information</li>
-  <li><code>-x, --ignore</code>: ignore failures</li>
-  <li><code>-y, --only-validate</code>: do not install, just check compatibility and conflicting files</li>
-  <li><code>-Y, --validate-before</code>: download, verify, and check file conflicts before any disk change is made</li>
-</ul>
-    
-      <h2 id="graalvm-updater-commands-overview">
-        
-        
-          GraalVM Updater Commands Overview <a href="#graalvm-updater-commands-overview" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>Command-line help is available by running <code>gu</code> or <code>gu -h</code>.  Run <code>gu &lt;command&gt; -h</code> to get help specific for the particular command. For example, <code>gu install -h</code>.</p>
-
-<p>GraalVM Updater usage options:</p>
-<ul>
-  <li><code>gu info [-cClLnprstuvV] &lt;param&gt;</code>: print the information about specific component (from file, URL, or catalog)</li>
-  <li><code>gu available [-aClvV] &lt;expr&gt;</code>: list components available in the catalog</li>
-  <li><code>gu install [--0CcDfiLMnosruvyxY] &lt;param&gt;</code>: install a component package</li>
-  <li><code>gu list [-clv] &lt;expression&gt;</code>: list installed components or components from catalog</li>
-  <li><code>gu remove [-0DfMxv] &lt;id&gt;</code>: uninstall a component</li>
-  <li><code>gu upgrade [-cCnLsuxSd] [&lt;ver&gt;] [&lt;cmp&gt;]</code>: upgrade to the recent GraalVM version</li>
-  <li><code>gu rebuild-images</code>: rebuild the native launchers. Use <code>-h</code> for detailed usage</li>
-</ul>
-
-<p>GraalVM Updater common options:</p>
-<ul>
-  <li><code>-A, --auto-yes</code>: say YES or ACCEPT to a question</li>
-  <li><code>-c, --catalog</code>: treat parameters as component IDs from the catalog of GraalVM components. This is the default</li>
-  <li><code>-C, --custom-catalog &lt;url&gt;</code>: use user-supplied catalog at URL</li>
-  <li><code>-e, --debug</code>: enable debugging and print stacktraces</li>
-  <li><code>-E, --no-catalog-errors</code>: do not stop if at least one catalog is working</li>
-  <li><code>-h, --help</code>: print help</li>
-  <li><code>-L, --local-file, --file</code>: treat parameters as local filenames of packaged components</li>
-  <li><code>-N, --non-interactive</code>: enable non-interactive mode. Fail when input is required</li>
-  <li><code>--show-version</code>: print version information and continue</li>
-  <li><code>-u, --url</code>: interpret parameters as URLs of packaged components</li>
-  <li><code>-v, --verbose</code>: enable verbose output. Print versions and dependency information</li>
-  <li><code>--version</code>: print version</li>
-</ul>
-
-<p>Additonal options:</p>
-
-<ul>
-  <li><code>--email &lt;address&gt;</code>: print an e-mail address used for generating a download token</li>
-  <li><code>--config &lt;path&gt;</code>: provide the path to a download token</li>
-  <li><code>--show-ee-token</code>: print a saved download token</li>
-  <li><code>-k, --public-key &lt;path&gt;</code>: provide path to custom GPG public key for verification</li>
-  <li><code>-U, --username &lt;username&gt;</code>: enter a username for login to Oracle component repository</li>
-</ul>
-    
-      <h3 id="related-documentation">
-        
-        
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Check the <a href="/dev/docs/introduction/#licensing-and-support">GraalVM’s components availability and support per platform</a>.</p>
+        <p>The GraalVM Updater was removed in GraalVM for JDK 21. For more details and information on migration options, see <a href="https://github.com/oracle/graal/issues/6855">issue #6855</a>.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -883,16 +543,14 @@ gu -C /tmp/instalables install ruby
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -900,15 +558,9 @@ gu -C /tmp/instalables install ruby
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -916,12 +568,11 @@ gu -C /tmp/instalables install ruby
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

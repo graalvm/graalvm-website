@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/debugging-and-diagnostics/JFR/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/debugging-and-diagnostics/JFR/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -384,7 +384,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">
-              Inspection Tool
+              Inspect Tool
             </a>
           </li>
 
@@ -421,8 +421,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/NMT/">
+              Native Memory Tracking
             </a>
           </li>
 
@@ -432,8 +432,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/jcmd/">
+              Java Diagnostic Command
             </a>
           </li>
 
@@ -443,8 +443,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/JDWP/">
+              Java Debug Wire Protocol (JDWP) with Native Image
             </a>
           </li>
 
@@ -454,8 +454,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/perf-profiler/">
+              Linux Perf Profiler Support
             </a>
           </li>
 
@@ -498,6 +498,23 @@ $(document).ready(function(){
           
           <a href="/dev/reference-manual/native-image/native-code-interoperability/">
             Interoperability with Native Code
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/reference-manual/web-image/">
+            Web Image
           </a>
         </li>
 
@@ -588,70 +605,37 @@ $(document).ready(function(){
         
       </h1>
 
-<p>JDK Flight Recorder (JFR) is an event recorder for capturing information about a JVM, and an application running on the JVM. 
-GraalVM Native Image supports building a native executable with JFR events, and users can use <a href="https://docs.oracle.com/en/java/javase/20/docs/api/jdk.jfr/jdk/jfr/Event.html"><code>jdk.jfr.Event</code> API</a> with a similar experience to using JFR in the Java HotSpot VM.</p>
-
-<p>To record JFR events when running a native executable, JFR support and JFR recording must be enabled.</p>
+<p>JDK Flight Recorder (JFR) is an event recorder for capturing information about a JVM, and an application running on the JVM.
+GraalVM Native Image supports building a native executable with JFR events, and users can use <a href="https://docs.oracle.com/en/java/javase/25/docs/api/jdk.jfr/jdk/jfr/Event.html"><code>jdk.jfr.Event</code> API</a> with a similar experience to using JFR in the Java HotSpot VM.</p>
     
-      <h2 id="add-jfr-support-and-record-events-at-run-time">
+      <h2 id="include-jfr-support-at-build-time-and-record-events-at-runtime">
         
         
-          Add JFR Support and Record Events at Run Time <a href="#add-jfr-support-and-record-events-at-run-time" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Include JFR Support at Build Time and Record Events at Runtime <a href="#include-jfr-support-at-build-time-and-record-events-at-runtime" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>To build a native executable with the JFR events support, you first need to include JFR at build time, then enable the system, start a recording, and configure logging at native executable run time.</p>
+<p>JFR support is disabled by default and must be explicitly enabled at build time.</p>
 
-<p>To build a native executable with JFR, use the <code>--enable-monitoring=jfr</code> flag:</p>
+<blockquote>
+  <p>Note: JFR event recording is not yet available with Native Image on Windows.</p>
+</blockquote>
+
+<p>To build a native executable with JFR, use the <code>--enable-monitoring=jfr</code> option:</p>
 <pre><code class="language-shell">native-image --enable-monitoring=jfr JavaApplication
 </code></pre>
-<p>To enable the system, start a recording, and configure logging at run time, the following options are supported:</p>
+<p>The following options are supported to start a recording, and configure logging at runtime:</p>
 
 <ul>
-  <li><code>-XX:+FlightRecorder</code>: use to enable JFR</li>
-  <li><code>-XX:StartFlightRecording</code>: use to start a recording on application’s startup</li>
-  <li><code>-XX:FlightRecorderLogging</code>: use to configure the log output for the JFR system</li>
+  <li><code>-XX:StartFlightRecording</code>: starts a recording on application startup</li>
+  <li><code>-XX:FlightRecorderLogging</code>: configures the log output for the JFR</li>
 </ul>
 
-<p>To enable JFR and start a recording, simply use <code>-XX:StartFlightRecording</code>. 
+<p>To start a JFR recording, simply use <code>-XX:StartFlightRecording</code> at runtime.
 For example:</p>
 <pre><code class="language-shell">./javaapplication -XX:StartFlightRecording="filename=recording.jfr"
 </code></pre>
-    
-      <h3 id="run-a-demo">
-        
-        
-          Run a Demo <a href="#run-a-demo" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Transform this very simple demo application into a native image and see how to use JFR events from it.
-Save the following code to the <em>Example.java</em> file.</p>
-
-<pre><code class="language-java">import jdk.jfr.Event;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-
-public class Example {
-
-  @Label("Hello World")
-  @Description("Helps programmer getting started")
-  static class HelloWorldEvent extends Event {
-      @Label("Message")
-      String message;
-  }
-
-  public static void main(String... args) {
-      HelloWorldEvent event = new HelloWorldEvent();
-      event.message = "hello, world!";
-      event.commit();
-  }
-}
-</code></pre>
-
-<p>You can further configure the JFR recording or enable logging.</p>
     
       <h2 id="configure-jfr-recording">
         
@@ -661,7 +645,7 @@ public class Example {
         
       </h2>
 
-<p>You can configure the JFR recording by passing a comma-separated list of key-value pairs to the <code>-XX:StartFlightRecording</code> option.
+<p>Similar to how JFR recordings can be started on HotSpot, you start recording by passing a comma-separated list of key-value pairs to the <code>-XX:StartFlightRecording</code> option.
 For example:</p>
 <pre><code class="language-shell">-XX:StartFlightRecording="filename=recording.jfr,dumponexit=true,duration=10s"
 </code></pre>
@@ -680,42 +664,42 @@ For example:</p>
     <tr>
       <td>name</td>
       <td>none</td>
-      <td>Name that can be used to identify the recording, e.g., “name=MyRecording”</td>
+      <td>Name to identify the recording, for example, <code>name=MyRecording</code></td>
     </tr>
     <tr>
       <td>settings</td>
       <td>none</td>
-      <td>Settings file (profile.jfc, default.jfc, etc.), e.g., “settings=myprofile.jfc”</td>
+      <td>Settings file (<em>profile.jfc</em>, <em>default.jfc</em>, and so on), for example, <code>settings=myprofile.jfc</code></td>
     </tr>
     <tr>
       <td>delay</td>
       <td>none</td>
-      <td>Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g., “delay=5h”</td>
+      <td>Delay recording start with (s)econds, (m)inutes, (h)ours, or (d)ays, for example, <code>delay=5h</code></td>
     </tr>
     <tr>
       <td>duration</td>
       <td>infinite (0)</td>
-      <td>Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g., “duration=300s”</td>
+      <td>Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, for example, <code>duration=300s</code></td>
     </tr>
     <tr>
       <td>filename</td>
       <td>none</td>
-      <td>Resulting recording filename, e.g., “filename=recording1.jfr”</td>
+      <td>Resulting recording filename, for example, <code>filename=recording1.jfr</code></td>
     </tr>
     <tr>
       <td>maxage</td>
       <td>no limit (0)</td>
-      <td>Maximum time to keep the recorded data on disk in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g., 60m, or 0 for no limit. For example, “maxage=1d”</td>
+      <td>Maximum time to keep the recorded data on disk in (s)econds, (m)inutes, (h)ours, or (d)ays, for example, 60m, or 0 for no limit. For example, <code>maxage=1d</code></td>
     </tr>
     <tr>
       <td>maxsize</td>
       <td>no limit (0)</td>
-      <td>Maximum amount of bytes to keep on disk in (k)B, (M)B or (G)B, e.g., 500M, or 0 for no limit. For example, “maxsize=1G”</td>
+      <td>Maximum amount of bytes to keep on disk in (k)B, (M)B or (G)B, for example, 500M, or 0 for no limit. For example, <code>maxsize=1G</code></td>
     </tr>
     <tr>
       <td>dumponexit</td>
       <td>false</td>
-      <td>Whether to dump a running recording when the JVM shuts down, e.g., “dumponexit=true”</td>
+      <td>Whether to dump a running recording when the JVM shuts down, for example, <code>dumponexit=true</code></td>
     </tr>
   </tbody>
 </table>
@@ -728,8 +712,8 @@ For example:</p>
         
       </h2>
 
-<p>You can configure the logging for the JFR system with a separate flag <code>-XX:FlightRecorderLogging</code>. 
-The usage is: <code>-XX:FlightRecorderLogging=[tag1[+tag2...][*][=level][,...]]</code>. 
+<p>You can configure the logging for the JFR system with a separate flag <code>-XX:FlightRecorderLogging</code>.
+The usage is: <code>-XX:FlightRecorderLogging=[tag1[+tag2...][*][=level][,...]]</code>.
 For example:</p>
 <pre><code class="language-shell">-XX:FlightRecorderLogging=jfr+system=debug
 -XX:FlightRecorderLogging=all=trace
@@ -746,7 +730,7 @@ For example:</p>
 
 <p>Available log tags are: <code>all, jfr, system, event, setting, bytecode, parser, metadata, dcmd</code>.</p>
 
-<p>Otherwise, this option expects a comma separated list of tag combinations, each with an optional wildcard (<code>*</code>) and level.</p>
+<p>Otherwise, this option expects a comma-separated list of tag combinations, each with an optional wildcard (<code>*</code>) and level.</p>
 
 <ul>
   <li>A tag combination without a level is given a default level of <code>INFO</code>.</li>
@@ -757,33 +741,277 @@ For example:</p>
   <li>This option is case insensitive.</li>
 </ul>
     
-      <h3 id="related-documentation">
+      <h2 id="features-and-limitations">
         
         
-          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<ul>
-  <li><a href="/dev/reference-manual/native-image/debugging-and-diagnostics/">Debugging and Diagnostics</a></li>
-</ul>
-    
-      <h2 id="current-limitations">
-        
-        
-          Current Limitations <a href="#current-limitations" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Features and Limitations <a href="#features-and-limitations" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>JFR support is currently incomplete: for example, few VM-internal events are present. 
-However, JFR currently includes the following features: custom and system events, disk-based recordings, and stack traces. 
-To see an exhaustive list of JFR events and features supported by Native Image, see <a href="https://github.com/oracle/graal/issues/5410">this GitHub issue</a>.</p>
+<p>This section outlines the JFR features that are available in Native Image.</p>
+    
+      <h3 id="method-profiling-and-stack-traces">
+        
+        
+          Method Profiling and Stack Traces <a href="#method-profiling-and-stack-traces" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Method profiling in JFR supports two types of sampling: safepoint and asynchronous sampling.
+The asynchronous sampler is enabled by default, while the safepoint sampler is used only on demand.
+Asynchronous sampling offers the advantage of avoiding safepoint bias, which happens if a profiler does not sample all points in the application with equal probability.
+In this scenario, the sampler can only perform sampling at a safepoint, thereby introducing bias into the profiles.</p>
+
+<p>Both samplers periodically produce the event <code>jdk.ExecutionSample</code> at specified frequencies.
+These samples can be viewed in applications such as JDK Mission Control or VisualVM.
+In addition, other JFR events that support stacktraces on HotSpot also support stacktraces in Native Image.
+This means you can do interesting things such as viewing flamegraphs of <code>jdk.ObjectAllocationInNewTLAB</code> to diagnose where object allocations are frequently happening.</p>
+    
+      <h3 id="jfr-event-streaming">
+        
+        
+          JFR Event Streaming <a href="#jfr-event-streaming" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p><a href="https://openjdk.org/jeps/349">JFR Event Streaming</a> is available with Native Image.
+Event streaming enables you to register callbacks for specific events at the application level.
+This introduces more flexibility and control over how recordings are managed.
+For example, you may dynamically increase the duration threshold of an event if it is found in the stream beyond a certain number times.
+Event streaming also enables the application to get continuous periodic JFR updates that are useful for monitoring purposes.</p>
+
+<p>Currently, stacktraces are not yet available on streamed events.
+This means you cannot access the stacktrace of an event inside its callback method.
+However, this limitation does not affect stacktraces in the JFR snapshot file (<em>.jfr</em>), those will still work as usual.</p>
+    
+      <h3 id="interaction-with-flightrecordermxbean-via-remote-jmx">
+        
+        
+          Interaction with FlightRecorderMXBean via Remote JMX <a href="#interaction-with-flightrecordermxbean-via-remote-jmx" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>You can interact with Native Image JFR from out of a process via a remote JMX connection to <code>FlightRecorderMXBean</code>.
+This can be done using applications such as JDK Mission Control or VisualVM.
+Over JMX you can start, stop, and dump JFR recordings using the <code>FlightRecorderMXBean</code> API as an interface.</p>
 
 <blockquote>
-  <p>Note: the GraalVM distribution for Windows does not include JFR event recording.</p>
+  <p>Note: Remote JMX connection support needs to be enabled separately at build time and is experimental.</p>
 </blockquote>
+    
+      <h3 id="flightrecorderoptions">
+        
+        
+          FlightRecorderOptions <a href="#flightrecorderoptions" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>You can fine-tune JFR parameters by using <code>-XX:FlightRecorderOptions</code> at runtime.
+This is primarily for advanced users, and most people should be fine with the default parameters.</p>
+    
+      <h3 id="leak-profiling">
+        
+        
+          Leak Profiling <a href="#leak-profiling" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Leak profiling implemented using the <code>jdk.OldObjectSample</code> event is partially available.
+Specifically, old object tracking is possible, but the path to the GC root information is unavailable.</p>
+    
+      <h3 id="using-jfr-with-jcmd">
+        
+        
+          Using JFR with JCMD <a href="#using-jfr-with-jcmd" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>JFR can be controlled using the Java Diagnostic Command utility (<code>jcmd</code>).
+To enable this functionality, <code>jcmd</code> support must be configured at build time.
+The following JFR commands are available with <code>jcmd</code>: <code>JFR.start</code>, <code>JFR.stop</code>, <code>JFR.check</code>, and <code>JFR.dump</code>.</p>
+    
+      <h3 id="built-in-events">
+        
+        
+          Built-In Events <a href="#built-in-events" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Many of the VM-level built-in events are available in Native Image.
+Java-level events implemented by bytecode instrumentation on the HotSpot JVM are not yet available in Native Image.
+Such events include file I/O and exception built-in events.</p>
+
+<p>The following table lists JFR Events that can be collected with Native Image.
+Some of the events are available with <a href="/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">Serial GC</a> only, the default garbage collector in Native Image.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Event Name</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>jdk.ActiveRecording</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ActiveSetting</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.AllocationRequiringGC</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ClassLoadingStatistics</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ContainerCPUThrottling</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ContainerCPUUsage</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ContainerConfiguration</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ContainerIOUsage</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ContainerMemoryUsage</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.DataLoss</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ExecutionSample</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ExecuteVMOperation</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GarbageCollection</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCHeapSummary</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCPhasePause</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCPhasePauseLevel1</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCPhasePauseLevel2</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCPhasePauseLevel3</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.GCPhasePauseLevel4</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.InitialEnvironmentVariable</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.InitialSystemProperty</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.JavaMonitorEnter</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.JavaMonitorInflate</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.JavaMonitorWait</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.JavaThreadStatistics</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.JVMInformation</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.NativeMemoryUsage</code> <a href="#footnote-3">3)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.NativeMemoryUsageTotal</code> <a href="#footnote-3">3)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.NativeMemoryUsagePeak</code> <a href="#footnote-3">3)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.NativeMemoryUsageTotalPeak</code> <a href="#footnote-3">3)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ObjectAllocationSample</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ObjectAllocationInNewTLAB</code> <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.OldObjectSample</code> <a href="#footnote-1">2)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.OSInformation</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.PhysicalMemory</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.SafepointBegin</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.SafepointEnd</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.SocketRead</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.SocketWrite</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.SystemGC</code>  <a href="#footnote-1">1)</a></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadAllocationStatistics</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadCPULoad</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadEnd</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadPark</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadSleep</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.ThreadStart</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.VirtualThreadEnd</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.VirtualThreadPinned</code></td>
+    </tr>
+    <tr>
+      <td><code>jdk.VirtualThreadStart</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<p id="footnote-1" style="margin-bottom: 0;"><i>1) Available if Serial GC is used.</i></p>
+<p id="footnote-2" style="margin-bottom: 0;"><i>2) Partially available if Serial GC is used.</i></p>
+<p id="footnote-3" style="margin-bottom: 0;"><i>3) Available if Native Memory Tracking is used.</i></p>
     
       <h3 id="further-reading">
         
@@ -794,12 +1022,9 @@ To see an exhaustive list of JFR events and features supported by Native Image, 
       </h3>
 
 <ul>
-  <li>
-    <p><a href="/dev/reference-manual/native-image/guides/build-and-run-native-executable-with-jfr/">Practice how to enable JFR support with Native Image and record events at run time using a demo application</a>.</p>
-  </li>
-  <li>
-    <p><a href="https://docs.oracle.com/en/java/javase/17/jfapi/creating-and-recording-your-first-event.html">Create and record your first event with Java</a>.</p>
-  </li>
+  <li><a href="/dev/reference-manual/native-image/guides/build-and-run-native-executable-with-jfr/">Build and Run Native Executables with JFR</a></li>
+  <li><a href="/dev/reference-manual/native-image/guides/build-and-run-native-executable-with-remote-jmx/">Use remote JMX with Native Image</a></li>
+  <li><a href="/dev/reference-manual/native-image/debugging-and-diagnostics/jcmd/">Java Diagnostic Command (jcmd) with Native Image</a></li>
 </ul>
 
       </div>
@@ -913,16 +1138,14 @@ To see an exhaustive list of JFR events and features supported by Native Image, 
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -930,15 +1153,9 @@ To see an exhaustive list of JFR events and features supported by Native Image, 
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -946,12 +1163,11 @@ To see an exhaustive list of JFR events and features supported by Native Image, 
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

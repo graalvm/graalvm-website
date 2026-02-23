@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/ScriptEngine/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/js/ScriptEngine/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -241,7 +241,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            JavaScript and Node.js Reference
+            GraalJS
           </a>
         </li>
 
@@ -277,7 +277,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              JavaScript Compatibility
+              GraalJS Compatibility
             </a>
           </li>
 
@@ -310,7 +310,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalVM JavaScript
+              Migration Guide from Nashorn to GraalJS
             </a>
           </li>
 
@@ -321,7 +321,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalVM JavaScript
+              Migration Guide from Rhino to GraalJS
             </a>
           </li>
 
@@ -354,7 +354,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalVM JavaScript on a Stock JDK
+              Run GraalJS on a Stock JDK
             </a>
           </li>
 
@@ -471,9 +471,71 @@ $(document).ready(function(){
         
       </h1>
 
-<p>GraalVM provides a JSR-223 compliant <code>javax.script.ScriptEngine</code> implementation for running JavaScript.
-Note that this feature is provided for legacy reasons in order to allow easier migration for implementations currently based on a <code>ScriptEngine</code>.
-We strongly encourage users to use the <code>org.graalvm.polyglot.Context</code> interface in order to control many of the settings directly and benefit from finer-grained security settings in GraalVM.</p>
+<p>GraalJS provides a JSR-223 compliant <code>javax.script.ScriptEngine</code> implementation for running JavaScript.
+Note that this feature is provided for legacy reasons to allow easier migration for implementations currently based on a <code>ScriptEngine</code>.
+We strongly encourage users to use the <code>org.graalvm.polyglot.Context</code> interface to control many of the settings directly and benefit from finer-grained security settings in GraalVM.</p>
+
+<blockquote>
+  <p>Note: As of GraalVM for JDK 21, GraalVM no longer includes <code>ScriptEngine</code> by default. If you relied on that, you will have to migrate your setup to explicitly depend on the script engine module and add it to the <em>module path</em>.</p>
+</blockquote>
+
+<p>To enable the <code>js-scriptengine</code> module, add it as the Maven dependency, as follows:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.js&lt;/groupId&gt;
+    &lt;artifactId&gt;js-scriptengine&lt;/artifactId&gt;
+    &lt;version&gt;${graaljs.version}&lt;/version&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js&lt;/artifactId&gt;
+    &lt;version&gt;${graaljs.version}&lt;/version&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>If you are not using Maven, you will need to add the <em>js-scriptengine.jar</em> file to the module path manually, for example, <code>--module-path=languages/js/graaljs-scriptengine.jar</code>.
+In some cases you may also need to add <code>--add-modules org.graalvm.js.scriptengine</code> to the command line, to ensure that the <code>ScriptEngine</code> will be found.
+An explicit dependency on the <code>org.graalvm.js.scriptengine</code> module is only required if you want to use <code>GraalJSScriptEngine</code> directly (see below).
+Finally, it is also possible to use <code>jlink</code> to generate a custom Java runtime image that contains the GraalJS’s <code>ScriptEngine</code>.</p>
+
+<p>An example <em>pom.xml</em> file can be found in the <a href="https://github.com/oracle/graaljs/blob/master/graal-js/test/maven-demo/pom.xml">GraalJS repository on GitHub</a>.</p>
+    
+      <h2 id="recommendation-for-use">
+        
+        
+          Recommendation for Use <a href="#recommendation-for-use" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>To avoid unnecessary recompilation of JavaScript sources, <strong>it is recommended to use <code>CompiledScript.eval</code></strong> instead of <code>ScriptEngine.eval</code>.
+This prevents JIT-compiled code from being garbage-collected as long as the corresponding <code>CompiledScript</code> object is alive.</p>
+
+<p>Single-threaded example:</p>
+<pre><code class="language-java">ScriptEngineManager manager = new ScriptEngineManager();
+ScriptEngine engine = manager.getEngineByName("js");
+CompiledScript script = ((Compilable) engine).compile("console.log('hello world');");
+script.eval();
+</code></pre>
+
+<p>Multi-threaded example:</p>
+<pre><code class="language-java">ScriptEngineManager manager = new ScriptEngineManager();
+ScriptEngine engine = manager.getEngineByName("js");
+CompiledScript script = ((Compilable) engine).compile("console.log('start');var start = Date.now(); while (Date.now()-start &lt; 2000);console.log('end');");
+new Thread(new Runnable() {
+    @Override
+    public void run() {
+        try {
+            // Create ScriptEngine for this thread (with a shared polyglot Engine)
+            ScriptEngine engine = manager.getEngineByName("js");
+            script.eval(engine.getContext());
+        } catch (ScriptException scriptException) {
+            scriptException.printStackTrace();
+        }
+    }
+}).start();
+script.eval();
+</code></pre>
     
       <h2 id="setting-options-via-bindings">
         
@@ -482,9 +544,9 @@ We strongly encourage users to use the <code>org.graalvm.polyglot.Context</code>
         
         
       </h2>
-<p>The  <code>ScriptEngine</code> interface does not provide a default way to set options.
-As a workaround, <code>GraalJSScriptEngine</code> supports setting some <code>Context</code> options
-through <code>Bindings</code>.
+
+<p>The <code>ScriptEngine</code> interface does not provide a default way to set options.
+As a workaround, <code>GraalJSScriptEngine</code> supports setting some <code>Context</code> options through <code>Bindings</code>.
 These options are:</p>
 <ul>
   <li><code>polyglot.js.allowHostAccess &lt;boolean&gt;</code></li>
@@ -501,10 +563,10 @@ These options are:</p>
 <p>These options control the sandboxing rules applied to evaluated JavaScript code and are set to <code>false</code> by default, unless the application was started in the Nashorn compatibility mode (<code>--js.nashorn-compat=true</code>).</p>
 
 <p>Note that using <code>ScriptEngine</code> implies allowing experimental options.
-This is an exhaustive list of allowed options to be passed via Bindings; in case you need to pass additional options to GraalVM JavaScript, you need to manually create a <code>Context</code> as shown below.</p>
+This is an exhaustive list of allowed options to be passed via <code>Bindings</code>; in case you need to pass additional options to GraalJS, you need to manually create a <code>Context</code> as shown below.</p>
 
-<p>To set an option via <code>Bindings</code>, use <code>Bindings.put(&lt;option name&gt;, true)</code> <strong>before</strong> the engine’s script context is initialized. Note that
-even a call to <code>Bindings#get(String)</code> may lead to context initialization.
+<p>To set an option via <code>Bindings</code>, use <code>Bindings.put(&lt;option name&gt;, true)</code> <strong>before</strong> the engine’s script context is initialized.
+Note that even a call to <code>Bindings#get(String)</code> may lead to a context initialization.
 The following code shows how to enable <code>polyglot.js.allowHostAccess</code> via <code>Bindings</code>:</p>
 <pre><code class="language-java">ScriptEngine engine = new ScriptEngineManager().getEngineByName("JavaScript");
 Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
@@ -513,8 +575,7 @@ bindings.put("polyglot.js.allowHostClassLookup", (Predicate&lt;String&gt;) s -&g
 bindings.put("javaObj", new Object());
 engine.eval("(javaObj instanceof Java.type('java.lang.Object'));"); // it will not work without allowHostAccess and allowHostClassLookup
 </code></pre>
-<p>This example will not work if the user calls, e.g., <code>engine.eval("var x = 1;")</code>, before calling <code>bindings.put("polyglot.js.allowHostAccess", true);</code>, since
-any call to <code>eval</code> forces context initialization.</p>
+<p>This example will not work if the user calls, for example, <code>engine.eval("var x = 1;")</code>, before calling <code>bindings.put("polyglot.js.allowHostAccess", true);</code>, since any call to <code>eval</code> forces a context initialization.</p>
     
       <h2 id="setting-options-via-system-properties">
         
@@ -523,11 +584,13 @@ any call to <code>eval</code> forces context initialization.</p>
         
         
       </h2>
+
 <p>Options to the JavaScript engine can be set via system properties before starting the JVM by prepending <code>polyglot.</code>:</p>
 <pre><code class="language-java">java -Dpolyglot.js.ecmascript-version=2022 MyApplication
 </code></pre>
 
-<p>Or, options to the JavaScript engine can be set programmatically from within Java before creating <code>ScriptEngine</code>. This, however, only works for the options passed to the JavaScript engine (like <code>js.ecmascript</code>), not for the six options mentioned above that can be set via the <code>Bindings</code>.
+<p>Or, options to the JavaScript engine can be set programmatically from within a Java application before creating <code>ScriptEngine</code>.
+This, however, only works for the options passed to the JavaScript engine (such as <code>js.ecmascript-version</code>), and not for the options mentioned in the example that can be set via <code>Bindings</code>.
 Another caveat is that those system properties are shared by all concurrently executed <code>ScriptEngine</code>s.</p>
     
       <h2 id="manually-creating-context-for-more-flexibility">
@@ -537,6 +600,7 @@ Another caveat is that those system properties are shared by all concurrently ex
         
         
       </h2>
+
 <p><code>Context</code> options can also be passed to <code>GraalJSScriptEngine</code> directly, via an instance of <code>Context.Builder</code>:</p>
 <pre><code class="language-java">ScriptEngine engine = GraalJSScriptEngine.create(null,
         Context.newBuilder("js")
@@ -547,8 +611,8 @@ engine.put("javaObj", new Object());
 engine.eval("(javaObj instanceof Java.type('java.lang.Object'));");
 </code></pre>
 
-<p>This allows setting all options available in GraalVM JavaScript.
-It does come at the cost of a hard dependency on GraalVM JavaScript, e.g., the <code>GraalJSScriptEngine</code> and <code>Context</code> classes.</p>
+<p>This enables setting all options available in GraalJS.
+It does come at the cost of a hard dependency on GraalJS, for example, the <code>GraalJSScriptEngine</code> and <code>Context</code> classes.</p>
     
       <h2 id="supported-file-extensions">
         
@@ -557,7 +621,20 @@ It does come at the cost of a hard dependency on GraalVM JavaScript, e.g., the <
         
         
       </h2>
-<p>The GraalVM JavaScript implementation of <code>javax.script.ScriptEngine</code> supports the <code>js</code> file extension for JavaScript source files, as well as the <code>mjs</code> extension for ES modules.</p>
+
+<p>The GraalJS implementation of <code>javax.script.ScriptEngine</code> supports the <em>js</em> file extension for JavaScript source files, as well as the <em>mjs</em> extension for ES modules.</p>
+    
+      <h3 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="/dev/reference-manual/js/Options/#graaljs-engine-options">GraalJS Command-line Options</a></li>
+</ul>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -670,16 +747,14 @@ It does come at the cost of a hard dependency on GraalVM JavaScript, e.g., the <
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -687,15 +762,9 @@ It does come at the cost of a hard dependency on GraalVM JavaScript, e.g., the <
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -703,12 +772,11 @@ It does come at the cost of a hard dependency on GraalVM JavaScript, e.g., the <
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

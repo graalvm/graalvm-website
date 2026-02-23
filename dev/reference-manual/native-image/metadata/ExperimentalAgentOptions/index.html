@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/metadata/ExperimentalAgentOptions/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/metadata/ExperimentalAgentOptions/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -452,6 +452,23 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
+          <a href="/reference-manual/web-image/">
+            Web Image
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
           <a href="/dev/reference-manual/native-image/workshops/">
             Workshops and Labs
           </a>
@@ -547,11 +564,11 @@ These options are described here.</p>
 <p>Native-image needs all classes to be known at image build time (a “closed-world assumption”).
 However, Java has support for loading new classes at runtime.
 To emulate class loading, the agent can be told to trace dynamically loaded classes and save their bytecode for later use by the image builder.
-This functionality can be enabled by adding <code>experimental-class-define-support</code> to the agent option string, e.g.: <code>-agentlib:native-image-agent=config-output-dir=config,experimental-class-define-support</code>
+This functionality can be enabled by adding <code>experimental-class-define-support</code> to the agent option string, for example: <code>-agentlib:native-image-agent=config-output-dir=config,experimental-class-define-support</code>
 Apart from the standard configuration files, the agent will create an <code>agent-extracted-predefined-classes</code> directory in the configuration output directory and write bytecode of newly loaded classes on the go.
 The configuration directory can then be used by image builder without additional tweaks,.
 The classes will be loaded during the image build, but will not be initialized or made available to the application.
-At runtime, if there is an attempt to load a class with the same name and bytecodes as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
+At runtime, if there is an attempt to load a class with the same name and bytecode as one of the classes encountered during tracing, the predefined class will be supplied to the application.</p>
     
       <h3 id="known-limitations">
         
@@ -565,7 +582,7 @@ At runtime, if there is an attempt to load a class with the same name and byteco
   <li>Native images support “loading” a predefined class only once per execution, by just a single class loader.</li>
   <li>Predefined classes are initialized when they are “loaded” at runtime and cannot be initialized at build time.</li>
   <li>The agent collects all classes which are not loaded by one of the Java VM’s built-in class loaders (with some exceptions), that is, from the class path or module path. This includes classes loaded by any custom class loaders.</li>
-  <li>Classes that are generated with varying data in their name or bytecodes, such as sequential or random numbers or timestamps, can generally not be matched to predefined classes at runtime. In these cases, the way such classes are generated needs to be adjusted.</li>
+  <li>Classes that are generated with varying data in their name or bytecode, such as sequential or random numbers or timestamps, can generally not be matched to predefined classes at runtime. In these cases, the way such classes are generated needs to be adjusted.</li>
 </ul>
     
       <h2 id="printing-configuration-with-origins">
@@ -636,15 +653,14 @@ To further filter the generated configuration, you can use <code>conditional-con
       </h3>
 
 <p>Conditional configuration can be generated from multiple agent runs that reach different code paths in the application.
-Each agent run produces configuration with metadata. <code>native-image-configure</code> is then used to merge the collected data and produce a conditional configuration.
-To run the agent in this mode, add <code>experimental-conditional-config-part</code> to the agent’s command line.
-Once all the agent runs have finished, you can generate a conditional configuration by invoking:</p>
-<pre><code class="language-shell">native-image-configure generate-conditional --user-code-filter=&lt;path-to-filter-file&gt; --class-name-filter=&lt;path-to-filter-file&gt; --input-dir=&lt;path-to-agent-run-output-1&gt; --input-dir=&lt;path-to-agent-run-ouput-2&gt; ... --output-dir=&lt;path-to-resulting-conditional-config&gt;
+Each agent run produces configuration with metadata. After all agent runs have finished, you can use <code>native-image-utils</code> is then used to merge the collected data and produce a conditional configuration.
+To generate a conditional configuration, invoke:</p>
+<pre><code class="language-shell">native-image-utils generate-conditional --user-code-filter=&lt;path-to-filter-file&gt; --class-name-filter=&lt;path-to-filter-file&gt; --input-dir=&lt;path-to-agent-run-output-1&gt; --input-dir=&lt;path-to-agent-run-output-2&gt; ... --output-dir=&lt;path-to-resulting-conditional-config&gt;
 </code></pre>
 <p>where:</p>
 <ul>
   <li><code>--user-code-filter=&lt;path-to-filter-file&gt;</code>: path to an agent filter file that specifies user classes</li>
-  <li>(optional) <code>--class-name-filter=&lt;path-to-filter-file&gt;</code>: path to an agent filter file that further filters the generated config</li>
+  <li>(optional) <code>--class-name-filter=&lt;path-to-filter-file&gt;</code>: path to an agent filter file that further filters the generated configuration</li>
 </ul>
     
       <h3 id="the-underlying-heuristics">
@@ -795,16 +811,14 @@ This implies that the heuristic will not work well for code that generates confi
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -812,15 +826,9 @@ This implies that the heuristic will not work well for code that generates confi
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -828,12 +836,11 @@ This implies that the heuristic will not work well for code that generates confi
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

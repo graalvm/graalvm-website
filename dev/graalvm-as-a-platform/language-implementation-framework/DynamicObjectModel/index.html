@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/DynamicObjectModel/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/DynamicObjectModel/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -384,8 +384,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/truffle/docs/ModuleMigration.html">
-              Truffle Language Safepoint Tutorial
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
             </a>
           </li>
 
@@ -669,8 +669,8 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This guide demonstrates how to get started with using the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObject.html">DynamicObject</a> and <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObjectLibrary.html">DynamicObjectLibrary</a> APIs introduced with GraalVM 20.2.0.
-The full documentation can be found in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObjectLibrary.html">Javadoc</a>.</p>
+<p>This guide demonstrates how to use the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObject.html"><code>DynamicObject</code></a> and node APIs introduced with GraalVM 25.1.
+The full documentation can be found in the <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/DynamicObject.html">Javadoc</a>.</p>
     
       <h3 id="motivation">
         
@@ -734,7 +734,7 @@ public class Array extends BasicObject {
 }
 </code></pre>
 
-<p>Dynamic object members can be accessed using the <code>DynamicObjectLibrary</code>, which can be obtained using the <code>@CachedLibrary</code> annotation of the Truffle DSL and <code>DynamicObjectLibrary.getFactory()</code> + <code>getUncached()</code>, <code>create(DynamicObject)</code>, and <code>createDispatched(int)</code>.
+<p>You can access dynamic object members through <code>DynamicObject</code> access nodes. To obtain these nodes, cache them using the <code>@Cached</code> annotation provided in the Truffle DSL.
 Here is an example of how it could be used to implement <code>InteropLibrary</code> messages:</p>
 <pre><code class="language-java">@ExportLibrary(InteropLibrary.class)
 public class SimpleObject extends BasicObject {
@@ -750,9 +750,9 @@ public class SimpleObject extends BasicObject {
 
     @ExportMessage
     Object readMember(String name,
-                    @CachedLibrary("this") DynamicObjectLibrary objectLibrary)
+                    @Cached DynamicObject.GetNode getNode)
                     throws UnknownIdentifierException {
-        Object result = objectLibrary.getOrDefault(this, name, null);
+        Object result = getNode.execute(this, name, null);
         if (result == null) {
             /* Property does not exist. */
             throw UnknownIdentifierException.create(name);
@@ -762,14 +762,14 @@ public class SimpleObject extends BasicObject {
 
     @ExportMessage
     void writeMember(String name, Object value,
-                    @CachedLibrary("this") DynamicObjectLibrary objectLibrary) {
-        objectLibrary.put(this, name, value);
+                    @Cached DynamicObject.PutNode putNode) {
+        putNode.execute(this, name, value);
     }
 
     @ExportMessage
     boolean isMemberReadable(String member,
-                    @CachedLibrary("this") DynamicObjectLibrary objectLibrary) {
-        return objectLibrary.containsKey(this, member);
+                    @Cached DynamicObject.ContainsKeyNode containsKeyNode) {
+        return containsKeyNode.execute(this, member);
     }
     // ...
 }
@@ -778,7 +778,7 @@ public class SimpleObject extends BasicObject {
 <p>In order to construct instances of these objects, you first need a <code>Shape</code> that you can pass to the <code>DynamicObject</code> constructor.
 This shape is created using <a href="https://www.graalvm.org/truffle/javadoc/com/oracle/truffle/api/object/Shape.Builder.html"><code>Shape.newBuilder().build()</code></a>.
 The returned shape describes the initial shape of the object and forms the root of a new shape tree.
-As you are adding new properties with <code>DynamicObjectLibrary#put</code>, the object will mutate into other shapes in this shape tree.</p>
+As you are adding new properties with <code>DynamicObject.PutNode#execute</code>, the object will mutate into other shapes in this shape tree.</p>
 
 <p>Note: You should reuse the same initial shapes because shapes are internally cached per root shape.
 It is recommended that you store the initial shapes in the <code>TruffleLanguage</code> instance, so they can be shared across contexts of the same engine.
@@ -793,7 +793,7 @@ public final class MyLanguage extends TruffleLanguage&lt;MyContext&gt; {
     private final Shape initialArrayShape;
 
     public MyLanguage() {
-        this.initialObjectShape = Shape.newBuilder(ExtendedObject.class).build();
+        this.initialObjectShape = Shape.newBuilder().layout(ExtendedObject.class).build();
         this.initialArrayShape = Shape.newBuilder().build();
     }
 
@@ -814,7 +814,7 @@ public final class MyLanguage extends TruffleLanguage&lt;MyContext&gt; {
 
 <p>You can extend the default object layout with extra <em>dynamic fields</em> that you hand over to the dynamic object model by adding <code>@DynamicField</code>-annotated field declarations of type <code>Object</code> or <code>long</code> in your subclasses, and specifying the <em>layout class</em> with <code>Shape.newBuilder().layout(ExtendedObject.class).build();</code>.
 Dynamic fields declared in this class and its superclasses will then automatically be used to store dynamic object properties and allow faster access to properties that fit into this reserved space.
-Note: You must not access dynamic fields directly. Always use <code>DynamicObjectLibrary</code> for this purpose.</p>
+Note: You must not access dynamic fields directly. Always use <code>DynamicObject</code> nodes for this purpose.</p>
 
 <pre><code class="language-java">@ExportLibrary(InteropLibrary.class)
 public class ExtendedObject extends SimpleObject {
@@ -840,20 +840,19 @@ public class ExtendedObject extends SimpleObject {
         
       </h2>
 
-<p>In order to ensure optimal caching, avoid reusing the same cached <code>DynamicObjectLibrary</code> for multiple, independent operations (<code>get</code>, <code>put</code>, etc.).
-Try to minimize the number of different shapes and property keys seen by each cached library instance.
-When the property keys are known statically (compilation-final), always use a separate <code>DynamicObjectLibrary</code> for each property key.
-Use dispatched libraries (<code>@CachedLibrary(limit=...)</code>) when putting multiple properties in succession.
+<p>To ensure optimal caching, avoid reusing the same cached <code>DynamicObject</code> node (<code>GetNode</code>, <code>PutNode</code>, etc.) for multiple independent operations.
+Try to minimize the number of different shapes and property keys that each cached node instance encounters.
+When the property keys are known statically (compilation-final), always use a separate <code>DynamicObject</code> node for each property key.
 For example:</p>
 <pre><code class="language-java">public abstract class MakePairNode extends BinaryExpressionNode {
     @Specialization
     Object makePair(Object left, Object right,
                     @CachedLanguage MyLanguage language,
-                    @CachedLibrary(limit = "3") putLeft,
-                    @CachedLibrary(limit = "3") putRight) {
+                    @Cached DynamicObject.PutNode putLeft,
+                    @Cached DynamicObject.PutNode putRight) {
         MyObject obj = language.createObject();
-        putLeft.put(obj, "left", left);
-        putRight.put(obj, "right", right);
+        putLeft.execute(obj, "left", left);
+        putRight.execute(obj, "right", right);
         return obj;
     }
 }
@@ -982,16 +981,14 @@ For example:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -999,15 +996,9 @@ For example:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -1015,12 +1006,11 @@ For example:</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

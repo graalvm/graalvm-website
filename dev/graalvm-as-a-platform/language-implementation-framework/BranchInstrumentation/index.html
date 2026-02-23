@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/graalvm-as-a-platform/language-implementation-framework/BranchInstrumentation/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/BranchInstrumentation/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -384,8 +384,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/truffle/docs/ModuleMigration.html">
-              Truffle Language Safepoint Tutorial
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
             </a>
           </li>
 
@@ -686,13 +686,13 @@ form.</p>
 specified as system properties:</p>
 
 <ul>
-  <li><code>--engine.InstrumentBranches</code> - controls whether instrumentation is on (<code>true</code>
+  <li><code>--compiler.InstrumentBranches</code> - controls whether instrumentation is on (<code>true</code>
 or <code>false</code>, default is <code>false</code>)</li>
-  <li><code>--engine.InstrumentFilter</code> - filters methods in which instrumentation
+  <li><code>--compiler.InstrumentFilter</code> - filters methods in which instrumentation
 should be done (method filter syntax, essentially <code>&lt;package&gt;.&lt;class&gt;.&lt;method&gt;[.&lt;signature&gt;]</code>)</li>
-  <li><code>--engine.InstrumentationTableSize</code> - controls the maximum number of
+  <li><code>--compiler.InstrumentationTableSize</code> - controls the maximum number of
 instrumented locations</li>
-  <li><code>--engine.InstrumentBranchesPerInlineSite</code> - controls whether instrumentation
+  <li><code>--compiler.InstrumentBranchesPerInlineSite</code> - controls whether instrumentation
 provides separate branch profiles for each guest language function/compilation unit
 (default is <code>false</code>).</li>
 </ul>
@@ -713,8 +713,8 @@ problematic method. The following command runs a unit test for the SimpleLanguag
 and instruments all the <code>if</code>-statements:</p>
 
 <pre><code class="language-shell">mx --jdk jvmci sl --engine.BackgroundCompilation=false \
-  --engine.InstrumentBranches \
-  '--engine.InstrumentFilter=*.*.*' \
+  --compiler.InstrumentBranches \
+  '--compiler.InstrumentFilter=*.*.*' \
   ../truffle/truffle/com.oracle.truffle.sl.test/src/tests/LoopObjectDyn.sl
 </code></pre>
 
@@ -741,10 +741,10 @@ nodes, and you may wish to distinguish these occurrences. Therefore, set the
 per-inline-site flag to <code>true</code>, and change the filter to focus only on
 <code>SLPropertyCacheNode</code>:</p>
 
-<pre><code class="language-shell">mx --jdk jvmci sl -Dgraal.TruffleBackgroundCompilation=false \
-  --engine.InstrumentBranchesPerInlineSite \
-  --engine.InstrumentBranches \
-  '--engine.InstrumentFilter=*.SLPropertyCacheNode.*' \
+<pre><code class="language-shell">mx --jdk jvmci sl -Djdk.graal.TruffleBackgroundCompilation=false \
+  --compiler.InstrumentBranchesPerInlineSite \
+  --compiler.InstrumentBranches \
+  '--compiler.InstrumentFilter=*.SLPropertyCacheNode.*' \
   ../truffle/truffle/com.oracle.truffle.sl.test/src/tests/LoopObjectDyn.sl
 </code></pre>
 
@@ -772,7 +772,7 @@ com.oracle.truffle.sl.nodes.expression.SLLessThanNodeGen.executeBoolean_long_lon
 com.oracle.truffle.sl.nodes.expression.SLLessThanNodeGen.executeBoolean(SLLessThanNodeGen.java:33) [bci: 14]
 com.oracle.truffle.sl.nodes.controlflow.SLWhileRepeatingNode.evaluateCondition(SLWhileRepeatingNode.java:133) [bci: 5]
 com.oracle.truffle.sl.nodes.controlflow.SLWhileRepeatingNode.executeRepeating(SLWhileRepeatingNode.java:102) [bci: 2]
-org.graalvm.compiler.truffle.OptimizedOSRLoopNode.executeLoop(OptimizedOSRLoopNode.java:113) [bci: 61]
+com.oracle.truffle.runtime.OptimizedOSRLoopNode.executeLoop(OptimizedOSRLoopNode.java:113) [bci: 61]
 com.oracle.truffle.sl.nodes.controlflow.SLWhileNode.executeVoid(SLWhileNode.java:69) [bci: 5]
 com.oracle.truffle.sl.nodes.controlflow.SLBlockNode.executeVoid(SLBlockNode.java:84) [bci: 37]
 com.oracle.truffle.sl.nodes.controlflow.SLFunctionBodyNode.executeGeneric(SLFunctionBodyNode.java:81) [bci: 5]
@@ -807,13 +807,13 @@ have a <code>TruffleCallBoundary</code> annotation, and counts the calls to thos
 controlled by the following set of flags:</p>
 
 <ul>
-  <li><code>--engine.InstrumentBoundaries</code> - controls whether instrumentation is on (<code>true</code>
+  <li><code>--compiler.InstrumentBoundaries</code> - controls whether instrumentation is on (<code>true</code>
 or <code>false</code>, default is <code>false</code>)</li>
-  <li><code>--engine.InstrumentFilter</code> - filters methods in which instrumentation
+  <li><code>--compiler.InstrumentFilter</code> - filters methods in which instrumentation
 should be done (method filter syntax, essentially <code>&lt;package&gt;.&lt;class&gt;.&lt;method&gt;[.&lt;signature&gt;]</code>)</li>
-  <li><code>--engine.InstrumentationTableSize</code> - controls the maximum number of
+  <li><code>--compiler.InstrumentationTableSize</code> - controls the maximum number of
 instrumented locations</li>
-  <li><code>--engine.InstrumentBoundariesPerInlineSite</code> - controls whether instrumentation
+  <li><code>--compiler.InstrumentBoundariesPerInlineSite</code> - controls whether instrumentation
 is done per a declaration of an Truffle boundary call (<code>false</code>), or per every call
 stack where that callsite was inlined (<code>true</code>)</li>
 </ul>
@@ -937,16 +937,14 @@ then, after identifying the problematic methods, set that flag to <code>true</co
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -954,15 +952,9 @@ then, after identifying the problematic methods, set that flag to <code>true</co
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -970,12 +962,11 @@ then, after identifying the problematic methods, set that flag to <code>true</co
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

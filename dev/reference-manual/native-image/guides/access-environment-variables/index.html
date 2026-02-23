@@ -9,13 +9,13 @@
 
   <title>
     
-      Access Environment Variables in a Native Executable at Run Time
+      Access Environment Variables in a Native Executable at Runtime
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/guides/access-environment-variables/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/guides/access-environment-variables/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -143,35 +143,37 @@
     <div class="col-12 col-sm-12 col-md-12 col-lg-10 offset-lg-1 top-layout-indent">
       <br>
       <a href='/reference-manual/native-image/guides/' class="link-back"><i>&#9664;</i>Back</a>
-      <h1 id="access-environment-variables-in-a-native-executable-at-run-time">Access Environment Variables in a Native Executable at Run Time</h1>
+      <h1 id="access-environment-variables-in-a-native-executable-at-runtime">Access Environment Variables in a Native Executable at Runtime</h1>
 
-<p>A native executable accesses your environment variables in the same way as a regular Java application.
-For example, assume you have the following source code:</p>
+<p>A native executable accesses environment variables in the same way as a regular Java application.</p>
 
-<pre><code class="language-java">import java.util.Map;
+<h2 id="run-a-demo">Run a Demo</h2>
 
-public class EnvMap {
-    public static void main (String[] args) {
-        var filter = args.length &gt; 0 ? args[0] : "";
-        Map&lt;String, String&gt; env = System.getenv();
-        for (String envName : env.keySet()) {
-            if(envName.contains(filter)) {
-                System.out.format("%s=%s%n",
-                                envName,
-                                env.get(envName));
-            }
-        }
-    }
-}
-</code></pre>
+<p>For example, run a Java application that iterates over your environment variables and prints out the ones that contain the String of characters passed as a command-line argument.</p>
 
-<p>This code iterates over your environment variables and prints out the ones that contain the String of characters passed as the command-line argument.</p>
-
-<ol>
-  <li>
-    <p>Make sure you have installed a GraalVM JDK.
+<h3 id="prerequisite">Prerequisite</h3>
+<p>Make sure you have installed a GraalVM JDK.
 The easiest way to get started is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
+
+<ol>
+  <li>Save the following source code in a file named <em>EnvMap.java</em>:
+    <pre><code class="language-java"> import java.util.Map;
+
+ public class EnvMap {
+     public static void main (String[] args) {
+         var filter = args.length &gt; 0 ? args[0] : "";
+         Map&lt;String, String&gt; env = System.getenv();
+         for (String envName : env.keySet()) {
+             if(envName.contains(filter)) {
+                 System.out.format("%s=%s%n",
+                                 envName,
+                                 env.get(envName));
+             }
+         }
+     }
+ }
+</code></pre>
   </li>
   <li>Compile the file and build a native executable, as follows:
     <pre><code class="language-shell"> javac EnvMap.java
@@ -179,12 +181,12 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
     <pre><code class="language-shell"> native-image EnvMap
 </code></pre>
   </li>
-  <li>Run the resulting native executable and pass a command-line argument, such as “HELLO”. There should be no output, because there is no environment variable with a matching name.
+  <li>Run the native application and pass a command-line argument, such as “HELLO”. There should be no output, because there is no environment variable with a matching name.
     <pre><code class="language-shell"> ./envmap HELLO
  &lt;no output&gt;
 </code></pre>
   </li>
-  <li>Create a new environment variable named “HELLOWORLD” and give it the value “Hello World!”. (If you are using a <code>bash</code> shell, follow the example below.) Now, run the native executable again–it will correctly print out the name and value of the matching environment variable(s).
+  <li>Create a new environment variable named “HELLOWORLD” and give it the value “Hello World!”. (If you are using a <code>bash</code> shell, follow the example below.) Now, run the native executable again—it will correctly print out the name and value of the matching environment variable(s).
     <pre><code class="language-shell"> export HELLOWORLD='Hello World!'
 </code></pre>
     <pre><code class="language-shell"> ./envmap HELLO
@@ -305,16 +307,14 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -322,15 +322,9 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -338,12 +332,11 @@ For other installation options, visit the <a href="https://www.graalvm.org/downl
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/security-guide/native-image/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/security-guide/native-image/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -228,8 +228,8 @@ $(document).ready(function(){
           <li class="toc-bullets-main">
         
           
-          <a href="">
-            
+          <a href="/dev/getting-started/">
+            Getting Started
           </a>
         </li>
 
@@ -337,8 +337,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/security-guide/native-image/obfuscation/">
+              Advanced Obfuscation in Native Image
             </a>
           </li>
 
@@ -348,8 +348,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/security-guide/native-image/sbom/">
+              Software Bill of Materials (SBOM) in Native Image
             </a>
           </li>
 
@@ -359,8 +359,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/security-guide/polyglot-sandbox/">
-              Polyglot Sandboxing
+            <a href="/dev/security-guide/sandboxing/">
+              Sandboxing
             </a>
           </li>
 
@@ -443,7 +443,8 @@ $(document).ready(function(){
         
       </h1>
 
-<p>The <code>native-image</code> builder generates a snapshot of an application after startup and bundles it in a binary executable.</p>
+<p>The <code>native-image</code> builder generates a snapshot of an application after startup and bundles it in a binary executable.
+The security report section of the native image <a href="/dev/reference-manual/native-image/overview/BuildOutput/#security-report">build output</a> provides security relevant information about the native image build.</p>
     
       <h2 id="class-initialization">
         
@@ -471,77 +472,35 @@ Alternatively developers can make use of the <a href="https://www.graalvm.org/sd
         
       </h2>
 
-<p>GraalVM Native Image can embed a Software Bill of Materials (SBOM) at build time to detect any libraries that may be susceptible to known security vulnerabilities.
-Native Image provides the <code>--enable-sbom</code> option to embed an SBOM into a native executable.</p>
-
-<blockquote>
-  <p>Note: Embedding a Software Bill of Materials (SBOM) is not available in GraalVM Community Edition.</p>
-</blockquote>
-
-<p>The CycloneDX format is supported and the default. 
-To embed a CycloneDX SBOM into a native executable, pass the <code>--enable-sbom</code> option to the <code>native-image</code> command.</p>
-
-<p>The implementation constructs the SBOM by recovering all version information observable in external library manifests for classes included in a native executable. 
-The SBOM is also compressed in order to limit the SBOM’s impact on the native executable size.<br />
-The SBOM is stored in the <code>gzip</code> format with the exported <code>sbom</code> symbol referencing its start address and the <code>sbom_length</code> symbol its size.</p>
-
-<p>After embedding the compressed SBOM into the executable, the <a href="/dev/reference-manual/native-image/debugging-and-diagnostics/InspectTool/">native image inspect tool</a> is able to extract the compressed SBOM using an optional <code>--sbom</code> parameter accessible through <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt;</code> from both executables and shared libraries.
-It outputs the SBOM in the following format:</p>
-
-<pre><code class="language-json">{
-  "bomFormat": "CycloneDX",
-  "specVersion": "1.4",
-  "version": 1,
-  "components": [
-    {
-      "type": "library",
-      "group": "io.netty",
-      "name": "netty-codec-http2",
-      "version": "4.1.76.Final",
-      "properties": [
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:codec:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty-codec-http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        {
-          "name": "syft:cpe23",
-          "value": "cpe:2.3:a:codec:netty_codec_http2:4.1.76.Final:*:*:*:*:*:*:*"
-        },
-        ...
-      ]
-    },
-    ...
-  ],
-  "serialNumber": "urn:uuid:51ec305f-616e-4139-a033-a094bb94a17c"
-}
-</code></pre>
-
-<p>To scan for any vulnerable libraries, submit the SBOM to a vulnerability scanner.
-For example, the popular <a href="https://anchore.com/">Anchore software supply chain management platform</a> makes the <code>grype</code> scanner freely available.
-You can check whether the libraries given in your SBOMs have known vulnerabilities documented in Anchore’s database.
-For this purpose, the output of the tool can be fed directly to the <code>grype</code> scanner to check for vulnerable libraries, using the command <code>$JAVA_HOME/bin/native-image-inspect --sbom &lt;path_to_binary&gt; | grype</code> which produces the following output:</p>
-<pre><code class="language-shell">NAME                 INSTALLED      VULNERABILITY   SEVERITY
-netty-codec-http2    4.1.76.Final   CVE-2022-24823  Medium
-</code></pre>
-
-<p>You can then use this report to update any vulnerable dependencies found in your executable.</p>
+<p>Native Image can embed a Software Bill of Materials (SBOM) which is an inventory of all the components, libraries, and modules that make up an application.
+Read more in <a href="/dev/security-guide/native-image/sbom/">Software Bill of Materials (SBOM) in Native Image</a>.</p>
     
-      <h2 id="java-serialization-in-native-image">
+      <h2 id="obfuscation">
         
         
-          Java serialization in Native Image <a href="#java-serialization-in-native-image" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Obfuscation <a href="#obfuscation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Native Image provides strong obfuscation capabilities by default through native compilation and aggressive optimizations. 
+For an additional layer of protection, use the experimental <a href="/dev/security-guide/native-image/obfuscation/">Advanced Obfuscation feature</a> to obfuscate symbol names (module, package, class, method, field, and source file names).
+Obfuscation makes reverse engineering more difficult and helps protect intellectual property.</p>
+    
+      <h2 id="java-serialization">
+        
+        
+          Java serialization <a href="#java-serialization" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
 <p>Native Image supports Serialization to help users deserialize the constructors for classes, contained in a native executable.
-Unless picked up by native image analysis automatically, <a href="/dev/reference-manual/native-image/dynamic-features/Reflection/#manual-configuration">these classes have to be pre-specified</a>, as classes not contained in a native executable cannot be deserialized.
+Unless picked up by native image analysis automatically, <a href="/dev/reference-manual/native-image/metadata/#reflection">these classes have to be prespecified</a>, as classes not contained in a native executable cannot be deserialized.
 Native Image cannot prevent exploitation of deserialization vulnerabilities in isolation.
 The <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html#8">serialization and deserialization Secure Coding Guidelines for Java SE</a> should be followed.</p>
+
+<p>The security report section of the native image <a href="/dev/reference-manual/native-image/overview/BuildOutput/#security-report">build output</a> provides information on whether deserialization code is part of a native image’s attack surface or not.</p>
     
       <h2 id="miscellaneous">
         
@@ -550,6 +509,8 @@ The <a href="https://www.oracle.com/java/technologies/javase/seccodeguide.html#8
         
         
       </h2>
+
+<p>Setting the security manager is not allowed. For more information see the <a href="/dev/reference-manual/native-image/metadata/Compatibility/#security-manager">compatibility documentation</a>.</p>
 
 <p>Native Image provides multiple ways to specify a certificate file used to define the default TrustStore.
 While the default behavior for <code>native-image</code> is to capture and use the default TrustStore from the build-time host environment, this can be changed at run time by setting the “javax.net.ssl.trustStore*” system properties.
@@ -570,7 +531,7 @@ Attempting to set a security manager will trigger a runtime error.</p>
 
 <ul>
   <li><a href="/dev/security-guide/">Security Guide</a></li>
-  <li><a href="/dev/security-guide/polyglot-sandbox/">Polyglot Sandboxing</a></li>
+  <li><a href="/dev/security-guide/sandboxing/">Sandboxing</a></li>
   <li><a href="/dev/security-guide/native-image/Jipher/">Jipher JCE with Native Image</a></li>
 </ul>
 
@@ -685,16 +646,14 @@ Attempting to set a security manager will trigger a runtime error.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -702,15 +661,9 @@ Attempting to set a security manager will trigger a runtime error.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -718,12 +671,11 @@ Attempting to set a security manager will trigger a runtime error.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

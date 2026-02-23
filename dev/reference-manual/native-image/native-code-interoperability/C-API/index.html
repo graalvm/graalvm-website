@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/native-code-interoperability/C-API/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/native-code-interoperability/C-API/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -448,12 +448,29 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/native-code-interoperability/ffm-api/">
+              Foreign Function and Memory API
             </a>
           </li>
 
           
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/reference-manual/web-image/">
+            Web Image
+          </a>
+        </li>
+
+        
+        
+
+        
         
       
     
@@ -541,7 +558,7 @@ The C API is available when Native Image is built as a shared library and its de
  * passed to an entry point as the execution context.
  */
 struct __graal_isolate_t;
-typedef struct _graal_isolate_t graal_isolate_t;
+typedef struct __graal_isolate_t graal_isolate_t;
 
 /*
  * Structure representing a thread that is attached to an isolate. A pointer to
@@ -552,8 +569,29 @@ struct __graal_isolatethread_t;
 typedef struct __graal_isolatethread_t graal_isolatethread_t;
 
 /* Parameters for the creation of a new isolate. */
+enum { __graal_create_isolate_params_version = 5 };
 struct __graal_create_isolate_params_t {
-    /* for future use */
+    /* Version of this struct. Set to __graal_create_isolate_params_version after zeroing this struct. */
+    int version;
+
+    /* Fields introduced in version 1 */
+    __graal_uword  reserved_address_space_size; /* Size of virtual address space to reserve for the heap. */
+
+    /* Fields introduced in version 2. Internal usage, do not use. */
+    const char    *auxiliary_image_path;                /* Path to an auxiliary image to load. */
+    __graal_uword  auxiliary_image_reserved_space_size; /* Reserved bytes for loading an auxiliary image. */
+
+    /* Fields introduced in version 3 */
+    int            argc;                        /* Number of char* argument strings in argv. */
+    char         **argv;                        /* Array of argument strings, parsed like command line arguments. */
+    int            pkey;                        /* Isolate protection key or domain. Internal usage, do not use. */
+
+    /* Fields introduced in version 4 */
+    char           ignore_unrecognized_args;    /* Ignore unrecognized arguments in argv when 1. */
+    char           _reserved_4;                 /* Internal usage, do not use. */
+
+    /* Fields introduced in version 5 */
+    char           _reserved_5;                 /* Internal usage, do not use. */
 };
 typedef struct __graal_create_isolate_params_t graal_create_isolate_params_t;
 
@@ -561,8 +599,8 @@ typedef struct __graal_create_isolate_params_t graal_create_isolate_params_t;
  * Create a new isolate, considering the passed parameters (which may be NULL).
  * Returns 0 on success, or a non-zero value on failure.
  * On success, the current thread is attached to the created isolate, and the
- * address of the isolate and the isolate thread structures is written to the
- * passed pointers if they are not NULL.
+ * address of the isolate and the isolate thread are written to the passed pointers
+ * if they are not NULL.
  */
 int graal_create_isolate(graal_create_isolate_params_t* params, graal_isolate_t** isolate, graal_isolatethread_t** thread);
 
@@ -583,9 +621,8 @@ int graal_attach_thread(graal_isolate_t* isolate, graal_isolatethread_t** thread
 graal_isolatethread_t* graal_get_current_thread(graal_isolate_t* isolate);
 
 /*
- * Given an isolate thread structure, determines to which isolate it belongs and
- * returns the address of its isolate structure. If an error occurs, returns NULL
- * instead.
+ * Given an isolate thread structure, determines to which isolate it belongs and returns
+ * the address of its isolate structure. If an error occurs, returns NULL instead.
  */
 graal_isolate_t* graal_get_isolate(graal_isolatethread_t* thread);
 
@@ -598,10 +635,18 @@ graal_isolate_t* graal_get_isolate(graal_isolatethread_t* thread);
 int graal_detach_thread(graal_isolatethread_t* thread);
 
 /*
- * Tears down the isolate of the passed (and still attached) isolate thread
+ * Tears down the isolate of the passed (and still attached) isolate thread,
  * waiting for any attached threads to detach from it, then discards its objects,
  * threads, and any other state or context that is associated with it.
  * Returns 0 on success, or a non-zero value on failure.
+ *
+ * If this call blocks indefinitely, this means there are still Java threads running
+ * which do not terminate after receiving the Thread.interrupt() event.
+ * To prevent indefinite blocking, these threads should be cooperatively shut down
+ * within Java before invoking this call.
+ * To diagnose such issues, use the option '-R:TearDownWarningSeconds=&lt;secs&gt;' to detect
+ * the threads that are still running.
+ * This will print the stack traces of all threads that block tear-down.
  */
 int graal_tear_down_isolate(graal_isolatethread_t* thread);
 </code></pre>
@@ -733,16 +778,14 @@ int graal_tear_down_isolate(graal_isolatethread_t* thread);
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -750,15 +793,9 @@ int graal_tear_down_isolate(graal_isolatethread_t* thread);
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -766,12 +803,11 @@ int graal_tear_down_isolate(graal_isolatethread_t* thread);
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

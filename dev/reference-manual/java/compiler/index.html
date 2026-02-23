@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/java/compiler/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/java/compiler/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -237,7 +237,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/java/">
-            Java and JVM
+            GraalVM as a Java Virtual Machine
           </a>
         </li>
 
@@ -278,7 +278,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/java/options/">
-              Compiler Configuration on JVM
+              Graal JIT Compiler Configuration
             </a>
           </li>
 
@@ -288,8 +288,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="/dev/reference-manual/java/operations/">
-              JVM Operations Manual
+            <a href="/dev/reference-manual/compiler/operations/">
+              Graal JIT Compiler Operations Manual
             </a>
           </li>
 
@@ -372,19 +372,10 @@ $(document).ready(function(){
         
       </h1>
 
-<ul>
-  <li><a href="#compiler-advantages">Compiler Advantages</a></li>
-  <li><a href="#graph-compilation">Graph Compilation</a></li>
-  <li><a href="#ahead-of-time-compilation">Ahead-of-time Compilation</a></li>
-  <li><a href="#compiler-operating-modes">Compiler Operating Modes</a></li>
-  <li><a href="#diagnostic-data">Diagnostic Data</a></li>
-</ul>
-
-<p>The Graal compiler is a dynamic just-in-time (JIT) compiler, written in Java, that transforms bytecode into machine code.
-The Graal compiler integrates with the Java HotSpot VM, which supports a compatible version of the JVM Compiler Interface (JVMCI).
-JVMCI is a privileged, low-level interface to the JVM, enabling a compiler written in Java to be used by the JVM as a dynamic compiler (see <a href="https://openjdk.java.net/jeps/243">JEP 243</a>).
-It can read metadata from the VM, such as method bytecode, and install machine code into the VM.
-GraalVM includes a version of the HotSpot JVM that supports JVMCI.</p>
+<p>The Graal compiler is a dynamic compiler, written in Java, that transforms bytecode into machine code.
+The Graal just-in-time (JIT) compiler is integrated with the Java HotSpot Virtual Machine and GraalVM.
+See <a href="https://docs.oracle.com/en/java/javase/25/vm/java-virtual-machine-technology-overview.html" target="_blank">Java Virtual Machine Guide</a> and the section <a href="/dev/reference-manual/java/">GraalVM as a Virtual Machine</a> for more information.
+(The open source code of the Graal JIT compiler is available on <a href="https://github.com/oracle/graal/tree/master/compiler" target="_blank">GitHub</a>.)</p>
     
       <h2 id="compiler-advantages">
         
@@ -394,14 +385,18 @@ GraalVM includes a version of the HotSpot JVM that supports JVMCI.</p>
         
       </h2>
 
-<p>The Graal compiler provides optimized performance for programs running on the JVM through unique approaches to code analysis and optimization.
-It includes multiple optimization algorithms (called “Phases”), like aggressive inlining, polymorphic inlining, and others. 
-Find some of the platform-independent compiler optimizations in GraalVM Community Edition <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.internal.vm.compiler/src/org/graalvm/compiler/core/phases/CEOptimization.java">here</a>.</p>
+<p>The Graal JIT compiler provides optimized performance for applications running on a Java Virtual Machine (JVM) through unique approaches to code analysis and optimization.
+It includes multiple optimization algorithms (called “Phases”), such as aggressive inlining, polymorphic inlining, and others.</p>
 
-<p>The Graal compiler can bring performance advantages for highly-abstracted programs. For example, it includes a <a href="https://www.javadoc.io/static/org.graalvm.compiler/compiler/22.3.1/org/graalvm/compiler/core/phases/CEOptimization.html#PartialEscapeAnalysis">partial-escape-analysis optimization</a> that can remove costly allocations of certain objects. 
-This optimization determines when a new object is accessible outside a compilation unit and only allocates it on paths that “escape” the compilation unit (e.g. the object is passed as a parameter, stored in a field, or returned from a method). This can greatly improve performance of an application by reducing the number of heap allocations. 
-Code using more modern Java features like Streams or Lambdas will see greater speedups as this type of code involves a significant number of such non- or partially-escaping objects. Code that is bound by things like I/O or memory allocations that cannot be removed by the compiler will see less improvement. 
-For more information on performance tuning, refer to <a href="/dev/reference-manual/java/options/">Compiler Configuration on JVM</a>.</p>
+<p><a id="partial-escape-analysis"></a>
+The Graal compiler can bring performance advantages for highly-abstracted programs.
+For example, it includes a partial-escape-analysis optimization that can remove the costly allocations of certain objects.
+See the value <a href="https://github.com/oracle/graal/blob/master/compiler/src/jdk.graal.compiler/src/jdk/graal/compiler/core/phases/CEOptimization.java#L176" target="_blank"><code>PartialEscapeAnalysis</code></a> in the <code>CEOptimization enum</code> in the GraalVM GitHub repository for more information.
+The optimization determines when a new object is accessible outside a compilation unit and only allocates it on paths that “escape” the compilation unit (for example, if the object is passed as a parameter, stored in a field, or returned from a method).
+This approach can greatly improve the performance of an application by reducing the number of heap allocations.
+Code that uses more modern Java features such as Streams or Lambdas will see greater improvements in performance as this type of code involves a significant number of such non- or partially-escaping objects.
+Code bound by characteristics such as I/O or memory allocations that cannot be removed by the compiler will see less improvement.
+For more information on performance tuning, refer to <a href="/dev/reference-manual/java/options/">Graal JIT Compiler Configuration</a>.</p>
     
       <h2 id="graph-compilation">
         
@@ -411,54 +406,11 @@ For more information on performance tuning, refer to <a href="/dev/reference-man
         
       </h2>
 
-<p>To run guest programming languages, namely JavaScript, Ruby, R, Python, and WebAssembly in the same runtime as the host JVM-based language, the compiler should work with a language-independent intermediate representation (IR) between the source language and the machine code to be generated.
-A <em>graph</em> was selected for this role.</p>
+<p>To run guest programming languages (namely JavaScript, Python, and Ruby) in the same runtime as the host JVM-based language, the compiler works with a language-independent intermediate graph representation between the source language and the machine code to be generated.
+(For more information on language interoperability, see <a href="/dev/reference-manual/java/#interoperability">Interoperability</a>.)</p>
 
-<p>The graph can represent similar statements of different languages in the same way, like “if” statements or loops, which makes it possible to mix languages in the same program.
+<p>The graph can represent similar statements of different languages in the same way, such as “if” statements or loops, which makes it possible to mix languages in the same application.
 The Graal compiler can then perform language-independent optimization and generate machine code on this graph.</p>
-
-<p>GraalVM also includes the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">Truffle language implementation framework</a> – a library, written in Java – to build interpreters for programming languages, which then run on GraalVM.
-These languages can consequently benefit from the optimization possibilities of the Graal compiler.
-The pipeline for such compilation is:</p>
-
-<ul>
-  <li>The Truffle framework code and data (Abstract Syntax Trees) is partially evaluated to produce a compilation graph. When such an Abstract Syntax Tree (AST) is hot (i.e., called many times), it is scheduled for compilation by the compiler.</li>
-  <li>The compilation graph is optimized by the Graal compiler to produce machine code.</li>
-  <li>JVMCI installs this machine code in the VM’s code cache.</li>
-  <li>The AST will automatically redirect execution to the installed machine code once it is available.</li>
-</ul>
-    
-      <h2 id="ahead-of-time-compilation">
-        
-        
-          Ahead-of-time Compilation <a href="#ahead-of-time-compilation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>Besides the Truffle framework, GraalVM incorporates its optimizing compiler into an advanced ahead-of-time (AOT) compilation technology – <a href="/dev/reference-manual/native-image/">Native Image</a> – which translates Java and JVM-based code into a native platform executable.
-These native executables start nearly instantaneously, are smaller, and consume less resources of the same Java application, making them ideal for cloud deployments and microservices.
-For more information about the AOT compilation, go to <a href="/dev/reference-manual/native-image/">Native Image</a>.</p>
-    
-      <h2 id="compiler-operating-modes">
-        
-        
-          Compiler Operating Modes <a href="#compiler-operating-modes" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>There are two operating modes of the Graal compiler when used as the HotSpot JIT compiler: as pre-compiled machine code (“libgraal”), or as dynamically executed Java bytecode (“jargraal”).</p>
-
-<p><strong>libgraal:</strong> the Graal compiler is compiled ahead-of-time into a native shared library.
-In this operating mode, the shared library is loaded by the HotSpot VM.
-The compiler uses memory separate from the HotSpot heap.
-It runs fast from the start since it does not need to warm up.
-This is the default and recommended mode of operation.</p>
-
-<p><strong>jargraal:</strong> the Graal compiler goes through the same warm-up phase that the rest of the Java application does.
-That is, it is first interpreted before its hot methods are compiled.
-This mode is selected with the <code>-XX:-UseJVMCINativeLibrary</code> command line option.</p>
     
       <h2 id="diagnostic-data">
         
@@ -468,20 +420,17 @@ This mode is selected with the <code>-XX:-UseJVMCINativeLibrary</code> command l
         
       </h2>
 
-<p>If an uncaught exception is thrown by the compiler, the compilation is simply discarded and execution continues.
+<p>If an uncaught exception is thrown by the compiler, the compilation is typically discarded and execution continues.
 The Graal compiler can instead produce diagnostic data (such as immediate representation graphs) that can be submitted along with a bug report.
-This is enabled with <code>-Dgraal.CompilationFailureAction=Diagnose</code>.
-The default location of the diagnostics output is in <code>graal_dumps/</code> under the current working directory of the process but can be changed with the <code>-Dgraal.DumpPath</code> option.
-During the VM shutdown, the location of the archive containing the diagnostic data is printed to the console.</p>
+This is enabled with the <code>-Djdk.graal.CompilationFailureAction=Diagnose</code> option.
+The default location of the diagnostics output is in the <em>graal_dumps/</em> directory under the current working directory of the process but can be changed with the <code>-Djdk.graal.DumpPath</code> option.
+During the JVM shutdown, the location of the archive containing the diagnostic data is printed to the console.</p>
 
-<p>Furthermore, diagnostic data can be produced for any compilation performed by the Graal compiler with the <code>-Dgraal.Dump</code> option.
-This will produce diagnostic data for every method compiled by the compiler.
-To refine the set of methods for which diagnostic data is produced, use the <code>-Dgraal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
-For example, <code>-Dgraal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic data only for methods in the <code>java.lang.String</code> class as well as methods named <code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
+<p>Furthermore, diagnostic data can be produced for any compilation performed by the Graal compiler with the <code>-Djdk.graal.Dump</code> option.
+This will produce diagnostic data for every method compiled by the compiler.</p>
 
-<p>Instead of being written to a file, diagnostic data can also be sent over the network to the <a href="https://www.graalvm.org/latest/tools/igv/">Ideal Graph Visualizer</a>.
-This requires the <code>-Dgraal.PrintGraph=Network</code> option, upon which the compiler will try to send diagnostic data to <em>127.0.0.1:4445</em>.
-This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</code> and <code>-Dgraal.PrintGraphPort</code> options.</p>
+<p>To refine the set of methods for which diagnostic data is produced, use the <code>-Djdk.graal.MethodFilter=&lt;class&gt;.&lt;method&gt;</code> option.
+For example, <code>-Djdk.graal.MethodFilter=java.lang.String.*,HashMap.get</code> will produce diagnostic data only for methods in the <code>java.lang.String</code> class as well as methods named <code>get</code> in a class whose non-qualified name is <code>HashMap</code>.</p>
     
       <h3 id="related-documentation">
         
@@ -492,8 +441,8 @@ This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</c
       </h3>
 
 <ul>
-  <li><a href="/dev/reference-manual/java/operations/">JVM Operations Manual</a></li>
-  <li><a href="/dev/reference-manual/java/options/">Compiler Configuration on JVM</a></li>
+  <li><a href="/dev/reference-manual/compiler/operations/">Graal JIT Compiler Operations Manual</a></li>
+  <li><a href="/dev/reference-manual/java/options/">Graal JIT Compiler Configuration</a></li>
 </ul>
 
       </div>
@@ -607,16 +556,14 @@ This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</c
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -624,15 +571,9 @@ This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</c
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -640,12 +581,11 @@ This network endpoint can be configured with the <code>-Dgraal.PrintGraphHost</c
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

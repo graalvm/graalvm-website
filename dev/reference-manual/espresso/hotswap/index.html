@@ -9,13 +9,13 @@
 
   <title>
     
-      Enhanced HotSwap Capabilities with Java on Truffle
+      Enhanced HotSwap Capabilities with Espresso
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/espresso/hotswap/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/espresso/hotswap/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -239,7 +239,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/espresso/">
-            Espresso (Java on Truffle)
+            Espresso
           </a>
         </li>
 
@@ -419,28 +419,28 @@ $(document).ready(function(){
 
 
         
-        <h1 id="enhanced-hotswap-capabilities-with-java-on-truffle">
+        <h1 id="enhanced-hotswap-capabilities-with-espresso">
         
         
-          Enhanced HotSwap Capabilities with Java on Truffle
+          Enhanced HotSwap Capabilities with Espresso
         
         
       </h1>
 
-<p>With Java on Truffle you can benefit from enhanced HotSwap capabilites that allow the code to evolve naturally during development without the need for restarting a running application.
+<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
 You do not have to configure anything specific besides launching your app in debug mode and attaching a standard IDE debugger to gain the advantages of enhanced HotSwap.</p>
     
-      <h2 id="debugging-with-java-on-truffle">
+      <h2 id="debugging-with-espresso">
         
         
-          Debugging with Java on Truffle <a href="#debugging-with-java-on-truffle" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Debugging with Espresso <a href="#debugging-with-espresso" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>You can use your favorite IDE debugger to debug Java applications running in the Java on Truffle runtime.
+<p>You can use your favorite IDE debugger to debug Java applications running in the Espresso runtime.
 For example, starting a debugger session from IntelliJ IDEA is based on the Run Configurations.
-To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to <strong>Run</strong>, <strong>Debug…</strong>, Edit Configurations, expand Environment, check the JRE value and VM options values.
+To ensure you attach the debugger to your Java application in the same environment, navigate in the main menu to <strong>Run</strong>, <strong>Debug…</strong>, <strong>Edit Configurations</strong>, expand Environment, check the JRE value and VM options values.
 It should show GraalVM as project’s JRE and VM options should include <code>-truffle -XX:+IgnoreUnrecognizedVMOptions</code>. It is necessary to specify <code>-XX:+IgnoreUnrecognizedVMOptions</code> because Intellij automatically adds a <code>-javaagent</code> argument which is not supported yet.
 Press Debug.</p>
 
@@ -449,7 +449,7 @@ Press Debug.</p>
       <h2 id="using-hotswap-during-a-debugging-session">
         
         
-          Using HotSwap during a Debugging Session <a href="#using-hotswap-during-a-debugging-session" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Using HotSwap During a Debugging Session <a href="#using-hotswap-during-a-debugging-session" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
@@ -459,65 +459,63 @@ Feel free to try this out on your own applications or by following these instruc
 
 <ol>
   <li>Create a new Java application.</li>
-  <li>
-    <p>Use the following <code>main</code> method as a starting point:</p>
+  <li>Use the following <code>main</code> method as a starting point:
+    <pre><code class="language-java"> public class HotSwapDemo {
 
-    <pre><code class="language-java">       public class HotSwapDemo {
+     private static final int ITERATIONS = 100;
 
-           private static final int ITERATIONS = 100;
+     public static void main(String[] args) {
+         HotSwapDemo demo = new HotSwapDemo();
+         System.out.println("Starting HotSwap demo with Espresso: 'java.vm.name' = " + System.getProperty("java.vm.name"));
+         // run something in a loop
+         for (int i = 1; i &lt;= ITERATIONS; i++) {
+             demo.runDemo(i);
+         }
+         System.out.println("Completed HotSwap demo with Espresso");
+     }
 
-           public static void main(String[] args) {
-               HotSwapDemo demo = new HotSwapDemo();
-               System.out.println("Starting HotSwap demo with Java on Truffle: 'java.vm.name' = " + System.getProperty("java.vm.name"));
-               // run something in a loop
-               for (int i = 1; i &lt;= ITERATIONS; i++) {
-                   demo.runDemo(i);
-               }
-               System.out.println("Completed HotSwap demo with Java on Truffle");
-           }
-
-           public void runDemo(int iteration) {
-               int random = new Random().nextInt(iteration);
-               System.out.printf("\titeration %d ran with result: %d\n", iteration, random);
-           }
-       }
+     public void runDemo(int iteration) {
+         int random = new Random().nextInt(iteration);
+         System.out.printf("\titeration %d ran with result: %d\n", iteration, random);
+     }
+ }
 </code></pre>
   </li>
   <li>Check that the <code>java.vm.name</code> property says you’re running on Espresso.</li>
   <li>Place a line breakpoint on the first line in <code>runDemo()</code>.</li>
   <li>
-    <p>Setup the Run configurations to run with Java on Truffle and press Debug. You will see:</p>
+    <p>Setup the Run configurations to run with Espresso and press Debug. You will see:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-1.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-1.png" alt="HotSwap Debugging Session: Debug Output " /></p>
   </li>
   <li>
     <p>While paused at the breakpoint, extract a method from the body of <code>runDemo()</code>:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-2.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-2.png" alt="HotSwap Debugging Session: Extract Method" /></p>
   </li>
   <li>
     <p>Reload the changes by navigating to Run -&gt; Debugging Actions -&gt; Reload Changed Classes:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-3.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-3.png" alt="HotSwap Debugging Session: Reload Changed Classes" /></p>
   </li>
   <li>
     <p>Verify that the change was applied by noticing the <code>&lt;obsolete&gt;:-1</code> current frame in the Debug -&gt; Frames view:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-4.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-4.png" alt="HotSwap Debugging Session: Frames View" /></p>
   </li>
   <li>
     <p>Place a breakpoint on the first line of the new extracted method and press Resume Program. The breakpoint will hit:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-5.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-5.png" alt="HotSwap Debugging Session: Set a Breakpoint and Resume Program" /></p>
   </li>
   <li>
     <p>Try to change the access modifiers of <code>printRandom()</code> from <code>private</code> to <code>public static</code>. Reload the changes. Press Resume Program to verify the change was applied:</p>
 
-    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-6.png" alt="" /></p>
+    <p><img src="/docs/reference-manual/java-on-truffle/images/debug-6.png" alt="HotSwap Debugging Session: Change Access Modifiers" /></p>
   </li>
 </ol>
 
-<p>Watch the video <a href="https://www.youtube.com/watch?v=gfuvvV6mplo">version of the enhanced HotSwap capabilities with Java on Truffle demo</a>.</p>
+<p>Watch the video <a href="https://www.youtube.com/watch?v=gfuvvV6mplo">version of the enhanced HotSwap capabilities with Espresso demo</a>.</p>
     
       <h3 id="supported-changes">
         
@@ -527,7 +525,7 @@ Feel free to try this out on your own applications or by following these instruc
         
       </h3>
 
-<p>The enhanced HotSwap of Java on Truffle is almost feature complete.
+<p>The enhanced HotSwap of Espresso is almost feature complete.
 The following changes are supported:</p>
 
 <ul>
@@ -539,7 +537,7 @@ The following changes are supported:</p>
   <li>Add and remove fields</li>
   <li>Change field type</li>
   <li>Move field in hierarchy and preserve state (see note below)</li>
-  <li>Changes to class access modifiers, e.g. abstract and final modifiers</li>
+  <li>Changes to class access modifiers, for example, abstract and final modifiers</li>
   <li>Changes to Lambdas</li>
   <li>Add new anonymous inner classes</li>
   <li>Remove anonymous inner classes</li>
@@ -549,9 +547,9 @@ The following changes are supported:</p>
 
 <p><strong>Note</strong>: When instance fields are moved in the class hierarchy the state is preserved whenever possible.
 Examples include the Pull Up Field refactoring where all existing instances of the origin subclass will be able to read the previously stored value from the super class field.
-On the other hand, for unrelated subclass instances where the field was not present prior to the change, the new field value will be the language default (i.e. null for object-type fields, 0 for int etc.).</p>
+On the other hand, for unrelated subclass instances where the field was not present prior to the change, the new field value will be the language default (null for object-type fields, 0 for int, and so on).</p>
 
-<p>As of GraalVM 22.1.0, the following limitations remain:</p>
+<p>The following limitations remain:</p>
 <ul>
   <li>Changes to Enums</li>
 </ul>
@@ -564,11 +562,12 @@ On the other hand, for unrelated subclass instances where the field was not pres
         
       </h2>
 
-<p>With Java on Truffle you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
-While code reloading (HotSwap) is a powerful tool, it is not sufficient to reflect all kinds of changes, e.g., changes to annotations, framework-specific changes such as implemented services or beans.
+<p>With Espresso you can benefit from enhanced HotSwap capabilities that allow the code to evolve naturally during development without the need for restarting a running application.
+While code reloading (HotSwap) is a powerful tool, it is not sufficient to reflect all kinds of changes, for example, changes to annotations, framework-specific changes such as implemented services or beans.
 For these things the code often needs to be executed to reload configurations or contexts before the changes are fully reflected in the running instance.
-This is where the Truffle on Java HotSwap Plugin API comes in handy.
-The Truffle on Java HotSwap Plugin API is meant for framework developers by setting up appropriate hooks to reflect changes in response to source code edits in your IDE.
+This is where the Espresso HotSwap Plugin API comes in handy.</p>
+
+<p>The HotSwap Plugin API is meant for framework developers by setting up appropriate hooks to reflect changes in response to source code edits in your IDE.
 The main design principle is that you can register various HotSwap listeners that will be fired on specified HotSwap events.
 Examples include the ability to re-run a static initializer, a generic post HotSwap callback and hooks when implementations for a certain service provider changes.</p>
 
@@ -682,10 +681,10 @@ Upon completion of a HotSwap action the plugin receives a <code>postHotSwap</cod
       </h3>
 
 <p>HotSwap is designed to enable classes to be HotSwap’ed in a running application.
-However, if a developer introduces an entirely new class, e.g., a new <code>@Controller </code>class in Micronaut, HotSwap does not magically inject a new class, as doing so would require knowledge about internal classloading logic at the very least.</p>
+However, if a developer introduces an entirely new class (for example, a new <code>@Controller </code>class in Micronaut), HotSwap does not magically inject a new class, as doing so would require knowledge about internal class loading logic at the very least.</p>
 
 <p>A standard way in which classes are discovered by a framework is through the <code>ServiceLoader</code> mechanism.
-The Truffle on Java HotSwap API has built-in support for registering service implementation change listeners by means of the method <code>EspressoHotSwap.registerMetaInfServicesListener</code>:</p>
+The HotSwap API has built-in support for registering service implementation change listeners by means of the method <code>EspressoHotSwap.registerMetaInfServicesListener</code>:</p>
 
 <pre><code class="language-java">public static boolean registerMetaInfServicesListener(Class&lt;?&gt; serviceType, ClassLoader loader, HotSwapAction action)
 </code></pre>
@@ -694,7 +693,7 @@ The Truffle on Java HotSwap API has built-in support for registering service imp
 Whenever there is a change to the set of service implementations for the registered class type, the <code>action</code> is fired.
 In the Micronaut HotSwap plugin, <code>reloadContext</code> is executed which will then pickup the changes automatically.</p>
 
-<p><strong>Note</strong>: HotSwap actions caused by changes to service implementation changes are fired indepent of HotSwap. As a developer, you do not need to perform a HotSwap from your IDE to see the new functionality in the running application.</p>
+<p><strong>Note</strong>: HotSwap actions caused by changes to service implementation changes are fired independent of HotSwap. As a developer, you do not need to perform a HotSwap from your IDE to see the new functionality in the running application.</p>
     
       <h3 id="next-level-hotswap-for-micronaut">
         
@@ -709,27 +708,27 @@ Here is a sample application created from the tutorial <a href="https://guides.m
 Example’s sources can be downloaded as a ready-made Gradle project from <a href="https://guides.micronaut.io/latest/micronaut-creating-first-graal-app-gradle-java.zip">here</a>.
 Download, unzip and open the project in your IDE.</p>
 
-<p>Before you proceed, make sure that you have Java on Truffle <a href="/dev/reference-manual/espresso/#install-java-on-truffle">installed</a> and set the GraalVM as the project SDK.</p>
+<p>Before you proceed, make sure that you have <a href="/dev/reference-manual/espresso/#install-java-on-truffle">Espresso installed</a> and GraalVM set as the project SDK.</p>
 
 <ol>
   <li>In your IDE navigate to the root <code>build.gradle</code> within the sample project. Add:
-    <pre><code class="language-groovy">run.jvmArgs+="-truffle"
+    <pre><code> run.jvmArgs+="-truffle"
 </code></pre>
   </li>
   <li>Also add maven local repository where we previously published the enhanced Micronaut framework. For example:
-    <pre><code class="language-groovy">repositories {
-  mavenLocal()
-  ...
-}
+    <pre><code> repositories {
+ mavenLocal()
+ ...
+ }
 </code></pre>
   </li>
   <li>In <code>gradle.properties</code> update the Micronaut version that you published. For example:
-    <pre><code class="language-groovy">micronautVersion=2.5.8-SNAPSHOT
+    <pre><code> micronautVersion=2.5.8-SNAPSHOT
 </code></pre>
     <p>Now you are all setup.</p>
   </li>
   <li>
-    <p>Execute<code>assemble</code> task and create a run configuration using the defined <code>run</code> gradle task.</p>
+    <p>Execute<code>assemble</code> task and create a run configuration using the defined <code>run</code> Gradle task.</p>
   </li>
   <li>
     <p>Press the Debug button to start the application in debugging mode, which enables enhanced HotSwap support.</p>
@@ -737,7 +736,7 @@ Download, unzip and open the project in your IDE.</p>
   <li>
     <p>Once the application is started, verify that you get a response from the <code>ConferenceController</code> by going to <code>http://localhost:8080/conferences/random</code>.</p>
   </li>
-  <li>Try to make various changes to the classes within the sample app, e.g., change the <code>@Controller</code> mapping to a different value, or add a new <code>@Get</code>annotated method and apply HotSwap to see the magic. In case you define a new <code>@Controller</code> class, all you need is compiling the class and once the change is picked up by the file system watch, you will see the reload without the need for explicitly HotSwap.</li>
+  <li>Try to make various changes to the classes within the sample app, for example, change the <code>@Controller</code> mapping to a different value, or add a new <code>@Get</code>annotated method and apply HotSwap to see the magic. In case you define a new <code>@Controller</code> class, all you need is compiling the class and once the change is picked up by the file system watch, you will see the reload without the need for explicitly HotSwap.</li>
 </ol>
 
       </div>
@@ -851,16 +850,14 @@ Download, unzip and open the project in your IDE.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -868,15 +865,9 @@ Download, unzip and open the project in your IDE.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -884,12 +875,11 @@ Download, unzip and open the project in your IDE.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

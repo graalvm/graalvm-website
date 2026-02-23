@@ -9,13 +9,13 @@
 
   <title>
     
-      Run GraalVM JavaScript on a Stock JDK
+      Run GraalJS on a Stock JDK
     
   </title>
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/js/RunOnJDK/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/js/RunOnJDK/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -241,7 +241,7 @@ $(document).ready(function(){
         
           
           <a href="/dev/reference-manual/js/">
-            JavaScript and Node.js Reference
+            GraalJS
           </a>
         </li>
 
@@ -277,7 +277,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/JavaScriptCompatibility/">
-              JavaScript Compatibility
+              GraalJS Compatibility
             </a>
           </li>
 
@@ -310,7 +310,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/NashornMigrationGuide/">
-              Migration Guide from Nashorn to GraalVM JavaScript
+              Migration Guide from Nashorn to GraalJS
             </a>
           </li>
 
@@ -321,7 +321,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RhinoMigrationGuide/">
-              Migration Guide from Rhino to GraalVM JavaScript
+              Migration Guide from Rhino to GraalJS
             </a>
           </li>
 
@@ -354,7 +354,7 @@ $(document).ready(function(){
           
             
             <a href="/dev/reference-manual/js/RunOnJDK/">
-              Run GraalVM JavaScript on a Stock JDK
+              Run GraalJS on a Stock JDK
             </a>
           </li>
 
@@ -463,86 +463,64 @@ $(document).ready(function(){
 
 
         
-        <h1 id="run-graalvm-javascript-on-a-stock-jdk">
+        <h1 id="run-graaljs-on-a-stock-jdk">
         
         
-          Run GraalVM JavaScript on a Stock JDK
+          Run GraalJS on a Stock JDK
         
         
       </h1>
 
-<p>GraalVM JavaScript is optimized for execution as part of GraalVM, or in an embedding scenario built on GraalVM.
-This guarantees best possible performance by using the <a href="https://github.com/oracle/graal">GraalVM compiler</a> as the optimizing compiler, and potentially <a href="/dev/reference-manual/native-image/">Native Image</a> to ahead-of-time compile the engine into a native binary.</p>
+<p>GraalJS is optimized for execution as part of GraalVM, primarily recommended for use in a Java application.
+This guarantees the best possible performance by using the <a href="https://www.graalvm.org/reference-manual/java/compiler/">Graal compiler</a> as the optimizing compiler, and potentially <a href="/dev/reference-manual/native-image/">Native Image</a> to compile the engine ahead of time into a native binary.</p>
 
-<p>As GraalVM JavaScript is a Java application, it is possible to execute it on a stock Java VM like OpenJDK.
-When executed without the GraalVM compiler, JavaScript performance will be significantly worse.
-While the JIT compilers available on stock JVMs can execute and JIT-compile the GraalVM JavaScript codebase, they cannot optimize it to its full performance potential.
-This document describes how to run GraalVM JavaScript on stock Java VMs, and shows how you can use the GraalVM compiler as a JIT compiler to guarantee the best possible performance.</p>
+<p>It is, however, possible to execute GraalJS on a standard Java VM such as Oracle JDK or OpenJDK.
+When executed without the Graal Compiler, JavaScript performance will be significantly worse.
+While the JIT compiler available on a standard JVM can execute and JIT-compile the GraalJS codebase, it cannot optimize GraalJS to its full performance potential.
+This document describes how to run GraalJS on a standard Java VM, and shows how you can use the Graal compiler as a JIT compiler to guarantee the best possible performance.</p>
     
-      <h2 id="graalvm-javascript-on-maven-central">
+      <h2 id="graaljs-on-maven-central">
         
         
-          GraalVM JavaScript on Maven Central <a href="#graalvm-javascript-on-maven-central" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          GraalJS on Maven Central <a href="#graaljs-on-maven-central" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
-<p>GraalVM JavaScript is open source and regularly pushed to Maven Central Repository by the community.
-You can find it as package <a href="https://mvnrepository.com/artifact/org.graalvm.js/js">org.graalvm.js</a>.</p>
 
-<p>There is an example Maven project for GraalVM JavaScript on JDK11 (or later) using the GraalVM compiler at <a href="https://github.com/graalvm/graal-js-jdk11-maven-demo">graal-js-jdk11-maven-demo</a>.
-The example contains a Maven project for a JavaScript benchmark (a prime number generator).
-It allows a user to compare the performance of GraalVM JavaScript running with or without the GraalVM compiler as the optimizing compiler.
-Running with the GraalVM compiler will siginificantly improve the execution performance of any relatively large JavaScript codebase.</p>
+<p>GraalJS is open source and regularly pushed to Maven Central Repository by the community.
+You can find it under <a href="https://mvnrepository.com/artifact/org.graalvm.polyglot/js"><code>org.graalvm.polyglot:js</code></a>.</p>
 
-<p>In essence, the example POM file activates JVMCI to install additional JIT compilers, and configures the JIT compiler to be the GraalVM compiler by providing it on <code>--module-path</code> and <code>--upgrade-module-path</code>.</p>
+<p>We provide example projects running GraalJS embedded in Java on JDK 21 (or later) and using the Graal compiler:</p>
+<ul>
+  <li><a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demo</a>.
+Maven and Gradle projects for a simple JavaScript “Hello World” application.</li>
+  <li><a href="https://github.com/oracle/graaljs/tree/master/graal-js/test/maven-demo">JS Maven Demo</a>.
+This example contains a Maven project for a JavaScript benchmark (a prime number generator).
+It enables a user to compare the performance of GraalJS running with or without the Graal compiler as the optimizing compiler.
+Running with the Graal compiler significantly improves the execution performance of any relatively large JavaScript codebase.
+In essence, the example <em>pom.xml</em> file activates the JVM Compiler Interface (JVMCI) and configures the JIT compiler to be the Graal compiler by providing it on <code>--module-path</code> and <code>--upgrade-module-path</code>.</li>
+</ul>
     
-      <h2 id="graalvm-javascript-on-jdk-11">
-        
-        
-          GraalVM JavaScript on JDK 11+ <a href="#graalvm-javascript-on-jdk-11" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-<p>The Maven example given above is the preferred way to start on JDK 11 (or newer).
-Working without Maven, you can provide the JAR files manually to the <code>java</code> command.
-Using <code>--upgrade-module-path</code> executes GraalVM JavaScript with the GraalVM compiler, guaranteeing the best performance.
-The GraalVM JAR files can be downloaded from <a href="https://mvnrepository.com/artifact/org.graalvm">org.graalvm at Maven</a>, and the ICU4J library from <a href="https://mvnrepository.com/artifact/com.ibm.icu/icu4j">org.ibm.icu at Maven</a>.</p>
-
-<p><em>On Linux and MacOS</em></p>
-<pre><code class="language-shell">JARS=/path/to/JARs
-JDK=/path/to/JDK
-$JDK/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler --module-path=$JARS/graal-sdk-22.2.0.jar:$JARS/truffle-api-22.2.0.jar --upgrade-module-path=$JARS/compiler-22.2.0.jar:$JARS/compiler-management-22.2.0.jar -cp $JARS/launcher-common-22.2.0.jar:$JARS/js-launcher-22.2.0.jar:$JARS/js-22.2.0.jar:$JARS/truffle-api-22.2.0.jar:$JARS/graal-sdk-22.2.0.jar:$JARS/js-scriptengine-22.2.0.jar:$JARS/regex-22.2.0.jar:$JARS/icu4j-71.1.jar com.oracle.truffle.js.shell.JSLauncher
-</code></pre>
-
-<p><em>On Windows</em> - similar to the Linux/MacOS command but adapted to the syntax of Window’s shell:</p>
-<pre><code class="language-shell">set JARs=c:\path\to\jars
-set JDK=c:\path\to\jdk
-%JDK%\bin\java -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler --module-path=%JARS%\graal-sdk-22.2.0.jar;%JARS%\truffle-api-22.2.0.jar --upgrade-module-path=%JARS%\compiler-22.2.0.jar;%JARS%\compiler-management-22.2.0.jar -cp %JARS%\launcher-common-22.2.0.jar;%JARS%\js-launcher-22.2.0.jar;%JARS%\js-22.2.0.jar;%JARS%\truffle-api-22.2.0.jar;%JARS%\graal-sdk-22.2.0.jar;%JARS%\js-scriptengine-22.2.0.jar;%JARS%\regex-22.2.0.jar;%JARS\icu4j-71.1.jar com.oracle.truffle.js.shell.JSLauncher
-</code></pre>
-
-<p>To start a Java application instead and launch GraalVM JavaScript via GraalVM SDK’s <code>Context</code> (encouraged) or a <code>ScriptEngine</code> (supported, but discouraged), <em>launcher-common-*.jar</em> and  <em>js-launcher-*.jar</em> can be omitted.</p>
-    
-      <h3 id="scriptengine-jsr-223">
+      <h2 id="scriptengine-jsr-223">
         
         
           ScriptEngine JSR 223 <a href="#scriptengine-jsr-223" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
-      </h3>
-<p>GraalVM JavaScript can be started via <code>ScriptEngine</code> when <em>js-scriptengine.jar</em> is included on the classpath.
-The engine registers under several different names, e.g., <code>Graal.js</code>.
-Note that the Nashorn engine might be available under its names as well, if available on the JDK.</p>
+      </h2>
 
-<p>To start GraalVM JavaScript from <code>ScriptEngine</code>, the following code can be used:</p>
+<p>GraalJS can be started via <code>ScriptEngine</code> when <em>js-scriptengine.jar</em> is included on the module path.
+The engine registers under several different names, including <code>Graal.js</code>, <code>js</code>, <code>JavaScript</code>, and <code>javascript</code>.
+Note that the Nashorn engine might be available under its names as well, if on the module path.</p>
 
-<pre><code class="language-java">new ScriptEngineManager().getEngineByName("graal.js");
+<p>To start GraalJS from <code>ScriptEngine</code>, the following code can be used:</p>
+<pre><code class="language-java">new ScriptEngineManager().getEngineByName("Graal.js");
 </code></pre>
 
 <p>To list all available engines:</p>
-
-<pre><code class="language-java">List&lt;ScriptEngineFactory&gt; engines = (new ScriptEngineManager()).getEngineFactories();
-for (ScriptEngineFactory f: engines) {
-    System.out.println(f.getLanguageName()+" "+f.getEngineName()+" "+f.getNames().toString());
+<pre><code class="language-java">List&lt;ScriptEngineFactory&gt; engines = new ScriptEngineManager().getEngineFactories();
+for (ScriptEngineFactory f : engines) {
+    System.out.println(f.getLanguageName() + " " + f.getEngineName() + " " + f.getNames());
 }
 </code></pre>
     
@@ -553,12 +531,24 @@ for (ScriptEngineFactory f: engines) {
         
         
       </h3>
-<p>The <code>--engine.TraceCompilation</code> flag enables a debug output whenever a JavaScript method is compiled by the GraalVM compiler.
-JavaScript source code with long-enough run time will trigger the compilation and print a log output:</p>
 
+<p>The <code>--engine.TraceCompilation</code> option enables a debug output whenever a JavaScript method is compiled by the Graal compiler.
+JavaScript source code with a long-enough run time will trigger the compilation and print a log output:</p>
 <pre><code class="language-shell">&gt; function add(a,b) { return a+b; }; for (var i=0;i&lt;1000*1000;i++) { add(i,i); }
 [truffle] opt done         add &lt;opt&gt; &lt;split-c0875dd&gt;                                   |ASTSize       7/    7 |Time    99(  90+9   )ms |DirectCallNodes I    0/D    0 |GraalNodes    22/   71 |CodeSize          274 |CodeAddress 0x7f76e4c1fe10 |Source    &lt;shell&gt;:1:1
 </code></pre>
+    
+      <h3 id="related-documentation">
+        
+        
+          Related Documentation <a href="#related-documentation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<ul>
+  <li><a href="/dev/reference-manual/js/">Getting Started with GraalJS on the JVM</a></li>
+</ul>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
@@ -671,16 +661,14 @@ JavaScript source code with long-enough run time will trigger the compilation an
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -688,15 +676,9 @@ JavaScript source code with long-enough run time will trigger the compilation an
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -704,12 +686,11 @@ JavaScript source code with long-enough run time will trigger the compilation an
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>

@@ -15,7 +15,7 @@
   <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
 
   
-  <link rel="canonical" href="https://www.graalvm.org/latest/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">
+  <link rel="canonical" href="https://www.graalvm.org/dev/reference-manual/native-image/optimizations-and-performance/MemoryManagement/">
   
 
   <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
@@ -378,8 +378,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/optimizations-and-performance/ObjectHeaderSize/">
+              Object Header Size in Native Image
             </a>
           </li>
 
@@ -400,8 +400,8 @@ $(document).ready(function(){
           <li class="toc-bullets-sub">
           
             
-            <a href="">
-              
+            <a href="/dev/reference-manual/native-image/optimizations-and-performance/PGO/">
+              Profile-Guided Optimization
             </a>
           </li>
 
@@ -450,6 +450,23 @@ $(document).ready(function(){
           
           <a href="/dev/reference-manual/native-image/native-code-interoperability/">
             Interoperability with Native Code
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+      
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/reference-manual/web-image/">
+            Web Image
           </a>
         </li>
 
@@ -553,11 +570,11 @@ When the heap becomes full, a garbage collection is triggered to reclaim memory 
 
 <p>For managing the Java heap, Native Image provides different garbage collector (GC) implementations:</p>
 <ul>
-  <li>The <strong>Serial GC</strong> is the default GC in GraalVM.
+  <li>The <strong>Serial GC</strong> is the default GC in GraalVM Native Image.
 It is optimized for low memory footprint and small Java heap sizes.</li>
-  <li>The <strong>G1 GC</strong> (not available in GraalVM Community Edition) is a multi-threaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency, while achieving high throughput.
-To enable G1, specify the option <code>--gc=G1</code> at image build time.
-Currently, G1 can only be used in native images that are built on Linux for AMD64.</li>
+  <li>The <strong>G1 GC</strong> is a multithreaded GC that is optimized to reduce stop-the-world pauses and therefore improve latency, while achieving high throughput.
+To enable it, pass the option <code>--gc=G1</code> to the <code>native-image</code> builder.
+Currently, G1 Garbage Collector can be used with Native Image on the Linux AMD64 and AArch64 architectures. (Not available in GraalVM Community Edition.)</li>
   <li>The <strong>Epsilon GC</strong> (available with GraalVM 21.2 or later) is a no-op garbage collector that does not do any garbage collection and therefore never frees any allocated memory.
 The primary use case for this GC are very short running applications that only allocate a small amount of memory.
 To enable the Epsilon GC, specify the option <code>--gc=epsilon</code> at image build time.</li>
@@ -589,7 +606,7 @@ The exact values may depend on the system configuration and the used GC.</p>
 <ul>
   <li>The <em>maximum Java heap size</em> defines the upper limit for the size of the whole Java heap.
 If the Java heap is full and the GC is unable reclaim sufficient memory for a Java object allocation, the allocation will fail with the <code>OutOfMemoryError</code>.
-Note: The maximum heap size is only the upper limit for the Java heap and not necessarily the upper limit for the total amount of consumed memory, as Native Image places some data such as thread stacks, just-in-time compiled code, and internal data structures in memory that is separate from the Java heap.</li>
+Note: The maximum heap size is only the upper limit for the Java heap and not necessarily the upper limit for the total amount of consumed memory, as Native Image places some data such as thread stacks, just-in-time compiled code (for Truffle runtime compilation), and internal data structures in memory that is separate from the Java heap.</li>
   <li>The <em>minimum Java heap size</em> defines how much memory the GC may always assume as reserved for the Java heap, no matter how little of that memory is actually used.</li>
   <li>The <em>young generation size</em> determines the amount of Java memory that can be allocated without triggering a garbage collection.</li>
 </ul>
@@ -693,9 +710,9 @@ Decreasing this value will increase the number of full GCs, which can improve th
       </h2>
 
 <p>Oracle GraalVM also provides the Garbage-First (G1) garbage collector, which is based on the G1 GC from the Java HotSpot VM.
-Currently, G1 can only be used in native images that are built on Linux for AMD64.
-To enable it, pass the option <code>--gc=G1</code> to the native image builder.</p>
+Currently, G1 Garbage Collector can be used with Native Image on the Linux AMD64 and AArch64 architectures. (Not available in GraalVM Community Edition.)</p>
 
+<p>To enable it, pass the option <code>--gc=G1</code> to the <code>native-image</code> builder.</p>
 <pre><code class="language-shell"># Build a native image that uses the G1 GC with default settings
 native-image --gc=G1 HelloWorld
 </code></pre>
@@ -750,7 +767,7 @@ Here is a small subset of the options that can be specified when doing performan
 </ul>
 
 <pre><code class="language-shell"># Build and execute a native image that uses the G1 GC with a region size of 2MB and a maximum pause time goal of 100ms
-native-image --gc=G1 -H:G1RegionSize=2m -R:MaxGCPauseMillis=100 HelloWorld
+native-image --gc=G1 -H:G1HeapRegionSize=2m -R:MaxGCPauseMillis=100 HelloWorld
 ./helloworld
 
 # Execute the native image from above and override the maximum pause time goal
@@ -842,7 +859,7 @@ One common use-case is a <code>java.nio.DirectByteBuffer</code> that directly re
         
       </h2>
 
-<p>When executing a native image, the following options can be be used to print some information on garbage collection.
+<p>When executing a native image, the following options can be used to print some information on garbage collection.
 Which data is printed in detail depends on the used GC.</p>
 <ul>
   <li><code>-XX:+PrintGC</code> - print basic information for every garbage collection</li>
@@ -865,6 +882,7 @@ Which data is printed in detail depends on the used GC.</p>
       </h3>
 
 <ul>
+  <li><a href="/dev/reference-manual/native-image/guides/optimize-memory-footprint/">Optimize Memory Footprint of a Native Executable</a></li>
   <li><a href="/dev/reference-manual/native-image/overview/BuildConfiguration/#memory-configuration-for-native-image-build">Memory Configuration for Native Image Build</a></li>
 </ul>
 
@@ -979,16 +997,14 @@ Which data is printed in detail depends on the used GC.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/guides/">Guides</a></li>
-              <li class="footer-list__item"><a href="/latest/docs/">Documentation</a></li>
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
                 <a href="https://www.graalvm.org/25.0/javadoc/sdk/" class="javadoc" target="_blank">25</a>
               </li>
-              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
             </ul>
           </div>
         </div>
@@ -996,15 +1012,9 @@ Which data is printed in detail depends on the used GC.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="https://www.oracle.com/java/graalvm/" target="_blank">Oracle
-                  GraalVM</a></li>
-              <li class="footer-list__item"><a href="https://www.oracle.com/developer/" target="_blank">Oracle
-                  Developers</a></li>
-              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html"
-                  target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
               <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
-              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand
-                  Guidelines</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
             </ul>
           </div>
         </div>
@@ -1012,12 +1022,11 @@ Which data is printed in detail depends on the used GC.</p>
           <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
           <div class="grow">
             <ul class="footer-list">
-              <li class="footer-list__item"><a href="/why-graalvm/">Why GraalVM?</a></li>
-              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a>
-              </li>
               <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
-              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
               <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
             </ul>
           </div>
         </div>
