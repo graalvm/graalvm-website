@@ -88,8 +88,8 @@ const platforms = {
 
 const fullJavaVersions = {
   "17": "17.0.12",
-  "21": "21.0.10",
-  "25": "25.0.2",
+  "21": "21.0.11",
+  "25": "25.0.3",
 }
 
 function updateGHASnippet(majorJavaVersion) {
@@ -111,8 +111,8 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
   const comment = majorJavaVersion === "25" ? ' <span class="no-strip"># coming soon</span>' : '';
-  // $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal # coming soon`);
-    $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal`);
+  $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal # coming soon`);
+    // $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal`);
 }
 
 
