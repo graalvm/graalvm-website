@@ -706,9 +706,11 @@ Whenever a PE boundary is detected, the host inlining phase no longer makes any 
 
 <p>Truffle host inlining is applied when compiling a method annotated with <code>@HostCompilerDirectives.BytecodeInterpreterSwitch</code>.
 The maximum node cost for such methods can be configured using <code>-H:TruffleHostInliningByteCodeInterpreterBudget=100000</code> for native images and <code>-Djdk.graal.TruffleHostInliningByteCodeInterpreterBudget=100000</code> on HotSpot. 
-If a method that is annotated with  <code>@BytecodeInterpreterSwitch</code> calls a method with the same annotation then the method is directly inlined as long as the cost of both methods do not exceed the budget.
-In other words, any such method will be treated by the inlining phase just as if they would be part of the root bytecode switch method.
-This allows bytecode interpreter switches to be composed of multiple methods if needed.</p>
+If a method that is annotated with <code>@BytecodeInterpreterSwitch</code> calls a method with the same annotation then the method is directly inlined as long as the cost of both methods do not exceed the budget.
+In other words, any such method will be treated by the inlining phase just as if it were part of the root bytecode switch method.
+This allows bytecode interpreter switches to be composed of multiple methods if needed.
+Helper methods in a split interpreter can also inline back into the root when they carry the same <code>@BytecodeInterpreterHandlerConfig</code>.
+By contrast, methods annotated with <code>@BytecodeInterpreterHandler</code> are intentionally not host-inlined directly into <code>@BytecodeInterpreterSwitch</code> methods, so that bytecode-handler outlining remains intact.</p>
 
 <p>Native image, during closed world analysis, computes all methods that are reachable for runtime compilation.
 Any potentially reachable method from <code>RootNode.execute(...)</code> is determined as runtime compilable.

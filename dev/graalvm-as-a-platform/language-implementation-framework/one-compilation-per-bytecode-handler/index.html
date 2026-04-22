@@ -743,9 +743,9 @@ public int addHandler(int pc, State state, short[] bytecode, Frame frame) {
         
       </h3>
 
-<p>Define extra properties for the treatment of each parameter of a bytecode handler with a <code>BytecodeInterpreterHandlerConfig</code> annotation:</p>
+<p>Define extra properties for the treatment of each parameter of a bytecode handler with a <code>BytecodeInterpreterHandlerConfig</code> annotation. If an interpreter is split across multiple methods, ensure that every switch method in the interpreter is annotated with the same <code>BytecodeInterpreterHandlerConfig</code>:</p>
 
-<pre><code class="language-java">@BytecodeInterpreterSwitch
+<pre><code class="language-java">@BytecodeInterpreterSwitch()
 @BytecodeInterpreterHandlerConfig(maximumOperationCode = LAST_OPCODE, arguments = {
     @Argument, // Denotes `this' pointer
     @Argument(returnValue = true),
@@ -758,17 +758,44 @@ public void dispatchLoop(short[] bytecode) {
     Frame frame = ...;
     State state = new State(0);
     while (true) {
-        switch (bytecode[pc]) {
+        int opcode = bytecode[pc];
+        switch (opcode) {
             case ADD:
                 pc = this.addHandler(pc, state, bytecode, frame);
                 break;
             // ... other cases
+            // (optional) dispatch to helper method with remaining cases:
+            default:
+                pc = dispatchLoop_1(pc, state, bytecode, frame, opcode);
+                break;
         }
     }
 }
+
+@EarlyInline
+@BytecodeInterpreterSwitch()
+@BytecodeInterpreterHandlerConfig(maximumOperationCode = LAST_OPCODE, arguments = {
+    @Argument, // Denotes `this' pointer
+    @Argument(returnValue = true),
+    @Argument(expand = VIRTUAL),
+    @Argument,
+    @Argument(expand = MATERIALIZED, fields = {@Field(name = "stack")})
+})
+private int dispatchLoop_1(int pc, State state, short[] bytecode, Frame frame, int opcode) {
+    switch (opcode) {
+        case SUB:
+            pc = this.subHandler(pc, state, bytecode, frame);
+            break;
+        // ... additional split opcodes
+        default:
+            throw new IllegalArgumentException("Unknown opcode: " + opcode);
+    }
+    return pc;
+}
 </code></pre>
 
-<p>Note that all <code>BytecodeInterpreterHandler</code> annotated methods in the same source file must have the same signature, and the signature must have the same number of arguments (include any implicit receiver) as the length of the {@link BytecodeInterpreterHandlerConfig#arguments} array.</p>
+<p>Note that all <code>BytecodeInterpreterHandler</code> annotated methods in the same source file must have the same signature, and the signature must have the same number of arguments (include any implicit receiver) as the length of the {@link BytecodeInterpreterHandlerConfig#arguments} array.
+When the interpreter is split across multiple <code>@BytecodeInterpreterSwitch</code> methods, these helper methods can still inline back into the interpreter root, but the <code>@BytecodeInterpreterHandler</code> methods themselves remain outlined.</p>
 
 <p>The <code>@Argument</code> annotations define how each parameter (including receiver for non-static method) is handled:</p>
 
@@ -947,9 +974,9 @@ __stub_addHandler(ReceiverType thiz, int pc, int sp, short[] bytecode, Frame fra
 
 <ul>
   <li>The <code>BytecodeInterpreterSwitch</code> method must not contain additional logic after bytecode handler invocations, as such logic will only be executed after the threading terminates</li>
-  <li>All <code>BytecodeInterpreterHandler</code> methods called by the same <code>BytecodeInterpreterSwitch</code> method must share the same method descriptor and modifiers</li>
+  <li>All <code>BytecodeInterpreterHandler</code> methods participating in the same interpreter must share the same method descriptor and modifiers</li>
   <li>A method annotated with <code>BytecodeInterpreterFetchOpcode</code> must be declared in the same enclosing class, have the same signature as <code>BytecodeInterpreterHandler</code> methods, and be free of side effects</li>
-  <li>Exception handling in the BytecodeInterpreterSwitch method should be made aware that exceptions thrown from handler stubs can be unwound to any threading entry point</li>
+  <li>Exception handling in the <code>BytecodeInterpreterSwitch</code> method should account for exceptions thrown from handler stubs being unwound to any threading entry point.</li>
 </ul>
 
       </div>
