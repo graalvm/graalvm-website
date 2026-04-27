@@ -1146,8 +1146,8 @@ public abstract static class APINode extends Node {
         return -v;
     }
 
-    public static APINode inline(@RequiredField(value = StateField.class, bits = 32) InlineContext context) {
-        return APINodeGen.inline(context);
+    public static APINode inline(@RequiredField(value = StateField.class, bits = 32) InlineTarget target) {
+        return APINodeGen.inline(target);
     }
 
     public static APINode create() {
@@ -1165,6 +1165,10 @@ We specify a manual <code>inline</code> method that specifies the required bits 
 If the specializations of a node require more bits or more additional fields other than specified, then the annotation processor fails with an error.
 If the node requires fewer bits, then this does not cause any compiler error.
 This allows API to use node inlining across stable API boundaries as long as the reserved field capacity is not exceeded.</p>
+
+<p>Reference-typed required fields participate in the same compatibility contract. For generated inline methods, the DSL now preserves concrete node types for public node fields and node arrays in <code>@RequiredField(type = ...)</code>. This means that a generated signature may change incompatibly if a public cached child field changes from one concrete node type to another. Non-public or generated helper node types are still widened to generic <code>Node.class</code> or <code>Node[].class</code> and are therefore not exposed in generated inline signatures.</p>
+
+<p>If you need a stable inline API, prefer declaring a handwritten <code>inline(InlineTarget)</code> method and pin <code>ReferenceField</code> requirements to a stable public supertype, for example <code>Node.class</code>, instead of relying on the generated concrete node type. This allows the implementation to evolve as long as the reserved state bits and chosen public supertype remain compatible.</p>
 
 <p>A change is compatible if:</p>
 <ul>
