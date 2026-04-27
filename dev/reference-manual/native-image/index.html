@@ -504,7 +504,7 @@ $(document).ready(function(){
         
       </h1>
 
-<p>Native Image is a technology to compile Java code ahead-of-time to a binary—a <strong>native executable</strong>. 
+<p>Native Image is a technology to compile Java code ahead-of-time to a binary—a <strong>native executable</strong>.
 A native executable includes only the code required at run time, that is the application classes, standard-library classes, the language runtime, and statically-linked native code from the JDK.</p>
 
 <p>An executable file produced by Native Image has several important advantages, in that it</p>
@@ -550,7 +550,7 @@ This entire process is called <strong>build time</strong> to clearly distinguish
         
       </h3>
 
-<p>The <code>native-image</code> tool, available in the <code>bin</code> directory of your GraalVM installation, depends on the local toolchain (header files for the C library, <code>glibc-devel</code>, <code>zlib</code>, <code>gcc</code>, and/or <code>libstdc++-static</code>). 
+<p>The <code>native-image</code> tool, available in the <code>bin</code> directory of your GraalVM installation, depends on the local toolchain (header files for the C library, <code>glibc-devel</code>, <code>zlib</code>, <code>gcc</code>, and/or <code>libstdc++-static</code>).
 These dependencies can be installed (if not yet installed) using a package manager on your machine.
 Choose your operating system to find instructions to meet the prerequisites.</p>
     
@@ -620,7 +620,8 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
         
       </h2>
 
-<p>We provide Maven and Gradle plugins for Native Image to automate building, testing, and configuring native executables.</p>
+<p>We provide Maven and Gradle plugins for Native Image to automate building, testing, and configuring native executables.
+Ensure <code>JAVA_HOME</code> points to a GraalVM installation so that the plugins can find the <code>native-image</code> tool.</p>
     
       <h3 id="maven">
         
@@ -642,8 +643,14 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
      │           └── example
      │               └── App.java
 </code></pre>
-    <p>For example, you can run this command to create a new Maven project using the quickstart archetype:</p>
-    <pre><code class="language-bash"> mvn archetype:generate -DgroupId=com.example -DartifactId=helloworld -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false
+    <p>For example, you can run this command to create a new Maven project using the Maven Quickstart archetype:</p>
+    <pre><code class="language-bash"> mvn archetype:generate \
+   -DarchetypeGroupId=org.apache.maven.archetypes \
+   -DarchetypeArtifactId=maven-archetype-quickstart \
+   -DarchetypeVersion=1.5 \
+   -DgroupId=com.example \
+   -DartifactId=helloworld \
+   -DinteractiveMode=false
 </code></pre>
   </li>
   <li>Add the regular Maven plugins for compiling and assembling the project into an executable JAR file to your <em>pom.xml</em> file:
@@ -700,15 +707,19 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
    &lt;/profile&gt;
  &lt;/profiles&gt;
 </code></pre>
-    <p>Set the <code>version</code> property to the latest plugin version (for example, by specifying the version via <code>&lt;native.maven.plugin.version&gt;</code> in the <code>&lt;properties&gt;</code> element).</p>
+    <p>Set the <code>version</code> property to the latest plugin version (for example, by specifying the version via <code>&lt;native.maven.plugin.version&gt;</code> in the <code>&lt;properties&gt;</code> element). Keeping the plugin in a <code>native</code> profile preserves the default JVM build and enables native image generation only when you pass <code>-Pnative</code>. The <code>compile-no-fork</code> goal builds the native executable during the <code>package</code> phase without starting a second Maven lifecycle.</p>
   </li>
   <li>Compile the project and build a native executable at one step:
     <pre><code class="language-bash"> mvn -Pnative package
 </code></pre>
-    <p>The native executable, named <code>helloworld</code>, is created in the <em>target/</em> directory of the project.</p>
+    <p>The native executable, named <code>helloworld</code>, is created in the <em>target/</em> directory of the project.
+ To build and run JUnit Platform tests as native executables, add the plugin <code>test</code> goal and run:</p>
+    <pre><code class="language-bash"> mvn -Pnative test
+</code></pre>
+    <p>Use <code>-DskipTests</code> to skip all tests, or <code>-DskipNativeTests</code> to run only the regular JVM tests.</p>
   </li>
   <li>Run the executable:
-    <pre><code class="language-bash"> ./target/helloworld 
+    <pre><code class="language-bash"> ./target/helloworld
 </code></pre>
     <p>That is it, you successfully created the native executable for your Java application using Maven.</p>
   </li>
@@ -748,8 +759,8 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
       <li>Generate a project:
         <pre><code class="language-bash">  gradle init --project-name helloworld --type java-application --test-framework junit-jupiter --dsl groovy
 </code></pre>
-        <p>Follow the prompts. 
-  This command sets up a new Java application with the necessary directory structure and build files.</p>
+        <p>Follow the prompts.
+  This command sets up a new Java application with the necessary directory structure and build files. The generated project uses an <code>app</code> subproject, so the application code and the plugin configuration live in <em>app/build.gradle</em>.</p>
 
         <blockquote>
           <p>If caching was enabled by the project generator in the <em>gradle.properties</em> file, comment out or remove the <code>org.gradle.configuration-cache=true</code> line.</p>
@@ -757,21 +768,22 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
       </li>
     </ul>
   </li>
-  <li>Enable the Gradle plugin for Native Image by adding the following to <code>plugins</code> section of your project’s <em>build.gradle</em> file:
+  <li>Enable the Gradle plugin for Native Image by adding the following to the <code>plugins</code> section of <em>app/build.gradle</em>:
     <pre><code> plugins {
  // ...
  id 'org.graalvm.buildtools.native' version 'x.x.x'
  }
 </code></pre>
-    <p>Specify the latest plugin version for the <code>'x.x.x'</code> version value.</p>
+    <p>Specify the latest plugin version for the <code>'x.x.x'</code> version value. Apply it together with the <code>application</code> or <code>java</code> plugin. By default, the native executable name is derived from the project name, and the main class is taken from the application configuration.</p>
   </li>
   <li>Build a native executable by running <code>./gradlew nativeCompile</code>:
     <pre><code class="language-bash"> ./gradlew nativeCompile
 </code></pre>
-    <p>The native executable, named <code>app</code>, is created in the <em>app/build/native/nativeCompile/</em> directory of the project.</p>
+    <p>The native executable, named <code>app</code>, is created in the <em>app/build/native/nativeCompile/</em> directory of the project.
+ Related tasks you may want to use are <code>./gradlew nativeRun</code> to build and run the native executable, and <code>./gradlew nativeTest</code> to build and run native JUnit tests.</p>
   </li>
   <li>Run the native executable:
-    <pre><code class="language-bash"> ./app/build/native/nativeCompile/app 
+    <pre><code class="language-bash"> ./app/build/native/nativeCompile/app
 </code></pre>
     <p>That is it, you successfully created the native executable for your Java application using Gradle.</p>
   </li>
@@ -787,7 +799,7 @@ You can install <code>libstdc++-static</code> if the optional repositories are e
         
       </h2>
 
-<p>The <code>native-image</code> tool takes Java bytecode as its input. 
+<p>The <code>native-image</code> tool takes Java bytecode as its input.
 You can build a native executable from a class file, from a JAR file, or from a module (with Java 9 and higher).</p>
     
       <h3 id="from-a-class">
@@ -873,13 +885,13 @@ You can build a native executable from a class file, from a JAR file, or from a 
         
       </h2>
 
-<p>There many options you can pass to the <code>native-image</code> tool to configure the build process. 
+<p>There many options you can pass to the <code>native-image</code> tool to configure the build process.
 Run <code>native-image --help</code> to see the full list.
 The options passed to <code>native-image</code> are evaluated left-to-right.</p>
 
 <p>For different build tweaks and to learn more about build time configuration, see <a href="/dev/reference-manual/native-image/overview/BuildConfiguration/">Native Image Build Configuration</a>.</p>
 
-<p>Native Image will output the progress and various statistics during the build. 
+<p>Native Image will output the progress and various statistics during the build.
 To learn more about the output and the different build phases, see <a href="/dev/reference-manual/native-image/overview/BuildOutput/">Build Output</a>.
 For more detailed insights regarding the contents of a native executable, see <a href="/dev/reference-manual/native-image/overview/build-report/">Build Reports</a>.</p>
     
@@ -893,12 +905,12 @@ For more detailed insights regarding the contents of a native executable, see <a
 
 <p>For more complex applications that use external libraries, you must provide the <code>native-image</code> tool with metadata.</p>
 
-<p>Building a standalone binary with <code>native-image</code> takes place under a “closed world assumption”. 
-The <code>native-image</code> tool performs an analysis to see which classes, methods, and fields within your application are reachable and must be included in the native executable. 
+<p>Building a standalone binary with <code>native-image</code> takes place under a “closed world assumption”.
+The <code>native-image</code> tool performs an analysis to see which classes, methods, and fields within your application are reachable and must be included in the native executable.
 The analysis is static: it does not run your application.
 This means that all the bytecode in your application that can be called at runtime must be known (observed and analyzed) at build time.</p>
 
-<p>The analysis can determine some cases of dynamic class loading, but it cannot always exhaustively predict all usages of the Java Native Interface (JNI), Java Reflection, Dynamic Proxy objects, or class path resources. 
+<p>The analysis can determine some cases of dynamic class loading, but it cannot always exhaustively predict all usages of the Java Native Interface (JNI), Java Reflection, Dynamic Proxy objects, or class path resources.
 To deal with these dynamic features of Java, you inform the analysis with details of the classes that use Reflection, Proxy, and so on, or what classes to be dynamically loaded.
 To achieve this, you either provide the <code>native-image</code> tool with JSON-formatted configuration files or pre-compute metadata in the code.</p>
 
@@ -920,7 +932,7 @@ To learn more, see <a href="/dev/reference-manual/native-image/native-code-inter
         
       </h3>
 
-<p>This getting started guide is intended for new users or those with little experience of using Native Image. 
+<p>This getting started guide is intended for new users or those with little experience of using Native Image.
 We strongly recommend these users to check the <a href="/dev/reference-manual/native-image/basics/">Basics of Native Image</a> page to better understand some key aspects before going deeper.</p>
 
 <p>Check <a href="/dev/guides/">user guides</a> to become more experienced with Native Image, find demo examples, and learn about potential usage scenarios.</p>

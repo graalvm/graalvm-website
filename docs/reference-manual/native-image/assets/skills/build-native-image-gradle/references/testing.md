@@ -29,6 +29,8 @@ test {
 
 The output binary is located at:
 `build/native/nativeTestCompile/<imageName>`
+For plugin-specific testing options, see the [Native Build Tools Gradle testing support](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#testing-support).
+For debugger-based workflows, see [Debug Native Tests in Maven and Gradle Projects](../../../../guides/debug-native-tests-with-maven-and-gradle.md).
 
 
 

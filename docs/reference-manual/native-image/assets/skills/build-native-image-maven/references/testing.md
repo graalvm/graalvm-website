@@ -55,6 +55,8 @@ Add the `test` goal execution to the native-maven-plugin:
 ```
 
 This compiles a native test binary and executes all discovered JUnit tests.
+For plugin-specific testing options, see the [Native Build Tools Maven testing support](https://graalvm.github.io/native-build-tools/latest/maven-plugin.html#testing-support).
+For debugger-based workflows, see [Debug Native Tests in Maven and Gradle Projects](../../../../guides/debug-native-tests-with-maven-and-gradle.md).
 
 ## Collecting Test Metadata
 
