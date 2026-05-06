@@ -636,6 +636,35 @@ Conditional metadata is mainly aimed towards library maintainers with the goal o
 
 <p>To collect conditional metadata with the agent, see <a href="/dev/reference-manual/native-image/metadata/ExperimentalAgentOptions/#generating-conditional-configuration-using-the-agent">Conditional Metadata Collection</a>.</p>
     
+      <h3 id="conditional-metadata-collection-from-a-native-image">
+        
+        
+          Conditional Metadata Collection From a Native Image <a href="#conditional-metadata-collection-from-a-native-image" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>To generate conditional metadata directly from a native image, build the image with metadata tracing support:</p>
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions ...
+</code></pre>
+
+<p>At run time, pass <code>-XX:TraceMetadata=path=&lt;output-dir&gt;</code> and <code>-XX:TraceMetadataConditionPackages=&lt;package-1&gt;,&lt;package-2&gt;</code>.
+This produces the most accurate conditional metadata because the traced accesses follow Native Image semantics.
+If the image is built with <code>-H:Preserve=all</code>, it should produce all metadata correctly.
+The package list uses exact package names.
+When a traced access occurs, Native Image uses the first stack frame whose class is in one of those packages as the <code>typeReached</code> condition.
+Trace events without a matching stack frame are ignored.</p>
+
+<p>For example:</p>
+<pre><code class="language-shell">./application -XX:TraceMetadata=path=metadata-output -XX:TraceMetadataConditionPackages=com.example.application
+</code></pre>
+
+<p>Run the image with inputs that cover each code path that needs conditional metadata, writing each run to a separate output directory.
+Then merge the outputs:</p>
+<pre><code class="language-shell">native-image-utils generate --input-dir=metadata-output-1 --input-dir=metadata-output-2 --output-dir=merged-metadata
+</code></pre>
+<p>Alternatively, the image generation and aggregation steps can be repeated in a loop until the generated metadata converges.</p>
+    
       <h2 id="agent-advanced-usage">
         
         

@@ -663,6 +663,32 @@ This option instructs the compiler to use all instructions that it finds availab
 If the generated binary, on the other hand, is distributed to users with many different, and potentially very old machines, use <code>-march=compatibility</code>.
 This reduces the set of instructions used by the compiler to a minimum and thus improves the compatibility of the generated binary.</p>
     
+      <h3 id="position-independent-code">
+        
+        
+          Position-Independent Code <a href="#position-independent-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Native Image generally builds executables as position-independent executables (PIE).
+On most platforms, this is already the default for the system toolchain that Native Image uses.
+On Linux systems, Native Image also requests PIE explicitly.
+Shared library images (<code>-shared</code>) are always position-independent.
+The operating system can use address space layout randomization (ASLR) on position-independent code to make its location in memory less predictable, which improves security.</p>
+
+<p>Typically, position-independent code introduces many additional <em>relocations</em> for pointers that must be adjusted at runtime based on where the code was loaded.
+The dynamic linker needs to process these relocations, which increases startup time, memory usage, and file size.</p>
+
+<p>Native Image substantially reduces this cost by using <em>relative code pointers</em> by default.
+Instead of storing absolute code addresses that need adjustment, relative code pointers store offsets from the <em>code base</em>, the start of the code area.
+At runtime, Native Image keeps the code base address in a dedicated register and computes absolute code addresses by adding that base address to the stored offset.</p>
+
+<p>The overhead of relative code pointers is typically negligible.
+However, code with unusually many indirect calls or code that is especially sensitive to register pressure might see small slowdowns.
+To turn off relative code pointers, use <code>-H:-RelativeCodePointers</code>.
+To explicitly disable PIE on Linux systems (even if the system toolchain would otherwise produce PIE), use <code>-H:NativeLinkerOption=-no-pie</code>.</p>
+    
       <h3 id="additional-features">
         
         

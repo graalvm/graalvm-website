@@ -111,8 +111,8 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
   const comment = majorJavaVersion === "25" ? ' <span class="no-strip"># coming soon</span>' : '';
-  $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal # coming soon`);
-    // $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal`);
+  // $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal # coming soon`);
+    $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal`);
 }
 
 
@@ -162,24 +162,36 @@ function updateDownloadButton(majorJavaVersion) {
 }
 
 
-function toggleJDK17Banner(majorJavaVersion) {
+function toggleDownloadBanners(majorJavaVersion) {
+  const entitledBanner = document.getElementById("entitled-banner");
   const jdk17Banner = document.getElementById("jdk17-banner");
   const allJdkBanner = document.getElementById("all-jdk-banner");
   const optionTabs = document.querySelector(".downloads__option-tabs");
 
-  if (majorJavaVersion === "17") {
-    jdk17Banner.style.display = "block";
+  entitledBanner.style.display = "none";
+  entitledBanner.classList.remove("visible");
+  allJdkBanner.style.display = "none";
+  allJdkBanner.classList.remove("visible");
+  jdk17Banner.style.display = "none";
+  jdk17Banner.classList.remove("visible");
+
+  if (majorJavaVersion === "25") {
+    entitledBanner.style.display = "block";
+    setTimeout(() => entitledBanner.classList.add("visible"), 10);
+    optionTabs.style.display = "";
+  } else if (majorJavaVersion === "21") {
     allJdkBanner.style.display = "block";
+    setTimeout(() => allJdkBanner.classList.add("visible"), 10);
+    optionTabs.style.display = "";
+  } else if (majorJavaVersion === "17") {
+    allJdkBanner.style.display = "block";
+    jdk17Banner.style.display = "block";
     setTimeout(() => {
-      jdk17Banner.classList.add("visible");
       allJdkBanner.classList.add("visible");
+      jdk17Banner.classList.add("visible");
     }, 10);
     optionTabs.style.display = "none";
   } else {
-    jdk17Banner.classList.remove("visible");
-    jdk17Banner.style.display = "none";
-    allJdkBanner.style.display = "block";
-    setTimeout(() => allJdkBanner.classList.add("visible"), 10);
     optionTabs.style.display = "";
   }
 }
@@ -209,7 +221,7 @@ function changeVersion(majorJavaVersion, platform) {
   updateSDKMANSnippet(majorJavaVersion);
   updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension);
 
-  toggleJDK17Banner(majorJavaVersion);
+  toggleDownloadBanners(majorJavaVersion);
   toggleInteractivityForJava17(majorJavaVersion);
 }
 
