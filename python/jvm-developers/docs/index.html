@@ -983,7 +983,55 @@ These settings control what system resources and host functionality your embedde
 <p>Python native extensions run by default as native binaries with full access to the underlying system.
 This means they bypass the security controls described above.</p>
 
-<p>For more information about limitations when embedding native extensions, see <a href="#embedding-limitations">Embedding limitations</a>.</p>
+<p>For more information about limitations when embedding native extensions, see <a href="#embedding-limitations-for-native-extensions">Embedding limitations</a>.</p>
+
+<h2 id="embedding-limitations-for-native-extensions"><a href="#embedding-limitations-for-native-extensions"></a><a href="#embedding-limitations-for-native-extensions" class="anchor-link">Embedding Limitations for Native Extensions</a></h2>
+
+<p>Python native extensions run by default as native binaries, with full access to the underlying system.
+This has a few implications:</p>
+
+<ol>
+  <li>Native code is entirely unrestricted and can circumvent any security protections Truffle or the JVM may provide.</li>
+  <li>Native data structures are not subject to the Java GC and the combination of them with Java data structures may lead to increased memory pressure or memory leaks.</li>
+  <li>Native libraries generally cannot be loaded multiple times into the same process, and they may contain global state that cannot be safely reset.</li>
+</ol>
+
+<h3 id="full-native-access"><a href="#full-native-access"></a><a href="#full-native-access" class="anchor-link">Full Native Access</a></h3>
+
+<p>The Context API allows you to set options such as <code>allowIO</code>, <code>allowHostAccess</code>, <code>allowThreads</code>, and more on created contexts.
+To use Python native extensions on GraalPy, the <code>allowNativeAccess</code> option must be set to <code>true</code>, but this opens the door to full native access.
+This means that while Python code may be denied access to the host file system, thread or subprocess creation, and more, the native extension is under no such restriction.</p>
+
+<h3 id="memory-management"><a href="#memory-management"></a><a href="#memory-management" class="anchor-link">Memory Management</a></h3>
+
+<p>Python C extensions, like the CPython reference implementation, use reference counting for memory management.
+This is fundamentally incompatible with JVM GCs.</p>
+
+<p>Java objects may end up being referenced from native data structures that the JVM cannot trace, so to avoid crashing, GraalPy keeps such Java objects strongly referenced.
+To avoid memory leaks, GraalPy implements a cycle detector that regularly traces references between Java objects and native objects that have crossed between the two worlds and cleans up strong references that are no longer needed.</p>
+
+<p>On the other side, reference-counted native extension objects may end up being referenced from Java objects, and in this case GraalPy bumps their reference count to make them unreclaimable.
+Any such references to native extension objects are registered with a <code>java.lang.ref.WeakReference</code>, and when the JVM GC has collected the owning Java object, the reference count of the native object is reduced again.</p>
+
+<p>Both of these mechanisms together mean there is additional delay between objects becoming unreachable and their memory being reclaimed when compared to the CPython implementation.
+This can manifest in increased memory usage when running C extensions.
+You can tweak the context options <code>python.BackgroundGCTaskInterval</code>, <code>python.BackgroundGCTaskThreshold</code>, and <code>BackgroundGCTaskMinimum</code> to mitigate this.
+They control the minimum interval between cycle detections, how much RSS memory must have increased since the last time to trigger the cycle detector, and the absolute minimum RSS under which no cycle detection should be done.
+You can also manually trigger the detector with the Python <code>gc.collect()</code> call.</p>
+
+<h3 id="multi-context-and-native-libraries"><a href="#multi-context-and-native-libraries"></a><a href="#multi-context-and-native-libraries" class="anchor-link">Multi-Context and Native Libraries</a></h3>
+
+<p>Using C extensions in multiple contexts is only possible on Linux for now, and many C extensions still have issues in this mode.
+You should test your applications thoroughly if you want to use this feature.
+There are many possibilities for native code to sidestep the library isolation through other process-wide global state, corrupting the state and leading to incorrect results or crashing.
+The implementation also relies on <code>venv</code> to work, even if you are not using external packages.</p>
+
+<p>To support creating multiple GraalPy contexts that access native modules within the same JVM or Native Image, GraalPy isolates them from each other.
+The current strategy for this is to copy the libraries and modify them such that the dynamic library loader of the operating system will isolate them.
+To do this, all GraalPy contexts in the same process, not just those in the same engine, must set the <code>python.IsolateNativeModules</code> option to <code>true</code>.
+You should test your applications thoroughly if you want to use this feature, as there are many possibilities for native code to sidestep the library isolation through other process-wide global state.</p>
+
+<p>For more details on this, see <a href="https://github.com/oracle/graalpython/blob/master/docs/contributor/IMPLEMENTATION_DETAILS.md#c-extension-copying">our implementation details</a>.</p>
 
 <h2 id="interoperability"><a href="#interoperability"></a><a href="#interoperability" class="anchor-link">Interoperability</a></h2>
 
@@ -991,6 +1039,10 @@ This means they bypass the security controls described above.</p>
 This means that you can use other languages’ objects and functions directly from your Python scripts.
 This interoperability works in both directions.
 Python can call other languages, and other languages can call Python code.</p>
+
+<blockquote>
+  <p><strong>Note for Python users:</strong> The Java interoperability sections below require a JVM-based GraalPy runtime with the relevant Java classes on the classpath. The later <code>polyglot</code> sections describe the more general cross-language APIs for working with other Graal languages.</p>
+</blockquote>
 
 <h3 id="call-java-from-python"><a href="#call-java-from-python"></a><a href="#call-java-from-python" class="anchor-link">Call Java from Python</a></h3>
 
@@ -2469,6 +2521,14 @@ The generated class is a Java object, but attribute lookup is dispatched to the 
 </h3>
 <p>Below are the options you can set on contexts for GraalPy.</p>
 <p>
+  <strong>AllowSignalHandlers</strong>
+  
+</p>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Allow installing signal handlers. Accepts: <code>true|false</code>
+</p>
+
+<p>
   <strong>CheckHashPycsMode</strong>
   
 </p>
@@ -2922,9 +2982,10 @@ The generated class is a Java object, but attribute lookup is dispatched to the 
   </tbody>
 </table>
 
-<h2 id="graalpy-troubleshooting"><a href="#graalpy-troubleshooting"></a><a href="#graalpy-troubleshooting" class="anchor-link">GraalPy Troubleshooting</a></h2>
+<h2 id="graalpy-embedding-troubleshooting"><a href="#graalpy-embedding-troubleshooting"></a><a href="#graalpy-embedding-troubleshooting" class="anchor-link">GraalPy Embedding Troubleshooting</a></h2>
 
-<p>This guide helps you resolve common issues when using GraalPy, whether running it standalone or embedded in Java applications.</p>
+<p>This guide helps you resolve common issues when embedding GraalPy in Java applications.
+It focuses on Virtual FileSystem setup, context configuration, build tooling, and dependency alignment for JVM-based deployments.</p>
 
 <h3 id="virtual-filesystem-issues"><a href="#virtual-filesystem-issues"></a><a href="#virtual-filesystem-issues" class="anchor-link">Virtual FileSystem Issues</a></h3>
 
