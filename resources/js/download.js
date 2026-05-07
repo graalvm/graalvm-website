@@ -175,11 +175,13 @@ function toggleDownloadBanners(majorJavaVersion) {
   jdk17Banner.style.display = "none";
   jdk17Banner.classList.remove("visible");
 
-  if (majorJavaVersion === "25") {
-    entitledBanner.style.display = "block";
-    setTimeout(() => entitledBanner.classList.add("visible"), 10);
-    optionTabs.style.display = "";
-  } else if (majorJavaVersion === "21") {
+  // Temporarily hide the Commercial Support for GraalVM banner for GraalVM 25.
+  // if (majorJavaVersion === "25") {
+  //   entitledBanner.style.display = "block";
+  //   setTimeout(() => entitledBanner.classList.add("visible"), 10);
+  //   optionTabs.style.display = "";
+  // } else
+  if (majorJavaVersion === "21") {
     allJdkBanner.style.display = "block";
     setTimeout(() => allJdkBanner.classList.add("visible"), 10);
     optionTabs.style.display = "";
