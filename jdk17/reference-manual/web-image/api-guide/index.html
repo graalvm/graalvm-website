@@ -300,9 +300,9 @@ $(document).ready(function(){
         
       </h1>
 
-<p>This document describes the recommended approach for using the Web Image API to enable JavaScript interoperability in Java applications that are compiled into WebAssembly modules using <a href="/jdk17/reference-manual/web-image/">GraalVM Native Image Web Image backend</a>, and can run in Node.js or browser environments.</p>
+<p>This document describes the recommended approach for using the Web Image API to enable JavaScript interoperability in JVM applications that are compiled into WebAssembly modules using the <a href="/jdk17/reference-manual/web-image/">GraalVM Native Image Web Image backend</a>, and can run in Node.js or browser environments.</p>
 
-<p>The <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/webimage/api/package-summary.html">Web Image API</a> provides a Java-to-JavaScript interoperability layer for applications compiled to WebAssembly.</p>
+<p>The <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/webimage/api/package-summary.html">Web Image API</a> provides a JavaScript interoperability layer for JVM applications compiled to WebAssembly.</p>
 
 <blockquote>
   <p>Note: Web Image is experimental and under active development. APIs, tooling, and capabilities may change.</p>
@@ -320,10 +320,10 @@ $(document).ready(function(){
   <li><a href="#embedding-javascript-code-with-js">Embedding JavaScript Code with <code>@JS</code></a></li>
   <li><a href="#working-with-primitives">Working with Primitives</a></li>
   <li><a href="#working-with-objects">Working with Objects</a></li>
-  <li><a href="#creating-javascript-objects-in-java">Creating JavaScript Objects in Java</a></li>
+  <li><a href="#creating-javascript-objects-from-application-code">Creating JavaScript Objects from Application Code</a></li>
   <li><a href="#creating-instances-of-javascript-classes">Creating Instances of JavaScript Classes</a></li>
   <li><a href="#functions-are-objects">Functions Are Objects</a></li>
-  <li><a href="#exporting-java-code-to-javascript">Exporting Java Code to JavaScript</a></li>
+  <li><a href="#exporting-application-code-to-javascript">Exporting Application Code to JavaScript</a></li>
   <li><a href="#passing-arguments">Passing Arguments</a></li>
   <li><a href="#what-counts-as-a-callable-value">What Counts as a Callable Value?</a></li>
   <li><a href="#error-handling">Error Handling</a></li>
@@ -435,7 +435,7 @@ public class Example {
 </code></pre>
 
 <p>Instead of <code>Object raw = request.get("price");</code>.
-Typed <code>get(...)</code> is clearer and gives you earlier failures if the data does not match what Java expects.</p>
+Typed <code>get(...)</code> is clearer and gives you earlier failures if the data does not match what your application expects.</p>
     
       <h2 id="working-with-objects">
         
@@ -445,7 +445,7 @@ Typed <code>get(...)</code> is clearer and gives you earlier failures if the dat
         
       </h2>
 
-<p>At present, <strong><code>JSObject</code></strong> is the primary way to work with JavaScript objects from Java.
+<p>At present, <strong><code>JSObject</code></strong> is the primary way to work with JavaScript objects from JVM application code.
 The current limitations are:</p>
 
 <ul>
@@ -475,7 +475,7 @@ response.set("discountApplied", JSNumber.of(24));
 response.set("premium", JSBoolean.of(true));
 </code></pre>
 
-<p>This ensures that the stored properties are JavaScript values instead of proxied Java objects.
+<p>This ensures that the stored properties are JavaScript values instead of proxied JVM-side objects.
 When returned back to JavaScript, this becomes a normal JavaScript object.</p>
 
 <p>Nested objects are handled in the same way: read the nested property as another <code>JSObject</code>, then continue reading from it.</p>
@@ -484,10 +484,10 @@ When returned back to JavaScript, this becomes a normal JavaScript object.</p>
 String tier = user.get("tier", String.class);
 </code></pre>
     
-      <h2 id="creating-javascript-objects-in-java">
+      <h2 id="creating-javascript-objects-from-application-code">
         
         
-          Creating JavaScript Objects in Java <a href="#creating-javascript-objects-in-java" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Creating JavaScript Objects from Application Code <a href="#creating-javascript-objects-from-application-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
@@ -507,7 +507,7 @@ String tier = user.get("tier", String.class);
   <li><code>JSObject.defineProperties(...)</code></li>
 </ul>
 
-<p>These methods are useful when you want to construct objects in Java without writing a JavaScript helper.</p>
+<p>These methods are useful when you want to construct objects in application code without writing a JavaScript helper.</p>
 
 <p>Use these helpers for descriptor objects, plain record-like objects, temporary request or response objects.</p>
     
@@ -528,7 +528,7 @@ However, if you need an actual instance of a JavaScript class, such as a browser
 static native JSObject newFoo(int arg1, String arg2);
 </code></pre>
 
-<p>In practice, create the instance in JavaScript and then handle it in Java as a <code>JSObject</code>.
+<p>In practice, create the instance in JavaScript and then handle it in application code as a <code>JSObject</code>.
 The same guidance applies to browser and framework objects.
 If you need something like a JavaScript <code>Date</code>, a DOM-like helper object, or an application-specific JavaScript instance, construct it in a small <code>@JS</code> helper and return <code>JSObject</code>.</p>
     
@@ -541,7 +541,7 @@ If you need something like a JavaScript <code>Date</code>, a DOM-like helper obj
       </h2>
 
 <p>A JavaScript function can be represented as a <code>JSObject</code>.
-You can call it from Java using:</p>
+You can call it from application code using:</p>
 
 <ul>
   <li><code>invoke(args...)</code></li>
@@ -559,16 +559,16 @@ Object result = fn.invoke(1, 2);
 <p>This is useful when JavaScript returns callbacks or factories.
 This is also useful when an API returns a function-valued property instead of a plain object.</p>
     
-      <h2 id="exporting-java-code-to-javascript">
+      <h2 id="exporting-application-code-to-javascript">
         
         
-          Exporting Java Code to JavaScript <a href="#exporting-java-code-to-javascript" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Exporting Application Code to JavaScript <a href="#exporting-application-code-to-javascript" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
-<p>Another common use of <code>@JS</code> is exposing Java code to JavaScript.
-The current practical pattern is to export a Java function through a small bootstrap helper written with <code>@JS</code>.</p>
+<p>Another common use of <code>@JS</code> is exposing application code to JavaScript.
+The current practical pattern is to export an application function through a small bootstrap helper written with <code>@JS</code>.</p>
 
 <p>Example pattern:</p>
 <pre><code class="language-java">@JS(args = {"adder"}, value = "globalThis.adder = adder;")
@@ -579,9 +579,9 @@ private static native void export(java.util.function.BiFunction&lt;JSNumber, JSN
 <pre><code class="language-java">export((a, b) -&gt; JSNumber.of(a.asInt() + b.asInt()));
 </code></pre>
 
-<p>Here, <code>@JS</code> is used to install a Java-provided function onto the JavaScript side so that browser or Node.js code can call it later.</p>
+<p>Here, <code>@JS</code> is used to install an application-provided function onto the JavaScript side so that browser or Node.js code can call it later.</p>
 
-<p>This is different from the simpler <code>@JS</code> example shown earlier, where <code>@JS</code> is used to run JavaScript from Java:</p>
+<p>This is different from the simpler <code>@JS</code> example shown earlier, where <code>@JS</code> is used to run JavaScript from application code:</p>
 <pre><code class="language-java">public class Example {
     @JS("console.log(message);")
     static native void log(String message);
@@ -617,7 +617,7 @@ static native int add(int a, int b);
         
       </h2>
 
-<p>JavaScript needs a callable value, and the practical Java-side model is a functional interface.
+<p>JavaScript needs a callable value, and the practical JVM-side model is a functional interface.
 That callable can be a lambda, a method reference, or an implementation of a functional interface.
 Common choices include:</p>
 
@@ -651,7 +651,7 @@ export(Example::handleRequest);
 export(new PricingHandler());
 </code></pre>
 
-<p>For structured request/response exchange, <code>Function&lt;JSObject, JSObject&gt;</code> is often the most convenient shape: JavaScript passes a plain object, Java reads it with typed <code>get(...)</code> calls, and returns a fresh <code>JSObject</code>.</p>
+<p>For structured request/response exchange, <code>Function&lt;JSObject, JSObject&gt;</code> is often the most convenient shape: JavaScript passes a plain object, the application reads it with typed <code>get(...)</code> calls, and returns a fresh <code>JSObject</code>.</p>
     
       <h2 id="error-handling">
         
@@ -662,7 +662,7 @@ export(new PricingHandler());
       </h2>
 
 <p>When JavaScript throws a non-Java exception value, it may be surfaced as <code>ThrownFromJavaScript</code>.
-That gives Java code access to the thrown object:</p>
+That gives application code access to the thrown object:</p>
 
 <pre><code class="language-java">try {
 ...
@@ -672,7 +672,7 @@ That gives Java code access to the thrown object:</p>
 </code></pre>
 
 <p>This is useful for APIs called directly from browser JavaScript.
-A returned error object is often easier to inspect in the console or UI than a Java-side exception crossing the boundary.</p>
+A returned error object is often easier to inspect in the console or UI than a JVM-side exception crossing the boundary.</p>
     
       <h3 id="summary">
         
