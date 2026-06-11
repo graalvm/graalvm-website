@@ -632,22 +632,50 @@ Conditional metadata is mainly aimed towards library maintainers with the goal o
 
 <p>To collect conditional metadata with the agent, see <a href="/dev/reference-manual/native-image/metadata/ExperimentalAgentOptions/#generating-conditional-configuration-using-the-agent">Conditional Metadata Collection</a>.</p>
     
-      <h3 id="conditional-metadata-collection-from-a-native-image">
+      <h3 id="dynamic-metadata-collection-from-a-native-image">
         
         
-          Conditional Metadata Collection From a Native Image <a href="#conditional-metadata-collection-from-a-native-image" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Dynamic Metadata Collection From a Native Image <a href="#dynamic-metadata-collection-from-a-native-image" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>To generate conditional metadata directly from a native image, build the image with metadata tracing support:</p>
+<p>This workflow collects metadata dynamically by tracing an actual native image execution.
+The generated metadata is conditional because each traced access can be guarded by a <code>typeReached</code> condition derived from the run-time call stack.
+To generate conditional metadata this way, build the image with metadata tracing support:</p>
 <pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions ...
 </code></pre>
+    
+      <h4 id="creating-a-complete-image-for-tracing">
+        
+        
+          Creating a Complete Image for Tracing
+        
+        
+      </h4>
+
+<p>Metadata tracing can only record metadata that was included in the native image at build time.
+For exploratory tracing, use <code>-H:Preserve</code> at build time to include the packages, modules, or class path entries whose metadata you want to observe during tracing.
+This intentionally expands the image for the discovery phase so the subsequent run can deduce which metadata is actually needed.
+For example, preserve a package and its subpackages while enabling tracing support:</p>
+
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=package=com.example.library.* ...
+</code></pre>
+
+<p>For broad exploratory runs, use <code>-H:Preserve=all</code>:</p>
+
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=all ...
+</code></pre>
+
+<p><code>-H:Preserve=all</code> can require significantly more memory and produces larger executables.
+You can use it for one exploratory build with metadata tracing support to include as much metadata as possible, then use the traced run to deduce which metadata is actually needed.
+Regular follow-up builds can use the generated metadata without <code>-H:Preserve=all</code>.
+This combines broad discovery with smaller and less resource-intensive normal builds.
+If you still need preservation after exploration, prefer a specific selector such as <code>-H:Preserve=package=&lt;package&gt;</code> once you know which application or library packages need metadata.</p>
 
 <p>At run time, pass <code>-XX:TraceMetadata=path=&lt;output-dir&gt;</code> and <code>-XX:TraceMetadataConditionPackages=&lt;package-1&gt;,&lt;package-2&gt;</code>.
 This produces the most accurate conditional metadata because the traced accesses follow Native Image semantics.
-If the image is built with <code>-H:Preserve=all</code>, it should produce all metadata correctly.
-The package list uses exact package names.
+The package list uses package prefixes.
 When a traced access occurs, Native Image uses the first stack frame whose class is in one of those packages as the <code>typeReached</code> condition.
 Trace events without a matching stack frame are ignored.</p>
 

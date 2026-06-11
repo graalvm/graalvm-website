@@ -744,6 +744,9 @@ For example:</p>
   <li>You can combine any of the previous uses by separating them with a comma (<code>,</code>). For example: <code>-H:Preserve=path=&lt;cp-entry&gt;,module=&lt;module&gt;,module=&lt;module2&gt;,package=&lt;package&gt;</code></li>
 </ul>
 
+<p>Native Image also preserves the corresponding lambda proxy class when a lambda proxy class generated for a preserved capturing class is reached.
+It registers that proxy class for reflection and JNI access, like other preserved classes, and it registers serializable lambdas for Java serialization.</p>
+
 <p>You must explicitly configure multi-interface proxy classes, arrays of dimension 3 and higher, and <em>.class</em> files as resources in the native image. Tooling-related Java modules are not included by default with <code>-H:Preserve=all</code> and must be added with <code>-H:Preserve=module=&lt;module&gt;</code> if needed.</p>
 
 <p>If you get errors related to <code>--initialize-at-build-time</code>, follow the suggestions in the error messages.</p>
@@ -753,6 +756,11 @@ For example:</p>
 </blockquote>
 
 <p>For a practical demonstration, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
+
+<p>You can combine <code>-H:Preserve</code> with <a href="/dev/reference-manual/native-image/metadata/AutomaticMetadataCollection/#dynamic-metadata-collection-from-a-native-image">metadata tracing from a native image</a> to collect reachability metadata from a representative run:</p>
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=package=com.example.library.* ...
+./application -XX:TraceMetadata=path=metadata-output -XX:TraceMetadataConditionPackages=com.example.application
+</code></pre>
     
       <h4 id="memory-requirements">
         
@@ -762,7 +770,7 @@ For example:</p>
         
       </h4>
 
-<p>Native Image compilation is memory-intensive, particularly when building large projects or when using -<code>H:Preserve=all</code> or <code>--pgo-instrument</code>.</p>
+<p>Native Image compilation is memory-intensive, particularly when building large projects or when using <code>-H:Preserve=all</code> or <code>--pgo-instrument</code>.</p>
 
 <p>If you encounter <code>OutOfMemoryError: Java heap space</code> you can:</p>
 
