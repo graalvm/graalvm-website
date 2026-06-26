@@ -559,25 +559,47 @@ $(document).ready(function(){
         
       </h1>
 
-<p>URL Protocols in Native Image can be divided into three classes:</p>
+<p>Native Image includes URL protocol handlers that are reachable in the generated binary.
+The <code>file</code> and <code>resource</code> URL protocols are enabled by default.
+Resources must still be included through <a href="/dev/reference-manual/native-image/metadata/#resources">reachability metadata</a> before the <code>resource</code> protocol can resolve them.</p>
 
-<ul>
-  <li>supported and enabled by default</li>
-  <li>supported and disabled by default</li>
-  <li>HTTPS support</li>
-</ul>
+<p>Other JDK URL protocol handlers are supported but not enabled by default.
+To use one, register the corresponding <code>sun.net.www.protocol.&lt;protocol&gt;.Handler</code> constructor in reachability metadata.
+For example, to use the <code>http</code> and <code>https</code> protocols, add this entry to <em>META-INF/native-image/reachability-metadata.json</em>:</p>
 
-<p>URL Protocols that are supported and enabled by default will be included into every generated native binary.
-Currently, <code>file</code> and <code>resource</code> are the only supported URL protocols enabled by default.</p>
+<pre><code class="language-json">{
+  "reflection": [
+    {
+      "type": "sun.net.www.protocol.http.Handler",
+      "methods": [
+        {
+          "name": "&lt;init&gt;",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.net.www.protocol.https.Handler",
+      "methods": [
+        {
+          "name": "&lt;init&gt;",
+          "parameterTypes": []
+        }
+      ]
+    }
+  ]
+}
+</code></pre>
 
-<p>There are URL Protocols that are supported but not enabled by default when building a native binary.
-They must be enabled during build time by using the <code>--enable-url-protocols=&lt;protocols&gt;</code> option on the command line.
-The option accepts a list of comma-separated protocols.</p>
+<p>Use the same form for other JDK protocols, for example <code>jar</code>, <code>jrt</code>, <code>ftp</code>, <code>jmod</code>, or <code>mailto</code>,
+by replacing the protocol name in the handler class.
+For <code>jrt</code>, registering <code>sun.net.www.protocol.jrt.Handler</code> only enables URL construction.
+Opening a <code>jrt:</code> connection also requires <code>-H:+AllowJRTFileSystem</code>, and runtime module access depends on <code>java.home</code>.
+If a native executable accesses a supported protocol that was not registered, the URL lookup fails at run time
+and reports the handler class that must be added to reachability metadata.</p>
 
-<p>The rationale behind enabling protocols on-demand is that you can start with a minimal binary and add features as you need them.
-This way your binary will only include the features you use, which helps keep the overall size small.
-Currently <code>http</code> and <code>https</code> are the only URL protocols that are supported and can be enabled on demand.
-They can be enabled using the <code>--enable-http</code> and <code>--enable-https</code> command-line options.</p>
+<p>The <code>--enable-http</code>, <code>--enable-https</code>, and <code>--enable-url-protocols</code> options are deprecated.
+Use reachability metadata instead.</p>
     
       <h2 id="https-support">
         
@@ -587,11 +609,11 @@ They can be enabled using the <code>--enable-http</code> and <code>--enable-http
         
       </h2>
 <p>Support for the <code>https</code> URL protocol relies on the Java Cryptography Architecture (JCA) framework.
-Thus enabling <code>https</code> will add the code required by the JCA to the generated binary, including statically linked native libraries that the JCA may depend on.
+Registering the <code>https</code> handler can add the code required by the JCA to the generated binary, including statically linked native libraries that the JCA may depend on.
 See the <a href="/dev/reference-manual/native-image/dynamic-features/JCASecurityServices/">documentation on security services</a> for more details.</p>
 
-<p>No other URL protocols are currently tested.
-They can still be enabled using <code>--enable-url-protocols=&lt;protocols&gt;</code>, however they might not work as expected.</p>
+<p>URL protocols beyond the JDK handlers discussed above are not currently tested.
+They can still be registered with reachability metadata, however they might not work as expected.</p>
     
       <h3 id="related-documentation">
         
@@ -603,6 +625,7 @@ They can still be enabled using <code>--enable-url-protocols=&lt;protocols&gt;</
 
 <ul>
   <li><a href="/dev/reference-manual/native-image/overview/BuildConfiguration/">Native Image Build Configuration</a></li>
+  <li><a href="/dev/reference-manual/native-image/metadata/">Reachability Metadata</a></li>
 </ul>
 
       </div>
