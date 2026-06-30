@@ -166,13 +166,39 @@ This approach is useful for deployment on a distroless container image.</p>
 <p>The easiest way to install GraalVM is with <a href="https://sdkman.io/jdks#graal">SDKMAN!</a>.
 For other installation options, visit the <a href="https://www.graalvm.org/downloads/">Downloads section</a>.</p>
 
-<p>To create statically linked applications with Native Image, you need a <code>musl</code> toolchain that includes the <code>zlib</code> library.
-Download the recommended musl toolchain: <a href="https://gds.oracle.com/download/bfs/archive/musl-toolchain-1.2.5-oracle-00001-linux-amd64.tar.gz">musl-toolchain-1.2.5-oracle-00001-linux-amd64.tar.gz</a>.</p>
+<p>To create statically linked applications with Native Image, you require a <code>musl</code> toolchain with the <code>zlib</code> library.
+Use the latest or a recent version of musl (all versions prior and including <code>1.2.5</code> are affected by <a href="https://www.openwall.com/lists/musl/2025/02/13/1">CVE-2025-26519</a>).
+The steps to building <code>musl</code> from <a href="https://musl.libc.org/">source</a> are as shown below.
+The example assumes you are using <a href="https://musl.libc.org/releases/musl-1.2.6.tar.gz">musl-1.2.6</a>.</p>
 
-<p>Download the archive, extract it, and add the toolchain’s <code>bin</code> directory to your system path:</p>
-<pre><code class="language-shell">curl -SLO https://gds.oracle.com/download/bfs/archive/musl-toolchain-1.2.5-oracle-00001-linux-amd64.tar.gz
-tar xzf musl-toolchain-1.2.5-oracle-00001-linux-amd64.tar.gz
-export PATH="$(pwd)/musl-toolchain/bin:$PATH"
+<pre><code class="language-bash"># Specify an installation directory for musl:
+export MUSL_HOME=$PWD/musl-toolchain
+
+# Download musl and zlib sources:
+curl -O https://musl.libc.org/releases/musl-1.2.6.tar.gz
+curl -O https://zlib.net/fossils/zlib-1.2.13.tar.gz
+
+# Build musl from source
+tar -xzvf musl-1.2.6.tar.gz
+pushd musl-1.2.6
+./configure --prefix=$MUSL_HOME --static
+# The next operation may require privileged access to system resources, so use sudo
+sudo make &amp;&amp; make install
+popd
+
+# Install a symlink for use by native-image
+ln -s $MUSL_HOME/bin/musl-gcc $MUSL_HOME/bin/x86_64-linux-musl-gcc
+
+# Extend the system path and confirm that musl is available by printing its version
+export PATH="$MUSL_HOME/bin:$PATH"
+x86_64-linux-musl-gcc --version
+
+# Build zlib with musl from source and install into the MUSL_HOME directory
+tar -xzvf zlib-1.2.13.tar.gz
+pushd zlib-1.2.13
+CC=musl-gcc ./configure --prefix=$MUSL_HOME --static
+make &amp;&amp; make install
+popd
 </code></pre>
 
 <p>With the requirements set up, create the demo.</p>
@@ -210,7 +236,7 @@ export PATH="$(pwd)/musl-toolchain/bin:$PATH"
  Run it with <code>./envmap</code>.</p>
 
     <p>You can confirm the application is fully statically linked using the <code>ldd</code> command:</p>
-    <pre><code class="language-shell"> ldd envmap
+    <pre><code class="language-shell"> ldd EnvMap
 </code></pre>
     <p>The output should be “not a dynamic executable”.</p>
   </li>
@@ -218,7 +244,7 @@ export PATH="$(pwd)/musl-toolchain/bin:$PATH"
 
 <h2 id="build-a-mostly-static-native-executable">Build a Mostly-Static Native Executable</h2>
 
-<p>With GraalVM Native Image you can build a mostly-static native executable that statically links everything except <code>libc</code>.
+<p>With GraalVM Native Image you can build a mostly-static native executable that statically links everything except <code>libc</code>. 
 Statically linking all your libraries except <code>libc</code> ensures your application has all the libraries it needs to run on any Linux <code>libc</code>-based distribution.</p>
 
 <p>To build a mostly-static native executable, use this command:</p>
@@ -229,9 +255,9 @@ Statically linking all your libraries except <code>libc</code> ensures your appl
 <pre><code class="language-shell">native-image --static-nolibc EnvMap
 </code></pre>
 
-<p>This produces a native executable that statically links all involved libraries (including JDK-shared static libraries) except for <code>libc</code>.
-This includes <code>zlib</code>.
-Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>.
+<p>This produces a native executable that statically links all involved libraries (including JDK-shared static libraries) except for <code>libc</code>. 
+This includes <code>zlib</code>. 
+Also, depending on the user’s code, it may link <code>libstdc+</code> and <code>libgcc</code>. 
 One way to check what dynamic libraries your application depends on is to run <code>ldd</code> with the native executable, for example, <code>ldd envmap</code>.</p>
 
 <h3 id="frequently-asked-questions">Frequently Asked Questions</h3>
@@ -246,7 +272,7 @@ In both cases, choosing the base container image generally depends on your nativ
 
 <ul>
   <li><a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/tiny-java-containers">Tiny Java Containers</a> demo shows how a simple Java application and a simple web server can be compiled to produce very small Docker container images using various lightweight base images.</li>
-  <li><a href="https://github.com/graalvm/workshops/tree/main/native-image/spring-boot-webserver">From JIT to Native: Efficient Java Containers with GraalVM and Spring Boot</a> workshop demonstrates how to build efficient, size-optimized native applications, and deploy them in various containers.</li>
+  <li><a href="https://luna.oracle.com/lab/fdfd090d-e52c-4481-a8de-dccecdca7d68">GraalVM Native Image, Spring and Containerization</a> interactive lab to build a mostly static executable of a Spring Boot application.</li>
 </ul>
 
       </div>

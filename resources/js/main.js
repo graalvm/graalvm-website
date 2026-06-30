@@ -634,9 +634,11 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "GraalVM 25 (Latest)";
+    version = "GraalVM 25.1 (Latest)";
   } else if (version === "dev") {
     version = "Dev Build";
+  } else if (version === "jdk25") {
+    version = "GraalVM 25.0";
   } else if (version.indexOf("jdk") === 0) {
     version = `GraalVM for JDK ${version.substr(3)}`;
   } else {

@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -476,6 +477,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -1557,7 +1559,7 @@ For example:</p>
 <pre><code class="language-json">{
    "resources": [
       {
-        "module:": "library.module",
+        "module": "library.module",
         "glob": "resource-file.txt" 
       }
    ]
@@ -1574,6 +1576,9 @@ Native Image will also ensure that the modules are guaranteed to be accessible a
 </code></pre>
 
 <p>It will always work as expected for resources registered as described above (even if the module does not contain any code that is considered reachable by static analysis).</p>
+
+<p>Module-qualified resource metadata is also used for lookups that go through module-aware class loaders or module readers, such as <code>ClassLoader#getResource</code>, <code>Class#getResource</code>, and <code>ModuleReader#open</code>.
+When a resource is registered with a <code>module</code> field, Native Image keeps enough module identity to resolve the embedded resource even when the original module location is not available at run time.</p>
     
       <h3 id="embedded-resources-information">
         
@@ -1740,6 +1745,34 @@ For example, the following pattern will register the class <code>pkg.Serializabl
   ]
 }
 </code></pre>
+
+<p>For lambda classes:</p>
+
+<pre><code class="language-json">{
+  "reflection": [
+    {
+      "type": {
+        "lambda": {
+          "declaringClass": "com.example.LambdaHost",
+          "declaringMethod": {
+            "name": "declaringMethodName",
+            "parameterTypes": []
+          },
+          "interfaces": [
+            "com.example.SerializableFunction"
+          ]
+        }
+      },
+      "serializable": true
+    }
+  ]
+}
+</code></pre>
+
+<p>For each lambda class matched by a descriptor marked <code>"serializable": true</code>, Native Image also
+registers the lambda capturing class, its synthetic lambda deserialization method, the
+serialized-lambda carrier type, the carrier’s serialized field types, and statically declared
+captured field types.</p>
 
 <p>In rare cases an application might explicitly make calls to:</p>
 

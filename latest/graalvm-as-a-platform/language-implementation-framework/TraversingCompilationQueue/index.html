@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -597,6 +598,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -746,26 +748,27 @@ For example, let’s assume that an average compilation takes 100ms and that the
 A runtime with 16 threads will finish all the tasks in approximately <code>10 * 100ms</code> i.e. 1 second.
 On the other hand, a runtime with 2 compiler thread will take approximately <code>80 * 100ms</code>, i.e. 8 seconds.</p>
 
-<p>The scale function is defined by 3 parameters: <code>--engine.DynamicCompilationThresholdsMinScale</code>, <code>--engine.DynamicCompilationThresholdsMinNormalLoad</code> and <code>DynamicCompilationThresholdsMaxNormalLoad</code>.</p>
+<p>The scale function is defined by 4 parameters: <code>--engine.DynamicCompilationThresholdsMinScale</code>, <code>--engine.DynamicCompilationThresholdsMinNormalLoad</code>, <code>--engine.DynamicCompilationThresholdsMaxNormalLoad</code>, and <code>--engine.DynamicCompilationThresholdsHighLoadSlope</code>.</p>
 
 <p>The <code>--engine.DynamicCompilationThresholdsMinScale</code> option defines how low we are willing to scale the thresholds.
 It has a default value of 0.1, meaning that the compilation thresholds will never be scaled below 10% of their default value.
-This in practice means that, by definition, <code>scale(0) = DynamicCompilationThresholdsMinScale</code> or for default values <code>scale(0) = 0.1</code></p>
+When <code>DynamicCompilationThresholdsMinNormalLoad</code> is greater than 0, this in practice means that, by definition, <code>scale(0) = DynamicCompilationThresholdsMinScale</code>.
+When <code>DynamicCompilationThresholdsMinNormalLoad</code> is 0, low-load threshold reduction is disabled, which is the default behavior.</p>
 
 <p>The <code>--engine.DynamicCompilationThresholdsMinNormalLoad</code> option defines the minimal load at which compilation thresholds will not be scaled.
 This means that as long as the load of the queue is above this value the runtime will not <em>scale down</em> the compilation thresholds.
-This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMinScale) = 1</code> or for default values <code>scale(10) = 1</code></p>
+This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMinNormalLoad) = 1</code> or for default values <code>scale(0) = 1</code></p>
 
 <p>The <code>--engine.DynamicCompilationThresholdsMaxNormalLoad</code> option defines the maximal load at which compilation thresholds will not be scaled.
 This means that as long as the load of the queue is below this value the runtime will not <em>scale up</em> the compilation thresholds.
-This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMaxScale) = 1</code> or for default values <code>scale(90) = 1</code></p>
+This in practice means that, by definition, <code>scale(DynamicCompilationThresholdsMaxNormalLoad) = 1</code> or for default values <code>scale(90) = 1</code></p>
 
 <p>So far we’ve defined the <code>scale</code> function at 3 points.
 For all values between those points the <code>scale</code> function is a straight line connecting those two points.
 This means that for all values between the minimal and maximal normal load the scale function is 1 by definition.
 For values between 0 and the minimal normal load the <code>scale</code> function grows linearly between the minimal scale and 1.
-Let’s define the slope of this function as <code>s</code>.
-Now, for the remainder of the functions domain, i.e. the values greater than the maximum normal load, we define <code>scale</code> to be a linear function with slope <code>s</code> passing through the point <code>(DynamicCompilationThresholdsMaxNormalLoad, 1)</code>.</p>
+If the minimum normal load is 0, the scale function does not reduce thresholds for low load.
+Now, for the remainder of the functions domain, i.e. the values greater than the maximum normal load, we define <code>scale</code> to be a linear function with slope <code>DynamicCompilationThresholdsHighLoadSlope</code> passing through the point <code>(DynamicCompilationThresholdsMaxNormalLoad, 1)</code>.</p>
 
 <p>The following is an ASCII art plot of the scale function which should illustrate how it’s defined.</p>
 

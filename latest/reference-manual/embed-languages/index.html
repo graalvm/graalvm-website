@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -429,6 +430,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -479,9 +481,9 @@ $(document).ready(function(){
   <li><a href="#computed-arrays-using-polyglot-proxies">Computed Arrays Using Polyglot Proxies</a></li>
   <li><a href="#host-access">Host Access</a></li>
   <li><a href="#runtime-optimization-support">Runtime Optimization Support</a></li>
+  <li><a href="#polyglot-isolates">Polyglot Isolates</a></li>
   <li><a href="#build-native-executables-from-polyglot-applications">Build Native Executables from Polyglot Applications</a></li>
   <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
-  <li><a href="#polyglot-isolates">Polyglot Isolates</a></li>
   <li><a href="#embed-guest-languages-in-java">Embed Guest Languages in Java</a></li>
   <li><a href="#build-a-shell-for-many-languages">Build a Shell for Many Languages</a></li>
   <li><a href="#step-through-with-execution-listeners">Step Through with Execution Listeners</a></li>
@@ -538,8 +540,8 @@ See the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot em
 </blockquote>
 
 <p>Language and tool dependencies use the <a href="https://www.oracle.com/downloads/licenses/graal-free-license.html">GraalVM Free Terms and Conditions (GFTC)</a> license.
-To use community-licensed versions instead, add the <code>-community</code> suffix to each artifact (for example, <code>js-community</code>).
-To access <a href="#polyglot-isolates">polyglot isolate</a> artifacts, use the <code>-isolate</code> suffix instead (for example, <code>js-isolate</code>).</p>
+To use community-licensed versions, add the <code>-community</code> suffix to each artifact (for example, <code>js-community</code>).
+For <a href="#polyglot-isolates">polyglot isolate</a> artifacts, use <code>-isolate</code> on Oracle GraalVM and <code>-isolate-community</code> on GraalVM Community Edition 25.1 or later (for example, <code>js-isolate</code> or <code>js-isolate-community</code>).</p>
 
 <p>The artifacts <code>languages</code> and <code>tools</code> include all available languages and tools as dependencies.
 This artifact might grow or shrink between major releases.
@@ -1837,35 +1839,36 @@ The following access parameters may be configured:</p>
 
 <p>Polyglot Truffle runtimes can be used on several host virtual machines with varying support for runtime optimization.
 Runtime optimization of guest application code is crucial for the efficient execution of embedded guest applications.
-This table shows the level of optimizations the Java runtimes currently provide:</p>
+Runtime optimization support depends on both the Java runtime and the Polyglot version. This table summarizes how to enable the optimizing runtime and when the fallback runtime is used:</p>
 
 <table>
   <thead>
     <tr>
-      <th>Java Runtime</th>
-      <th>Runtime Optimization Level</th>
+      <th>Java Runtime / JDK Version</th>
+      <th>Optimizing Runtime</th>
+      <th>Fallback Runtime</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Oracle GraalVM</td>
-      <td>Best (includes additional compiler optimizations)</td>
+      <td>Oracle GraalVM 25</td>
+      <td>Supported with additional compiler optimizations. No extra configuration is required.</td>
+      <td>Supported</td>
     </tr>
     <tr>
-      <td>GraalVM Community Edition</td>
-      <td>Optimized</td>
+      <td>GraalVM Community Edition 25</td>
+      <td>Supported. No extra configuration is required.</td>
+      <td>Supported</td>
     </tr>
     <tr>
-      <td>Oracle JDK</td>
-      <td>Optimized via VM option</td>
+      <td>Oracle JDK 25 or OpenJDK 25</td>
+      <td><a href="#polyglot-isolates">Polyglot isolate</a> only.</td>
+      <td>Supported</td>
     </tr>
     <tr>
-      <td>OpenJDK</td>
-      <td>Optimized via VM option and <code>--upgrade-module-path</code></td>
-    </tr>
-    <tr>
-      <td>JDK without JVMCI capability</td>
-      <td>No runtime optimizations (interpreter-only)</td>
+      <td>JDK 21 runtimes</td>
+      <td><a href="#polyglot-isolates">Polyglot isolate</a> only.</td>
+      <td>Supported</td>
     </tr>
   </tbody>
 </table>
@@ -1879,36 +1882,30 @@ This table shows the level of optimizations the Java runtimes currently provide:
       </h3>
 
 <ul>
-  <li><strong>Optimized:</strong> Executed guest application code can be compiled and executed as highly efficient machine code at run time.</li>
-  <li><strong>Optimized with additional compiler passes:</strong> Oracle GraalVM implements additional optimizations performed during runtime compilation. For example, it uses a more advanced inlining heuristic. This typically leads to better runtime performance and memory consumption.</li>
-  <li><strong>Optimized via VM option:</strong> Optimization is enabled by specifying <code>-XX:+EnableJVMCI</code> to the <code>java</code> launcher.</li>
-  <li><strong>Optimized via VM option and <code>--upgrade-module-path</code>:</strong> Optimization is enabled by specifying <code>-XX:+EnableJVMCI</code> to the <code>java</code> launcher. Additionally, the Graal compiler must be downloaded as a JAR file and specified to the <code>java</code> launcher with <code>--upgrade-module-path</code>. In this mode, the compiler runs as a Java application and may negatively affect the execution performance of the host application.</li>
-  <li><strong>No runtime optimizations:</strong> With no runtime optimizations or if JVMCI is not enabled, the guest application code is executed in interpreter-only mode.</li>
+  <li><strong>Optimizing runtime:</strong> Executed guest application code can be compiled and executed as highly efficient machine code at run time.</li>
+  <li><strong>Additional compiler optimizations:</strong> Oracle GraalVM implements additional optimizations performed during runtime compilation. For example, it uses a more advanced inlining heuristic. This typically leads to better runtime performance and memory consumption.</li>
+  <li><strong>Polyglot isolate only:</strong> The host Java application uses the fallback runtime, while the guest language runs as a Native Image in a <a href="#polyglot-isolates">polyglot isolate</a>.</li>
+  <li><strong>Fallback runtime:</strong> The guest application code is executed in interpreter-only mode, without runtime compilation to machine code.</li>
   <li><strong>JVMCI:</strong> Refers to the <a href="https://openjdk.org/jeps/243">Java-Level JVM Compiler Interface</a> supported by most Java runtimes.</li>
 </ul>
-
-<p>A project has been created to enable runtime optimization by default for Oracle JDK and OpenJDK.
-See <a href="https://openjdk.org/projects/galahad/">Project Galahad</a> for further details.</p>
     
-      <h3 id="enable-optimization-on-openjdk-and-oracle-jdk">
+      <h3 id="runtime-optimization-warning">
         
         
-          Enable Optimization on OpenJDK and Oracle JDK <a href="#enable-optimization-on-openjdk-and-oracle-jdk" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Runtime Optimization Warning <a href="#runtime-optimization-warning" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h3>
 
-<p>When running on a JDK runtime optimization enabled by default, such as OpenJDK, you might see a warning like this:</p>
+<p>When the fallback runtime is used, you might see a warning like this:</p>
 
-<pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to machine code.
+<pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
 Execution without runtime compilation will negatively impact the guest application performance.
 </code></pre>
 
-<p>This indicates that the guest application is executed with no runtime optimizations enabled.
-The warning can be suppressed by either suppressing using the <code>--engine.WarnInterpreterOnly=false</code> option or the <code>-Dpolyglot.engine.WarnInterpreterOnly=false</code> system property.
-In addition, the <code>compiler.jar</code> file and its dependencies must be downloaded from <a href="https://central.sonatype.com/artifact/org.graalvm.compiler/compiler/">Maven Central</a> and referred to use the option <code>--upgrade-module-path</code>.
-Note that <code>compiler.jar</code> must <em>not</em> be put on the module or class path.
-Refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">polyglot embedding demonstration</a> for an example configuration using Maven or Gradle.</p>
+<p>If you see this warning, runtime optimization is disabled. Guest application code is executed in interpreter-only mode and is not compiled to machine code at run time.
+To enable runtime optimization, use an optimizing configuration listed in the table above, or use <a href="#polyglot-isolates">polyglot isolates</a> where required.
+If interpreter-only execution is intentional, the warning can be suppressed using either the <code>--engine.WarnInterpreterOnly=false</code> option or the <code>-Dpolyglot.engine.WarnInterpreterOnly=false</code> system property.</p>
     
       <h3 id="switching-to-the-fallback-engine">
         
@@ -1918,10 +1915,30 @@ Refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">polygl
         
       </h3>
 
-<p>If the need arises, for example, running only trivial scripts or in the resource-constrained systems, you may want to switch to the fallback engine without runtime optimizations.
-Since Polyglot version 23.1, the fallback engine can be activated by removing the <code>truffle-runtime</code> and <code>truffle-enterprise</code> modules from the class or module path.</p>
+<p>If the need arises, for example, when running only trivial scripts or on resource-constrained systems, you may want to switch to the fallback engine without runtime optimizations.
+To force the fallback runtime, set the <code>truffle.UseFallbackRuntime</code> system property to <code>true</code>:</p>
 
-<p>This can be achieved with Maven like this:</p>
+<pre><code class="language-bash">java -Dtruffle.UseFallbackRuntime=true ...
+</code></pre>
+
+<p>For Native Image builds, pass the same property to <code>native-image</code> at image build time:</p>
+
+<pre><code class="language-bash">native-image -Dtruffle.UseFallbackRuntime=true ...
+</code></pre>
+
+<p>This explicitly selects the fallback runtime without changing your application dependencies.
+Unless the warning is disabled, the engine prints the following runtime optimization warning:</p>
+
+<pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
+Execution without runtime compilation will negatively impact the guest application performance.
+The following cause was found: The fallback runtime was explicitly selected using the -Dtruffle.UseFallbackRuntime option.
+For more information see: https://www.graalvm.org/latest/reference-manual/embed-languages/#runtime-optimization-support.
+To disable this warning use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
+</code></pre>
+
+<p>Since Polyglot version 23.1, the fallback engine can also be activated by removing the <code>truffle-runtime</code> modules from the class or module path.
+This can be useful if you want your dependency graph to exclude the optimizing runtime entirely.
+This can be achieved with Maven like this:</p>
 
 <pre><code class="language-xml">&lt;dependencies&gt;
   &lt;dependency&gt;
@@ -1933,24 +1950,18 @@ Since Polyglot version 23.1, the fallback engine can be activated by removing th
         &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
         &lt;artifactId&gt;truffle-runtime&lt;/artifactId&gt;
       &lt;/exclusion&gt;
-      &lt;exclusion&gt;
-        &lt;groupId&gt;org.graalvm.truffle&lt;/groupId&gt;
-        &lt;artifactId&gt;truffle-enterprise&lt;/artifactId&gt;
-      &lt;/exclusion&gt;
     &lt;/exclusions&gt;
   &lt;/dependency&gt;
 &lt;/dependencies&gt;
 </code></pre>
 
-<p>The exclusion rule for <code>truffle-enterprise</code> is unnecessary if you only use <code>-community</code> dependencies.
-Since <code>truffle-enterprise</code> is excluded, the fallback engine does not support advanced extensions such as sandbox limits or polyglot isolates.
-It may be useful to double-check with <code>mvn dependency:tree</code> that the two dependencies are not included elsewhere.</p>
+<p>You can run ``mvn dependency:tree<code> to confirm that the </code>truffle-runtime` dependency is not included elsewhere.</p>
 
 <p>If the runtime was excluded successfully, you should see the following log message:</p>
 
 <pre><code>[engine] WARNING: The polyglot engine uses a fallback runtime that does not support runtime compilation to native code.
 Execution without runtime compilation will negatively impact the guest application performance.
-The following cause was found: No optimizing Truffle runtime found on the module or class path.
+The following cause was found: No optimizing Truffle runtime found on the module or class-path.
 For more information see: https://www.graalvm.org/latest/reference-manual/embed-languages/.
 To disable this warning use the '--engine.WarnInterpreterOnly=false' option or the '-Dpolyglot.engine.WarnInterpreterOnly=false' system property.
 </code></pre>
@@ -1958,6 +1969,227 @@ To disable this warning use the '--engine.WarnInterpreterOnly=false' option or t
 <p>You can disable this message using the indicated options as an additional step.</p>
 
 <p>Removing these dependencies also automatically switches to the fallback engine in Native Image builds.</p>
+    
+      <h2 id="polyglot-isolates">
+        
+        
+          Polyglot Isolates <a href="#polyglot-isolates" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>On GraalVM, a polyglot engine can be configured to run in a dedicated Native Image isolate.
+This capability is available on Oracle GraalVM since version 23.1 and on GraalVM Community Edition starting with version 25.1.
+A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler.
+Polyglot isolates are useful for <a href="/latest/security-guide/sandboxing/">sandboxing</a>.
+Running languages in an isolate works with HotSpot and Native Image host virtual machines.</p>
+
+<p>Languages used as polyglot isolates can be downloaded from Maven Central.
+Use <code>-isolate</code> artifacts with Oracle GraalVM and <code>-isolate-community</code> artifacts with GraalVM Community Edition.
+For example, add the following Maven dependency to use JavaScript in a polyglot isolate:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+    &lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+    &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
+    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+    &lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>For GraalVM Community Edition 25.1 or later, use <code>js-isolate-community</code> instead of <code>js-isolate</code>.</p>
+
+<p>Starting with the Polyglot API version 24.1.0, the polyglot engine supports polyglot isolates for individual platforms.
+To download a polyglot isolate for a specific platform, append the operating system and CPU architecture classifiers to the polyglot isolate Maven <code>artifactId</code>.
+For example, to configure a dependency on isolated Python for Linux AMD64, add the following Maven dependencies:</p>
+
+<pre><code class="language-xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;python-isolate-linux-amd64&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>For GraalVM Community Edition 25.1 or later, use the <a href="#polyglot-isolate-artifacts">corresponding <code>-community</code> artifact</a>:</p>
+<pre><code class="language-xml">&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;polyglot&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;jar&lt;/type&gt;
+&lt;/dependency&gt;
+&lt;dependency&gt;
+	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
+	&lt;artifactId&gt;python-isolate-linux-amd64-community&lt;/artifactId&gt;
+	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
+	&lt;type&gt;pom&lt;/type&gt;
+&lt;/dependency&gt;
+</code></pre>
+
+<p>Supported platform classifiers are:</p>
+<ul>
+  <li><code>linux-amd64</code></li>
+  <li><code>linux-aarch64</code></li>
+  <li><code>darwin-aarch64</code></li>
+  <li><code>windows-amd64</code></li>
+</ul>
+
+<p>For a complete Maven POM file that adds the polyglot isolate Native Image dependency for the current platform, refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demonstration</a> on GitHub.</p>
+
+<p>To enable isolate usage with the Polyglot API, create an <code>Engine</code> or <code>Context</code> builder with an explicit permitted languages list and call <code>spawnIsolate(true)</code>.</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolate {
+	public static void main(String[] args) {
+		try (Context context = Context.newBuilder("js")
+			  .allowHostAccess(HostAccess.SCOPED)
+			  .spawnIsolate(true).build()) {
+
+			Value function = context.eval("js", "x =&gt; x+1");
+			assert function.canExecute();
+			int x = function.execute(41).asInt();
+			assert x == 42;
+		}
+	}
+}
+</code></pre>
+
+<p>Starting from GraalVM 25, a polyglot isolate can be launched in a separate external subprocess by setting the <code>--engine.IsolateMode=external</code> option.
+This allows the isolate to run in a separate OS process, providing an additional level of isolation.
+The default mode remains <code>internal</code>, which uses a Native Image isolate embedded in the same process.</p>
+
+<pre><code class="language-java">Context context = Context.newBuilder("js")
+			  .allowHostAccess(HostAccess.SCOPED)
+			  .spawnIsolate(true)
+			  .option("engine.IsolateMode", "external")
+			  .build()
+</code></pre>
+
+<p><a id="polyglot-isolate-artifacts"></a>
+Currently, the following languages are available as polyglot isolates:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Language</th>
+      <th>Oracle GraalVM artifact (available from)</th>
+      <th>GraalVM Community Edition artifact (available from)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>JavaScript</td>
+      <td><code>js-isolate</code> (23.1)</td>
+      <td><code>js-isolate-community</code> (25.1)</td>
+    </tr>
+    <tr>
+      <td>Python</td>
+      <td><code>python-isolate</code> (24.1)</td>
+      <td><code>python-isolate-community</code> (25.1)</td>
+    </tr>
+    <tr>
+      <td>Wasm</td>
+      <td><code>wasm-isolate</code> (25.0)</td>
+      <td><code>wasm-isolate-community</code> (25.1)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Support for more languages is planned for future versions.</p>
+
+<p>In the previous example, scoped references were enabled using <code>HostAccess.SCOPED</code>.
+This is necessary because the host GC and the guest GC are unaware of one another, so cyclic references between objects cannot be resolved automatically.
+It is strongly recommended to use <a href="#controlling-host-callback-parameter-scoping">scoped parameters for host callbacks</a> to avoid cyclic references altogether.</p>
+
+<p>Multiple contexts can be spawned in the same isolated engine by <a href="#code-caching-across-multiple-contexts">sharing engines</a>:</p>
+
+<pre><code class="language-java">public class PolyglotIsolateMultipleContexts {
+    public static void main(String[] args) {
+        try (Engine engine = Engine.newBuilder("js")
+                .spawnIsolate(true).build()) {
+            Source source = Source.create("js", "21 + 21");
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+            try (Context context = Context.newBuilder()
+                .engine(engine)
+                .build()) {
+                    int v = context.eval(source).asInt();
+                    assert v == 42;
+            }
+        }
+    }
+}
+</code></pre>
+    
+      <h3 id="passing-native-image-runtime-options">
+        
+        
+          Passing Native Image Runtime Options <a href="#passing-native-image-runtime-options" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Engines running in an isolate can use <a href="/latest/reference-manual/native-image/overview/Options/">Native Image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
+For example, use <code>--engine.IsolateOption.MaxHeapSize=128m</code> to limit the maximum heap memory used by an engine:</p>
+
+<pre><code class="language-java">import org.graalvm.polyglot.*;
+
+public class PolyglotIsolateMaxHeap {
+  public static void main(String[] args) {
+    try {
+      Context context = Context.newBuilder("js")
+        .allowHostAccess(HostAccess.SCOPED)
+        .spawnIsolate(true)
+        .option("engine.IsolateOption.MaxHeapSize", "64m").build()
+      context.eval("js", "var a = [];while (true) {a.push('foobar');}");
+    } catch (PolyglotException ex) {
+      if (ex.isResourceExhausted()) {
+        System.out.println("Resource exhausted");
+      }
+    }
+  }
+}
+</code></pre>
+<p>Exceeding the maximum heap size automatically closes the context and throws a <code>PolyglotException</code>.</p>
+    
+      <h3 id="ensuring-host-callback-stack-headroom">
+        
+        
+          Ensuring Host Callback Stack Headroom <a href="#ensuring-host-callback-stack-headroom" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>With polyglot isolates, <code>--engine.HostCallStackHeadRoom</code> ensures that a minimum amount of stack space is available when performing a host callback.
+The host callback fails if the available stack size drops below the specified threshold.</p>
+    
+      <h3 id="memory-protection">
+        
+        
+          Memory Protection <a href="#memory-protection" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>In Linux environments that support Memory Protection Keys, use the <code>--engine.MemoryProtection=true</code> option to isolate the heaps of polyglot isolates at the hardware level.
+If an engine is created with this option, a dedicated protection key will be allocated for the isolated engine’s heap.
+GraalVM only enables access to the engine’s heap when executing code of the polyglot isolate.</p>
     
       <h2 id="build-native-executables-from-polyglot-applications">
         
@@ -2158,203 +2390,6 @@ If a source instance is no longer referenced, but the engine is still referenced
 We recommend, therefore, keeping a strong reference to the <code>Source</code> object as long as <code>Source</code> should remain cached.</p>
 
 <p>To summarize, the code cache can be controlled by keeping and maintaining strong references to the <code>Engine</code> and <code>Source</code> objects.</p>
-    
-      <h2 id="polyglot-isolates">
-        
-        
-          Polyglot Isolates <a href="#polyglot-isolates" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h2>
-
-<p>On Oracle GraalVM, a polyglot engine can be configured to run in a dedicated Native Image isolate.
-A polyglot engine in this mode executes within a VM-level fault domain with a dedicated garbage collector and JIT compiler.
-Polyglot isolates are useful for <a href="/latest/security-guide/sandboxing/">sandboxing</a>.
-Running languages in an isolate works with HotSpot and Native Image host virtual machines.</p>
-
-<p>Languages used as polyglot isolates can be downloaded from Maven Central using the <code>-isolate</code> suffix.
-For example, a dependency on isolated JavaScript can be configured by adding a Maven dependency like this:</p>
-
-<pre><code class="language-xml">&lt;dependency&gt;
-    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-    &lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
-    &lt;type&gt;jar&lt;/type&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-    &lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-    &lt;artifactId&gt;js-isolate&lt;/artifactId&gt;
-    &lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
-    &lt;type&gt;pom&lt;/type&gt;
-&lt;/dependency&gt;
-</code></pre>
-
-<p>Starting from the Polyglot API version 24.1.0, the polyglot engine supports polyglot isolates for individual platforms.
-To download a polyglot isolate for a specific platform, append the operating system and CPU architecture classifiers to the polyglot isolate Maven <code>artifactId</code>.
-For example, to configure a dependency on isolated Python for Linux amd64, add the following Maven dependencies:</p>
-
-<pre><code class="language-xml">&lt;dependency&gt;
-	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-	&lt;artifactId&gt;polyglot&lt;/artifactId&gt;
-	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
-	&lt;type&gt;jar&lt;/type&gt;
-&lt;/dependency&gt;
-&lt;dependency&gt;
-	&lt;groupId&gt;org.graalvm.polyglot&lt;/groupId&gt;
-	&lt;artifactId&gt;python-isolate-linux-amd64&lt;/artifactId&gt;
-	&lt;version&gt;${graalvm.polyglot.version}&lt;/version&gt;
-	&lt;type&gt;pom&lt;/type&gt;
-&lt;/dependency&gt;
-</code></pre>
-
-<p>Supported platform classifiers are:</p>
-<ul>
-  <li><code>linux-amd64</code></li>
-  <li><code>linux-aarch64</code></li>
-  <li><code>darwin-aarch64</code></li>
-  <li><code>windows-amd64</code></li>
-</ul>
-
-<p>For a complete Maven POM file that adds the polyglot isolate Native Image dependency for the current platform, refer to the <a href="https://github.com/graalvm/polyglot-embedding-demo">Polyglot Embedding Demonstration</a> on GitHub.</p>
-
-<p>To enable isolate usage with the Polyglot API, the <code>--engine.SpawnIsolate=true</code> option must be passed to <code>Engine</code> or <code>Context</code> when constructed.
-The option <code>engine.SpawnIsolate</code> may not be available if used on any JDK other than Oracle GraalVM.</p>
-
-<pre><code class="language-java">import org.graalvm.polyglot.*;
-
-public class PolyglotIsolate {
-	public static void main(String[] args) {
-		try (Context context = Context.newBuilder("js")
-			  .allowHostAccess(HostAccess.SCOPED)
-			  .option("engine.SpawnIsolate", "true").build()) {
-
-			Value function = context.eval("js", "x =&gt; x+1");
-			assert function.canExecute();
-			int x = function.execute(41).asInt();
-			assert x == 42;
-		}
-	}
-}
-</code></pre>
-
-<p>Starting from GraalVM 25.0, a polyglot isolate can be launched in a separate external sub-process by setting the <code>--engine.IsolateMode=external</code> option.
-This allows the isolate to run in a fully separate OS process, providing an additional level of isolation. The default mode remains <code>internal</code>, which uses a Native Image isolate embedded in the same process.</p>
-
-<pre><code class="language-java">Context context = Context.newBuilder("js")
-			  .allowHostAccess(HostAccess.SCOPED)
-			  .option("engine.SpawnIsolate", "true")
-			  .option("engine.IsolateMode", "external")
-			  .build()
-</code></pre>
-
-<p>Currently, the following languages are available as polyglot isolates:</p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Language</th>
-      <th>Available from</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>JavaScript (<code>js-isolate</code>)</td>
-      <td>23.1</td>
-    </tr>
-    <tr>
-      <td>Python (<code>python-isolate</code>)</td>
-      <td>24.1</td>
-    </tr>
-    <tr>
-      <td>Wasm (<code>wasm-isolate</code>)</td>
-      <td>25.0</td>
-    </tr>
-  </tbody>
-</table>
-
-<p>We plan to add support for more languages in future versions.</p>
-
-<p>In the previous example, we enable scoped references using <code>HostAccess.SCOPED</code>.
-This is necessary because the host GC and the guest GC are unaware of one another, so cyclic references between objects cannot be resolved automatically.
-We thus strongly recommend using <a href="#controlling-host-callback-parameter-scoping">scoped parameters for host callbacks</a> to avoid cyclic references altogether.</p>
-
-<p>Multiple contexts can be spawned in the same isolated engine by <a href="#code-caching-across-multiple-contexts">sharing engines</a>:</p>
-
-<pre><code class="language-java">public class PolyglotIsolateMultipleContexts {
-    public static void main(String[] args) {
-        try (Engine engine = Engine.newBuilder("js")
-                .option("engine.SpawnIsolate", "true").build()) {
-            Source source = Source.create("js", "21 + 21");
-            try (Context context = Context.newBuilder()
-                .engine(engine)
-                .build()) {
-                    int v = context.eval(source).asInt();
-                    assert v == 42;
-            }
-            try (Context context = Context.newBuilder()
-                .engine(engine)
-                .build()) {
-                    int v = context.eval(source).asInt();
-                    assert v == 42;
-            }
-        }
-    }
-}
-</code></pre>
-    
-      <h3 id="passing-native-image-runtime-options">
-        
-        
-          Passing Native Image Runtime Options <a href="#passing-native-image-runtime-options" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>Engines running in an isolate can make use of <a href="/latest/reference-manual/native-image/overview/Options/">Native Image runtime options</a> by passing <code>--engine.IsolateOption.&lt;option&gt;</code> to the engine builder.
-For example, this can be used to limit the maximum heap memory used by an engine by setting the maximum heap size for the isolate via <code>--engine.IsolateOption.MaxHeapSize=128m</code>:</p>
-
-<pre><code class="language-java">import org.graalvm.polyglot.*;
-
-public class PolyglotIsolateMaxHeap {
-  public static void main(String[] args) {
-    try {
-      Context context = Context.newBuilder("js")
-        .allowHostAccess(HostAccess.SCOPED)
-        .option("engine.SpawnIsolate", "true")
-        .option("engine.IsolateOption.MaxHeapSize", "64m").build()
-      context.eval("js", "var a = [];while (true) {a.push('foobar');}");
-    } catch (PolyglotException ex) {
-      if (ex.isResourceExhausted()) {
-        System.out.println("Resource exhausted");
-      }
-    }
-  }
-}
-</code></pre>
-<p>Exceeding the maximum heap size will automatically close the context and raise a <code>PolyglotException</code>.</p>
-    
-      <h3 id="ensuring-host-callback-stack-headroom">
-        
-        
-          Ensuring Host Callback Stack Headroom <a href="#ensuring-host-callback-stack-headroom" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>With Polyglot Isolates, the <code>--engine.HostCallStackHeadRoom</code> ensures a minimum stack space available when performing a host callback.
-The host callback fails if the available stack size drops below the specified threshold.</p>
-    
-      <h3 id="memory-protection">
-        
-        
-          Memory Protection <a href="#memory-protection" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
-        
-        
-      </h3>
-
-<p>In Linux environments that support Memory Protection Keys, the <code>--engine.MemoryProtection=true</code> option can be used to isolate the heaps of Polyglot Isolates at the hardware level.
-If an engine is created with this option, a dedicated protection key will be allocated for the isolated engine’s heap.
-GraalVM only enables access to the engine’s heap when executing code of the Polyglot Isolate.</p>
     
       <h2 id="embed-a-guest-language-in-java">
         

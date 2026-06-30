@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -421,6 +422,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -506,9 +508,44 @@ Experimental support for CommonJS modules can be enabled through the <code>js.co
 
 <p>GraalJS supports the full ES modules specification, including <code>import</code> statements, dynamic modules import using <code>import()</code>, and advanced features such as <a href="https://github.com/tc39/proposal-top-level-await">top-level <code>await</code></a>.</p>
 
-<p>ECMAScript modules can be loaded in a <code>Context</code> simply by evaluating the module sources. 
-GraalJS loads ECMAScript modules based on their file extension. 
-Therefore, any ECMAScript module should have file name extension <em>.mjs</em>. 
+<p>GraalJS supports import attributes using the <code>with</code> syntax:</p>
+
+<pre><code class="language-js">import config from "./config.json" with { type: "json" };
+</code></pre>
+
+<p>Legacy import assertions using <code>assert</code>, and the <code>js.import-assertions</code> option, are no longer supported.
+Use import attributes and the <code>js.import-attributes</code> option instead.</p>
+    
+      <h4 id="importing-source-text-and-bytes">
+        
+        
+          Importing Source Text and Bytes
+        
+        
+      </h4>
+
+<p>GraalJS can import the contents of a module without evaluating it.
+Enable import attributes together with the corresponding experimental feature:</p>
+
+<pre><code class="language-shell">js --experimental-options \
+   --js.import-attributes \
+   --js.import-text \
+   --module application.mjs
+</code></pre>
+
+<p>Use the <code>text</code> import attribute to receive the source as a string:</p>
+
+<pre><code class="language-js">import source from "./document.txt" with { type: "text" };
+</code></pre>
+
+<p>Enable <code>--js.import-bytes</code> and use the <code>bytes</code> import attribute to receive the source as a <code>Uint8Array</code>:</p>
+
+<pre><code class="language-js">import data from "./data.bin" with { type: "bytes" };
+</code></pre>
+
+<p>ECMAScript modules can be loaded in a <code>Context</code> simply by evaluating the module sources.
+GraalJS loads ECMAScript modules based on their file extension.
+Therefore, any ECMAScript module should have file name extension <em>.mjs</em>.
 Alternatively, the module <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Source.html">Source</a> should have MIME type <code>"application/javascript+module"</code>.</p>
 
 <p>As an example, let’s assume that you have a file named <em>foo.mjs</em> containing the following simple ES module:</p>

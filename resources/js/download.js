@@ -1,4 +1,4 @@
-let currentMajorJavaVersion = "25";
+let currentMajorJavaVersion = "25.1";
 let currentPlatform = "empty-choice";
 let currentDownloadLink = null;
 
@@ -90,12 +90,14 @@ const fullJavaVersions = {
   "17": "17.0.12",
   "21": "21.0.11",
   "25": "25.0.3",
+  "25.1": "25.1.3",
 }
 
 function updateGHASnippet(majorJavaVersion) {
+  const fullJavaVersion = fullJavaVersions[majorJavaVersion] || majorJavaVersion;
   $("#dl-snippet-gha").text(`- uses: graalvm/setup-graalvm@v1
   with:
-    java-version: '${majorJavaVersion}'
+    java-version: '${fullJavaVersion}'
     distribution: 'graalvm'
     github-token: \$\{\{ secrets.GITHUB_TOKEN \}\}`);
 }
@@ -110,9 +112,8 @@ docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
 
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
-  const comment = majorJavaVersion === "25" ? ' <span class="no-strip"># coming soon</span>' : '';
-  // $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal # coming soon`);
-    $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal`);
+  const comment = majorJavaVersion === "25.1" ? ' <span class="no-strip"># coming soon</span>' : '';
+  $("#dl-snippet-sdkman").html(`sdk install java ${fullJavaVersion}-graal${comment}`);
 }
 
 
@@ -130,8 +131,10 @@ curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk
 
 function updateDownloadButton(majorJavaVersion) {
   let versionLabel = '';
-  if (majorJavaVersion === "25") {
-    versionLabel = "GraalVM 25";
+  if (majorJavaVersion === "25.1") {
+    versionLabel = "GraalVM 25.1";
+  } else if (majorJavaVersion === "25") {
+    versionLabel = "GraalVM 25.0";
   } else if (majorJavaVersion === "21") {
     versionLabel = "GraalVM for JDK 21";
   } else if (majorJavaVersion === "17") {
@@ -175,7 +178,7 @@ function toggleDownloadBanners(majorJavaVersion) {
   jdk17Banner.style.display = "none";
   jdk17Banner.classList.remove("visible");
 
-  if (majorJavaVersion === "25" || majorJavaVersion === "21") {
+  if (majorJavaVersion === "25.1" || majorJavaVersion === "25" || majorJavaVersion === "21") {
     allJdkBanner.style.display = "block";
     setTimeout(() => allJdkBanner.classList.add("visible"), 10);
     optionTabs.style.display = "";

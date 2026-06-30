@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -514,6 +515,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -626,19 +628,7 @@ $(document).ready(function(){
   <li><code>--exact-reachability-metadata</code>: enables exact and user-friendly handling of reflection, resources, JNI, and serialization</li>
   <li><code>--exact-reachability-metadata-path</code>: trigger exact handling of reflection, resources, JNI, and serialization from all types in the given class-path or module-path entries</li>
   <li><code>--features</code>: a comma-separated list of fully qualified <a href="https://www.graalvm.org/sdk/javadoc/index.html?org/graalvm/nativeimage/hosted/Feature.html">Feature implementation classes</a></li>
-  <li><code>--future-defaults</code>: enable options that are planned to become defaults in future releases. A comma-separated list can contain <code>all</code>, <code>none</code>, <code>run-time-initialize-jdk</code>, <code>class-for-name-respects-class-loader</code>, <code>run-time-initialize-file-system-providers</code>, <code>run-time-initialize-security-providers</code>, <code>run-time-initialize-resource-bundles</code>. The preferred usage is <code>--future-defaults=all</code>.
-    <ul>
-      <li><code>all</code>: enables all other future default behaviors (preferred option)</li>
-      <li><code>none</code>: forcefully disables all enabled options (can only be used from the command line to override choices taken by inaccessible parts of the build process)</li>
-      <li><code>run-time-initialize-jdk</code>: enables all behaviors related to run-time initialization of the JDK (includes <code>run-time-initialize-security-providers</code>, <code>run-time-initialize-file-system-providers</code>, <code>run-time-initialize-resource-bundles</code>)</li>
-      <li><code>class-for-name-respects-class-loader</code>: <code>Class#forName</code> and <code>ClassLoader#loadClass</code> respect their class loader argument. Instead of one flat namespace, each class loader has its own namespace and may delegate to other class loaders</li>
-      <li><code>run-time-initialize-security-providers</code>: shifts away from build-time initialization for <code>java.security.Provider</code>. Unless you store <code>java.security.Provider</code>-related classes in the image heap, this option should not affect you</li>
-      <li><code>run-time-initialize-file-system-providers</code>: shifts away from build-time initialization for <code>java.nio.file.spi.FileSystemProvider</code>. Unless you store <code>FileSystemProvider</code>-related classes in the image heap, this option should not affect you</li>
-      <li><code>run-time-initialize-resource-bundles</code>: shifts away from build-time initialization for <code>java.util.ResourceBundle</code>. Unless you store <code>ResourceBundle</code>-related classes in the image heap, this option should not affect you</li>
-    </ul>
-
-    <p>Test your application with <code>--future-defaults=all</code> to make sure it is compatible with future releases of GraalVM and upcoming semantic changes.</p>
-  </li>
+  <li><code>--future-defaults</code>: enable options that are planned to become defaults in future releases. A comma-separated list can contain <code>all</code>, <code>run-time-initialized-jdk</code>, <code>none</code>.</li>
   <li><code>--gc=&lt;value&gt;</code>: select a Native Image garbage collector implementation. Allowed options for <code>&lt;value&gt;</code> are: <code>G1</code> for G1 garbage collector (not available in GraalVM Community Edition); <code>epsilon</code> for Epsilon garbage collector; <code>serial</code> for Serial garbage collector (default).</li>
   <li><code>--initialize-at-build-time</code>: a comma-separated list of packages and classes (and implicitly all of their superclasses) that are initialized during generation of a native executable. An empty string designates all packages.</li>
   <li><code>--initialize-at-run-time</code>: a comma-separated list of packages and classes (and implicitly all of their subclasses) that must be initialized at run time and not during generation. An empty string is currently not supported.</li>
@@ -779,6 +769,11 @@ For example:</p>
 </blockquote>
 
 <p>For a practical demonstration, see the <a href="https://github.com/graalvm/graalvm-demos/tree/master/native-image/preserve-package">preserve-package demo</a>.</p>
+
+<p>You can combine <code>-H:Preserve</code> with <a href="/jdk25/reference-manual/native-image/metadata/AutomaticMetadataCollection/#dynamic-metadata-collection-from-a-native-image">metadata tracing from a native image</a> to collect reachability metadata from a representative run:</p>
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=package=com.example.library.* ...
+./application -XX:TraceMetadata=path=metadata-output -XX:TraceMetadataConditionPackages=com.example.application
+</code></pre>
     
       <h4 id="memory-requirements">
         
@@ -788,7 +783,7 @@ For example:</p>
         
       </h4>
 
-<p>Native Image compilation is memory-intensive, particularly when building large projects or when using -<code>H:Preserve=all</code> or <code>--pgo-instrument</code>.</p>
+<p>Native Image compilation is memory-intensive, particularly when building large projects or when using <code>-H:Preserve=all</code> or <code>--pgo-instrument</code>.</p>
 
 <p>If you encounter <code>OutOfMemoryError: Java heap space</code> you can:</p>
 

@@ -189,7 +189,8 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25 (Latest)', 'latest');">GraalVM 25 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.1 (Latest)', 'latest');">GraalVM 25.1 (Latest)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0', 'jdk25');">GraalVM 25.0</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21', 'jdk21');">GraalVM for JDK 21</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17', 'jdk17');">GraalVM for JDK 17</li>
         <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
@@ -492,6 +493,7 @@ $(document).ready(function(){
   
 
 </div>
+
         </div>
       </div>
     </div>
@@ -550,7 +552,7 @@ $(document).ready(function(){
 
 <p>The Native Image tool relies on the static analysis of an application’s reachable code at runtime. 
 However, the analysis cannot always completely predict all usages of the Java Native Interface (JNI), Foreign Function and Memory (FFM) API, Java Reflection, Dynamic Proxy objects, or class path resources. 
-Undetected usages of these dynamic features must be provided to the <code>native-image</code> tool in the form of <a href="/jdk25/reference-manual/native-image/metadata/">metadata</a> (precomputed in code or as JSON configuration files). For a complete reference of JSON field configurations, see <a href="/jdk25/reference-manual/native-image/metadata/#reachability-metadata-json-format-reference">Reachability Metadata JSON Format Reference</a>.</p>
+Undetected usages of these dynamic features must be provided to the <code>native-image</code> tool in the form of <a href="/jdk25/reference-manual/native-image/metadata/">metadata</a> (precomputed in code or as JSON configuration files).</p>
 
 <p>Here you will find information how to automatically collect metadata for an application and write JSON configuration files.
 To learn how to compute dynamic feature calls in code, see <a href="/jdk25/reference-manual/native-image/metadata/#computing-metadata-in-code">Reachability Metadata</a>.</p>
@@ -567,7 +569,7 @@ To learn how to compute dynamic feature calls in code, see <a href="/jdk25/refer
   <li><a href="#tracing-agent">Tracing Agent</a></li>
   <li><a href="#conditional-metadata-collection">Conditional Metadata Collection</a></li>
   <li><a href="#agent-advanced-usage">Agent Advanced Usage</a></li>
-  <li><a href="#native-image-configure-tool">Native Image Configure Tool</a></li>
+  <li><a href="#native-image-utils-tool">Native Image Utils Tool</a></li>
 </ul>
     
       <h2 id="tracing-agent">
@@ -631,6 +633,63 @@ When multiple files with the same name are found, all of them are considered.</p
 Conditional metadata is mainly aimed towards library maintainers with the goal of reducing overall footprint.</p>
 
 <p>To collect conditional metadata with the agent, see <a href="/jdk25/reference-manual/native-image/metadata/ExperimentalAgentOptions/#generating-conditional-configuration-using-the-agent">Conditional Metadata Collection</a>.</p>
+    
+      <h3 id="dynamic-metadata-collection-from-a-native-image">
+        
+        
+          Dynamic Metadata Collection From a Native Image <a href="#dynamic-metadata-collection-from-a-native-image" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>This workflow collects metadata dynamically by tracing an actual native image execution.
+The generated metadata is conditional because each traced access can be guarded by a <code>typeReached</code> condition derived from the run-time call stack.
+To generate conditional metadata this way, build the image with metadata tracing support:</p>
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions ...
+</code></pre>
+    
+      <h4 id="creating-a-complete-image-for-tracing">
+        
+        
+          Creating a Complete Image for Tracing
+        
+        
+      </h4>
+
+<p>Metadata tracing can only record metadata that was included in the native image at build time.
+For exploratory tracing, use <code>-H:Preserve</code> at build time to include the packages, modules, or class path entries whose metadata you want to observe during tracing.
+This intentionally expands the image for the discovery phase so the subsequent run can deduce which metadata is actually needed.
+For example, preserve a package and its subpackages while enabling tracing support:</p>
+
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=package=com.example.library.* ...
+</code></pre>
+
+<p>For broad exploratory runs, use <code>-H:Preserve=all</code>:</p>
+
+<pre><code class="language-shell">native-image -H:+UnlockExperimentalVMOptions -H:+MetadataTracingSupport -H:-UnlockExperimentalVMOptions -H:Preserve=all ...
+</code></pre>
+
+<p><code>-H:Preserve=all</code> can require significantly more memory and produces larger executables.
+You can use it for one exploratory build with metadata tracing support to include as much metadata as possible, then use the traced run to deduce which metadata is actually needed.
+Regular follow-up builds can use the generated metadata without <code>-H:Preserve=all</code>.
+This combines broad discovery with smaller and less resource-intensive normal builds.
+If you still need preservation after exploration, prefer a specific selector such as <code>-H:Preserve=package=&lt;package&gt;</code> once you know which application or library packages need metadata.</p>
+
+<p>At run time, pass <code>-XX:TraceMetadata=path=&lt;output-dir&gt;</code> and <code>-XX:TraceMetadataConditionPackages=&lt;package-1&gt;,&lt;package-2&gt;</code>.
+This produces the most accurate conditional metadata because the traced accesses follow Native Image semantics.
+The package list uses package prefixes.
+When a traced access occurs, Native Image uses the first stack frame whose class is in one of those packages as the <code>typeReached</code> condition.
+Trace events without a matching stack frame are ignored.</p>
+
+<p>For example:</p>
+<pre><code class="language-shell">./application -XX:TraceMetadata=path=metadata-output -XX:TraceMetadataConditionPackages=com.example.application
+</code></pre>
+
+<p>Run the image with inputs that cover each code path that needs conditional metadata, writing each run to a separate output directory.
+Then merge the outputs:</p>
+<pre><code class="language-shell">native-image-utils generate --input-dir=metadata-output-1 --input-dir=metadata-output-2 --output-dir=merged-metadata
+</code></pre>
+<p>Alternatively, the image generation and aggregation steps can be repeated in a loop until the generated metadata converges.</p>
     
       <h2 id="agent-advanced-usage">
         
@@ -754,9 +813,9 @@ However, for a better understanding of the execution, the agent can also write a
 <pre><code class="language-shell">$JAVA_HOME/bin/java -agentlib:native-image-agent=trace-output=/path/to/trace-file.json ...
 </code></pre>
 
-<p>The <code>native-image-configure</code> tool can transform trace files to configuration files.
+<p>The <code>native-image-utils</code> tool can transform trace files to configuration files.
 The following command reads and processes <code>trace-file.json</code> and generates a set of configuration files in the directory <code>/path/to/config-dir/</code>:</p>
-<pre><code class="language-shell">native-image-configure generate --trace-input=/path/to/trace-file.json --output-dir=/path/to/config-dir/
+<pre><code class="language-shell">native-image-utils generate --trace-input=/path/to/trace-file.json --output-dir=/path/to/config-dir/
 </code></pre>
     
       <h3 id="interoperability">
@@ -783,21 +842,21 @@ In this case, it is necessary to provide the absolute path of the agent:</p>
 <p>The agent has options which are currently experimental and might be enabled in future releases, but can also be changed or removed entirely.
 See the <a href="/jdk25/reference-manual/native-image/metadata/ExperimentalAgentOptions/">ExperimentalAgentOptions.md</a> guide.</p>
     
-      <h2 id="native-image-configure-tool">
+      <h2 id="native-image-utils-tool">
         
         
-          Native Image Configure Tool <a href="#native-image-configure-tool" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Native Image Utils Tool <a href="#native-image-utils-tool" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
 
 <p>When using the agent in multiple processes at the same time as described in the previous section, <code>config-output-dir</code> is a safe option, but it results in multiple sets of configuration files.
-The <code>native-image-configure</code> tool can be used to merge these configuration files:</p>
-<pre><code class="language-shell">native-image-configure generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
+The <code>native-image-utils</code> tool can be used to merge these configuration files:</p>
+<pre><code class="language-shell">native-image-utils generate --input-dir=/path/to/config-dir-0/ --input-dir=/path/to/config-dir-1/ --output-dir=/path/to/merged-config-dir/
 </code></pre>
 
 <p>This command reads one set of configuration files from <code>/path/to/config-dir-0/</code> and another from <code>/path/to/config-dir-1/</code> and then writes a set of configuration files that contains both of their information to <code>/path/to/merged-config-dir/</code>.
-An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-configure help</code> for all options.</p>
+An arbitrary number of <code>--input-dir</code> arguments with sets of configuration files can be specified. See <code>native-image-utils help</code> for all options.</p>
     
       <h3 id="further-reading">
         
