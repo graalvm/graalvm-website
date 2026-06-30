@@ -93,6 +93,14 @@ const fullJavaVersions = {
   "25.1": "25.1.3",
 }
 
+const downloadArtifacts = {
+  "25.1": {
+    baseUrl: "https://gds.oracle.com/download/graal/25i1",
+    latestVersion: "25i1-25",
+    archiveVersion: "25i1-25.0.3",
+  },
+}
+
 function updateGHASnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion] || majorJavaVersion;
   $("#dl-snippet-gha").text(`- uses: graalvm/setup-graalvm@v1
@@ -118,14 +126,18 @@ function updateSDKMANSnippet(majorJavaVersion) {
 
 
 function updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtension) {
+  const artifact = downloadArtifacts[majorJavaVersion];
+  const baseUrl = artifact ? artifact.baseUrl : `https://download.oracle.com/graalvm/${majorJavaVersion}`;
+  const latestVersion = artifact ? artifact.latestVersion : majorJavaVersion;
+  const archiveVersion = artifact ? artifact.archiveVersion : majorJavaVersion;
   $("#dl-snippet-script-friendly-urls").text(`# Download with wget
-wget https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}
+wget ${baseUrl}/latest/graalvm-jdk-${latestVersion}_${platform}_bin.${fileExtension}
 
 # Download with curl
-curl https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}
+curl ${baseUrl}/latest/graalvm-jdk-${latestVersion}_${platform}_bin.${fileExtension}
 
 # Download from archive
-curl https://download.oracle.com/graalvm/${majorJavaVersion}/archive/graalvm-jdk-${majorJavaVersion}_${platform}_bin.${fileExtension}`);
+curl ${baseUrl}/archive/graalvm-jdk-${archiveVersion}_${platform}_bin.${fileExtension}`);
 }
 
 
@@ -151,7 +163,10 @@ function updateDownloadButton(majorJavaVersion) {
 
   if (isValid) {
     const fileExtension = currentPlatform.indexOf("windows") === 0 ? "zip" : "tar.gz";
-    currentDownloadLink = `https://download.oracle.com/graalvm/${majorJavaVersion}/latest/graalvm-jdk-${majorJavaVersion}_${currentPlatform}_bin.${fileExtension}`;
+    const artifact = downloadArtifacts[majorJavaVersion];
+    const baseUrl = artifact ? artifact.baseUrl : `https://download.oracle.com/graalvm/${majorJavaVersion}`;
+    const latestVersion = artifact ? artifact.latestVersion : majorJavaVersion;
+    currentDownloadLink = `${baseUrl}/latest/graalvm-jdk-${latestVersion}_${currentPlatform}_bin.${fileExtension}`;
 
     $("#download-main-btn")
       .attr("href", currentDownloadLink)
