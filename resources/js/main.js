@@ -634,11 +634,13 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "GraalVM 25.1 (Latest)";
+    version = "GraalVM 25.1 (Innovation)";
   } else if (version === "dev") {
     version = "Dev Build";
   } else if (version === "jdk25") {
-    version = "GraalVM 25.0";
+    version = "GraalVM 25.0 (LTS)";
+  } else if (version === "jdk21" || version === "jdk17") {
+    version = `GraalVM for JDK ${version.substr(3)} (LTS)`;
   } else if (version.indexOf("jdk") === 0) {
     version = `GraalVM for JDK ${version.substr(3)}`;
   } else {

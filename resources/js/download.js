@@ -144,13 +144,13 @@ curl ${baseUrl}/archive/graalvm-jdk-${archiveVersion}_${platform}_bin.${fileExte
 function updateDownloadButton(majorJavaVersion) {
   let versionLabel = '';
   if (majorJavaVersion === "25.1") {
-    versionLabel = "GraalVM 25.1";
+    versionLabel = "25.1 (Innovation)";
   } else if (majorJavaVersion === "25") {
-    versionLabel = "GraalVM 25.0";
+    versionLabel = "25.0 (LTS)";
   } else if (majorJavaVersion === "21") {
-    versionLabel = "GraalVM for JDK 21";
+    versionLabel = "JDK 21 (LTS)";
   } else if (majorJavaVersion === "17") {
-    versionLabel = "GraalVM for JDK 17";
+    versionLabel = "JDK 17 (LTS)";
   } else {
     versionLabel = `Java ${majorJavaVersion}`;
   }
