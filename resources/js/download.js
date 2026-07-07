@@ -102,10 +102,13 @@ const downloadArtifacts = {
 }
 
 function updateGHASnippet(majorJavaVersion) {
-  const fullJavaVersion = fullJavaVersions[majorJavaVersion] || majorJavaVersion;
+  const usesGraalVMVersion = majorJavaVersion === "25" || majorJavaVersion === "25.1";
+  const versionInput = usesGraalVMVersion ? "version" : "java-version";
+  const selectedVersion = majorJavaVersion === "25" ? "25.0" :
+    usesGraalVMVersion ? majorJavaVersion : fullJavaVersions[majorJavaVersion] || majorJavaVersion;
   $("#dl-snippet-gha").text(`- uses: graalvm/setup-graalvm@v1
   with:
-    java-version: '${fullJavaVersion}'
+    ${versionInput}: '${selectedVersion}'
     distribution: 'graalvm'
     github-token: \$\{\{ secrets.GITHUB_TOKEN \}\}`);
 }
