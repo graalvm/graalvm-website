@@ -137,10 +137,10 @@ function updateScriptFriendlyURLsSnippet(majorJavaVersion, platform, fileExtensi
 wget ${baseUrl}/latest/graalvm-jdk-${latestVersion}_${platform}_bin.${fileExtension}
 
 # Download with curl
-curl ${baseUrl}/latest/graalvm-jdk-${latestVersion}_${platform}_bin.${fileExtension}
+curl -LO ${baseUrl}/latest/graalvm-jdk-${latestVersion}_${platform}_bin.${fileExtension}
 
 # Download from archive
-curl ${baseUrl}/archive/graalvm-jdk-${archiveVersion}_${platform}_bin.${fileExtension}`);
+curl -LO ${baseUrl}/archive/graalvm-jdk-${archiveVersion}_${platform}_bin.${fileExtension}`);
 }
 
 
