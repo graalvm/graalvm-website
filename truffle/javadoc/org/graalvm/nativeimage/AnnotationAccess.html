@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../search.html">Search</a></li>
 <li><a href="../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.3.4.1-dev</b><br>44b6eecab21647604859c2df93fb709c9d8a5d40</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.3.4.1-dev</b><br>0835ac863bc51d548dc4407ca8b169db27edb396</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -78,8 +78,10 @@ loadScripts(document, 'script');</script>
 <div class="horizontal-scroll">
 <div class="type-signature"><span class="modifiers">public final class </span><span class="element-name type-name-label">AnnotationAccess</span>
 <span class="extends-implements">extends <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a></span></div>
-<div class="block">This class provides methods to query annotation information on <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/reflect/AnnotatedElement.html" title="class or interface in java.lang.reflect" class="external-link"><code>AnnotatedElement</code></a>s while
-trying to prevent, at image build time, side-effecting changes that impact the analysis results.
+<div class="block">This class provides same-VM annotation access for <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/reflect/AnnotatedElement.html" title="class or interface in java.lang.reflect" class="external-link"><code>AnnotatedElement</code></a>s owned by the current
+context while trying to prevent, at image build time, side-effecting changes that impact the
+analysis results. Native Image builder code querying guest-owned JVMCI elements must use its
+builder-to-guest annotation facade instead.
 
 The getAnnotation implementation in the JDK for Class, Field, and Method initializes the classes
 of all annotations present on that element, not just the class of the queried annotation. This
@@ -94,6 +96,11 @@ When methods of this class are called not at image build time, i.e., at image ru
 the execution of a Java application not involving native image, then the JDK method to query the
 annotation is invoked. In these cases, there is no difference to the class initialization
 behavior of the JDK.
+
+In a fully isolated image build, builder-owned elements are queried in the builder VM using core
+reflection. For those elements, these methods follow the JDK class initialization behavior; in
+particular, <a href="#getAnnotationTypes(java.lang.reflect.AnnotatedElement)"><code>getAnnotationTypes(AnnotatedElement)</code></a> can initialize annotation interfaces. Guest and
+application elements retain the reduced class initialization behavior described above.
 
 Note that there is intentionally no `getAnnotations` method to query all annotations: all
 annotation classes must be initialized anyways by this method, so the JDK method can be invoke
