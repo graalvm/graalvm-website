@@ -114,11 +114,12 @@ function updateGHASnippet(majorJavaVersion) {
 }
 
 function updateContainerSnippet(majorJavaVersion) {
+  const imageTag = majorJavaVersion === "25.2" ? "25i2" : majorJavaVersion;
   $("#dl-snippet-containers").text(`# GraalVM JDK with Native Image
-docker pull container-registry.oracle.com/graalvm/native-image:${majorJavaVersion}
+docker pull container-registry.oracle.com/graalvm/native-image:${imageTag}
 
 # GraalVM JDK without Native Image
-docker pull container-registry.oracle.com/graalvm/jdk:${majorJavaVersion}`);
+docker pull container-registry.oracle.com/graalvm/jdk:${imageTag}`);
 }
 
 function updateSDKMANSnippet(majorJavaVersion) {
