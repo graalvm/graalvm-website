@@ -189,7 +189,7 @@ $(document).ready(function(){
         <span class="value-text" id="valueText">Version</span>
       </div>
       <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
-        <li class="select-option" onclick="selected('GraalVM 25.2 (Innovation)', 'latest');">GraalVM 25.2 (Innovation)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.3 (Innovation)', 'latest');">GraalVM 25.3 (Innovation)</li>
         <li class="select-option" onclick="selected('GraalVM 25.0 (LTS)', 'jdk25');">GraalVM 25.0 (LTS)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 21 (LTS)', 'jdk21');">GraalVM for JDK 21 (LTS)</li>
         <li class="select-option" onclick="selected('GraalVM for JDK 17 (LTS)', 'jdk17');">GraalVM for JDK 17 (LTS)</li>
@@ -526,14 +526,14 @@ $(document).ready(function(){
         
       </h1>
 
-<p>The dynamic language features of the JVM (for example, reflection and resource handling) compute the <em>dynamically-accessed program elements</em> such as fields, methods, or resource URLs at run time. 
-On HotSpot this is possible because all class files and resources are available at run time and can be loaded by the runtime. 
+<p>The dynamic language features of the JVM (for example, reflection and resource handling) compute the <em>dynamically-accessed program elements</em> such as fields, methods, or resource URLs at run time.
+On HotSpot this is possible because all class files and resources are available at run time and can be loaded by the runtime.
 Availability of all classes and resources, and their loading at run time, comes with an extra overhead in memory and startup time.</p>
 
-<p>To make native binaries small, the <code>native-image</code> builder performs <a href="/latest/reference-manual/native-image/basics/#static-analysis-reachability-and-closed-world-assumption">static analysis</a> at build time to determine only the necessary program elements that are needed for the correctness of the application. 
+<p>To make native binaries small, the <code>native-image</code> builder performs <a href="/latest/reference-manual/native-image/basics/#static-analysis-reachability-and-closed-world-assumption">static analysis</a> at build time to determine only the necessary program elements that are needed for the correctness of the application.
 Small binaries allow fast application startup and low memory footprint, however they come at a cost: determining dynamically-accessed application elements via static analysis is infeasible as reachability of those elements depends on data that is available <em>only</em> at run time.</p>
 
-<p>To ensure inclusion of necessary dynamically-accessed elements into the native binary, the <code>native-image</code> builder requires <strong>reachability metadata</strong> (hereinafter referred to as <em>metadata</em>). 
+<p>To ensure inclusion of necessary dynamically-accessed elements into the native binary, the <code>native-image</code> builder requires <strong>reachability metadata</strong> (hereinafter referred to as <em>metadata</em>).
 Providing the builder with correct and exhaustive reachability metadata guarantees application correctness and ensures compatibility with third-party libraries at runtime.</p>
 
 <p>You can provide reachability metadata to the <code>native-image</code> builder using the following methods:</p>
@@ -568,7 +568,7 @@ Providing the builder with correct and exhaustive reachability metadata guarante
 <ul>
   <li><a href="#computing-metadata-in-code">Computing Metadata in Code</a></li>
   <li><a href="#specifying-metadata-with-json">Specifying Metadata with JSON</a></li>
-  <li><a href="#reachability-metadata-json-format-reference">Reachability Metadata JSON Format Reference</a></li>
+  <li><a href="#metadata-json-format-reference">Metadata JSON Format Reference</a></li>
   <li><a href="#metadata-types">Metadata Types</a></li>
   <li><a href="#reflection">Reflection</a></li>
   <li><a href="#java-native-interface">Java Native Interface</a></li>
@@ -632,8 +632,8 @@ Providing the builder with correct and exhaustive reachability metadata guarante
     <p>Note that Native Image currently aggressively computes constants, and therefore it is not possible to specify exactly what is a constant at build time.</p>
   </li>
   <li>
-    <p>By <a href="/latest/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">initializing classes at build time</a> and storing dynamically accessed elements into the initial heap of the native executable. 
-This way of providing metadata is suited for cases when specifying metadata with constants or in JSON is not possible. 
+    <p>By <a href="/latest/reference-manual/native-image/optimizations-and-performance/ClassInitialization/">initializing classes at build time</a> and storing dynamically accessed elements into the initial heap of the native executable.
+This way of providing metadata is suited for cases when specifying metadata with constants or in JSON is not possible.
 This is necessary in cases when:</p>
     <ul>
       <li>The user code needs to generate new class bytecode.</li>
@@ -670,8 +670,9 @@ This is necessary in cases when:</p>
         
       </h2>
 
-<p>All metadata specified in the <em>reachability-metadata.json</em> file that is located in any of the classpath entries at <em>META-INF/native-image/&lt;group.Id&gt;\/&lt;artifactId&gt;\/</em>.
-The JSON schema for the reachability metadata is defined in <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.2.0.json"><em>reachability-metadata-schema-v1.2.0.json</em></a>.</p>
+<p>You can provide metadata configuration in JSON.
+Native Image reads all metadata specified in <em>reachability-metadata.json</em> files located in classpath entries under <em>META-INF/native-image/&lt;groupId&gt;/&lt;artifactId&gt;/</em>.
+See the <a href="#json-schema-reference">JSON Schema Reference</a> for current and earlier schema configurations.</p>
 
 <p>A sample <em>reachability-metadata.json</em> file can be found <a href="#sample-reachability-metadata">in the sample section</a>.
 The <em>reachability-metadata.json</em> configuration contains a single object with one field for each type of metadata. Each field in the top-level object contains an array of <em>metadata entries</em>:</p>
@@ -712,7 +713,7 @@ A conditional entry is specified by adding a <code>condition</code> field to the
 }
 </code></pre>
 
-<p>A metadata entry with a <code>typeReached</code> condition is considered available at run time, only when the specified fully-qualified type is <em>reached</em> at run time. 
+<p>A metadata entry with a <code>typeReached</code> condition is considered available at run time, only when the specified fully-qualified type is <em>reached</em> at run time.
 Before that, all dynamic accesses to the element represented with the <code>metadata-entry</code> will behave as if the <code>metadata-entry</code> does not exist.
 This means that those dynamic accesses will throw a missing-registration error.</p>
 
@@ -736,7 +737,7 @@ public class App {
     public static void main(String[] args) {
         // ConditionType not reached =&gt; metadata entry not available
         ConditionType.class;
-        // ConditionType not reached (ConditionType.class doesn't start class initialization) =&gt; metadata entry not available  
+        // ConditionType not reached (ConditionType.class doesn't start class initialization) =&gt; metadata entry not available
         ConditionType.singleton();
         // ConditionType reached (already initialized) =&gt; metadata entry available
     }
@@ -747,20 +748,49 @@ public class App {
 
 <p>Array types are never marked as reached and as such cannot be used in conditions.</p>
 
-<p>A conditional metadata entry is included into the image when the fully-qualified type is reachable at build time. 
+<p>A conditional metadata entry is included into the image when the fully-qualified type is reachable at build time.
 This entry affects the image size, and it will be available at run time only when the condition is reached at run time.</p>
 
 <p>You can find more examples of the metadata files in the <a href="https://github.com/oracle/graalvm-reachability-metadata">GraalVM Reachability Metadata repository</a>.</p>
     
-      <h2 id="reachability-metadata-json-format-reference">
+      <h2 id="metadata-json-format-reference">
         
         
-          Reachability Metadata JSON Format Reference <a href="#reachability-metadata-json-format-reference" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+          Metadata JSON Format Reference <a href="#metadata-json-format-reference" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
         
         
       </h2>
+    
+      <h3 id="json-schema-reference">
+        
+        
+          JSON Schema Reference <a href="#json-schema-reference" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
 
-<p>The <em>reachability-metadata.json</em> file contains three main sections: <code>reflection</code>, <code>jni</code>, and <code>resources</code>. Each section contains arrays of metadata entries with specific field configurations.</p>
+<p>You can configure dynamic features, including reflection, JNI, resources, serialization, proxies, and foreign-function access, in the JSON-formatted <em>reachability-metadata.json</em> file.
+Validate your configuration with <a href="/docs/reference-manual/native-image/assets/reachability-metadata-schema-v1.2.0.json">reachability-metadata-schema-v1.2.0.json</a>.</p>
+
+<p>Use <em>predefined-classes-config.json</em> to configure predefined classes.
+Validate it with <a href="/docs/reference-manual/native-image/assets/predefined-classes-config-schema-v1.0.0.json">predefined-classes-config-schema-v1.0.0.json</a>.</p>
+
+<p>To validate configuration for an earlier Native Image release, use the corresponding schema in the <a href="https://github.com/oracle/graal/tree/master/docs/reference-manual/native-image/assets">Native Image assets directory</a>.</p>
+    
+      <h4 id="agent-filters">
+        
+        
+          Agent Filters
+        
+        
+      </h4>
+
+<p>The tracing agent uses the same JSON format for caller-filter and access-filter files.
+See <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/#caller-based-filters">Custom Caller Filters</a> and <a href="/latest/reference-manual/native-image/metadata/AutomaticMetadataCollection/#access-filters">Access Filters</a> for the file format and option names.</p>
+
+<p>The <em>reachability-metadata.json</em> file contains three main sections: <code>reflection</code>, <code>jni</code>, and <code>resources</code>. Each section contains arrays of metadata entries with specific field configurations.
+The following tables provide a readable overview of the most commonly used fields.
+Use the applicable schema from the <a href="#json-schema-reference">JSON Schema Reference</a> to validate a complete configuration.</p>
     
       <h3 id="common-fields">
         
@@ -1119,7 +1149,7 @@ This entry affects the image size, and it will be available at run time only whe
         
       </h2>
 
-<p>For all methods in this section Native Image will compute reachability at build time given that all the call arguments are constant. 
+<p>For all methods in this section Native Image will compute reachability at build time given that all the call arguments are constant.
 Providing constant arguments in code is a preferred way to provide metadata as it requires no duplication of information in external JSON files.</p>
 
 <p>Reflection in Java starts with <code>java.lang.Class</code> that allows fetching further reflective elements such as methods and fields.
@@ -1470,6 +1500,11 @@ Therefore, the <code>native-image</code> builder must be provided with descripto
 Resource metadata instructs the <code>native-image</code> builder to include specified resources and resource bundles in the produced binary.
 A consequence of this approach is that some parts of the application that use resources for configuration (such as logging) are effectively configured at build time.</p>
 
+<p>Resources embedded in a native executable are returned as <code>resource:</code> URLs instead of <code>file:</code> URLs.
+Do not use <code>URL#getFile()</code> to obtain a file system path for an embedded resource.
+To read the resource, use <code>Class#getResourceAsStream()</code>, <code>ClassLoader#getResourceAsStream()</code>, or <code>URL#openStream()</code>.
+If an API requires a file system path, copy the resource to a temporary file first.</p>
+
 <p>Native Image will detect calls to <code>java.lang.Class#getResource</code> and <code>java.lang.Class#getResourceAsStream</code> in which:</p>
 
 <ul>
@@ -1560,7 +1595,7 @@ For example:</p>
    "resources": [
       {
         "module": "library.module",
-        "glob": "resource-file.txt" 
+        "glob": "resource-file.txt"
       }
    ]
 }
@@ -1681,7 +1716,7 @@ This is necessary because serialization usually requires reflective accesses to 
         
       </h3>
 
-<p>Native Image detects calls to <code>ObjectInputFilter.Config#createFilter(String pattern)</code> and if the <code>pattern</code> argument is constant, the exact classes mentioned in the pattern will be registered for serialization. 
+<p>Native Image detects calls to <code>ObjectInputFilter.Config#createFilter(String pattern)</code> and if the <code>pattern</code> argument is constant, the exact classes mentioned in the pattern will be registered for serialization.
 For example, the following pattern will register the class <code>pkg.SerializableClass</code> for serialization:</p>
 
 <pre><code class="language-java">  var filter = ObjectInputFilter.Config.createFilter("pkg.SerializableClass;!*;")
@@ -1738,9 +1773,9 @@ For example, the following pattern will register the class <code>pkg.Serializabl
   "reflection": [
     {
       "type": {
-        "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"],
-        "serializable": true
-      }
+        "proxy": ["FullyQualifiedInterface1", "...", "FullyQualifiedInterfaceN"]
+      },
+      "serializable": true
     }
   ]
 }
@@ -1805,7 +1840,7 @@ As a result, this use case does not require any additional metadata.</p>
       "methods": [
         {
           "name": "method1",
-          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"] 
+          "parameterTypes": ["&lt;param-type1&gt;", "&lt;param-typeI&gt;", "&lt;param-typeN&gt;"]
         }
       ],
       "allDeclaredConstructors": true,
@@ -2044,7 +2079,7 @@ Note: Predefined classes are the best-effort approach for legacy projects, and t
               <li class="footer-list__item">
                 SDK Javadoc for JDK
                 <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
-                <a href="https://www.graalvm.org/25.2/javadoc/sdk/" class="javadoc" target="_blank">25</a>
+                <a href="https://www.graalvm.org/25.3/javadoc/sdk/" class="javadoc" target="_blank">25.3</a>
               </li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
               <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>

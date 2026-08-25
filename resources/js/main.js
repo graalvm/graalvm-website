@@ -634,7 +634,7 @@ $(document).ready(function() {
 
   var version = window.location.pathname.split('/')[1];
   if (version === "latest") {
-    version = "GraalVM 25.2 (Innovation)";
+    version = "GraalVM 25.3 (Innovation)";
   } else if (version === "dev") {
     version = "Dev Build";
   } else if (version === "jdk25") {
