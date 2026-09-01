@@ -93,6 +93,10 @@ const fullJavaVersions = {
   "25.3": "25.3.4.1",
 }
 
+const sdkmanJavaVersions = {
+  "25.3": "25.3.4+1.r25",
+}
+
 const downloadArtifacts = {
   "25.3": {
     baseUrl: "https://gds.oracle.com/download/graal/25i3",
@@ -124,7 +128,7 @@ docker pull container-registry.oracle.com/graalvm/jdk:${imageTag}`);
 
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
-  const sdkmanVersion = majorJavaVersion === "25.3" ? `${fullJavaVersion}+r25` : fullJavaVersion;
+  const sdkmanVersion = sdkmanJavaVersions[majorJavaVersion] || fullJavaVersion;
   const comment = majorJavaVersion === "25.3" ? ' <span class="no-strip"># coming soon</span>' : '';
   $("#dl-snippet-sdkman").html(`sdk install java ${sdkmanVersion}-graal${comment}`);
 }
