@@ -129,8 +129,7 @@ docker pull container-registry.oracle.com/graalvm/jdk:${imageTag}`);
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
   const sdkmanVersion = sdkmanJavaVersions[majorJavaVersion] || fullJavaVersion;
-  const comment = majorJavaVersion === "25.3" ? ' <span class="no-strip"># coming soon</span>' : '';
-  $("#dl-snippet-sdkman").html(`sdk install java ${sdkmanVersion}-graal${comment}`);
+  $("#dl-snippet-sdkman").html(`sdk install java ${sdkmanVersion}-graal`);
 }
 
 
