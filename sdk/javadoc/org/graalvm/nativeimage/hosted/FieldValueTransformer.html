@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.4.4.1.1-dev</b><br>e6b57e97784447a3d0240a7578f9071f526659dd</div>
+<div class="about-language"><b>GraalVM SDK Java API Reference<br>25.4.4.1.1-dev</b><br>ad8c401ff0849b50bee6efe5f1d0f1d308860d03</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -81,6 +81,10 @@ heap. Without a transformer, the value of the field in the image heap is the sam
 value in the image generator. A field value transformer allows to intercept the value. A field
 value transformer can, for example, reset a field to the default null/0 value, replace a filled
 collection with a new empty collection, or provide any kind of new value for a field.
+<p>
+The value returned by <a href="#transform(java.lang.Object,java.lang.Object)"><code>transform(Object, Object)</code></a> may be cached when it is first queried
+for a given receiver. Consequently, later changes to the original hosted field value may not be
+reflected in the image heap.
 <p>
 Only one field value transformer can be registered for each field.
 <p>
@@ -162,7 +166,9 @@ field has a primitive type, the return value must be a boxed value, and must not
 <h3>isAvailable</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type">boolean</span>&nbsp;<span class="element-name">isAvailable</span>()</div>
-<div class="block">Returns true when the value for this custom computation is available.</div>
+<div class="block">Returns true when the value for this custom computation is available. A transition from
+unavailable to available only permits <a href="#transform(java.lang.Object,java.lang.Object)"><code>transform(Object, Object)</code></a> to be invoked; it
+does not itself trigger a field scan or rescan.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>25</dd>
