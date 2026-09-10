@@ -1,0 +1,73 @@
+name: Deploy GraalJS website
+
+on: [workflow_dispatch]
+
+# Grant write access only to the deploy job.
+permissions:
+  contents: read
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "graaljs-website"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out GraalJS repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: oracle/graaljs
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@afeafc3d1ab54a631816aba4c914a0081c12ff2f # v1.310.0
+        with:
+          ruby-version: '3.2'
+      - name: Install website dependencies
+        working-directory: docs/site
+        run: bundle install
+      - name: Build website
+        working-directory: docs/site
+        env:
+          JEKYLL_ENV: production
+        run: bundle exec jekyll build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: docs/site/_site
+
+  deploy:
+    # Deploy only explicitly from the Actions tab.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - name: Check out GraalVM website repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: graalvm/graalvm-website
+          ref: master
+      - name: Download website artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/graaljs-artifact
+      - name: Update JavaScript website
+        run: |
+          mkdir -p "$RUNNER_TEMP/graaljs-site"
+          tar -xf "$RUNNER_TEMP/graaljs-artifact/artifact.tar" -C "$RUNNER_TEMP/graaljs-site"
+          rsync -a --delete "$RUNNER_TEMP/graaljs-site/" javascript/
+      - name: Commit and push website changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all -- javascript/
+          if git diff --cached --quiet -- javascript/; then
+            echo "No JavaScript website changes to commit."
+            exit 0
+          fi
+          git commit -m "Update GraalJS website"
+          git push origin HEAD:master
