@@ -1,4 +1,4 @@
-let currentMajorJavaVersion = "25.3";
+let currentMajorJavaVersion = "25.4";
 let currentPlatform = "empty-choice";
 let currentDownloadLink = null;
 
@@ -90,23 +90,23 @@ const fullJavaVersions = {
   "17": "17.0.12",
   "21": "21.0.12.1.1",
   "25": "25.0.4.1.1",
-  "25.3": "25.3.4.1",
+  "25.4": "25.4.4.1.1",
 }
 
 const sdkmanJavaVersions = {
-  "25.3": "25.3.4+1.r25",
+  "25.4": "25.4.4+1.1",
 }
 
 const downloadArtifacts = {
-  "25.3": {
-    baseUrl: "https://gds.oracle.com/download/graal/25i3",
-    latestVersion: "25i3-25",
-    archiveVersion: "25i3-25.0.4.1",
+  "25.4": {
+    baseUrl: "https://gds.oracle.com/download/graal/25i4",
+    latestVersion: "25i4-25",
+    archiveVersion: "25i4-25.0.4.1.1",
   },
 }
 
 function updateGHASnippet(majorJavaVersion) {
-  const usesGraalVMVersion = majorJavaVersion === "25" || majorJavaVersion === "25.3";
+  const usesGraalVMVersion = majorJavaVersion === "25" || majorJavaVersion === "25.4";
   const versionInput = usesGraalVMVersion ? "version" : "java-version";
   const selectedVersion = majorJavaVersion === "25" ? "25.0" :
     usesGraalVMVersion ? majorJavaVersion : fullJavaVersions[majorJavaVersion] || majorJavaVersion;
@@ -118,7 +118,7 @@ function updateGHASnippet(majorJavaVersion) {
 }
 
 function updateContainerSnippet(majorJavaVersion) {
-  const imageTag = majorJavaVersion === "25.3" ? "25i3" : majorJavaVersion;
+  const imageTag = majorJavaVersion === "25.4" ? "25i4" : majorJavaVersion;
   $("#dl-snippet-containers").text(`# GraalVM JDK with Native Image
 docker pull container-registry.oracle.com/graalvm/native-image:${imageTag}
 
@@ -129,7 +129,8 @@ docker pull container-registry.oracle.com/graalvm/jdk:${imageTag}`);
 function updateSDKMANSnippet(majorJavaVersion) {
   const fullJavaVersion = fullJavaVersions[majorJavaVersion];
   const sdkmanVersion = sdkmanJavaVersions[majorJavaVersion] || fullJavaVersion;
-  $("#dl-snippet-sdkman").html(`sdk install java ${sdkmanVersion}-graal`);
+  const comment = majorJavaVersion === "25.4" ? ' <span class="no-strip"># coming soon</span>' : '';
+  $("#dl-snippet-sdkman").html(`sdk install java ${sdkmanVersion}-graal${comment}`);
 }
 
 
@@ -151,8 +152,8 @@ curl -LO ${baseUrl}/archive/graalvm-jdk-${archiveVersion}_${platform}_bin.${file
 
 function updateDownloadButton(majorJavaVersion) {
   let versionLabel = '';
-  if (majorJavaVersion === "25.3") {
-    versionLabel = "25.3 (Innovation)";
+  if (majorJavaVersion === "25.4") {
+    versionLabel = "25.4 (Innovation)";
   } else if (majorJavaVersion === "25") {
     versionLabel = "25.0 (LTS)";
   } else if (majorJavaVersion === "21") {
@@ -201,7 +202,7 @@ function toggleDownloadBanners(majorJavaVersion) {
   jdk17Banner.style.display = "none";
   jdk17Banner.classList.remove("visible");
 
-  if (majorJavaVersion === "25.3" || majorJavaVersion === "25" || majorJavaVersion === "21") {
+  if (majorJavaVersion === "25.4" || majorJavaVersion === "25" || majorJavaVersion === "21") {
     allJdkBanner.style.display = "block";
     setTimeout(() => allJdkBanner.classList.add("visible"), 10);
     optionTabs.style.display = "";
