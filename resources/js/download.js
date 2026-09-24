@@ -94,6 +94,9 @@ const fullJavaVersions = {
 }
 
 const sdkmanJavaVersions = {
+  "17": "17.0.12",
+  "21": "21.0.12",
+  "25": "25.0.4",
   "25.4": "25.4.4+1",
 }
 
