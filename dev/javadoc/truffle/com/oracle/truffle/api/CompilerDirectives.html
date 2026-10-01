@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../search.html">Search</a></li>
 <li><a href="../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>11b21fb2e5691e49d46525dac7b87ef33aeafe82</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>42fc5254205937962ab892272577c37ff157454d</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -100,6 +100,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#shouldNotReachHere(java.lang.String)" tabindex="0">shouldNotReachHere(String)</a></li>
 <li><a href="#shouldNotReachHere(java.lang.Throwable)" tabindex="0">shouldNotReachHere(Throwable)</a></li>
 <li><a href="#shouldNotReachHere(java.lang.String,java.lang.Throwable)" tabindex="0">shouldNotReachHere(String, Throwable)</a></li>
+<li><a href="#mergeExplodeKey(int)" tabindex="0">mergeExplodeKey(int)</a></li>
+<li><a href="#mergeExplodeKey(long)" tabindex="0">mergeExplodeKey(long)</a></li>
 </ol>
 </li>
 </ol>
@@ -347,6 +349,18 @@ partial evaluation phase.</div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
 <div class="block">Ensures that the given object is not virtual, i.e., not removed by Escape Analysis at the
 point of this call.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static int</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#mergeExplodeKey(int)" class="member-name-link">mergeExplodeKey</a><wbr>(int&nbsp;i)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Marks a local variable as the key used for merging loop iterations in methods annotated with
+<a href="nodes/ExplodeLoop.LoopExplosionKind.html#MERGE_EXPLODE"><code>ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE</code></a>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static long</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#mergeExplodeKey(long)" class="member-name-link">mergeExplodeKey</a><wbr>(long&nbsp;i)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Marks a <code>long</code> variable as the key used for merging loop iterations in methods
+annotated with <a href="nodes/ExplodeLoop.LoopExplosionKind.html#MERGE_EXPLODE"><code>ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE</code></a>.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#preserveFrameStateHere()" class="member-name-link">preserveFrameStateHere</a>()</code></div>
@@ -1122,6 +1136,96 @@ if (expectedCondition) {
 <dd><code>cause</code> - the cause if an exception was responsible for the unexpected case.</dd>
 <dt>Since:</dt>
 <dd>20.2</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mergeExplodeKey(int)">
+<h3>mergeExplodeKey</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">mergeExplodeKey</span><wbr><span class="parameters">(int&nbsp;i)</span></div>
+<div class="block">Marks a local variable as the key used for merging loop iterations in methods annotated with
+<a href="nodes/ExplodeLoop.LoopExplosionKind.html#MERGE_EXPLODE"><code>ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE</code></a>. Using this outside of merge exploded methods will
+lead to a compilation failure.
+
+Call this method once before the loop, preferably immediately before it, and assign the
+return value back to the variable:
+
+<pre>
+int bci = 0;
+// ...
+bci = CompilerDirectives.mergeExplodeKey(bci);
+while (bci != END_BCI) {
+    // ...
+}
+</pre>
+
+Direct adjacency is not required, but the marked value must reach the first loop header
+unchanged and must not be consumed by an intervening merge-exploded loop. Key discovery
+happens only at initial entry; calling this method inside the loop is too late. Later
+iterations track the current value at the discovered location.
+<p>
+A nested <code>int</code> or <code>long</code> value stored in objects virtualized by
+<a href="CompilerDirectives.EarlyEscapeAnalysis.html" title="annotation interface in com.oracle.truffle.api"><code>CompilerDirectives.EarlyEscapeAnalysis</code></a> can also be marked, for example <code>state.inner.key =
+CompilerDirectives.mergeExplodeKey(state.inner.key);</code>. This is only supported while every
+object on that access path remains virtual and never escapes.
+<p>
+Only a single variable can currently be marked with this method; marking multiple variables
+causes a compilation failure. This restriction will be lifted in a future release.
+<p>
+At every iteration, the key value must be a compile-time constant <code>int</code> or <code>long</code>
+so the compiler can create a distinct merge point for each key value and correctly handle
+irreducibly exploded structures. If this is not upheld, a compilation failure occurs.
+<p>
+Other variables must have the same value at every iteration where the key matches (e.g.,
+partial evaluate to the same constant or remain unchanged). If a non-key variable changes
+while the key stays the same, a compilation failure occurs because the states cannot be
+merged. A way to explicitly mark a variable as exempt from the same-value requirement is
+planned.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>i</code> - the variable that should be used as the merge key.</dd>
+<dt>Returns:</dt>
+<dd>the unchanged value</dd>
+<dt>Since:</dt>
+<dd>25.5</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list">
+<li><a href="#mergeExplodeKey(long)"><code>mergeExplodeKey(long)</code></a></li>
+</ul>
+</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="mergeExplodeKey(long)">
+<h3>mergeExplodeKey</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">long</span>&nbsp;<span class="element-name">mergeExplodeKey</span><wbr><span class="parameters">(long&nbsp;i)</span></div>
+<div class="block">Marks a <code>long</code> variable as the key used for merging loop iterations in methods
+annotated with <a href="nodes/ExplodeLoop.LoopExplosionKind.html#MERGE_EXPLODE"><code>ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE</code></a>. Using this outside of merge exploded
+methods will lead to a compilation failure.
+<p>
+The usage and restrictions are the same as for <a href="#mergeExplodeKey(int)"><code>mergeExplodeKey(int)</code></a>, including the
+requirement that the key be a compile-time constant at every loop header. For irreducible
+loops, <code>long</code> key values must also fit in the signed 32-bit <code>int</code> range. Values
+outside of this range will cause a compilation failure.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>i</code> - the variable that should be used as the merge key.</dd>
+<dt>Returns:</dt>
+<dd>the unchanged value</dd>
+<dt>Since:</dt>
+<dd>25.5</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list">
+<li><a href="#mergeExplodeKey(int)"><code>mergeExplodeKey(int)</code></a></li>
+</ul>
+</dd>
 </dl>
 </div>
 </section>
