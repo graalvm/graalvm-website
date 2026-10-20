@@ -429,6 +429,11 @@ The usage of Debug Adapter Protocol is similar to the existing <a href="/dev/too
   <li><code>--dap=&lt;[[host:]port]&gt;</code>: start the debugger on a different port than default (<code>&lt;host&gt;:4711</code>).</li>
 </ul>
 
+<p>The DAP server supports successive debugger connections to the same polyglot engine, with one active session at a time.
+Disconnecting an attached debugger leaves the application running and releases the session’s breakpoints and debugger state.
+Another debugger can attach without restarting the application or replacing its engine.
+The <code>--dap.Suspend</code> and <code>--dap.WaitAttached</code> options apply to startup, not to subsequent sessions.</p>
+
 <p>Then you need a DAP client to connect to the open DAP port. VS Code will be used as an example.</p>
 
 <p>1. Save this Node.js application in a file named <em>App.js</em>:</p>
@@ -481,7 +486,92 @@ app.listen(port, () =&gt; console.log(`Example app listening on port ${port}!`))
 }
 </code></pre>
 
-<p>8. Start debugging (F5).</p>
+<p>8. Start debugging (F5).
+When debugging a guest language application from VS Code, a user can choose a protocol to use by setting the protocol attribute in the corresponding debug configuration to either <code>chromeDevTools</code> or <code>debugAdapter</code>.
+To connect to the open DAP port in this scenario, the content of the <em>launch.json</em> should be:</p>
+
+<pre><code class="language-json">{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "graalvm",
+            "request": "launch",
+            "name": "Launch Node App",
+            "outputCapture": "std",
+            "protocol": "debugAdapter",
+            "program": "${workspaceFolder}/App.js"
+        }
+    ]
+}
+</code></pre>
+
+<p>The advantage of using Debug Adapter Protocol over Chrome Dev Tools is that (1) it is ‘native’ to Visual Studio Code (VS Code), meaning it does not require any intermediate translation, and (2) that it supports multithreading, which can be particularly useful to debug, for example, a Ruby application.</p>
+    
+      <h2 id="configure-source-path-mappings">
+        
+        
+          Configure Source Path Mappings <a href="#configure-source-path-mappings" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Use source path mappings when the debugger client and the GraalVM runtime access the same sources through different paths.
+You can configure mappings in either a <code>launch</code> or an <code>attach</code> configuration.</p>
+
+<p>The <code>pathMappings</code> property accepts the debugpy array syntax.
+Each entry maps a client-local <code>localRoot</code> to a <code>remoteRoot</code> used by the runtime:</p>
+
+<pre><code class="language-json">{
+    "request": "launch",
+    "pathMappings": [
+        {
+            "localRoot": "${workspaceFolder}/src",
+            "remoteRoot": "/opt/application/src"
+        }
+    ]
+}
+</code></pre>
+
+<p>The Xdebug object syntax maps each runtime root key to a client-local root value:</p>
+
+<pre><code class="language-json">{
+    "request": "attach",
+    "pathMappings": {
+        "/opt/application/src": "${workspaceFolder}/src",
+        "/opt/libraries": "${workspaceFolder}/libraries"
+    }
+}
+</code></pre>
+
+<p>For a single direct mapping, set <code>localRoot</code> and <code>remoteRoot</code> at the top level:</p>
+
+<pre><code class="language-json">{
+    "request": "attach",
+    "localRoot": "${workspaceFolder}",
+    "remoteRoot": "/opt/application"
+}
+</code></pre>
+
+<p>The server translates client-local paths to runtime paths for path-based breakpoint, breakpoint-location, and source requests.
+It translates runtime paths to client-local paths in loaded-source events, loaded-source responses, and stack traces.
+Trailing path separators do not affect matching.
+Windows drive-letter roots (such as <code>C:\work</code>) and Universal Naming Convention (UNC) roots (such as <code>\\server\share</code> or <code>//server/share</code>) match without regard to case.
+For these roots, <code>/</code> and <code>\</code> are interchangeable separators.
+The server recognizes Windows syntax independently on each side of a mapping, regardless of its own operating system.
+Other roots remain case-sensitive.
+A root matches either the complete path or a whole directory prefix, so <code>/opt/app</code> does not match <code>/opt/application</code>.
+When multiple roots match, the longest root takes precedence.
+You can combine <code>pathMappings</code> with the top-level <code>localRoot</code> and <code>remoteRoot</code> pair.
+If matching roots have the same length, the top-level pair takes precedence.
+Paths that do not match a configured root remain unchanged.
+When path mappings are configured, a source receives a <code>sourceReference</code> only if its runtime path does not match a mapped remote root.
+A source that matches a mapping is returned with the mapped client path, even when the runtime cannot verify its readability.
+This also applies to sources cached before the <code>launch</code> or <code>attach</code> request supplies mappings.</p>
+
+<blockquote>
+  <p>Note: Paths for sources with a positive <code>sourceReference</code> remain unchanged.
+The client must retrieve these sources with a DAP <code>source</code> request that specifies the source reference.</p>
+</blockquote>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">

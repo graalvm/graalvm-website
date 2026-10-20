@@ -465,6 +465,7 @@ $(document).ready(function(){
   <li><a href="#polyglot-isolates">Polyglot Isolates</a></li>
   <li><a href="#managing-internal-resources">Managing Internal Resources</a></li>
   <li><a href="#build-native-executables-from-polyglot-applications">Build Native Executables from Polyglot Applications</a></li>
+  <li><a href="#manage-the-lifecycle-of-contexts-and-engines">Manage the Lifecycle of Contexts and Engines</a></li>
   <li><a href="#code-caching-across-multiple-contexts">Code Caching Across Multiple Contexts</a></li>
   <li><a href="#embed-guest-languages-in-java">Embed Guest Languages in Java</a></li>
   <li><a href="#build-a-shell-for-many-languages">Build a Shell for Many Languages</a></li>
@@ -2365,6 +2366,41 @@ public class AccessJavaFromJS {
 </code></pre>
 
 <p>Now, you can add <code>reachability-metadata.json</code> to <code>META-INF/native-image/&lt;group-id&gt;/</code> of your project.</p>
+    
+      <h2 id="manage-the-lifecycle-of-contexts-and-engines">
+        
+        
+          Manage the Lifecycle of Contexts and Engines <a href="#manage-the-lifecycle-of-contexts-and-engines" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>A polyglot <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Context.html"><code>Context</code></a> or <a href="https://www.graalvm.org/sdk/javadoc/org/graalvm/polyglot/Engine.html"><code>Engine</code></a> can hold resources that are released when it is closed.
+Explicitly close contexts and engines as soon as they are no longer needed, preferably by using a try-with-resources statement.
+Explicit closure provides timely and predictable resource cleanup instead of relying on garbage collection.</p>
+
+<p>An exception to this recommendation applies when the host process is exiting.
+For performance reasons, embedders should not explicitly close contexts or engines in this case.
+Closing an engine can wait for compiler threads to shut down and delay process termination.</p>
+
+<p>Since Polyglot version 24.2.0, a context that is no longer strongly reachable is automatically closed as a fallback.
+A <code>Context</code> is eligible for automatic closure when all of the following conditions are satisfied:</p>
+
+<ul>
+  <li>No strong references to the <code>Context</code> or to context-bound objects such as <code>Value</code> and <code>PolyglotException</code> remain.</li>
+  <li>The <code>Context</code> has no active polyglot threads and is not explicitly entered by a host thread.</li>
+  <li>No reachable inner contexts prevent their parent context from being closed.</li>
+  <li>Guest state does not retain a host object that directly or indirectly refers to the <code>Context</code> or to a context-bound object such as <code>Value</code>.</li>
+</ul>
+
+<p>A guest-to-host reference cycle can prevent automatic closure even after the embedder drops all of its direct references to the context.
+Guest-invoked host callbacks should therefore avoid capturing <code>Context</code>, <code>Value</code>, or other context-bound objects.
+A synchronous callback can obtain the currently entered context by calling <code>Context.getCurrent()</code> during each invocation.
+If a callback can tolerate the context becoming unavailable, it can instead retain a <code>WeakReference&lt;Context&gt;</code> and handle the reference being cleared.</p>
+
+<p>An <code>Engine</code> is automatically closed when it is no longer strongly reachable through the public <code>Engine</code> or associated <code>Language</code>, <code>Instrument</code>, or <code>ExecutionListener</code> objects, and it has no active or reachable contexts.</p>
+
+<p>Because garbage collection is nondeterministic, automatic closure should not replace explicit close in a running process.</p>
     
       <h2 id="code-caching-across-multiple-contexts">
         

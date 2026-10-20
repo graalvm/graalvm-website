@@ -976,6 +976,211 @@ __stub_addHandler(ReceiverType thiz, int pc, int sp, short[] bytecode, Frame fra
   <li>A method annotated with <code>BytecodeInterpreterFetchOpcode</code> must be declared in the same enclosing class, have the same signature as <code>BytecodeInterpreterHandler</code> methods, and be free of side effects</li>
   <li>Exception handling in the <code>BytecodeInterpreterSwitch</code> method should account for exceptions thrown from handler stubs being unwound to any threading entry point.</li>
 </ul>
+    
+      <h3 id="bytecode-handler-templates">
+        
+        
+          Bytecode Handler Templates <a href="#bytecode-handler-templates" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Bytecode handler templates work with tail call threading to generate multiple variants of a bytecode handler.</p>
+    
+      <h4 id="configure-template-variables">
+        
+        
+          Configure Template Variables
+        
+        
+      </h4>
+
+<p>To enable templates, designate an <code>int</code> field of a <code>VIRTUAL</code> argument as a <em>template variable</em> by setting <code>@Field(templateVariable = N)</code>.
+<code>N</code> is the number of variants for that field and must be at least 2.
+The following example uses <code>level</code> to represent three states of an int-only top-of-stack cache:</p>
+
+<pre><code class="language-java">@BytecodeInterpreterHandlerConfig(maximumOperationCode = RET, arguments = {
+    @Argument, // receiver
+    @Argument(returnValue = true),
+    @Argument(expand = VIRTUAL, fields = {
+        @Field(name = "level", templateVariable = 3)
+    }),
+    @Argument,
+    @Argument(expand = MATERIALIZED)
+})
+public int execute(short[] bytecode) {
+    ...
+}
+
+public final class TopOfStackCache {
+    final int[] stack;
+    int sp;
+    int tos0;
+    int tos1;
+    int level; // template variable
+}
+</code></pre>
+
+<p>Only fields with a property need to be listed in <code>fields</code>, so the example lists only <code>level</code>.
+All other <code>TopOfStackCache</code> fields participate in <code>VIRTUAL</code> expansion as ordinary handler arguments.
+These arguments form part of the handler’s application binary interface (ABI): the convention for passing values between compiled handlers.
+The interpreter loads them from the Java object when entering the threaded handler chain, carries them between handlers, and writes mutable fields back when control returns to Java.
+Final fields are treated as immutable values.</p>
+
+<p>The template field selects the handler variant and is initialized as a constant on entry to that variant.
+When a handler chain returns to Java, its current template values are transferred through per-thread state and written back to the Java object without occupying stub ABI argument slots.</p>
+
+<p>The three states are:</p>
+
+<ul>
+  <li><code>level == 0</code>: no cached operand; operands are in the backing stack array</li>
+  <li><code>level == 1</code>: <code>tos0</code> holds the top int operand</li>
+  <li><code>level == 2</code>: <code>tos0</code> and <code>tos1</code> hold the top two int operands, with <code>tos1</code> at the top</li>
+</ul>
+
+<p>In your handler implementation, assign a new constant value to the <em>template variable</em> to select which variant of the next bytecode handler executes.
+The assignment runs as part of the handler before it transfers control to the next handler.
+If the handler does not update the field, the current value is retained.</p>
+
+<p>Multiple template variables are also supported. The total number of handler variants is the product of all configured variant counts. Template variables are encoded in expanded-field order using mixed-radix indexing; for example, <code>@Field(name = "level", templateVariable = 3)</code> followed by <code>@Field(name = "mode", templateVariable = 2)</code> creates six variants with flat index <code>level + mode * 3</code>. Each template variable value must be in the range <code>[0, N)</code>, where <code>N</code> is that field’s <code>templateVariable</code> value.</p>
+
+<p>With escape analysis, the compiler expects to determine a constant value for each template variable on each possible execution path before a handler transfers control to the next threaded handler.
+Different branches can select different constants, and branch conditions can depend on runtime values.
+If several template variables depend on which branch executes, update them together in the same <code>if</code> or <code>switch</code> statement so their execution paths rejoin at the same point.
+Selecting their values in separate, independent branch statements is unsupported.
+An assertion checks that template values resolve to constants after final escape analysis.
+When final escape analysis has not run, for example with <code>-Ob</code>, unresolved values select the handler table at runtime.
+The compiler still reports an error if constant branch assignments do not meet the shared-merge requirement.</p>
+
+<p>Template variables do not occupy stub ABI argument slots. The selected stub variant initializes them as constants on entry, and their value on exit selects the variant of the next threaded handler.</p>
+    
+      <h4 id="example-top-of-stack-cache">
+        
+        
+          Example: Top-of-Stack Cache
+        
+        
+      </h4>
+
+<p>The following state machine illustrates this top-of-stack cache:</p>
+
+<pre><code>                  +-----+
+                  | pop |
+    +---------------+   |
+    |    level 0    |&lt;--+    // memory stack only
+    +---------------+
+      |           ^
+      | push      | pop
+      v           |
+    +---------------+
+    |    level 1    |        // tos0 is valid
+    +---------------+
+      |           ^
+      | push      | pop
+      v           |
+    +---------------+
++--&gt;|    level 2    |        // tos0 and tos1 are valid
+|   +---------------+
+|     | push
++-----+
+</code></pre>
+
+<p>In practice, it is common to encapsulate these state transitions within individual helper methods and force their inlining.
+For instance, updates to the <em>template variable</em> <code>level</code> can go through <code>push</code> and <code>pop</code>:</p>
+
+<pre><code class="language-java">public final class TopOfStackCache {
+    final int[] stack;
+    int sp;
+    int tos0;
+    int tos1;
+    int level; // template variable
+
+    public void push(int value) {
+        switch (level) {
+            case 0:
+                tos0 = value;
+                level = 1;
+                break;
+            case 1:
+                tos1 = value;
+                level = 2;
+                break;
+            case 2:
+                stack[sp++] = tos0;
+                tos0 = tos1;
+                tos1 = value;
+                level = 2;
+                break;
+            default:
+                throw new AssertionError(level);
+        }
+    }
+
+    public int pop() {
+        switch (level) {
+            case 0:
+                return stack[--sp];
+            case 1:
+                level = 0;
+                return tos0;
+            case 2:
+                level = 1;
+                return tos1;
+            default:
+                throw new AssertionError(level);
+        }
+    }
+
+    public int peek() {
+        switch (level) {
+            case 0:
+                return stack[sp - 1];
+            case 1:
+                return tos0;
+            case 2:
+                return tos1;
+            default:
+                throw new AssertionError(level);
+        }
+    }
+}
+</code></pre>
+
+<p>The bytecode handlers can then be written against the logical operand stack. For example:</p>
+
+<pre><code class="language-java">@BytecodeInterpreterHandler(ICONST_0)
+public long iconst0Handler(long pc, TopOfStackCache stack, short[] bytecode, Frame frame) {
+    stack.push(0);
+    return pc + 1;
+}
+
+@BytecodeInterpreterHandler(IADD)
+public long iaddHandler(long pc, TopOfStackCache stack, short[] bytecode, Frame frame) {
+    int b = stack.pop();
+    int a = stack.pop();
+    stack.push(a + b);
+    return pc + 1;
+}
+</code></pre>
+
+<p>When the compiler generates the variants, the <em>template variable</em> is initialized with a constant value. As the bytecode handler executes, each call to the push and pop operations updates <code>level</code> to a next constant, enabling the compiler to eliminate dead code through constant folding and propagation. For example, the <code>IADD</code> handler in <code>level == 2</code> can fold the two pops and one push into direct operations on the expanded fields, with no backing stack access on that path.</p>
+    
+      <h4 id="dispatch-and-exception-handling">
+        
+        
+          Dispatch and Exception Handling
+        
+        
+      </h4>
+
+<p>With escape analysis, the compiler specializes each execution path that reaches a threaded dispatch using the value of <code>level</code>.
+For example, one branch can set <code>level = 1</code> and another can set <code>level = 2</code>, even when the condition is evaluated at runtime.
+If <code>level</code> remains dynamic after final escape analysis, a compiler assertion reports the missed specialization.
+Without final escape analysis, a runtime selection chooses among the existing handler tables.</p>
+
+<p>When control returns to the Java switch loop, main dispatch selects the handler variant from the current template-variable values and passes the ordinary expanded fields to that variant.</p>
+
+<p>A handler exception can still exit tail call threading before normal return. This follows the same state model as ordinary Java execution: there is no hidden cleanup callback. Mutable ordinary fields and template variables are preserved through pending exception state.</p>
 
       </div>
       <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">

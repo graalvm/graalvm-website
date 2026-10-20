@@ -757,6 +757,21 @@ Use <code>--bundle-apply=application.nib</code> like this:</p>
 
 <p>After running this command, the executable is rebuilt from the bundle with debug info enabled.</p>
 
+<p>When replaying a stored <code>-o</code> argument, Native Image uses only its source-platform filename because bundle processing redirects the output directory.
+This applies to both absolute and relative output paths.</p>
+
+<p>Bundle path substitution preserves an input recorded as unavailable when you apply the bundle or create a derived bundle, even if a file later appears at its original location.
+This also applies to uncaptured inputs recorded as identity substitutions in bundle formats older than 1.0, and to missing manifest dependencies.
+The Native Image driver represents these inputs with guaranteed-missing paths instead of consulting their original locations.</p>
+
+<p>For an input without a recorded substitution, replay uses its recorded canonical location when one is available.
+On a platform with the same path syntax, the original path retains its root semantics.
+On a platform with different path syntax, an uncaptured rooted path, such as a Windows drive path replayed on Linux, is represented by a guaranteed-missing path inside the bundle.
+This lets missing class path and module path entries remain ignorable without accidentally selecting unrelated files on the replay machine.</p>
+
+<p>Manifest <code>Class-Path</code> entries are resolved as URI references against the original JAR location, using its source platform’s file URI semantics.
+Entries that cannot be converted to filesystem paths are ignored without preventing later entries from being processed.</p>
+
 <p>The full option help of <code>--bundle-apply</code> shows a more advanced use case that will be discussed <a href="#combining---bundle-create-and---bundle-apply">later</a> in detail:</p>
 <pre><code>--bundle-apply=some-bundle.nib[,dry-run][,container[=&lt;container-tool&gt;][,dockerfile=&lt;Dockerfile&gt;]]
                       an image will be built from the given bundle file with the exact same
@@ -911,12 +926,11 @@ Using a tool to compare directories, you can inspect the differences in detail.<
 
 <p>As you can see that <em>application-pgo-optimized.nib</em> contains <em>default.iprof</em> in the directory <em>input/auxiliary</em>, and there are also changes in other files. 
 The contents of <em>META-INF/nibundle.properties</em>, <em>input/stage/path_substitutions.json</em> and <em>input/stage/path_canonicalizations.json</em> will be explained <a href="#bundle-file-format">later</a>. 
-For now, look at the diff in <em>build.json</em>:</p>
-<pre><code>@@ -4,4 +4,5 @@
-   "-H:Name=application",
--  "-H:Class=example.com.Application"
-+  "-H:Class=example.com.Application",
-+  "--pgo"
+Creating <em>application-pgo-optimized.nib</em> on Linux AMD64 adds the following argument group to <em>build.json</em>:</p>
+<pre><code class="language-json">{
+  "platform": "linux-amd64",
+  "args": ["--pgo"]
+}
 </code></pre>
 
 <p>As expected, the new bundle contains the <code>--pgo</code> option that you passed to <code>native-image</code> to build an optimized bundle.
@@ -1028,15 +1042,75 @@ Inside a bundle you can find the following inner structure:</p>
         
       </h3>
 
-<p>The layout of a bundle file itself is versioned.
-There are two properties in <em>META-INF/nibundle.properties</em> that declare which version of the layout a given bundle file is based on.
-Bundles currently use the following layout version:</p>
-<pre><code>BundleFileVersionMajor=0
-BundleFileVersionMinor=9
+<p>The bundle format version covers both the directory layout and the JSON representation of paths and build arguments.
+Two properties in <em>META-INF/nibundle.properties</em> declare the format version of a bundle.
+Starting with GraalVM 25.5, Native Image writes the following bundle format version:</p>
+<pre><code class="language-properties">BundleFileVersionMajor=2
+BundleFileVersionMinor=0
 </code></pre>
 
-<p>Future versions of GraalVM might alter or extend the internal structure of bundle files.
-The versioning enables us to evolve the bundle format with backwards compatibility in mind.</p>
+<p>The properties file also records the producer’s <code>NativeImageVersion</code>, <code>NativeImageVendor</code>, and <code>NativeImagePlatform</code>.
+The bundle format version is independent of the GraalVM version.</p>
+    
+      <h3 id="format-version-history">
+        
+        
+          Format Version History <a href="#format-version-history" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>The following table lists format changes and the GraalVM versions that introduced them:</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Bundle Format</th>
+      <th>Introduced In</th>
+      <th>Changes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2.0</td>
+      <td>GraalVM 25.5</td>
+      <td>Added explicit path root kinds, source-platform groups for build arguments, and unavailable-input markers.</td>
+    </tr>
+    <tr>
+      <td>1.0</td>
+      <td><a href="https://www.graalvm.org/release-notes/25.1/">GraalVM 25.1.3</a>; also backported to <a href="https://docs.oracle.com/en/graalvm/jdk/25/docs/release-notes/">Oracle GraalVM 25.0.4</a></td>
+      <td>Added portable path maps with path style information for replay across platforms.</td>
+    </tr>
+    <tr>
+      <td>0.9</td>
+      <td><a href="https://www.graalvm.org/release-notes/JDK_17/">GraalVM for JDK 17</a> and <a href="https://www.graalvm.org/release-notes/JDK_20/">GraalVM for JDK 20</a>, internal version 23.0.0</td>
+      <td>Initial bundle format.</td>
+    </tr>
+  </tbody>
+</table>
+    
+      <h3 id="compatibility">
+        
+        
+          Compatibility <a href="#compatibility" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Newer Native Image versions can read and use bundles created with older bundle formats.
+Native Image reads both the untyped path maps used before format 1.0 and the portable path objects without <code>kind</code> used in format 1.0.
+It also reads the flat build argument arrays used before format 2.0, interpreting their paths using the bundle’s recorded platform.</p>
+
+<p>Native Image rejects a bundle whose major format version is newer than the version it supports.
+A higher minor version within the same major version produces a warning, after which Native Image attempts to read the bundle.</p>
+
+<p>Support for older file formats does not restore removed build modes or make obsolete build options compatible with a newer Native Image version.
+Bundles with <code>BuilderOnClasspath=true</code> are permanently unsupported because running the image builder on the class path has been removed.
+This mode will not be restored.
+Application and dependency compatibility with the JDK used for rebuilding must also be considered.</p>
+
+<p>When you combine <code>--bundle-apply</code> and <code>--bundle-create</code>, the new bundle uses the format written by the Native Image version creating it.
+It does not retain the original bundle’s format version.</p>
     
       <h3 id="input-data">
         
@@ -1047,7 +1121,12 @@ The versioning enables us to evolve the bundle format with backwards compatibili
       </h3>
 
 <p>This directory contains all input data that gets passed to the <code>native-image</code> builder. 
-The file <em>input/stage/build.json</em> holds the original command line that was passed to <code>native-image</code> when the bundle was created.</p>
+The file <em>input/stage/build.json</em> holds the original command line that was passed to <code>native-image</code> when the bundle was created.
+In format 2.0, this file contains an ordered array of argument groups.
+Each group has a <code>platform</code> string and an <code>args</code> array of argument strings.
+When you create a new bundle from an existing one, additional arguments form a new group with the platform on which you added them.
+The group order preserves the command line order, and each platform determines how paths and path list separators in that group are interpreted.
+The file <em>input/stage/run.json</em> continues to store a flat array of argument strings.</p>
 
 <p>Parameters that make no sense to get reapplied in a bundle-build are already filtered out.
 These include:</p>
@@ -1059,7 +1138,26 @@ These include:</p>
 
 <p>The state of environment variables that are relevant for the build are captured in <em>input/stage/environment.json</em>.
 For every <code>-E</code> argument that was seen when the bundle was created, a snapshot of its key-value pair is recorded in the file.
-The remaining files <em>path_canonicalizations.json</em> and <em>path_substitutions.json</em> contain a record of the file-path transformations that were performed by the <code>native-image</code> tool based on the input file paths as specified by the original command line arguments.</p>
+The remaining files <em>path_canonicalizations.json</em> and <em>path_substitutions.json</em> contain a record of the file-path transformations that were performed by the <code>native-image</code> tool based on the input file paths as specified by the original command line arguments.
+Each file contains an array of mappings with <code>src</code> and <code>dst</code> paths.
+In format 2.0, available paths have a <code>style</code>, a <code>kind</code>, and a <code>text</code> field.
+The <code>style</code> identifies Unix, Windows, or bundle-relative path syntax.
+The <code>kind</code> identifies the root semantics, including absolute and relative paths, Windows drive paths, and Windows network share paths.
+The <code>text</code> holds the path payload.
+For example, a captured JAR can have the following substitution:</p>
+<pre><code class="language-json">[
+  {
+    "src": {"style": "Unix", "kind": "Absolute", "text": "work/application.jar"},
+    "dst": {"style": "BundleRelative", "kind": "Relative", "text": "input/classes/cp/application.jar"}
+  }
+]
+</code></pre>
+
+<p>An unavailable input has a destination with <code>style: BundleRelative</code>, <code>kind: Unavailable</code>, and no <code>text</code> field in <em>path_substitutions.json</em>.
+The unavailable marker is valid only as a substitution destination:</p>
+<pre><code class="language-json">{"style": "BundleRelative", "kind": "Unavailable"}
+</code></pre>
+<p>This marker preserves the input’s absence across replay and derivation without storing a replay-specific placeholder path.</p>
     
       <h3 id="output-data">
         

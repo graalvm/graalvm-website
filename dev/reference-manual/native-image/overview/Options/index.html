@@ -580,7 +580,11 @@ $(document).ready(function(){
 </ul>
 
 <p>Depending on the GraalVM version, the options to the <code>native-image</code> builder may differ.
-Native Image options can also be categorized as <strong>hosted</strong> or <strong>runtime</strong> options:</p>
+An unrecognized option starting with <code>-</code> or <code>--</code> produces an error instead of being treated as a main class or an output filename.
+To use an output filename beginning with a dash, specify it with <code>-o</code>, for example <code>native-image -jar hello.jar -o --my-image</code>, or prefix it with <code>./</code>.
+Use <code>native-image --help</code> to check which build options your installed distribution supports.</p>
+
+<p>Native Image options can also be categorized as <strong>hosted</strong> or <strong>runtime</strong> options:</p>
 
 <ul>
   <li><strong>Hosted options</strong>: to configure the build process and set default values for run-time behavior. These options use the prefix <code>-H:</code>. For example, <code>-H:MaxHeapSize=2g</code> sets the default maximum heap size for the native executable.</li>
@@ -1300,6 +1304,10 @@ However, JDK system properties are included in generated executables and are vis
       <td>Specifies the host environment’s character encoding</td>
     </tr>
     <tr>
+      <td>org.graalvm.nativeimage.graalos</td>
+      <td>Specifies whether the image is built for GraalOS</td>
+    </tr>
+    <tr>
       <td>org.graalvm.nativeimage.kind</td>
       <td>Specifies if the image is built as a shared library or executable</td>
     </tr>
@@ -1321,6 +1329,20 @@ However, JDK system properties are included in generated executables and are vis
     </tr>
   </tbody>
 </table>
+    
+      <h3 id="identify-images-built-for-graalos">
+        
+        
+          Identify Images Built for GraalOS <a href="#identify-images-built-for-graalos" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Read the <code>org.graalvm.nativeimage.graalos</code> Java system property to determine whether an image was built for GraalOS, for example with <code>Boolean.getBoolean("org.graalvm.nativeimage.graalos")</code>.
+The <code>native-image</code> builder initializes it to <code>true</code> when you build with <code>-H:+GraalOS</code>, or <code>false</code> otherwise; you do not need to set an additional system property.
+The property is available during language resource inclusion and polyglot context preinitialization, and is preserved in the generated image at runtime.
+It describes the image build target, not the current execution environment, so a GraalOS-targeted image retains <code>true</code> even when you execute it outside GraalOS.
+Like other Java system properties, you can override it at runtime.</p>
     
       <h2 id="related-documentation">
         

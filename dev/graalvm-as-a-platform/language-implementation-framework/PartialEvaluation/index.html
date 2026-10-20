@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta property="og:image" content='/resources/img/og-image.jpg' />
+  <meta name="twitter:widgets:border-color" content="#55acee">
+
+  <title>
+    
+      Partial Evaluation in Truffle
+    
+  </title>
+  <meta name="description" content="GraalVM is an advanced JDK with ahead-of-time Native Image compilation."/>
+
+  
+  <link rel="canonical" href="https://www.graalvm.org/dev/graalvm-as-a-platform/language-implementation-framework/PartialEvaluation/">
+  
+
+  <link rel="icon" id="favicon" href='/resources/img/favicon/favicon-light/favicon-light.ico'>
+
+  <link rel="manifest" href='/resources/img/favicon/site.webmanifest'>
+  <meta name="msapplication-TileColor" content="#da532c">
+  <meta name="theme-color" content="#ffffff">
+
+  <script src='/resources/lib/jquery/jquery-3.6.1.min.js'></script>
+  <link rel="stylesheet" href='/assets/main.css'>
+  <script src='/resources/lib/bootstrap/js/bootstrap.min.js'></script>
+  <script src='/resources/lib/sticky-sidebar/resizeSensor.js'></script>
+  <script src='/resources/lib/sticky-sidebar/sticky-sidebar.min.js'></script>
+  <script src='/resources/lib/highlight/highlight.pack.js'></script>
+  <script src='/resources/lib/purl/purl.js'></script>
+  <script src='/resources/lib/fiddle/fiddle.js' defer></script>
+  <link rel="stylesheet" href='/resources/styles/fiddle.css'>
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+</head>
+
+
+
+
+  <body class="preload">
+    <div class="wrapper wrapper--nofooter">
+      <header  class="header header--content" 
+  role="banner">
+
+  
+  
+
+
+
+
+  <div class="d-flex">
+    <nav class="menu">
+      <div class="menu__logo">
+        <a class="menu__logojs" href="/">
+          <img src='/resources/img/home/logo_mobile_openmenu.svg' alt="GraalVM logo">
+        </a>
+      </div>
+      <ul class="menu__list">
+        <li class="menu__item">
+          <a href='/latest/docs/' class="menu__link">Docs</a>
+        </li>
+        <li class="menu__item">
+          <a href='/guides/' class="menu__link">Guides</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://medium.com/graalvm" class="menu__link" target="_blank">Blog</a>
+        </li>
+        <li class="menu__item">
+          <a href="https://www.youtube.com/graalvm" class="menu__link" target="_blank">Videos</a>
+        </li>
+        <li class="menu__item">
+          <a href='/community/' class="menu__link">Community</a>
+        </li>
+        <li class="menu__item">
+          <div class="stack-container">
+            <a href="#" class="menu__link stack__header">Graal Projects</a>
+            <div class="stack-menu">
+              <div class="stack-row">
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalstack.svg">
+                    <a href="https://graal.cloud/" class="item-line">Graal Stack</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/gdk.svg">
+                    <a href="https://graal.cloud/gdk/" class="item-line">Graal Dev Kit for Micronaut</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/graalos.svg">
+                    <a href="https://graal.cloud/graalos/" class="item-line">GraalOS</a>
+                  </div>
+                </div>
+                <div class="stack-column">
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/js-navi.svg">
+                    <a href="/javascript/" class="item-line">GraalJS</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/python-navi.svg">
+                    <a href="https://graalpy.org/" class="item-line" target="_blank">GraalPy</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/wasm-navi.svg">
+                    <a href="/webassembly/" class="item-line">GraalWasm</a>
+                  </div>
+                  <div class="stack__item">
+                    <img src="/resources/img/header-navigation/java-navi.svg">
+                    <a href='/reference-manual/java-on-truffle/' class="item-line">Espresso</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </li>
+        <div class="menu__item icons githubstar" tabindex="0">
+          <span class="github-widget">
+            <a tabindex="-1" class="github-button" href="https://github.com/oracle/graal" data-icon="octicon-star"
+              data-show-count="true" aria-label="Star oracle/graal on GitHub">Star</a>
+          </span>
+        </div>
+        <div class="menu__downloads">
+          <a href='/downloads/' class="btn btn-try btn-primary">Download</a>
+        </div>
+      </ul>
+      <div role="button" class="menu-btn menu-btn--menu js-show-menu" tabindex="-1" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </nav>
+  </div>
+  
+</header>
+      <main class="content" aria-label="Content">
+        <div class="wrapper wrapper-content">
+  <article>
+  <div class="row d-flex flex-wrap">
+    <div class="col-sm-3 docsimpro col-bg">
+      <div class="sidebar-wrap">
+        <div class="sidebar">
+          <div class="menuabout">
+            <img id="sidebarClose" src='/resources/img/docs-sidebar/arrow-sidebar(close).svg'
+              alt="Expand or collapse sidebar" class="btn-color no-display">
+            <img id="sidebarOpen" src='/resources/img/docs-sidebar/arrow-sidebar.svg' alt="Expand or collapse sidebar">
+          </div>
+          
+<div class="toc-floating">
+
+
+<script>
+var sidebar = document.currentScript.parentElement;
+
+
+$(document).ready(function(){
+  var header = $('.header').height();
+  var invisibleBlock;
+
+  $("#content-wrapper h1, #content-wrapper h2").each(function() {
+    invisibleBlock = $(this).before("<div class='anchor' id="+ $(this).attr("id") +"></div>");
+  });
+
+  $(window).scroll(function() {
+    var lastitem = null;
+    $("#content-wrapper h1, #content-wrapper h2").each(function() {
+      var heading = $(this);
+      var position = (heading.position().top - heading.height()) - $(window).scrollTop();
+      var listitem = $(sidebar).find("li").filter(function() {
+        return $(this).find("a").attr("href") == "#" + heading.attr("id");
+      });
+      listitem.removeClass("toc-bullets-focused");
+      if (position <= 0) {
+        lastitem = listitem;
+      }
+    });
+    if (lastitem != null) lastitem.addClass("toc-bullets-focused");
+  });
+});
+
+</script>
+
+<!-- Docs version dropdown -->
+<section class="versions">
+  <div class="dropdown">
+    <div class="d-flex align-items-center version-dropdown">
+      <input name="select_value" type="hidden" id="selectedValue">
+      <div class="display-value display-version" id="displayValue" onclick="toggleOptions(event)">
+        <span class="value-text" id="valueText">Version</span>
+      </div>
+      <ul tabindex="0" class="select-container" id="selectContainer" onblur="toggleOptions(event)">
+        <li class="select-option" onclick="selected('GraalVM 25.4 (Innovation)', 'latest');">GraalVM 25.4 (Innovation)</li>
+        <li class="select-option" onclick="selected('GraalVM 25.0 (LTS)', 'jdk25');">GraalVM 25.0 (LTS)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 21 (LTS)', 'jdk21');">GraalVM for JDK 21 (LTS)</li>
+        <li class="select-option" onclick="selected('GraalVM for JDK 17 (LTS)', 'jdk17');">GraalVM for JDK 17 (LTS)</li>
+        <li class="select-option" onclick="selected('Archives'); location='/docs/archives/'">Archives</li>
+        <li class="select-option" onclick="window.open('https://github.com/oracle/graal/tree/master/docs', '_blank').focus()">Dev Build</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<ul class="toc-bullets">
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+
+    
+      
+        
+          <li class="toc-bullets-main">
+        
+          
+          <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">
+            Truffle Language Implementation Framework
+          </a>
+        </li>
+
+        
+        
+
+        
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/BranchInstrumentation/">
+              Truffle Branches Instrumentation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DynamicObjectModel/">
+              Dynamic Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/StaticObjectModel/">
+              Static Object Model
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">
+              Host Optimization for Interpreter Code
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Inlining/">
+              Truffle Approach to Function Inlining
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Profiling/">
+              Profiling Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/InteropMigration/">
+              Truffle Interop 2.0
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/CloseOnGc/">
+              Automatic Close of Unreachable Context and Engine Objects in Polyglot API
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Languages/">
+              Language Implementations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/LanguageTutorial/">
+              Implementing a New Language with Truffle
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/migration-to-java-modules/">
+              Truffle Languages and Instruments Migration to Java Modules
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/NFI/">
+              Truffle Native Function Interface
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">
+              Optimizing Truffle Interpreters
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">
+              Deoptimization Cycle Patterns
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Options/">
+              Options
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/OnStackReplacement/">
+              On-Stack Replacement
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TruffleStrings/">
+              Truffle Strings Guide
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/SpecializationHistogram/">
+              Specialization Histogram
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/SpecializationTesting/">
+              Testing DSL Specializations
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TCK/">
+              Polyglot API Based TCK
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TraversingCompilationQueue/">
+              Truffle Approach to the Compilation Queue
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">
+              Truffle Library Guide
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/AOTOverview/">
+              Truffle AOT Overview
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/AOT/">
+              Truffle AOT Compilation
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/AuxiliaryEngineCachingEnterprise/">
+              Auxiliary Engine Caching
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Safepoint/">
+              Truffle Language Safepoint Tutorial
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/Monomorphization/">
+              Monomorphization
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/Splitting/">
+              Splitting Algorithm
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/MonomorphizationUseCases/">
+              Monomorphization Use Cases
+            </a>
+          </li>
+
+          
+        
+          
+          <li class="toc-bullets-sub">
+          
+            
+            <a href="/dev/graalvm-as-a-platform/language-implementation-framework/splitting/ReportingPolymorphism/">
+              Reporting Polymorphic Specializations to Runtime
+            </a>
+          </li>
+
+          
+        
+      
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</div>
+
+        </div>
+      </div>
+    </div>
+    <div class="col-sm-9 docsmod">
+      <div id="content-wrapper" class="docs-content docs-content--with-sidebar">
+        
+  <ul class="breadcrumb">
+    <li><a href='/'>Home</a></li>
+    
+    
+      
+      <li>
+        <a href="/dev/">
+          Dev
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/dev/graalvm-as-a-platform/">
+          Graalvm As A Platform
+        </a>
+      </li>
+      
+    
+      
+      <li>
+        <a href="/dev/graalvm-as-a-platform/language-implementation-framework/">
+          Language Implementation Framework
+        </a>
+      </li>
+      
+    
+      
+    
+  </ul>
+
+
+        
+        <h1 id="partial-evaluation-in-truffle">
+        
+        
+          Partial Evaluation in Truffle
+        
+        
+      </h1>
+    
+      <h2 id="document-purpose">
+        
+        
+          Document purpose <a href="#document-purpose" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Truffle uses partial evaluation (PE) in combination with dynamic speculation and run-time profiling feedback to compile interpreters to highly optimized machine code.
+This document explains the low-level primitives and concepts underlying Truffle PE for language implementers; it is intended as a technical foundation rather than a user guide.</p>
+
+<p>Truffle provides many higher-level features (including DSL specializations, inline caches, and libraries) that make these primitives easier to use.
+For practical guidance on those features, refer to their Javadoc, the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DSLGuidelines/">DSL guidance</a>, and the <a href="/dev/graalvm-as-a-platform/language-implementation-framework/TruffleLibraries/">Truffle Libraries</a> documentation.</p>
+    
+      <h2 id="motivation">
+        
+        
+          Motivation <a href="#motivation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>It is desirable for an interpreter to be fast, but supporting dynamic language semantics can often conflict with high performance.
+The conventional approach to achieve high performance is to combine an interpreter with a language-specific compiler/JIT that translates and optimizes the language to machine code.
+This approach gives the compiler direct control but often requires semantics, profiling, and optimization knowledge to be represented in both interpreter and compiler implementations.</p>
+
+<p>With the Truffle framework, implementers write an interpreter that specializes itself for behaviour observed at run time and generalizes when those observations no longer hold.
+The Graal compiler, which optimizes Java code, derives optimized machine code using the interpreter code and a particular guest program.
+By treating stable interpreter state and guest-program structure as compilation constants, partial evaluation can remove most interpreter abstractions, avoiding the need for a language-specific compiler.</p>
+
+<p>The Truffle approach simplifies the implementation effort, because optimized code is derived directly from the interpreter.
+However, the trade-off is that interpreter code must be written carefully to be PE-friendly and must correctly manage specialization, generalization, and invalidation.</p>
+    
+      <h2 id="how-partial-evaluation-works">
+        
+        
+          How partial evaluation works <a href="#how-partial-evaluation-works" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Abstractly, a computer program is a mapping from input data to output data: <code>Input -&gt; Output</code>.
+In a given context, some of the inputs can be static, while others remain dynamic.
+Partial evaluation optimizes a program with respect to its static inputs.
+The result is a version of the original program specialized to those static inputs: <code>DynamicInput -&gt; Output</code>.</p>
+
+<p>For example, consider a small function that rounds a floating point number to an integer, rounding up or down depending on a parameter:</p>
+
+<pre><code class="language-java">int round(double value, boolean roundUp) {
+    if (roundUp) {
+        return (int) Math.ceil(value);
+    } else {
+        return (int) Math.floor(value);
+    }
+}
+</code></pre>
+
+<p>Suppose this function is used in a context where <code>roundUp</code> is known statically to be <code>true</code>.
+Partial evaluation can produce a specialized version of <code>round</code> where <code>roundUp</code> is statically <code>true</code>:</p>
+
+<pre><code class="language-java">int round$specialized(double value) {
+   if (true) {
+      return (int) Math.ceil(value);
+   } else {
+      return (int) Math.floor(value);
+   }
+}
+</code></pre>
+
+<p>This static information often enables subsequent optimizations.
+In this example, PE can eliminate the <code>if-else</code> block altogether:</p>
+<pre><code class="language-java">int round$specialized(double value) {
+    return (int) Math.ceil(value);
+}
+</code></pre>
+
+<p>This transformation is called <em>partial evaluation</em> because it evaluates part of the program ahead of time using its static inputs.
+The result is a simpler program that only depends on <code>value</code>.
+The output, called the <em>residual</em> program, contains the remainder of the program that cannot be evaluated until its dynamic inputs (in this case, <code>value</code>) are supplied at run time.
+Since PE performs some evaluation ahead of time, the residual program is often simpler and performs less work at run time.</p>
+    
+      <h3 id="partially-evaluating-an-interpreter">
+        
+        
+          Partially evaluating an interpreter <a href="#partially-evaluating-an-interpreter" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>A language interpreter is itself a computer program.
+It broadly has two kinds of input data:</p>
+<ol>
+  <li>The guest program to interpret. Programs are typically represented as:
+    <ol>
+      <li>An abstract syntax tree (AST), which forms a structured tree of nodes. AST interpreters execute by evaluating each AST node in a tree-walk fashion.</li>
+      <li>Bytecode, which forms a linear sequence of low-level instructions. Bytecode interpreters execute by repeatedly fetching and executing instructions from a bytecode array.</li>
+    </ol>
+  </li>
+  <li>The inputs to the guest program.</li>
+</ol>
+
+<p>Guest programs are usually stable inputs, so we can partially evaluate the interpreter with respect to a given guest program to produce a specialized interpreter that runs only that program.
+In effect, partially evaluating an interpreter over a guest program removes much of the interpretation overhead, producing code specialized for that program, much like a compiler would.
+This technique is known as the <a href="https://fi.ftmr.info/PE-Museum/PE-Revised1999.pdf">first Futamura projection</a>.</p>
+
+<p>Consider the simple AST interpreter below, which implements a small expression language:</p>
+
+<pre><code class="language-java">public int interpret(ExpressionNode program, int[] args) {
+    return program.execute(args);
+}
+
+public interface ExpressionNode {
+    int execute(int[] args);
+}
+public class LoadArgumentNode implements ExpressionNode {
+    final int index;
+    int execute(int[] args) {
+        return args[index];
+    }
+}
+public class AddNode implements ExpressionNode {
+    final ExpressionNode left;
+    final ExpressionNode right;
+    int execute(int[] args) {
+        return left.execute(args) + right.execute(args);
+    }
+}
+</code></pre>
+
+<p>The <code>interpret</code> method can take a variety of different <code>ExpressionNode</code> programs as input.
+Consequently, the call to <code>program.execute</code> is <em>polymorphic</em>: it can resolve to any number of target methods.
+However, suppose we have a concrete AST <code>new AddNode(new LoadArgumentNode(1), new LoadArgumentNode(2))</code>.
+We can partially evaluate <code>interpret</code> with respect to this stable AST.</p>
+
+<p>Partial evaluation starts by replacing the <code>program</code> parameter with the stable value of the AST.
+We call this stable value a <em>partial evaluation (PE) constant</em>.</p>
+
+<pre><code class="language-java">public int interpret$specialized(int[] args) {
+    // program = new AddNode(new LoadArgumentNode(1), new LoadArgumentNode(2));
+    return program.execute(args);
+}
+</code></pre>
+
+<p>Then, since <code>program</code> is statically known to be <code>AddNode</code>, the <code>execute</code> call becomes <em>monomorphic</em>: it can only resolve to one method, <code>AddNode#execute</code>.
+PE will generally inline any monomorphic method call it reaches.
+After inlining <code>AddNode#execute</code>, the code looks like:</p>
+
+<pre><code class="language-java">public int interpret$specialized(int[] args) {
+    // program = new AddNode(new LoadArgumentNode(1), new LoadArgumentNode(2));
+    return program.left.execute(args) + program.right.execute(args);
+}
+</code></pre>
+
+<p>Now, notice that <code>program</code> is a PE constant <code>AddNode</code>, and that <code>AddNode</code> declares both <code>left</code> and <code>right</code> to be <code>final</code>.
+Partial evaluation can treat them transitively as PE constants, which allows it to determine that both are <code>LoadArgumentNode</code>s.
+It can then determine that both <code>execute</code> calls are monomorphic, and inline <code>LoadArgumentNode#execute</code> twice:</p>
+
+<pre><code class="language-java">public int interpret$specialized(int[] args) {
+    // program = new AddNode(new LoadArgumentNode(1), new LoadArgumentNode(2));
+    return args[program.left.index] + args[program.right.index];
+}
+</code></pre>
+
+<p>Again, since <code>index</code> is a final field of <code>LoadArgumentNode</code>, and <code>program.left</code> and <code>program.right</code> are both PE constants, <code>program.left.index</code> and <code>program.right.index</code> are transitively PE constants.
+Their values can be inlined into the method body:</p>
+
+<pre><code class="language-java">public int interpret$specialized(int[] args) {
+    // program = new AddNode(new LoadArgumentNode(1), new LoadArgumentNode(2));
+    return args[1] + args[2];
+}
+</code></pre>
+
+<p>Observe how similar the remaining code looks to the input program.
+Partial evaluation removed the indirection introduced by the interpreter: there are no <code>execute</code> calls or field reads in the residual program.
+This is why partial evaluation of an interpreter over a given program is often described as producing a “compiled” version of the program.</p>
+    
+      <h3 id="partial-evaluation-in-truffle-1">
+        
+        
+          Partial evaluation in Truffle <a href="#partial-evaluation-in-truffle-1" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Truffle performs runtime compilation on a <code>CallTarget</code>, which corresponds to a particular <code>RootNode</code>.
+Below is a simple example of a <code>RootNode</code> and how to invoke it through its call target:</p>
+
+<pre><code class="language-java">class ConstantRootNode extends RootNode {
+    final int value;
+
+    ConstantRootNode(int value) {
+        super(null);
+        this.value = value;
+    }
+
+    @Override
+    public Object execute(VirtualFrame frame) {
+        return value;
+    }
+}
+
+ConstantRootNode root = new ConstantRootNode(42);
+root.getCallTarget().call(); // returns 42
+</code></pre>
+
+<p>Truffle profiles the run time behaviour of a given call target (call counts, loop counts, etc.), and when it determines the target to be hot, it schedules the call target for runtime compilation.
+During runtime compilation, Truffle partially evaluates the interpreter with respect to the call target and then generates optimized machine code for the specialized interpreter using the Graal compiler.</p>
+
+<p>The entrypoint for compilation is the <code>RootNode</code>’s <code>execute</code> method.
+Partial evaluation specializes all code reachable from this method.
+It can inline direct calls, recognize Truffle compiler directives, and propagate facts established by control flow.</p>
+
+<p>PE constants provide further opportunities for specialization.
+The set of initial PE constants contains the root node and any <code>static final</code> constants in the program.
+Transitively, any stable fields of a PE constant object are also PE constants.
+Among other things, partial evaluation uses these stable values to:</p>
+<ul>
+  <li>replace stable field loads with PE constant values</li>
+  <li>inline/devirtualize virtual calls over PE constant receivers</li>
+  <li>simplify conditional branches and loops over PE constants</li>
+</ul>
+
+<p>The program produced by PE, called the <em>residual</em> program, performs the remaining computation after simplification by PE.
+Often, this code depends on program inputs or values observed at run time (like argument loads, or a virtual method dispatch).
+It is important for Truffle interpreters to expose their stable structure so that PE can simplify away interpreter indirections.</p>
+
+<p>For background on the Truffle partial evaluation approach, see <a href="https://chrisseaton.com/truffleruby/pldi17-truffle/pldi17-truffle.pdf">Practical Partial Evaluation for High-Performance Dynamic Language Runtimes</a>.</p>
+    
+      <h2 id="writing-interpreters-for-partial-evaluation">
+        
+        
+          Writing interpreters for partial evaluation <a href="#writing-interpreters-for-partial-evaluation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>This section describes some design considerations when writing interpreters for partial evaluation.</p>
+    
+      <h3 id="exposing-stable-interpreter-state">
+        
+        
+          Exposing stable interpreter state <a href="#exposing-stable-interpreter-state" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>The goal of PE is to remove the overhead of interpretation and produce residual code that focuses on executing the guest program.
+Partial evaluation can fold field reads, inline calls, and remove unnecessary branches or loops, but only if it knows which values are stable.
+Use appropriate annotations and compiler directives to indicate stable state to PE.</p>
+
+<p>Truffle’s PE leverages the speculative nature of Graal compilation: compiled code can make assumptions about the stability of values and behaviour, but those assumptions can later stop holding.
+For correctness, the interpreter must also invalidate affected compiled code before making changes to stable state.</p>
+    
+      <h4 id="static-interpreter-structure-with-final-child-and-children">
+        
+        
+          Static interpreter structure with <code>final</code>, <code>@Child</code>, and <code>@Children</code>
+        
+        
+      </h4>
+
+<p>Partial evaluation starts from a small set of values that are constant for the current compilation.
+This set includes the root node for the compiled call target and ordinary <code>static final</code> Java fields.
+Transitively, when a PE constant has a <code>final</code> field, that field value can also be treated as a PE constant.</p>
+
+<p>Consider the following code:</p>
+
+<pre><code class="language-java">final boolean flag;
+int execute(VirtualFrame frame) {
+    if (flag) {
+        return doTrue(frame);
+    } else {
+        return doFalse(frame);
+    }
+}
+</code></pre>
+
+<p>If the receiver is PE constant, PE can inline the constant value of <code>flag</code> and then omit the unreachable branch from the compilation.
+Without a stable field, PE would have to compile both branches because <code>flag</code> could have either value at run time.</p>
+
+<p>The same idea applies to child nodes.
+Truffle’s <code>@Child</code> and <code>@Children</code> annotations declare stable node children to PE.
+Additionally, Truffle automatically adopts <code>@Child</code> and <code>@Children</code> nodes (allowing you to walk the node tree with <code>Node#getChildren</code> and <code>Node#getParent</code>).</p>
+
+<p>Declaring node children is important because nodes often delegate to their children using virtual <code>execute</code> methods.
+When the child field is PE constant, PE can see the concrete receiver type and inline the target method.
+For example:</p>
+
+<pre><code class="language-java">final class AddNode extends ExpressionNode {
+    @Child ExpressionNode left;
+    @Child ExpressionNode right;
+
+    int executeInt(VirtualFrame frame) {
+        return left.executeInt(frame) + right.executeInt(frame);
+    }
+}
+</code></pre>
+
+<p>If a particular <code>AddNode</code> is PE constant, its <code>left</code> and <code>right</code> children are also PE constants, allowing PE to inline their concrete <code>executeInt</code> implementations.
+This turns a polymorphic interpreter call into direct code specialized to the given children.</p>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Use <code>final</code> for fields whose values are fixed at construction time.</li>
+  <li>Use <code>@Child</code> and <code>@Children</code> for AST child nodes whose structure should be stable during PE.</li>
+  <li>Remember that field values only fold when the receiver object is PE constant.</li>
+</ul>
+    
+      <h4 id="profiling-stable-state-with-compilationfinal">
+        
+        
+          Profiling stable state with <code>@CompilationFinal</code>
+        
+        
+      </h4>
+
+<p><code>@CompilationFinal</code> is similar to <code>final</code> from PE’s perspective, but the field is still mutable in Java.
+This allows interpreters to profile their own behaviour.
+Once a call target is scheduled for runtime compilation, PE will treat <code>@CompilationFinal</code> fields like <code>final</code> ones, effectively specializing the interpreter using profiled values.</p>
+
+<p>For example, the code below profiles the types of arguments it encounters using <code>@CompilationFinal</code> fields:</p>
+
+<pre><code class="language-java">@CompilationFinal private boolean intsSeen;
+@CompilationFinal private boolean stringsSeen;
+Object execute(VirtualFrame frame) {
+    Object arg1 = ...;
+    Object arg2 = ...;
+    if (intsSeen &amp;&amp; arg1 instanceof Integer i1 &amp;&amp; arg2 instanceof Integer i2) {
+        return i1 + i2;
+    } else if (stringsSeen &amp;&amp; arg1 instanceof String s1 &amp;&amp; arg2 instanceof String s2) {
+        return s1 + s2;
+    }
+
+    // No active case matched. Invalidate and re-specialize.
+    CompilerDirectives.transferToInterpreterAndInvalidate();
+    if (arg1 instanceof Integer i1 &amp;&amp; arg2 instanceof Integer i2) {
+        intsSeen = true;
+        return i1 + i2;
+    } else if (arg1 instanceof String s1 &amp;&amp; arg2 instanceof String s2) {
+        stringsSeen = true;
+        return s1 + s2;
+    }
+    throw CompilerDirectives.shouldNotReachHere();
+}
+</code></pre>
+
+<p>At the start of interpretation, <code>intsSeen == stringsSeen == false</code>, so the code supports no argument types.
+On first execution, if two <code>int</code> arguments are passed, <code>execute</code> will fall through to the specialization path and set <code>intsSeen == true</code>.
+Subsequent calls will handle <code>int</code> arguments without re-specialization.
+If this code is compiled, PE will see <code>intsSeen == true</code> and <code>stringsSeen == false</code>, and it will emit code that roughly performs:</p>
+<pre><code class="language-java">Object execute$compiled(VirtualFrame frame) {
+    Object arg1 = ...;
+    Object arg2 = ...;
+    if (arg1 instanceof Integer i1 &amp;&amp; arg2 instanceof Integer i2) {
+        return i1 + i2;
+    }
+   CompilerDirectives.transferToInterpreterAndInvalidate();
+}
+</code></pre>
+<p>This code is simpler and specialized for the types profiled at run time.
+Importantly, if <code>String</code> arguments were passed in the future, the code would fall through to <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code>, which invalidates the compiled code and restores execution in the interpreter (see <a href="#re-specializing-the-interpreter-in-the-slow-path">Re-specializing the interpreter in the slow path</a> below).
+After resuming in the interpreter, the node can re-specialize itself to handle both <code>int</code> and <code>String</code> arguments, and can eventually be recompiled.</p>
+
+<p>Before overwriting a <code>@CompilationFinal</code> field, you must invalidate any compiled code that relies on the stability of the old value.
+Truffle offers two mechanisms for invalidation:</p>
+<ul>
+  <li><em>Internal invalidation</em>: When code modifying a stable value itself makes assumptions about the stable value, it should use <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code> before changing it.
+If compiled code reaches this point in execution, it will trigger the current code to deoptimize and invalidate it.</li>
+  <li><em>External invalidation</em>: If some call target makes an assumption about a stable value, but some other call target can modify that value, the call targets should use an <code>Assumption</code>.
+The code that expects a stable value should create an assumption and check <code>isValid()</code> to register the assumption with the compiler; when some code wants to change the value, it can <code>invalidate()</code> the assumption, externally triggering invalidation of the compiled code.
+An invalidated call target can later be re-optimized, but stable fields must eventually stabilize, otherwise the code can get into a deoptimization cycle where it is repeatedly compiled and invalidated.</li>
+</ul>
+
+<p>For arrays, use <code>@CompilationFinal(dimensions=...)</code> to indicate how many dimensions of an array are stable.
+When <code>dimensions</code> is omitted, all dimensions are implicitly stable, but it is recommended to declare the dimensions explicitly:</p>
+
+<pre><code class="language-java">// table0, table0[c1], table0[c1][c2] are PE constant
+@CompilationFinal(dimensions = 2) private int[][] table0;
+
+// table1 and table1[c1] are PE constant; table1[c1][c2] is not.
+@CompilationFinal(dimensions = 1) private int[][] table1;
+
+// table2 is PE constant; table2[c1] and table2[c1][c2] are not.
+@CompilationFinal(dimensions = 0) private int[][] table2;
+
+// equivalent to table0 (dimensions = 2)
+@CompilationFinal private int[][] table3;
+</code></pre>
+
+<p>As with object fields, before mutating PE-constant array elements, invalidate any compiled code that relies on the stability of those elements.</p>
+
+<p>Stable state can allow PE to remove branches with PE-constant conditions entirely, but sometimes a branch condition remains dynamic and cannot be simplified by PE.
+Nevertheless, the <em>probability</em> that a branch is taken is sometimes a PE constant, either because it is statically known or can be inferred from stable profiling state.
+Use <code>CompilerDirectives.injectBranchProbability(...)</code> to report stable branch probabilities to the compiler, which can use them to inform later optimization phases.</p>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Use <code>@CompilationFinal</code> for fields that are initialized or changed later, but should become stable before compilation.</li>
+  <li>Invalidate compiled code before changing a <code>@CompilationFinal</code> value that compiled code may depend on.</li>
+  <li>Use <code>@CompilationFinal(dimensions = ...)</code> with arrays to declare the number of stable array dimensions.</li>
+  <li>Use <code>CompilerDirectives.injectBranchProbability(...)</code> to guide optimization of dynamic branches with known stable probabilities.</li>
+  <li>Separate fast-path code, which relies on profiled state, from the slow-path code responsible for re-specializing the interpreter (see below).</li>
+</ul>
+    
+      <h4 id="invalidation-and-re-specialization-using-slow-path-code">
+        
+        
+          Invalidation and re-specialization using slow path code
+        
+        
+      </h4>
+
+<p>Slow path code is fallback code that typically handles interpreter re-specialization (e.g., updating a profile).
+It should not run in compiled code and requires deoptimization to the interpreter before executing.
+In the previous section, <code>execute</code> contains a slow path responsible for re-specializing for <code>int</code> and <code>String</code> arguments.</p>
+
+<p>When the slow path can be handled locally (which is most cases), use <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code>.
+This directive tells compiled code to transfer back to the interpreter and invalidate the current compilation before continuing.
+Use this when the code at the slow-path check can re-specialize and handle the unexpected case itself.</p>
+
+<p>Sometimes, the deoptimizing code does not understand how to handle slow-path behaviour.
+Use <code>SlowPathException</code> to deoptimize and throw an exception to a catching call site that knows how to handle the slow path.
+PE treats <code>SlowPathException</code> as a <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/#skipped-exceptions"><em>skipped</em> exception</a>: when PE reaches a path that would allocate or throw a <code>SlowPathException</code>, it emits an invalidating deoptimization instead of compiled throw/catch control flow.</p>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Use deoptimizing slow paths to stop compiled execution, invalidate the compiled code, and resume in the interpreter.</li>
+  <li>Use <code>CompilerDirectives.transferToInterpreterAndInvalidate()</code> when the slow-path check and fallback are local.</li>
+  <li>Use <code>SlowPathException</code> when nested fast-path helpers need to abort to a caller that handles the fallback.</li>
+  <li>Ensure the slow path eventually changes state or handles an uncommon case; otherwise it can cause a <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">deoptimization cycle</a>.</li>
+</ul>
+    
+      <h3 id="shaping-loops-for-partial-evaluation">
+        
+        
+          Shaping loops for partial evaluation <a href="#shaping-loops-for-partial-evaluation" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Partial evaluation can have trouble optimizing loops; for example, when the values in a loop vary across iterations, there may not be many PE constants visible for optimization.
+For loops with a PE-constant number of iterations, you can use <code>@ExplodeLoop</code> to unroll the loop body during partial evaluation.
+After unrolling, each copy of the loop body has its own loop state, which can expose additional PE constants and enable further optimization.</p>
+
+<p>For example, consider a node that loops over its children and sums them:</p>
+
+<pre><code class="language-java">final class AddManyNode extends ExpressionNode {
+    @Children private ExpressionNode[] children;
+
+    @ExplodeLoop
+    int executeInt(VirtualFrame frame) {
+        int result = 0;
+        for (int i = 0; i &lt; children.length; i++) {
+            CompilerAsserts.partialEvaluationConstant(i);
+            result += children[i].executeInt(frame);
+        }
+        return result;
+    }
+}
+</code></pre>
+
+<p>Inside the loop <code>children[i]</code> could be any <code>ExpressionNode</code>; consequently, <code>executeInt</code> is a polymorphic call, and PE generally cannot inline it.
+However, unrolling the loop exposes the PE constant <code>children[i]</code> at each index.
+Suppose we have a particular <code>AddManyNode</code> instance with three children: <code>LoadArgumentNode(0)</code>, <code>LoadArgumentNode(1)</code>, and <code>LoadConstantNode(42)</code>.
+Observe how unrolling enables PE to optimize the loop:</p>
+
+<pre><code class="language-java">// after unrolling:
+int result = 0;
+result += children[0].executeInt(frame);
+result += children[1].executeInt(frame);
+result += children[2].executeInt(frame);
+return result;
+
+// what PE sees (conceptually):
+int result = 0;
+result += (LoadArgumentNode(0)).executeInt(frame);
+result += (LoadArgumentNode(1)).executeInt(frame);
+result += (LoadConstantNode(42)).executeInt(frame);
+return result;
+
+// after inlining:
+int result = 0;
+result += (int) frame.getArguments()[0];
+result += (int) frame.getArguments()[1];
+result += 42;
+return result;
+</code></pre>
+
+<p>After unrolling, each <code>children[i]</code> becomes PE constant, which in turn makes each <code>executeInt</code> call monomorphic.
+PE can inline these monomorphic calls to produce code specialized to the particular <code>AddManyNode</code>.</p>
+
+<p>Loop explosion can also fold loop-based computations during PE.
+For example, assume <code>locals</code> is a PE-constant array of metadata objects:</p>
+
+<pre><code class="language-java">@CompilationFinal(dimensions = 1) private final LocalInfo[] locals;
+
+@ExplodeLoop
+int getLiveLocalCount(int bci) {
+    CompilerAsserts.partialEvaluationConstant(bci);
+    CompilerAsserts.partialEvaluationConstant(locals.length);
+    int count = 0;
+    for (int i = 0; i &lt; locals.length; i++) {
+        CompilerAsserts.partialEvaluationConstant(i);
+        if (locals[i].isLive(bci)) {
+            count++;
+        }
+    }
+    CompilerAsserts.partialEvaluationConstant(count);
+    return count;
+}
+</code></pre>
+
+<p>When <code>locals.length</code> is PE constant, PE can unroll the loop, revealing a PE constant for each <code>locals[i]</code>; then, it can inline and simplify the <code>isLive</code> computation for each entry.
+Since <code>bci</code> is also a PE constant, PE can reduce each <code>isLive</code> computation to a PE-constant <code>true</code> or <code>false</code> and effectively compute <code>count</code> during partial evaluation.
+This replaces a loop-based metadata computation with a constant in the compiled graph.</p>
+
+<p>There are some caveats to consider when using <code>@ExplodeLoop</code>:</p>
+
+<ul>
+  <li><code>@ExplodeLoop</code> takes an optional <code>LoopExplosionKind</code> that controls the exact unrolling behaviour, like how successive iterations are connected (e.g., with merge points or with nested unrolling).
+The special <a href="#merge_explode-for-bytecode-dispatch-loops"><code>MERGE_EXPLODE</code></a> mode is explained below.
+Refer to the Javadoc for full details.</li>
+  <li><code>@ExplodeLoop</code> applies to all loops in the annotated method.
+It only applies to that method; the control flow of inlined callees is not recursively unrolled by default.
+Use <code>@EarlyInline</code> for helper methods that should participate in the caller’s unrolling; such callees will be inlined before PE performs loop unrolling.</li>
+  <li><code>@ExplodeLoop</code> is not a general-purpose performance annotation.
+It duplicates graph nodes and can increase compilation time and compiled code size, so it should be used with discretion.
+One heuristic: if the unrolled size is potentially unbounded, <code>@ExplodeLoop</code> is usually not appropriate.
+Typically, loops over AST nodes and other static code elements have a bounded size and are good candidates for unrolling.
+However, even if the size is bounded, you should consider whether unrolling actually helps PE, for example by exposing PE constants that enable further optimization.
+If later compiler phases could unroll and optimize the loop just as well, prefer to let the compiler make unrolling decisions.</li>
+</ul>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Use <code>@ExplodeLoop</code> to unroll loops with a PE-constant number of iterations.</li>
+  <li>Use <code>CompilerAsserts.partialEvaluationConstant(...)</code> to assert that loop variables influencing unrolling are PE constant.</li>
+  <li>Use loop explosion if unrolling exposes stable state that PE can further optimize.</li>
+</ul>
+    
+      <h4 id="merge_explode-for-bytecode-dispatch-loops">
+        
+        
+          <code>MERGE_EXPLODE</code> for bytecode dispatch loops
+        
+        
+      </h4>
+
+<p>There is a special <code>LoopExplosionKind</code>, <code>MERGE_EXPLODE</code>, which is intended for use with bytecode interpreters.
+Bytecode interpreters often contain bytecode dispatch loops with the following shape:</p>
+
+<pre><code class="language-java">@CompilationFinal(dimensions = 1) private final byte[] bytecodes;
+
+@ExplodeLoop(kind = ExplodeLoop.LoopExplosionKind.MERGE_EXPLODE)
+Object executeFromBci(VirtualFrame frame) {
+    int bci = 0;
+    int sp = 0;
+    while (true) {
+        CompilerAsserts.partialEvaluationConstant(bci);
+        switch (bytecodes[bci]) {
+            case LOAD_ARGUMENT:
+                ... // &lt;LOAD_ARGUMENT n&gt;
+                bci += 2;
+                sp++;
+                continue;
+            case ADD:
+                ... // &lt;ADD&gt;
+                bci += 1;
+                sp--;
+                continue;
+            case RETURN:
+                return frame.getObject(sp - 1);
+        }
+    }
+}
+</code></pre>
+<p>Such a dispatch loop consists of a loop with a <code>switch</code> table describing the execution semantics of each opcode in the language.
+It also has some set of state controlling the dispatch from iteration to iteration, like <code>bci</code> and <code>sp</code> variables.</p>
+
+<p>Unrolling bytecode dispatch loops is critical: by unrolling, the <code>bci</code> used in each iteration is PE constant, and so <code>bytecodes[bci]</code> is a PE constant, and we can eliminate the interpreter dispatch from compiled code.
+For example, PE of the above loop with bytecodes <code>[LOAD_ARGUMENT, 1, LOAD_ARGUMENT, 2, ADD, RETURN]</code> would generate code of the form:</p>
+<pre><code>&lt;LOAD_ARGUMENT 1&gt;                // unrolled iteration: bci = 0, sp = 0, opcode = LOAD_ARGUMENT
+&lt;LOAD_ARGUMENT 2&gt;                // unrolled iteration: bci = 2, sp = 1, opcode = LOAD_ARGUMENT
+&lt;ADD&gt;                            // unrolled iteration: bci = 4, sp = 2, opcode = ADD
+return frame.getObject(sp - 1)   // unrolled iteration: bci = 5, sp = 1, opcode = RETURN
+</code></pre>
+
+<p>Unrolling bytecode loops is not as simple as other loops: the instruction set often has control flow instructions that make the unrolling unbounded or even intractable.
+For example, consider a hypothetical bytecode program with a <code>BRANCH_BACKWARD</code> instruction:</p>
+<pre><code>lbl:
+   LOAD_ARGUMENT 1,
+   ... // more loop body
+   BRANCH_BACKWARD lbl
+...
+</code></pre>
+
+<p>A naive loop explosion would unroll the body of this loop indefinitely, because the Java loop does not end:</p>
+<pre><code>&lt;LOAD_ARGUMENT 1&gt;    // unrolled iteration: bci = 0, sp = 0, opcode = LOAD_ARGUMENT
+...                  // more unrolled iterations
+bci = 0              // unrolled iteration: bci = 10, sp = 0, opcode = BRANCH_BACKWARD
+&lt;LOAD_ARGUMENT 1&gt;    // unrolled iteration: bci = 0, sp = 0, opcode = LOAD_ARGUMENT
+...                  // more unrolled iterations
+bci = 0              // unrolled iteration: bci = 10, sp = 0, opcode = BRANCH_BACKWARD
+... // continue forever
+</code></pre>
+
+<p><code>MERGE_EXPLODE</code> resolves this problem by examining the <em>state</em> of each iteration: for simplicity, think of this as the state of local variables at the start of the iteration.
+When an unrolled iteration has the same state as some other unrolled iteration, PE stops unrolling and connects the current path to the existing code with the matching state.</p>
+<pre><code>lbl:
+&lt;LOAD_ARGUMENT 1&gt;    // unrolled iteration: bci = 0, sp = 0, opcode = LOAD_ARGUMENT
+...                  // more unrolled iterations
+bci = 0              // unrolled iteration: bci = 10, sp = 0, opcode = BRANCH_BACKWARD
+goto lbl             // next iteration: {bci = 0, sp = 0} matches a previous one. branch to it.
+</code></pre>
+<p>This merging of identical states is the “merge” part of <code>MERGE_EXPLODE</code>.
+Merging iterations with the same state is critical to prevent PE from unrolling dispatch loops indefinitely.</p>
+
+<p>Conditional control flow is also problematic for loop unrolling.
+Consider a <code>BRANCH_FALSE</code> instruction, whose handler might look something like:</p>
+<pre><code class="language-java">case BRANCH_FALSE:
+    boolean condition = (boolean) frame.getObject(sp - 1);
+    if (condition) {
+        bci += 2; // continue with the next instruction
+    } else {
+        bci = bytecodes[bci + 1]; // branch to encoded branch target
+    }
+    sp--;
+    continue;
+</code></pre>
+<p>After unrolling a <code>BRANCH_FALSE</code>, there are two possible states for the subsequent iteration: <code>bci</code> could point at the next instruction, or the instruction targeted by the branch.
+The next instruction to evaluate depends on which branch was taken.</p>
+
+<p>Take this program as an example:</p>
+<pre><code>   LOAD_ARGUMENT 1
+   BRANCH_FALSE lbl
+   LOAD_ARGUMENT 2
+   RETURN
+lbl:
+   LOAD_ARGUMENT 3
+   RETURN
+</code></pre>
+
+<p>Instead of joining control flow of the two paths after <code>BRANCH_FALSE</code>, <code>MERGE_EXPLODE</code> continues unrolling separately into each branch:</p>
+
+<pre><code>&lt;LOAD_ARGUMENT 1&gt;    // unrolled iteration: bci = 0, sp = 0, opcode = LOAD_ARGUMENT
+if (condition) {     // unrolled iteration: bci = 2, sp = 1, opcode = BRANCH_FALSE
+  &lt;LOAD_ARGUMENT 2&gt;  // unrolled iteration: bci = 4, sp = 0, opcode = LOAD_ARGUMENT
+  &lt;RETURN&gt;           // unrolled iteration: bci = 6, sp = 1, opcode = RETURN
+} else {
+  &lt;LOAD_ARGUMENT 3&gt;  // unrolled iteration: bci = 7, sp = 0, opcode = LOAD_ARGUMENT
+  &lt;RETURN&gt;           // unrolled iteration: bci = 9, sp = 1, opcode = RETURN
+}
+</code></pre>
+<p>Truffle refers to this kind of unrolling as “exploding”, which is why the mode is called <code>MERGE_EXPLODE</code>.
+By merging iterations with the same state and exploding the unrolling into each control flow branch, PE effectively compiles the interpreter to the control flow of the actual interpreted program.</p>
+
+<p><code>MERGE_EXPLODE</code> is powerful but requires some extra care to get right:</p>
+<ol>
+  <li>The partial evaluator uses the host interpreter state to determine whether two loop iterations can be merged; while this roughly corresponds to local variables, it can be error-prone.
+For example, unrelated variables like branch profiles can unintentionally be included in the state set and prevent two states from being merged as intended.
+A common workaround, since object comparison is based on identity, is to wrap these values in an object (e.g., an array) to prevent them from introducing unique state sets during loop explosion.
+It is important to inspect compiler logs and compiled code to ensure loop explosion works as expected.</li>
+  <li>Because <code>@ExplodeLoop</code> does not explode the control flow of inlined callees, outlining bytecode handlers can cause problems if they update dispatch state.
+For example, if the <code>BRANCH_FALSE</code> handler above was outlined to a helper function, PE would not continue loop explosion through its two branches.
+It would instead try to explode with the combined state of both branches, which would not have a PE-constant <code>bci</code>.
+For such cases, use the <code>@EarlyInline</code> annotation so that <code>MERGE_EXPLODE</code> explodes <em>through</em> the control flow of the helper method.</li>
+</ol>
+    
+      <h3 id="separating-interpreter-and-runtime-code">
+        
+        
+          Separating interpreter and runtime code <a href="#separating-interpreter-and-runtime-code" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Partial evaluation tries to optimize all code reachable from <code>RootNode#execute</code>.
+As PE inlines calls and simplifies branches, it can transitively pull more calls into the compilation.
+It can be tempting to think that exposing as much code as possible to PE would improve performance, but this can actually be counter-productive.
+Partial evaluation does not use host code profiles (e.g., JVM branch profiles), so code not designed for PE – that is, code without <a href="#profiling-stable-state-with-compilationfinal">explicit profiles</a> – usually just explodes the size of the compiler graph.
+Often, this leads to poorly-optimized code, increases compilation time, and causes compilation failures (due to size limits).</p>
+
+<p>Thus, when writing Truffle interpreters, it is important to draw a line between <em>interpreter code</em> and <em>runtime code</em>.
+Interpreter code is the code PE should see and specialize with respect to the current call target.
+It is the hot path that gets aggressively optimized by PE.
+Generally, the interpreter code should include the core interpretation abstractions, like <code>execute</code> calls and bytecode dispatch loops, so that these abstractions can be optimized away by PE.
+Well-written interpreter code is focused and exposes stable profiling state that allows it to be simplified by PE (e.g., by devirtualizing method calls or unrolling a bytecode loop).</p>
+
+<p>Runtime code is code that is unsuitable for PE, usually because it is too complex, lacks profiles, or does not partially evaluate well.
+Use the <code>@TruffleBoundary</code> annotation to prevent runtime code from being inlined during partial evaluation.
+Some kinds of code should usually be excluded from PE:</p>
+<ol>
+  <li>Recursive code, which typically increases code size without meaningfully simplifying code, should usually be excluded.</li>
+  <li>Complex code with many branches or many virtual calls can cause PE to pull in a significant amount of code that optimizes poorly, so it should usually be excluded, unless PE can substantially simplify it (using profiles, PE-constant arguments, etc.).</li>
+  <li>Third-party code that was not designed for PE should usually be excluded. This includes JDK library code, like string, I/O, and hash map operations.</li>
+</ol>
+
+<p>Sometimes <code>@TruffleBoundary</code> placement is an engineering decision that depends on whether a code path really benefits from PE or just inhibits it by introducing more complexity.</p>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Keep the core guest-language execution path in interpreter code that PE can see and simplify.</li>
+  <li>Put code that is not suitable for PE behind <code>@TruffleBoundary</code> as runtime code.</li>
+</ul>
+    
+      <h3 id="working-with-virtualframes">
+        
+        
+          Working with <code>VirtualFrame</code>s <a href="#working-with-virtualframes" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>Interpreters need a mechanism to store variables and other guest program state.
+In Truffle, this mechanism is the <code>VirtualFrame</code>, which is an object containing <em>slots</em> that can be written to and read from.
+Frame accesses incur memory loads/stores, which can significantly reduce performance of compiled code.</p>
+
+<p>An important optimization performed in Truffle compilation is scalar replacement of the <code>VirtualFrame</code>.
+Scalar replacement elides the allocation of the <code>VirtualFrame</code> object and decomposes it into its component values, which allows the compiler to represent frame values directly, often in registers or stack locations.
+This allows compiled code to access frame slots without the memory indirection of the <code>VirtualFrame</code>.
+If the compiled code deoptimizes, the VM reconstructs the frame object before resuming execution in the interpreter.</p>
+
+<p>The compiler can only perform scalar replacement if partial escape analysis (PEA) determines that the <code>VirtualFrame</code> does not escape the current compilation.
+Concretely, this means the frame should only be passed into interpreter methods that PE can see through, and not through polymorphic or <code>@TruffleBoundary</code> method calls.
+Since scalar replacement is so critical for performance, the compiler will abort compilation if the <code>VirtualFrame</code> escapes (unless materialization is explicitly requested using <code>frame.materialize()</code>).</p>
+
+<p>Guidelines:</p>
+<ul>
+  <li>Pass a <code>VirtualFrame</code> only through interpreter calls that PE can see through.</li>
+  <li>Do not pass a <code>VirtualFrame</code> through polymorphic or <code>@TruffleBoundary</code> calls unless it is deliberately materialized.</li>
+</ul>
+    
+      <h2 id="common-mistakes">
+        
+        
+          Common mistakes <a href="#common-mistakes" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>Below are a few common mistakes users make when writing code for PE.</p>
+    
+      <h3 id="assuming-stable-fields-fold-on-non-pe-constant-receivers">
+        
+        
+          Assuming stable fields fold on non-PE-constant receivers <a href="#assuming-stable-fields-fold-on-non-pe-constant-receivers" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>It is common to assume that all loads of a <code>@CompilationFinal</code> field fold to PE constants.
+However, partial evaluation can only fold loads of a PE-constant field if its receiver is also a PE constant.
+If the receiver is a dynamic value, then the value of its PE-constant field could be any arbitrary value.</p>
+
+<p>Consider the following code example:</p>
+
+<pre><code class="language-java">final class MyObject {
+    @CompilationFinal ObjectLayout layout;
+}
+
+Object readAttribute(MyObject receiver) {
+    return receiver.layout.read(receiver);
+}
+</code></pre>
+
+<p>If <code>receiver</code> is not a PE constant, the <code>readAttribute</code> method can observe any arbitrary <code>MyObject</code>.
+Therefore, PE cannot fold <code>receiver.layout</code> to a constant value.
+If the layout is stable in practice, the interpreter should expose the stable layout through PE-constant interpreter state (e.g., a <code>@CompilationFinal</code> profile) so that it can be exploited by PE.</p>
+
+<p>This usage pattern is a common source of <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/#compilation-final-field-of-a-non-constant-object">deoptimization cycles</a>.</p>
+    
+      <h3 id="using-explodeloop-with-unbounded-loops">
+        
+        
+          Using <code>@ExplodeLoop</code> with unbounded loops <a href="#using-explodeloop-with-unbounded-loops" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p><code>@ExplodeLoop</code> should only be used when PE can prove that loop explosion terminates.
+The usual case is a loop with a PE-constant number of iterations.</p>
+
+<p>The following code is suspicious:</p>
+
+<pre><code class="language-java">@ExplodeLoop
+void processInts(int[] values) {
+    for (int i = 0; i &lt; values.length; i++) {
+        // some work
+    }
+}
+</code></pre>
+
+<p>If <code>values.length</code> is not a PE constant, PE has no way to determine if the loop explosion will terminate.
+It may repeatedly duplicate the loop body until compilation fails with a graph-size bailout.</p>
+
+<p>If <code>values.length</code> should be a PE constant, use <code>CompilerAsserts.partialEvaluationConstant(...)</code> to defensively check this:</p>
+
+<pre><code class="language-java">@ExplodeLoop
+void processInts(int[] values) {
+    CompilerAsserts.partialEvaluationConstant(values.length);
+    for (int i = 0; i &lt; values.length; i++) {
+        // some work
+    }
+}
+</code></pre>
+    
+      <h3 id="excessive-use-of-explodeloop">
+        
+        
+          Excessive use of <code>@ExplodeLoop</code> <a href="#excessive-use-of-explodeloop" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h3>
+
+<p>You should also be deliberate about using <code>@ExplodeLoop</code>: just because you can does not mean you should.
+Consider the following example:</p>
+
+<pre><code class="language-java">@CompilationFinal(dimensions = 1) private final String[] metricNames;
+
+@ExplodeLoop
+void reportValue(Object value) {
+    for (int i = 0; i &lt; metricNames.length; i++) {
+        reportRuntime(metricNames[i], value);
+    }
+}
+
+@TruffleBoundary
+static void reportRuntime(String metricName, Object value) {
+    // Runtime code such as formatting, allocation, or I/O.
+}
+</code></pre>
+
+<p>Depending on the length of <code>metricNames</code>, exploding the loop above can drastically increase code size without any apparent benefit to PE.
+Even though the number of iterations is a PE constant, each unrolled iteration is still just another boundary call that PE cannot see through.
+Loop explosion is most useful when the explosion reveals stable constants that allow PE to perform further optimization.
+Other loops, especially uncommon loops or loops that are not performance-sensitive, are less likely to benefit from explosion.
+When in doubt, profile actual applications to inform loop explosion decisions.</p>
+    
+      <h2 id="when-pe-does-not-do-what-you-expect">
+        
+        
+          When PE does not do what you expect <a href="#when-pe-does-not-do-what-you-expect" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<p>When partially evaluable code is not optimized as expected, there are a few tell-tale symptoms:</p>
+
+<ul>
+  <li>performance warnings from <code>--engine.TracePerformanceWarnings=(call|instanceof|store|all)</code>, especially warnings about virtual calls that PE could not inline</li>
+  <li>repeated deoptimization or invalidation reported by <code>--engine.TraceCompilation</code>, which often indicates unstable state that was treated as stable</li>
+  <li>graph-size bailouts reported by compilation logs, for example with <code>--engine.TraceCompilation</code>, which often indicate that PE reached too much code or exploded too much control flow</li>
+  <li>unexpected Java methods or Truffle nodes in <code>--engine.MethodExpansionStatistics=truffleTier</code> or <code>--engine.NodeExpansionStatistics=truffleTier</code></li>
+  <li>remaining <code>Invoke</code> nodes, unexpected branches, or unexpected loops in the Graal graph after partial evaluation (see <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">Optimizing Truffle interpreters</a> for graph dumping instructions)</li>
+</ul>
+
+<p>These symptoms usually mean that some part of the fast path is not as stable or PE-friendly as expected.
+For example, a receiver might not be a PE constant, a loop bound might not be PE constant, a profile might not have stabilized, or slow path code may be unintentionally reachable to PE.</p>
+
+<p>The <a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">Optimizing Truffle interpreters</a> document describes several strategies for debugging problems with PE.
+In particular, graph dumps at level <code>:5</code> are useful for observing how PE expands and simplifies inlined methods.
+For common causes of repeated deoptimization, see <a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">Deoptimization Cycle Patterns</a>.</p>
+    
+      <h2 id="further-reading">
+        
+        
+          Further reading <a href="#further-reading" class="anchor_heading"><svg class='anchor-icon' width='22' height='22' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' aria-hidden='true'><path d='M10 13a5 5 0 0 0 7.07 0l3.54-3.54a5 5 0 0 0-7.07-7.07L10 5'/><path d='M14 11a5 5 0 0 0-7.07 0L3.39 14.54a5 5 0 1 0 7.07 7.07L14 19'/></svg></a>
+        
+        
+      </h2>
+
+<ul>
+  <li><a href="/dev/graalvm-as-a-platform/language-implementation-framework/Optimizing/">Optimizing Truffle interpreters</a> describes the main runtime compilation debugging workflow.</li>
+  <li><a href="/dev/graalvm-as-a-platform/language-implementation-framework/DeoptCyclePatterns/">Deoptimization Cycle Patterns</a> describes common patterns that cause repeated deoptimization.</li>
+  <li><a href="/dev/graalvm-as-a-platform/language-implementation-framework/DSLGuidelines/">Truffle DSL Guidelines</a> describes DSL-specific recommendations for writing optimizable nodes.</li>
+  <li><a href="/dev/graalvm-as-a-platform/language-implementation-framework/HostOptimization/">Host Compilation for Interpreter Java code</a> describes how Truffle interpreter code is optimized as Java code.</li>
+  <li><a href="/truffle/docs/bytecode_dsl/RuntimeCompilation.md">Bytecode DSL runtime compilation</a> describes PE-specific considerations for Bytecode DSL interpreters.</li>
+  <li><a href="https://chrisseaton.com/truffleruby/pldi17-truffle/pldi17-truffle.pdf">Practical Partial Evaluation for High-Performance Dynamic Language Runtimes</a> describes the Truffle partial evaluation approach in detail.</li>
+  <li><a href="https://fi.ftmr.info/PE-Museum/PE-Revised1999.pdf">Partial Evaluation of Computation Process–An Approach to a Compiler-Compiler</a> introduces the Futamura projections.</li>
+  <li><a href="https://pages.cs.wisc.edu/~horwitz/CS704-NOTES/PAPERS/JonesPartialEvaluation.pdf">Partial Evaluation and Automatic Program Generation</a> thoroughly discusses the theory and implementation of PE.</li>
+</ul>
+
+      </div>
+      <div role="button" class="menu-btn menu-btn--sidebar js-show-sidebar" title="sweet hamburger">
+        <div class="hamburger">
+          <div class="inner"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</article>
+</div>
+
+      </main>
+      <!-- Connect with us -->
+<section class="content-section socials">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row-socials">
+      <div class="title">
+        <h2 class="title-section">Connect with us</h2>
+      </div>
+      <div class="social-icons">
+        <div class="wider-logo">
+          <a href="https://github.com/oracle/graal" target="_blank" title="github social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="github social media icon">
+              <path
+                d="M12 0C5.374 0 0 5.373 0 12C0 17.302 3.438 21.8 8.207 23.387C8.806 23.498 9 23.126 9 22.81V20.576C5.662 21.302 4.967 19.16 4.967 19.16C4.421 17.773 3.634 17.404 3.634 17.404C2.545 16.659 3.717 16.675 3.717 16.675C4.922 16.759 5.556 17.912 5.556 17.912C6.626 19.746 8.363 19.216 9.048 18.909C9.155 18.134 9.466 17.604 9.81 17.305C7.145 17 4.343 15.971 4.343 11.374C4.343 10.063 4.812 8.993 5.579 8.153C5.455 7.85 5.044 6.629 5.696 4.977C5.696 4.977 6.704 4.655 8.997 6.207C9.954 5.941 10.98 5.808 12 5.803C13.02 5.808 14.047 5.941 15.006 6.207C17.297 4.655 18.303 4.977 18.303 4.977C18.956 6.63 18.545 7.851 18.421 8.153C19.191 8.993 19.656 10.064 19.656 11.374C19.656 15.983 16.849 16.998 14.177 17.295C14.607 17.667 15 18.397 15 19.517V22.81C15 23.129 15.192 23.504 15.801 23.386C20.566 21.797 24 17.3 24 12C24 5.373 18.627 0 12 0Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://x.com/graalvm" target="_blank" title="x social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 1200 1227" fill="none" xmlns="http://www.w3.org/2000/svg" alt="X social media icon">
+              <path d="M714.2 507.9L1167 0H1060.1L661.8 460.4L343.9 0H0L475.4 690.3L0 1227H106.9L531.8 738.5L875.6 1227H1219.5L714.2 507.9ZM582.6 675.5L537.9 611.2L144.6 80.6H288.5L598.8 530.5L643.5 594.8L1048.5 1146.4H904.6L582.6 675.5Z" fill="#171F26"/>
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.linkedin.com/company/graalvm/" target="_blank" title="linkedin social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="linkedin social media icon">
+              <path
+                d="M12 0C5.3736 0 0 5.3736 0 12C0 18.6264 5.3736 24 12 24C18.6264 24 24 18.6264 24 12C24 5.3736 18.6264 0 12 0ZM8.51294 18.1406H5.59039V9.34808H8.51294V18.1406ZM7.05176 8.14746H7.03271C6.052 8.14746 5.41772 7.47235 5.41772 6.6286C5.41772 5.76581 6.07141 5.10938 7.07117 5.10938C8.07092 5.10938 8.68616 5.76581 8.7052 6.6286C8.7052 7.47235 8.07092 8.14746 7.05176 8.14746ZM19.051 18.1406H16.1288V13.4368C16.1288 12.2547 15.7057 11.4485 14.6483 11.4485C13.8409 11.4485 13.3601 11.9923 13.1488 12.5173C13.0715 12.7051 13.0527 12.9677 13.0527 13.2305V18.1406H10.1303C10.1303 18.1406 10.1686 10.173 10.1303 9.34808H13.0527V10.593C13.441 9.9939 14.1359 9.14172 15.6865 9.14172C17.6093 9.14172 19.051 10.3984 19.051 13.099V18.1406Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://medium.com/graalvm" target="_blank" title="medium social media link">
+            <svg class="social-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="medium social media icon">
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                d="M12 0C5.374 0 0 5.372 0 12C0 18.627 5.374 24 12 24C18.627 24 24 18.627 24 12C24 5.372 18.627 0 12 0ZM18.974 17.557V17.322L17.882 16.25C17.786 16.177 17.738 16.056 17.758 15.937V8.063C17.738 7.944 17.786 7.823 17.882 7.75L19 6.678V6.443H15.131L12.373 13.323L9.235 6.443H5.176V6.678L6.484 8.253C6.612 8.368 6.678 8.538 6.66 8.71V14.898C6.698 15.121 6.628 15.349 6.471 15.512L5 17.296V17.531H9.17V17.296L7.699 15.512C7.541 15.349 7.466 15.123 7.497 14.898V9.546L11.157 17.531H11.582L14.725 9.546V15.911C14.725 16.081 14.725 16.113 14.614 16.224L13.484 17.322V17.557H18.974Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://bsky.app/profile/graalvm.org" target="_blank" title="blue sky social media link">
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <g clip-path="url(#clip0_2442_17265)">
+              <path d="M6.6075 3.99362C9.59982 6.25419 12.8184 10.8377 14.0001 13.2975C15.1819 10.8379 18.4003 6.25415 21.3927 3.99362C23.5518 2.36248 27.0501 1.1004 27.0501 5.11641C27.0501 5.91846 26.5931 11.8541 26.3251 12.8177C25.3935 16.1679 21.9986 17.0224 18.9789 16.5052C24.2574 17.4093 25.6002 20.4037 22.7002 23.3982C17.1927 29.0853 14.7843 21.9713 14.1669 20.1484C14.0537 19.8143 14.0008 19.6579 14 19.7909C13.9992 19.6579 13.9463 19.8143 13.8332 20.1484C13.216 21.9713 10.8077 29.0855 5.29983 23.3982C2.39985 20.4037 3.74261 17.4091 9.0212 16.5052C6.00134 17.0224 2.60645 16.1679 1.67495 12.8177C1.40692 11.854 0.949951 5.91837 0.949951 5.11641C0.949951 1.1004 4.44834 2.36248 6.60735 3.99362H6.6075Z" fill="#171F26"/>
+              </g>
+              <defs>
+              <clipPath id="clip0_2442_17265">
+              <rect width="27" height="24" fill="white" transform="translate(0.5 2)"/>
+              </clipPath>
+              </defs>
+              </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="/slack-invitation/" title="slack social media link">
+            <svg class="social-icon" width="40" height="40" viewBox="0 0 40 40" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="slack social media icon">
+              <path
+                d="M13.0009 23.1698C12.9989 23.6678 12.8495 24.154 12.5714 24.5671C12.2933 24.9802 11.899 25.3017 11.4384 25.4909C10.9777 25.6801 10.4714 25.7285 9.98319 25.6302C9.49502 25.5318 9.04693 25.291 8.6955 24.9382C8.34408 24.5854 8.10506 24.1363 8.00863 23.6478C7.91221 23.1592 7.96269 22.6531 8.15371 22.1932C8.34474 21.7333 8.66773 21.3403 9.08193 21.0638C9.49612 20.7874 9.98294 20.6398 10.4809 20.6398H13.0009V23.1698ZM14.2709 29.4798C14.3636 30.0763 14.6665 30.6201 15.125 31.0128C15.5835 31.4055 16.1672 31.6214 16.7709 31.6214C17.3746 31.6214 17.9584 31.4055 18.4168 31.0128C18.8753 30.6201 19.1782 30.0763 19.2709 29.4798V23.1698C19.327 22.8091 19.3043 22.4404 19.2044 22.0893C19.1045 21.7381 18.9299 21.4127 18.6923 21.1354C18.4548 20.8582 18.1601 20.6356 17.8284 20.483C17.4968 20.3304 17.136 20.2514 16.7709 20.2514C16.4058 20.2514 16.0451 20.3304 15.7134 20.483C15.3817 20.6356 15.087 20.8582 14.8495 21.1354C14.612 21.4127 14.4373 21.7381 14.3374 22.0893C14.2375 22.4404 14.2149 22.8091 14.2709 23.1698V29.4798ZM19.2709 13.0398V10.5198C19.2806 10.0137 19.1382 9.51621 18.8622 9.09184C18.5861 8.66746 18.1891 8.33567 17.7224 8.13936C17.2558 7.94305 16.741 7.89125 16.2445 7.99067C15.7481 8.09009 15.293 8.33615 14.9379 8.69703C14.5829 9.05791 14.3442 9.51701 14.2529 10.015C14.1616 10.5129 14.2217 11.0268 14.4256 11.4902C14.6295 11.9536 14.9677 12.3452 15.3965 12.6143C15.8253 12.8835 16.325 13.0177 16.8309 12.9998L19.2709 13.0398ZM10.4309 14.3098C9.8344 14.4025 9.29069 14.7054 8.89796 15.1639C8.50523 15.6224 8.28938 16.2061 8.28938 16.8098C8.28938 17.4135 8.50523 17.9973 8.89796 18.4557C9.29069 18.9142 9.8344 19.2171 10.4309 19.3098H16.7409C17.1017 19.3659 17.4703 19.3432 17.8215 19.2433C18.1726 19.1434 18.498 18.9688 18.7753 18.7312C19.0526 18.4937 19.2751 18.199 19.4278 17.8673C19.5804 17.5357 19.6594 17.1749 19.6594 16.8098C19.6594 16.4447 19.5804 16.084 19.4278 15.7523C19.2751 15.4206 19.0526 15.1259 18.7753 14.8884C18.498 14.6509 18.1726 14.4762 17.8215 14.3763C17.4703 14.2765 17.1017 14.2538 16.7409 14.3098H10.4309ZM26.8709 19.3098H29.3909C29.8984 19.3379 30.4027 19.2124 30.8378 18.9497C31.273 18.6871 31.619 18.2994 31.8307 17.8373C32.0424 17.3752 32.1099 16.86 32.0246 16.3589C31.9392 15.8578 31.7049 15.3941 31.3522 15.0281C30.9995 14.6621 30.5447 14.4108 30.0471 14.307C29.5495 14.2032 29.0322 14.2517 28.5626 14.4461C28.093 14.6406 27.6928 14.972 27.4142 15.3972C27.1357 15.8224 26.9916 16.3216 27.0009 16.8298L26.8709 19.3098ZM25.6009 10.4698C25.5605 9.82762 25.2769 9.22495 24.8078 8.78447C24.3387 8.34399 23.7194 8.0988 23.0759 8.0988C22.4324 8.0988 21.8131 8.34399 21.3441 8.78447C20.875 9.22495 20.5914 9.82762 20.5509 10.4698V16.7798C20.5292 17.1248 20.5784 17.4705 20.6955 17.7957C20.8125 18.1209 20.995 18.4187 21.2316 18.6707C21.4682 18.9226 21.7539 19.1234 22.0711 19.2607C22.3883 19.398 22.7303 19.4688 23.0759 19.4688C23.4216 19.4688 23.7635 19.398 24.0807 19.2607C24.3979 19.1234 24.6837 18.9226 24.9203 18.6707C25.1568 18.4187 25.3393 18.1209 25.4564 17.7957C25.5734 17.4705 25.6226 17.1248 25.6009 16.7798V10.4698ZM20.6409 26.9998V29.5198C20.6389 30.0206 20.7856 30.5108 21.0624 30.9281C21.3392 31.3455 21.7337 31.6713 22.1958 31.8644C22.6579 32.0574 23.1669 32.1089 23.6583 32.0124C24.1498 31.9159 24.6015 31.6758 24.9563 31.3223C25.3112 30.9689 25.5531 30.5181 25.6516 30.0271C25.75 29.536 25.7005 29.0268 25.5093 28.564C25.3181 28.1011 24.9938 27.7054 24.5775 27.4269C24.1613 27.1485 23.6717 26.9998 23.1709 26.9998H20.6409ZM29.4809 25.7298C30.1231 25.6894 30.7258 25.4058 31.1663 24.9367C31.6068 24.4676 31.8519 23.8483 31.8519 23.2048C31.8519 22.5613 31.6068 21.942 31.1663 21.473C30.7258 21.0039 30.1231 20.7203 29.4809 20.6798H23.1709C22.826 20.6581 22.4802 20.7073 22.155 20.8244C21.8298 20.9414 21.532 21.1239 21.2801 21.3605C21.0281 21.5971 20.8273 21.8828 20.69 22.2C20.5528 22.5172 20.4819 22.8592 20.4819 23.2048C20.4819 23.5505 20.5528 23.8924 20.69 24.2096C20.8273 24.5268 21.0281 24.8126 21.2801 25.0492C21.532 25.2858 21.8298 25.4682 22.155 25.5853C22.4802 25.7023 22.826 25.7515 23.1709 25.7298H29.4809Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+        <div class="wider-logo">
+          <a href="https://www.youtube.com/graalvm" target="_blank" title="youtube social media link">
+            <svg class="social-icon" width="35" height="24" viewBox="0 0 35 24" fill="none"
+              xmlns="http://www.w3.org/2000/svg" alt="youtube social media icon">
+              <path
+                d="M18.1713 23.9692L11.0316 23.839C8.71989 23.7937 6.40246 23.8843 4.13616 23.4143C0.688425 22.7121 0.444187 19.2692 0.188588 16.3812C-0.163569 12.321 -0.0272501 8.18716 0.637305 4.16095C1.01218 1.90151 2.48897 0.553774 4.77232 0.406542C12.48 -0.125756 20.2388 -0.0634659 27.9295 0.185695C28.7417 0.208346 29.5597 0.332927 30.3605 0.474496C34.3138 1.16535 34.4103 5.06699 34.6659 8.35138C34.9215 11.6698 34.8136 15.0051 34.3251 18.3008C33.9332 21.0303 33.1835 23.318 30.0197 23.5389C26.0551 23.8277 22.1814 24.0599 18.2054 23.9862C18.2054 23.9692 18.1827 23.9692 18.1713 23.9692ZM13.9738 17.0607C16.9615 15.3505 19.8924 13.6687 22.863 11.9699C19.8696 10.2597 16.9445 8.57789 13.9738 6.87907V17.0607Z"
+                fill="#171F26" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer footer__mobile">
+  <div class="container-fluid container-fluid--custom-sm">
+    <div class="row footer-content">
+      <div class="footer__getstarted">
+        <div class="rubber-footer">
+          <p class="title-footer quickstart">Get started with GraalVM</p>
+          <p class="footer-desc">Available for Linux, macOS, and Windows platforms</p>
+          <a href="/latest/docs/getting-started/" class="btn btn-primary">Get Started</a>
+        </div>
+      </div>
+      <div class="footer__columns">
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Learn</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item">
+                SDK Javadocs:
+                <a href="https://www.graalvm.org/23.1/javadoc/sdk/" class="javadoc" target="_blank">21</a> or
+                <a href="https://www.graalvm.org/25.4/javadoc/sdk/" class="javadoc" target="_blank">25.4</a>
+              </li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/workshops" target="_blank">Workshops</a></li>
+              <li class="footer-list__item"><a href="https://github.com/graalvm/graalvm-demos" target="_blank">Demos</a></li>
+              <li class="footer-list__item"><a href="https://medium.com/graalvm" target="_blank">Blog</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">Resources</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="https://docs.oracle.com/en/graalvm/index.html" target="_blank">Oracle Help Center</a></li>
+              <li class="footer-list__item"><a href="https://labs.oracle.com/" target="_blank">Oracle Labs</a></li>
+              <li class="footer-list__item"><a href="/graalvm-brand-guidelines/">Brand Guidelines</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer__columns-item">
+          <h6 class="title-footer" onclick="fadeInAndOut(this)">More</h6>
+          <div class="grow">
+            <ul class="footer-list">
+              <li class="footer-list__item"><a href="/release-notes/">Release Notes</a></li>
+              <li class="footer-list__item"><a href="/release-calendar/">Release Calendar</a></li>
+              <li class="footer-list__item"><a href="/community/contributors/">Contributors</a></li>
+              <li class="footer-list__item"><a href="/support/">Support</a></li>
+              <li class="footer-list__item"><a href="/faq/">FAQs</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-sm-12 col-md-12 col-lg-12">
+      <div class="row">
+        <div class="col-sm-12">
+          <p class="copyright">
+            Copyright © 2018, 2026, Oracle and/or its affiliates. All rights reserved. Oracle and Java are
+            registered trademarks. Other names may be trademarks of their respective owners.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  function fadeInAndOut(thz) {
+    var elmt = thz.nextElementSibling;//Get the element that is below the button that
+    //was just clicked
+    if (elmt.clientHeight) {
+      elmt.style.height = 0;
+    } else {
+      var wrapper = elmt.querySelector('ul');
+      elmt.style.height = wrapper.clientHeight + "px";
+    }
+  }
+</script>
+
+    </div>
+    <div class="overlay"></div>
+    <script src='/resources/lib/slick-slider/slick.min.js'></script>
+    <script src='/resources/js/main.js'></script>
+    <script src='/resources/js/download.js'></script>
+    <script src='/resources/js/sidebar.js'></script>
+    <script src='/resources/js/favicon.js'></script>
+  </body>
+</html>
