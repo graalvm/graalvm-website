@@ -633,18 +633,21 @@ native-image --gc=serial HelloWorld
         
       </h3>
 
-<p>In its core, the Serial GC is a simple (non-parallel, non-concurrent) stop and copy GC.
+<p>The Serial GC is a single-threaded collector that pauses all application threads throughout its collections.
 It divides the Java heap into a young and an old generation.
-Each generation consists of a set of equally sized chunks, each a contiguous range of virtual memory.
+The collector allocates and reclaims memory in chunks.
+Most chunks are the same size; large arrays get their own chunks.
 Those chunks are the GC-internal unit for memory allocation and memory reclamation.</p>
 
 <p>The young generation contains recently created objects and is divided into the <em>eden</em> and <em>survivor</em> regions.
 New objects are allocated in the eden region, and when this region is full, a young collection is triggered.
-Objects that are alive in the eden region will be moved to the survivor region, and alive objects in the survivor region stay in that region until they reach a certain age (have survived a certain number of collections), at which time they are moved to the old generation.
-When the old generation becomes full, a full collection is triggered that reclaims the space of unused objects in both the young and old generations.
+Young collections copy objects that are still in use to survivor regions, reclaiming memory in their original region.
+After enough collections, surviving objects enter the old generation.
+The collection policy triggers full collections to reclaim unused objects in both the young and old generations.
+A full collection assigns all chunks of the young generation to the old generation, individually marks those objects that are still in use, and compacts the marked objects in-place.
+In chunks that contain pinned objects, both young and full collections mark surviving objects and sweep the remaining memory, without compaction.
 Typically, a young collection is much faster than a full collection, however doing full collections is important for keeping the memory footprint low.
-By default, the Serial GC tries to find a size for the generations that provides good throughput, but to not increase sizes further when doing so gives diminishing returns.
-It also tries to maintain a ratio between the time spent in young collections and in full collections to keep the footprint small.</p>
+The default <code>Adaptive2</code> policy adjusts generation sizes and promotion age to balance throughput and memory use.</p>
 
 <p>If no maximum Java heap size is specified, a native image that uses the Serial GC will set its maximum Java heap size to 80% of the physical memory size.
 For example, on a machine with 4GB of RAM, the maximum Java heap size will be set to 3.2GB.
@@ -652,12 +655,6 @@ If the same image is executed on a machine that has 32GB of RAM, the maximum Jav
 Note that this is just the maximum value.
 Depending on the application, the amount of actually used Java heap memory can be much lower.
 To override this default behavior, either specify a value for <code>-XX:MaximumHeapSizePercent</code> or explicitly set the maximum <a href="#java-heap-size">Java heap size</a>.</p>
-
-<p>Note that GraalVM releases up to (and including) 21.3 use a different default configuration for the Serial GC with no survivor regions, a young generation that is limited to 256 MB, and a default collection policy that balances the time that is spent in young collections and old collections.
-This configuration can be enabled with: <code>-H:InitialCollectionPolicy=BySpaceAndTime</code></p>
-
-<p>Be mindful that the GC needs some extra memory when performing a garbage collection (2x of the maximum heap size is the worst case, usually, it is significantly less).
-Therefore, the resident set size, RSS, can increase temporarily during a garbage collection which can be an issue in any environment with memory constraints (such as a container).</p>
     
       <h3 id="performance-tuning">
         
@@ -671,9 +668,6 @@ Therefore, the resident set size, RSS, can increase temporarily during a garbage
 <ul>
   <li><code>-XX:MaximumHeapSizePercent</code> - the percentage of the physical memory size that is used as the maximum Java heap size if the maximum Java heap size is not specified otherwise.</li>
   <li><code>-XX:MaximumYoungGenerationSizePercent</code> - the maximum size of the young generation as a percentage of the maximum Java heap size.</li>
-  <li><code>-XX:±CollectYoungGenerationSeparately</code> (since GraalVM 21.0) - determines if a full GC collects the young generation separately or together with the old generation.
-If enabled, this may reduce the memory footprint during full GCs.
-However, full GCs may take more time.</li>
   <li><code>-XX:MaxHeapFree</code> (since GraalVM 21.3) - maximum total size (in bytes) of free memory chunks that remain reserved for allocations after a collection and are therefore not returned to the operating system.</li>
   <li><code>-H:AlignedHeapChunkSize</code> (can only be specified at image build time) - the size of a heap chunk in bytes.</li>
   <li><code>-H:MaxSurvivorSpaces</code> (since GraalVM 21.1, can only be specified at image build time) - the number of survivor spaces that are used for the young generation, that is, the maximum age at which an object will be promoted to the old generation.
@@ -689,15 +683,6 @@ native-image --gc=serial -R:MaximumHeapSizePercent=25 HelloWorld
 # Execute the native image from above but increase the maximum heap size to 75% of the physical memory
 ./helloworld -XX:MaximumHeapSizePercent=75
 </code></pre>
-
-<p>The following options are available with <code>-H:InitialCollectionPolicy=BySpaceAndTime</code> only:</p>
-
-<ul>
-  <li><code>-XX:PercentTimeInIncrementalCollection</code> - determines how much time the GC should spend doing young collections.
-With the default value of 50, the GC tries to balance the time spent on young and full collections.
-Increasing this value will reduce the number of full GCs, which can improve performance but may worsen the memory footprint.
-Decreasing this value will increase the number of full GCs, which can improve the memory footprint but may decrease performance.</li>
-</ul>
     
       <h2 id="g1-garbage-collector">
         
@@ -795,17 +780,17 @@ Further options to the native image builder can be listed using <code>native-ima
 <p>When executing a native image, suitable Java heap settings will be determined automatically based on the system configuration and the used GC.
 To override this automatic mechanism and to explicitly set the heap size at run time, the following command-line options can be used:</p>
 <ul>
-  <li><code>-Xmx</code> - maximum heap size in bytes</li>
-  <li><code>-Xms</code> - minimum heap size in bytes</li>
-  <li><code>-Xmn</code> - the size of the young generation in bytes</li>
+  <li><code>-Xmx</code> - maximum heap size, in bytes</li>
+  <li><code>-Xms</code> - minimum heap size, in bytes</li>
+  <li><code>-Xmn</code> - maximum young-generation size, in bytes</li>
 </ul>
 
 <p>It is also possible to preconfigure default heap settings at image build time.
 The specified values will then be used as the default values at run time:</p>
 <ul>
-  <li><code>-R:MaxHeapSize</code> (since GraalVM 20.0) - maximum heap size in bytes</li>
-  <li><code>-R:MinHeapSize</code> (since GraalVM 20.0) - minimum heap size in bytes</li>
-  <li><code>-R:MaxNewSize</code> (since GraalVM 20.0) - size of the young generation in bytes</li>
+  <li><code>-R:MaxHeapSize</code> (since GraalVM 20.0) - maximum heap size, in bytes</li>
+  <li><code>-R:MinHeapSize</code> (since GraalVM 20.0) - minimum heap size, in bytes</li>
+  <li><code>-R:MaxNewSize</code> (since GraalVM 20.0) - maximum young-generation size, in bytes</li>
 </ul>
 
 <pre><code class="language-shell"># Build a native image with the default heap settings and override the heap settings at run time
