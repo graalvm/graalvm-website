@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -129,7 +129,7 @@ returned.</div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code>default int</code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5"><code><a href="#getBytecodeIndex()" class="member-name-link">getBytecodeIndex</a>()</code></div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab5">
-<div class="block">Returns the resolved bytecode index for this frame instance if the root node returns one.</div>
+<div class="block">Returns the bytecode index of this frame's call site.</div>
 </div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a></code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#getCallNode()" class="member-name-link">getCallNode</a>()</code></div>
@@ -274,7 +274,8 @@ Initial call:       |  CallTarget   |
 <dd>a node representing the callsite of the next new target on the stack. Returns
         <code>null</code> in case there is no upper target or location. The set of possible
         call nodes is restricted to any node that was passed to
-        <a href="../CallTarget.html#call(com.oracle.truffle.api.nodes.Node,java.lang.Object...)"><code>CallTarget.call(Node, Object...)</code></a> or the node set using
+        <a href="../CallTarget.html#call(com.oracle.truffle.api.nodes.Node,java.lang.Object...)"><code>CallTarget.call(Node, Object...)</code></a> or
+        <a href="../CallTarget.html#call(com.oracle.truffle.api.nodes.Node,int,java.lang.Object%5B%5D)"><code>CallTarget.call(Node, int, Object[])</code></a> or the node set using
         <a href="../nodes/EncapsulatingNodeReference.html" title="class in com.oracle.truffle.api.nodes"><code>EncapsulatingNodeReference</code></a> when invoking <a href="../CallTarget.html#call(java.lang.Object...)"><code>CallTarget.call(Object...)</code></a>.
         If a cached variant of <a href="../nodes/DirectCallNode.html" title="class in com.oracle.truffle.api.nodes"><code>DirectCallNode</code></a> or <a href="../nodes/IndirectCallNode.html" title="class in com.oracle.truffle.api.nodes"><code>IndirectCallNode</code></a> was used
         then the call node will be the <a href="../nodes/DirectCallNode.html" title="class in com.oracle.truffle.api.nodes"><code>DirectCallNode</code></a> or <a href="../nodes/IndirectCallNode.html" title="class in com.oracle.truffle.api.nodes"><code>IndirectCallNode</code></a>
@@ -332,11 +333,19 @@ See <a href="#getCallNode()"><code>getCallNode()</code></a> for the relation bet
 <h3>getBytecodeIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">default</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">getBytecodeIndex</span>()</div>
-<div class="block">Returns the resolved bytecode index for this frame instance if the root node returns one.
-This method returns a negative integer for invalid or an unavailable bytecode index. The
-meaning of negative bytecode indices is not specified and should not be relied upon across
-guest language implementations.</div>
+<div class="block">Returns the bytecode index of this frame's call site.
+<p>
+If this frame called the next target on the stack using
+<a href="../CallTarget.html#call(com.oracle.truffle.api.nodes.Node,int,java.lang.Object%5B%5D)"><code>CallTarget.call(Node, int, Object[])</code></a>, and the supplied bytecode index
+was not <code>-1</code>, returns that explicit index. Otherwise, returns the result
+of <a href="../nodes/RootNode.html#findBytecodeIndex(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.frame.Frame)"><code>RootNode.findBytecodeIndex(Node, Frame)</code></a> on the root node associated
+with this frame's <a href="#getCallTarget()"><code>getCallTarget()</code></a>.
+<p>
+Negative values indicate invalid or unavailable indices; their meaning is
+language-specific.</div>
 <dl class="notes">
+<dt>Returns:</dt>
+<dd>the BCI, or a negative value if invalid or unavailable</dd>
 <dt>Since:</dt>
 <dd>24.1</dd>
 <dt>See Also:</dt>

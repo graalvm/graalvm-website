@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -59,6 +59,9 @@ loadScripts(document, 'script');</script>
 <li><a href="#annotation-interface-optional-element-summary" tabindex="0">Optional Element Summary</a></li>
 <li><a href="#annotation-interface-element-detail" tabindex="0">Element Details</a>
 <ol class="toc-list">
+<li><a href="#bindFrame()" tabindex="0">bindFrame</a></li>
+<li><a href="#bindBytecodeNode()" tabindex="0">bindBytecodeNode</a></li>
+<li><a href="#bindBytecodeIndex()" tabindex="0">bindBytecodeIndex</a></li>
 <li><a href="#allowUncached()" tabindex="0">allowUncached</a></li>
 <li><a href="#storeBytecodeIndex()" tabindex="0">storeBytecodeIndex</a></li>
 </ol>
@@ -80,7 +83,19 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Retention.html" title="class or interface in java.lang.annotation" class="external-link">@Retention</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/RetentionPolicy.html#CLASS" title="class or interface in java.lang.annotation" class="external-link">CLASS</a>)
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Target.html" title="class or interface in java.lang.annotation" class="external-link">@Target</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/ElementType.html#TYPE" title="class or interface in java.lang.annotation" class="external-link">TYPE</a>)
 </span><span class="modifiers">public static @interface </span><span class="element-name type-name-label">OperationProxy.Proxyable</span></div>
-<div class="block">Designates a <a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> class as eligible for proxying.</div>
+<div class="block">Designates a <a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes"><code>Node</code></a> class as eligible for proxying.
+<p>
+Execute parameters are ordered as: optional frame when <a href="#bindFrame()"><code>bindFrame()</code></a> is enabled,
+<a href="BytecodeNode.html" title="class in com.oracle.truffle.api.bytecode"><code>BytecodeNode</code></a> when <a href="#bindBytecodeNode()"><code>bindBytecodeNode()</code></a> is enabled, <code>int</code> when
+<a href="#bindBytecodeIndex()"><code>bindBytecodeIndex()</code></a> is enabled, then evaluated arguments. Enabled bytecode node and
+index parameters are required on every execute method and are not specialization operands.
+<p>
+Specializations access metadata through <code>@Bind</code>: this metadata comes from execute
+arguments during AST execution and from current interpreter state during operation
+execution. Without
+<code>bindBytecodeIndex</code>, <code>$bytecodeIndex</code> is <code>-1</code> during AST execution.
+Binding <code>$bytecodeNode</code> during AST execution without enabling
+<code>bindBytecodeNode</code> is a generation error.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>
@@ -104,9 +119,27 @@ loadScripts(document, 'script');</script>
 <div class="block">Whether a proxyable node allows use for uncached.</div>
 </div>
 <div class="col-first odd-row-color"><code>boolean</code></div>
-<div class="col-second odd-row-color"><code><a href="#storeBytecodeIndex()" class="member-name-link">storeBytecodeIndex</a></code></div>
+<div class="col-second odd-row-color"><code><a href="#bindBytecodeIndex()" class="member-name-link">bindBytecodeIndex</a></code></div>
 <div class="col-last odd-row-color">
-<div class="block">Indicates whether this operation requires the bytecode index to be updated.</div>
+<div class="block">Whether each execute method supplies an <code>int</code> metadata parameter for
+<code>@Bind("$bytecodeIndex")</code>.</div>
+</div>
+<div class="col-first even-row-color"><code>boolean</code></div>
+<div class="col-second even-row-color"><code><a href="#bindBytecodeNode()" class="member-name-link">bindBytecodeNode</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Whether each execute method supplies a <a href="BytecodeNode.html" title="class in com.oracle.truffle.api.bytecode"><code>BytecodeNode</code></a> metadata parameter for
+<code>@Bind("$bytecodeNode")</code>.</div>
+</div>
+<div class="col-first odd-row-color"><code>boolean</code></div>
+<div class="col-second odd-row-color"><code><a href="#bindFrame()" class="member-name-link">bindFrame</a></code></div>
+<div class="col-last odd-row-color">
+<div class="block">Whether to recognize an optional leading frame as execution metadata, accessible through
+<code>@Bind("$frame")</code> or a leading specialization parameter.</div>
+</div>
+<div class="col-first even-row-color"><code>boolean</code></div>
+<div class="col-second even-row-color"><code><a href="#storeBytecodeIndex()" class="member-name-link">storeBytecodeIndex</a></code></div>
+<div class="col-last even-row-color">
+<div class="block">Whether to store the BCI before executing this operation.</div>
 </div>
 </div>
 </section>
@@ -120,6 +153,67 @@ loadScripts(document, 'script');</script>
 <section class="member-details">
 <h2>Element Details</h2>
 <ul class="member-list">
+<li>
+<section class="detail" id="bindFrame()">
+<h3>bindFrame</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="return-type">boolean</span>&nbsp;<span class="element-name">bindFrame</span></div>
+<div class="block">Whether to recognize an optional leading frame as execution metadata, accessible through
+<code>@Bind("$frame")</code> or a leading specialization parameter. When disabled, frame
+parameters are evaluated arguments.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>whether to bind the frame; defaults to <code>true</code></dd>
+<dt>Since:</dt>
+<dd>25.6</dd>
+</dl>
+<dl class="notes">
+<dt>Default:</dt>
+<dd><code>true</code></dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="bindBytecodeNode()">
+<h3>bindBytecodeNode</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="return-type">boolean</span>&nbsp;<span class="element-name">bindBytecodeNode</span></div>
+<div class="block">Whether each execute method supplies a <a href="BytecodeNode.html" title="class in com.oracle.truffle.api.bytecode"><code>BytecodeNode</code></a> metadata parameter for
+<code>@Bind("$bytecodeNode")</code>. See <a href="OperationProxy.Proxyable.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>OperationProxy.Proxyable</code></a> for parameter order.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>whether to bind the bytecode node; defaults to <code>false</code></dd>
+<dt>Since:</dt>
+<dd>25.6</dd>
+</dl>
+<dl class="notes">
+<dt>Default:</dt>
+<dd><code>false</code></dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="bindBytecodeIndex()">
+<h3>bindBytecodeIndex</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="return-type">boolean</span>&nbsp;<span class="element-name">bindBytecodeIndex</span></div>
+<div class="block">Whether each execute method supplies an <code>int</code> metadata parameter for
+<code>@Bind("$bytecodeIndex")</code>. See <a href="OperationProxy.Proxyable.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>OperationProxy.Proxyable</code></a> for parameter order.</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>whether to bind the bytecode index; defaults to <code>false</code></dd>
+<dt>Since:</dt>
+<dd>25.6</dd>
+</dl>
+<dl class="notes">
+<dt>Default:</dt>
+<dd><code>false</code></dd>
+</dl>
+</div>
+</section>
+</li>
 <li>
 <section class="detail" id="allowUncached()">
 <h3>allowUncached</h3>
@@ -143,27 +237,15 @@ validations are performed to ensure the node supports uncached.</div>
 <h3>storeBytecodeIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="return-type">boolean</span>&nbsp;<span class="element-name">storeBytecodeIndex</span></div>
-<div class="block">Indicates whether this operation requires the bytecode index to be updated. By default,
-the DSL assumes that all operations with caches require the bytecode index to be updated.
-The DSL will emit a warning if specifying this attribute is necessary.
-<p>
-If this attribute has been set to <code>false</code>, then the <a href="StoreBytecodeIndex.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>StoreBytecodeIndex</code></a>
-annotation can be used to enable this property for individual <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Specialization</code></a> or
-<a href="../dsl/Fallback.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Fallback</code></a>-annotated methods.
-<p>
-This annotation only has an effect if
-<a href="GenerateBytecode.html#storeBytecodeIndexInFrame()"><code>GenerateBytecode.storeBytecodeIndexInFrame()</code></a> is set to <code>true</code> or if
-the <a href="GenerateBytecode.html#enableUncachedInterpreter()"><code>uncached interpreter tier</code></a> is
-enabled.</div>
+<div class="block">Whether to store the BCI before executing this operation. See
+<a href="Operation.html#storeBytecodeIndex()"><code>Operation.storeBytecodeIndex()</code></a> for mode-dependent defaults.
+When <code>false</code>, <a href="StoreBytecodeIndex.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>StoreBytecodeIndex</code></a> enables storage for individual
+<a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Specialization</code></a> or <a href="../dsl/Fallback.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Fallback</code></a> methods.</div>
 <dl class="notes">
+<dt>Returns:</dt>
+<dd>whether to enable operation-level BCI storage</dd>
 <dt>Since:</dt>
 <dd>25.1</dd>
-<dt>See Also:</dt>
-<dd>
-<ul class="tag-list">
-<li><a href="StoreBytecodeIndex.html" title="annotation interface in com.oracle.truffle.api.bytecode"><code>StoreBytecodeIndex</code></a></li>
-</ul>
-</dd>
 </dl>
 <dl class="notes">
 <dt>Default:</dt>

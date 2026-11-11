@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -65,6 +65,7 @@ loadScripts(document, 'script');</script>
 <li><a href="#getDouble(com.oracle.truffle.api.object.DynamicObject)" tabindex="0">getDouble(DynamicObject)</a></li>
 <li><a href="#getKey()" tabindex="0">getKey()</a></li>
 <li><a href="#getFlags()" tabindex="0">getFlags()</a></li>
+<li><a href="#getShape()" tabindex="0">getShape()</a></li>
 </ol>
 </li>
 </ol>
@@ -93,7 +94,7 @@ used where the object is already known to have the supported shape.</div>
 <dd>
 <ul class="tag-list-long">
 <li><a href="Shape.html#makePropertyGetter(java.lang.Object)"><code>Shape.makePropertyGetter(Object)</code></a></li>
-<li><a href="DynamicObjectLibrary.html" title="class in com.oracle.truffle.api.object"><code>DynamicObjectLibrary</code></a></li>
+<li><a href="DynamicObject.html" title="class in com.oracle.truffle.api.object"><code>DynamicObject</code></a></li>
 </ul>
 </dd>
 </dl>
@@ -151,6 +152,11 @@ object to get the property's value.</div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Gets the property's value from the given receiver object if the object has the supported
 <a href="Shape.html" title="class in com.oracle.truffle.api.object"><code>Shape</code></a>.</div>
+</div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="Shape.html" title="class in com.oracle.truffle.api.object">Shape</a></code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getShape()" class="member-name-link">getShape</a>()</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Returns the shape this property getter was created with.</div>
 </div>
 </div>
 </div>
@@ -337,6 +343,44 @@ if the value is of a different type. If the object's shape is not supported, thr
 <dd>
 <ul class="tag-list">
 <li><a href="Property.html#getFlags()"><code>Property.getFlags()</code></a></li>
+</ul>
+</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="getShape()">
+<h3>getShape</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type"><a href="Shape.html" title="class in com.oracle.truffle.api.object">Shape</a></span>&nbsp;<span class="element-name">getShape</span>()</div>
+<div class="block">Returns the shape this property getter was created with. Only objects of this exact shape are
+<a href="#accepts(com.oracle.truffle.api.object.DynamicObject)">accepted</a> by this property getter.
+<p>
+This allows the property getter's shape to be used in a specialization without occupying
+another cached field, for example, to perform its own shape-based guards:
+
+<div class="snippet-container"><button class="copy snippet-copy" aria-label="Copy snippet" onclick="copySnippet(this)"><span data-copied="Copied!">Copy</span><img src="../../../../../resource-files/copy.svg" alt="Copy snippet"></button>
+<pre class="snippet" id="snippet-getShape()1"><code class="language-java">@Specialization(guards = {"getter != null",
+                "getter.accepts(receiver)",
+                "!hasDict(getter.getShape())"}, limit = "3")
+static Object doGet(Object key, DynamicObject receiver,
+                @Cached("receiver.getShape().makePropertyGetter(key)") PropertyGetter getter) {
+    return getter.get(receiver);
+}
+</code></pre>
+</div>
+</div>
+<dl class="notes">
+<dt>Returns:</dt>
+<dd>the accepted shape</dd>
+<dt>Since:</dt>
+<dd>25.5</dd>
+<dt>See Also:</dt>
+<dd>
+<ul class="tag-list-long">
+<li><a href="#accepts(com.oracle.truffle.api.object.DynamicObject)"><code>accepts(DynamicObject)</code></a></li>
+<li><a href="Shape.html#makePropertyGetter(java.lang.Object)"><code>Shape.makePropertyGetter(Object)</code></a></li>
 </ul>
 </dd>
 </dl>

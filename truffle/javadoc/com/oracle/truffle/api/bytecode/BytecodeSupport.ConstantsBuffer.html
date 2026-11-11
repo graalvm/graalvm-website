@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -102,6 +102,10 @@ After the client has finished emitting a method it must call <a href="#materiali
 an immutable snapshot of the constant pool for that method. The buffer can then be filled
 again without further allocations. Call <a href="#clear()"><code>clear()</code></a> at the end of using this buffer if
 you want to release the object references or down-size the backing arrays.
+
+Constants are deduplicated by <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>Object.equals(Object)</code></a>. <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Float.html" title="class or interface in java.lang" class="external-link"><code>Float</code></a> and
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a> are the exception: they are compared by their raw bits, so distinct NaN
+payloads stay distinct. <code>+0.0</code> and <code>-0.0</code> stay distinct as well.
 
 <strong>Not thread-safe.</strong>
 
@@ -200,7 +204,8 @@ Intended for use in generated code. Do not use directly.</div>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">add</span><wbr><span class="parameters">(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html" title="class or interface in java.lang" class="external-link">Object</a>&nbsp;c)</span></div>
 <div class="block">Inserts <code>constant</code> (non-<code>null</code>) and returns its pool index. If an equal
-constant is already present, its existing index is returned.</div>
+constant is already present, its existing index is returned. <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Float.html" title="class or interface in java.lang" class="external-link"><code>Float</code></a> and
+<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a> constants compare by raw bits rather than <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html#equals(java.lang.Object)" title="class or interface in java.lang" class="external-link"><code>Object.equals(Object)</code></a>.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if <code>constant</code> is <code>null</code></dd>

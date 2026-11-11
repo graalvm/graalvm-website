@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -69,6 +69,8 @@ loadScripts(document, 'script');</script>
 <li><a href="#getBytecodeLocation(com.oracle.truffle.api.frame.FrameInstance)" tabindex="0">getBytecodeLocation(FrameInstance)</a></li>
 <li><a href="#getBytecodeLocation(int)" tabindex="0">getBytecodeLocation(int)</a></li>
 <li><a href="#getBytecodeIndex(com.oracle.truffle.api.frame.Frame)" tabindex="0">getBytecodeIndex(Frame)</a></li>
+<li><a href="#setBytecodeIndex(com.oracle.truffle.api.frame.Frame,int)" tabindex="0">setBytecodeIndex(Frame, int)</a></li>
+<li><a href="#setBytecodeIndex(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.frame.Frame,int)" tabindex="0">setBytecodeIndex(Node, Frame, int)</a></li>
 <li><a href="#getSourceLocation(com.oracle.truffle.api.frame.Frame,com.oracle.truffle.api.nodes.Node)" tabindex="0">getSourceLocation(Frame, Node)</a></li>
 <li><a href="#getSourceLocations(com.oracle.truffle.api.frame.Frame,com.oracle.truffle.api.nodes.Node)" tabindex="0">getSourceLocations(Frame, Node)</a></li>
 <li><a href="#getSourceLocation(int)" tabindex="0">getSourceLocation(int)</a></li>
@@ -352,7 +354,7 @@ using the stack trace location.</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>int</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getBytecodeIndex(com.oracle.truffle.api.frame.Frame)" class="member-name-link">getBytecodeIndex</a><wbr>(<a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame)</code></div>
 <div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
-<div class="block">Reads and returns the bytecode index from the <code>frame</code>.</div>
+<div class="block">Returns the BCI stored in the frame.</div>
 </div>
 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>final <a href="BytecodeLocation.html" title="class in com.oracle.truffle.api.bytecode">BytecodeLocation</a></code></div>
 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#getBytecodeLocation(int)" class="member-name-link">getBytecodeLocation</a><wbr>(int&nbsp;bytecodeIndex)</code></div>
@@ -603,6 +605,19 @@ otherwise <code>false</code>.</div>
 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
 <div class="block">Internal method to be overridden by generated code.</div>
 </div>
+<div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code>void</code></div>
+<div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4"><code><a href="#setBytecodeIndex(com.oracle.truffle.api.frame.Frame,int)" class="member-name-link">setBytecodeIndex</a><wbr>(<a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame,
+ int&nbsp;bytecodeIndex)</code></div>
+<div class="col-last odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab4">
+<div class="block">Stores a bytecode index in the <code>frame</code>.</div>
+</div>
+<div class="col-first even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code>static void</code></div>
+<div class="col-second even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4"><code><a href="#setBytecodeIndex(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.frame.Frame,int)" class="member-name-link">setBytecodeIndex</a><wbr>(<a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;location,
+ <a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame,
+ int&nbsp;bytecodeIndex)</code></div>
+<div class="col-last even-row-color method-summary-table method-summary-table-tab1 method-summary-table-tab4">
+<div class="block">Looks up the current bytecode node from <code>location</code> and stores a bytecode index.</div>
+</div>
 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code>abstract void</code></div>
 <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method-summary-table-tab3"><code><a href="#setLocalValue(int,com.oracle.truffle.api.frame.Frame,int,java.lang.Object)" class="member-name-link">setLocalValue</a><wbr>(int&nbsp;bytecodeIndex,
  <a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame,
@@ -770,8 +785,8 @@ stack walk.</div>
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>the bytecode location, or null if the frame instance does not originate from a
-        Bytecode DSL root node.</dd>
+<dd>the bytecode location, or <code>null</code> if the frame belongs to another bytecode node
+        or its BCI is unavailable</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 </dl>
@@ -804,17 +819,79 @@ calling <a href="#getBytecodeIndex(com.oracle.truffle.api.frame.Frame)"><code>ge
 <h3>getBytecodeIndex</h3>
 <div class="horizontal-scroll">
 <div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">getBytecodeIndex</span><wbr><span class="parameters">(<a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame)</span></div>
-<div class="block">Reads and returns the bytecode index from the <code>frame</code>. This method should only be
-called if the interpreter is configured to <a href="GenerateBytecode.html#storeBytecodeIndexInFrame()"><code>store the bytecode index in the frame</code></a>; be sure to read the documentation before using this
-feature.</div>
+<div class="block">Returns the BCI stored in the frame. Supported when
+<a href="GenerateBytecode.html#bytecodeIndexMode()"><code>GenerateBytecode.bytecodeIndexMode()</code></a> is <a href="BytecodeIndexMode.html#FRAME"><code>BytecodeIndexMode.FRAME</code></a> or
+<a href="BytecodeIndexMode.html#MANUAL"><code>BytecodeIndexMode.MANUAL</code></a>. In <code>MANUAL</code> mode, the value before the first store is
+unspecified.</div>
 <dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>frame</code> - the current frame</dd>
 <dt>Returns:</dt>
-<dd>the bytecode index stored in the frame</dd>
+<dd>the stored BCI, or <code>-1</code> if explicitly cleared</dd>
 <dt>Throws:</dt>
-<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if the interpreter does not always store the bytecode
-            index in the frame. See <a href="GenerateBytecode.html#storeBytecodeIndexInFrame()"><code>GenerateBytecode.storeBytecodeIndexInFrame()</code></a></dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if the configured bytecode index mode does not support
+            frame access</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="setBytecodeIndex(com.oracle.truffle.api.frame.Frame,int)">
+<h3>setBytecodeIndex</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setBytecodeIndex</span><wbr><span class="parameters">(<a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame,
+ int&nbsp;bytecodeIndex)</span></div>
+<div class="block">Stores a bytecode index in the <code>frame</code>. This method is supported when
+<a href="GenerateBytecode.html#bytecodeIndexMode()"><code>GenerateBytecode.bytecodeIndexMode()</code></a> is <a href="BytecodeIndexMode.html#FRAME"><code>BytecodeIndexMode.FRAME</code></a> or
+<a href="BytecodeIndexMode.html#MANUAL"><code>BytecodeIndexMode.MANUAL</code></a>. In <a href="BytecodeIndexMode.html#FRAME"><code>BytecodeIndexMode.FRAME</code></a> mode, a subsequent
+automatic update may replace the manually stored value. In <a href="BytecodeIndexMode.html#MANUAL"><code>BytecodeIndexMode.MANUAL</code></a>
+mode, resuming a continuation replaces the stored value with the resume bytecode index.
+<p>
+Use at foreign-call boundaries; ordinary operations should bind <code>$bytecodeIndex</code> and
+pass it explicitly.</div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>frame</code> - the current frame</dd>
+<dd><code>bytecodeIndex</code> - the bytecode index to store, or <code>-1</code> to clear the manual value</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if the configured bytecode index mode does not support
+            frame access</dd>
+<dt>Since:</dt>
+<dd>25.6</dd>
+</dl>
+</div>
+</section>
+</li>
+<li>
+<section class="detail" id="setBytecodeIndex(com.oracle.truffle.api.nodes.Node,com.oracle.truffle.api.frame.Frame,int)">
+<h3>setBytecodeIndex</h3>
+<div class="horizontal-scroll">
+<div class="member-signature"><span class="modifiers">public static</span>&nbsp;<span class="return-type">void</span>&nbsp;<span class="element-name">setBytecodeIndex</span><wbr><span class="parameters">(<a href="../nodes/Node.html" title="class in com.oracle.truffle.api.nodes">Node</a>&nbsp;location,
+ <a href="../frame/Frame.html" title="interface in com.oracle.truffle.api.frame">Frame</a>&nbsp;frame,
+ int&nbsp;bytecodeIndex)</span></div>
+<div class="block">Looks up the current bytecode node from <code>location</code> and stores a bytecode index.
+Prefer <a href="#setBytecodeIndex(com.oracle.truffle.api.frame.Frame,int)"><code>setBytecodeIndex(Frame, int)</code></a> when the bytecode node is already available,
+for example through <code>@Bind BytecodeNode bytecodeNode</code>.
+<p>
+Cached execution must provide a location, typically <code>this</code>. During uncached execution,
+null or non-adoptable locations use the current encapsulating node, which contains the
+bytecode node.
+
+<pre><code>BytecodeNode.setBytecodeIndex(this, frame, bytecodeIndex);
+</code></pre></div>
+<dl class="notes">
+<dt>Parameters:</dt>
+<dd><code>location</code> - the current node location, which must be a partial evaluation constant,
+           or null for uncached execution</dd>
+<dd><code>frame</code> - the frame belonging to the resolved bytecode node</dd>
+<dd><code>bytecodeIndex</code> - the index to store, or <code>-1</code> to clear it</dd>
+<dt>Throws:</dt>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/NullPointerException.html" title="class or interface in java.lang" class="external-link">NullPointerException</a></code> - if no bytecode node can be resolved</dd>
+<dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/UnsupportedOperationException.html" title="class or interface in java.lang" class="external-link">UnsupportedOperationException</a></code> - if the bytecode index mode does not support frame access</dd>
+<dt>Since:</dt>
+<dd>25.6</dd>
 </dl>
 </div>
 </section>
@@ -920,7 +997,8 @@ sections can be materialized by calling <a href="#ensureSourceInformation()"><co
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>the source location, or null if a location could not be found</dd>
+<dd>the source location, or null if the frame instance does not originate from this
+        bytecode node or a location could not be found</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 </dl>
@@ -940,7 +1018,8 @@ sections can be materialized by calling <a href="#ensureSourceInformation()"><co
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>the source locations, or null if they could not be found</dd>
+<dd>the source locations, or null if the frame instance does not originate from this
+        bytecode node or locations could not be found</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 </dl>
@@ -2128,8 +2207,8 @@ given bytecode location.</div>
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>a new array of local values, or null if the frame instance does not correspond to a
-        <a href="BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>BytecodeRootNode</code></a></dd>
+<dd>a new array of local values, or <code>null</code> if the frame instance does not correspond
+        to a <a href="BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>BytecodeRootNode</code></a> or its bytecode index cannot be determined</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 <dt>See Also:</dt>
@@ -2154,8 +2233,8 @@ given bytecode location.</div>
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>a new array of names, or null if the frame instance does not correspond to a
-        <a href="BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>BytecodeRootNode</code></a></dd>
+<dd>a new array of names, or <code>null</code> if the frame instance does not correspond to a
+        <a href="BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>BytecodeRootNode</code></a> or its bytecode index cannot be determined</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 <dt>See Also:</dt>
@@ -2181,7 +2260,8 @@ given bytecode location.</div>
 <dt>Parameters:</dt>
 <dd><code>frameInstance</code> - the frame instance</dd>
 <dt>Returns:</dt>
-<dd>whether the locals could be set with the information available in the frame instance</dd>
+<dd>whether the locals could be set; <code>false</code> if the frame instance does not
+        correspond to a <a href="BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>BytecodeRootNode</code></a> or its bytecode index cannot be determined</dd>
 <dt>Since:</dt>
 <dd>24.2</dd>
 <dt>See Also:</dt>

@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.5.5-dev</b><br>8830171ab3677c3e0e21dbd1e81e2571f2a8d50a</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>82573e4a1f083cd437c412f78021575bb24d6cb5</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -68,41 +68,12 @@ loadScripts(document, 'script');</script>
 <div class="type-signature"><span class="annotations"><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Retention.html" title="class or interface in java.lang.annotation" class="external-link">@Retention</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/RetentionPolicy.html#SOURCE" title="class or interface in java.lang.annotation" class="external-link">SOURCE</a>)
 <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/Target.html" title="class or interface in java.lang.annotation" class="external-link">@Target</a>(<a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/annotation/ElementType.html#METHOD" title="class or interface in java.lang.annotation" class="external-link">METHOD</a>)
 </span><span class="modifiers">public @interface </span><span class="element-name type-name-label">StoreBytecodeIndex</span></div>
-<div class="block">Can be applied to <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Specialization</code></a>- or <a href="../dsl/Fallback.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Fallback</code></a>-annotated methods to specify
-whether they require a bytecode index update in the frame. This allows the DSL to update the
-bytecode index only for a given specialization instead of the entire operation. In practice, this
-means that the bytecode index is updated just before the specialization is executed.
+<div class="block">Stores the BCI in the frame before an annotated <a href="../dsl/Specialization.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Specialization</code></a> or <a href="../dsl/Fallback.html" title="annotation interface in com.oracle.truffle.api.dsl"><code>Fallback</code></a>
+executes. Requires <a href="Operation.html#storeBytecodeIndex()"><code>Operation.storeBytecodeIndex()</code></a> to be <code>false</code>, the default in
+<a href="BytecodeIndexMode.html#MANUAL"><code>BytecodeIndexMode.MANUAL</code></a> mode.
 <p>
-This annotation only has an effect if <a href="GenerateBytecode.html#storeBytecodeIndexInFrame()"><code>GenerateBytecode.storeBytecodeIndexInFrame()</code></a> is set
-to <code>true</code> or if the <a href="GenerateBytecode.html#enableUncachedInterpreter()"><code>uncached
-interpreter tier</code></a> is enabled and the parent operation has <a href="Operation.html#storeBytecodeIndex()"><code>Operation.storeBytecodeIndex()</code></a>
-set to <code>false</code>.
-<p>
-Usage example:
-
-<pre>
-// Disable bytecode index updates at the operation level
-&#64;Operation(storeBytecodeIndex = false)
-static final class Abs {
-
-    &#64;Specialization(guards = "v &gt;= 0")
-    public static long doGreaterZero(long v) {
-        return v;
-    }
-
-    &#64;Specialization(guards = "v &lt; 0")
-    public static long doLessThanZero(long v) {
-        return -v;
-    }
-
-    // Update the bytecode index only for this specialization
-    &#64;Specialization
-    &#64;StoreBytecodeIndex
-    public static long doCallAbs(DynamicObject v) {
-        // ... guest language call ...
-    }
-}
-</pre></div>
+Applies in <a href="BytecodeIndexMode.html#FRAME"><code>BytecodeIndexMode.FRAME</code></a>, <code>MANUAL</code>, and uncached
+<a href="BytecodeIndexMode.html#CACHED_NODE"><code>BytecodeIndexMode.CACHED_NODE</code></a> execution.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>25.1</dd>
