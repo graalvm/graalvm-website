@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../search.html">Search</a></li>
 <li><a href="../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>44c9493cf316c5368160ad9cb9191ff79bd7cdca</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>958e1030f6ebd3337c2f613794de4aaa24a731a7</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -486,18 +486,26 @@ When serialization is enabled, the Bytecode DSL generates code to convert byteco
 and from a serialized byte array representation. The code effectively serializes the node's
 execution data (bytecode, constants, etc.) and all of its non-transient fields.
 <p>
-The serialization logic is defined in static <code>serialize</code> and <code>deserialize</code>
-methods of the generated root class. The generated <a href="BytecodeRootNodes.html" title="class in com.oracle.truffle.api.bytecode"><code>BytecodeRootNodes</code></a> class also
-overrides <a href="BytecodeRootNodes.html#serialize(java.io.DataOutput,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer)"><code>BytecodeRootNodes.serialize(DataOutput, BytecodeSerializer)</code></a>.
+The serialization logic is available through
+<a href="BytecodeDescriptor.html#serializeBuilderBytecode(java.io.DataOutput,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>BytecodeDescriptor.serializeBuilderBytecode(DataOutput, BytecodeSerializer, BytecodeParser)</code></a>,
+<a href="BytecodeDescriptor.html#serializeExecutionBytecode(L,java.io.DataOutput,com.oracle.truffle.api.bytecode.BytecodeConfig,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>BytecodeDescriptor.serializeExecutionBytecode(L, DataOutput, BytecodeConfig, BytecodeSerializer, BytecodeParser)</code></a>,
+<a href="BytecodeDescriptor.html#deserializeBuilderBytecode(L,com.oracle.truffle.api.bytecode.BytecodeConfig,java.util.function.Supplier,com.oracle.truffle.api.bytecode.serialization.BytecodeDeserializer)"><code>BytecodeDescriptor.deserializeBuilderBytecode(L, BytecodeConfig, Supplier, BytecodeDeserializer)</code></a>, and
+<a href="BytecodeDescriptor.html#deserializeExecutionBytecode(L,com.oracle.truffle.api.bytecode.BytecodeConfig,java.util.function.Supplier,java.util.function.Function,com.oracle.truffle.api.bytecode.serialization.BytecodeDeserializer)"><code>BytecodeDescriptor.deserializeExecutionBytecode(L, BytecodeConfig, Supplier, Function, BytecodeDeserializer)</code></a>. Equivalent static methods are also
+generated on the root class. The generated <a href="BytecodeRootNodes.html" title="class in com.oracle.truffle.api.bytecode"><code>BytecodeRootNodes</code></a> class overrides
+<a href="BytecodeRootNodes.html#serializeBuilderBytecode(java.io.DataOutput,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer)"><code>BytecodeRootNodes.serializeBuilderBytecode(DataOutput, BytecodeSerializer)</code></a> and
+<a href="BytecodeRootNodes.html#serializeExecutionBytecode(java.io.DataOutput,com.oracle.truffle.api.bytecode.BytecodeConfig,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer)"><code>BytecodeRootNodes.serializeExecutionBytecode(DataOutput, BytecodeConfig, BytecodeSerializer)</code></a>.
 <p>
-This feature can be used to avoid the overhead of parsing source code on start up. Note that
-serialization still incurs some overhead, as it does not trivially copy bytecode directly: in
-order to validate the bytecode (balanced stack pointers, valid branches, etc.), serialization
-encodes builder method calls and deserialization replays those calls.
+This feature can be used to avoid the overhead of parsing source code on start up. Builder
+bytecode encodes builder method calls, which are replayed and validated during deserialization
+(balanced stack pointers, valid branches, etc.). When the serialized bytes are trusted,
+execution bytecode can be loaded directly to avoid builder replay for a particular
+configuration.
 <p>
-Note that the generated <code>deserialize</code> method takes a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/function/Supplier.html" title="class or interface in java.util.function" class="external-link"><code>Supplier<DataInput></code></a> rather than a <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/DataInput.html" title="class or interface in java.io" class="external-link"><code>DataInput</code></a> directly. The supplier should
-produce a fresh <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/DataInput.html" title="class or interface in java.io" class="external-link"><code>DataInput</code></a> each time because the input may be processed
-multiple times (due to <a href="BytecodeRootNodes.html#update(com.oracle.truffle.api.bytecode.BytecodeConfig)"><code>reparsing</code></a>).</div>
+The deserialization methods take <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/function/Supplier.html" title="class or interface in java.util.function" class="external-link"><code>Supplier</code></a>s of <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/DataInput.html" title="class or interface in java.io" class="external-link"><code>DataInput</code></a> rather than inputs
+directly. The builder bytecode supplier should produce a fresh <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/DataInput.html" title="class or interface in java.io" class="external-link"><code>DataInput</code></a> each time
+because the input may be processed multiple times (due to
+<a href="BytecodeRootNodes.html#update(com.oracle.truffle.api.bytecode.BytecodeConfig)"><code>reparsing</code></a>). The execution bytecode supplier
+is invoked at most once during initial deserialization.</div>
 <dl class="notes">
 <dt>Since:</dt>
 <dd>24.2</dd>

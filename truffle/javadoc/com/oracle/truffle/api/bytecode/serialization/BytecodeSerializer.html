@@ -35,7 +35,7 @@ loadScripts(document, 'script');</script>
 <li><a href="../../../../../../search.html">Search</a></li>
 <li><a href="../../../../../../help-doc.html#class">Help</a></li>
 </ul>
-<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>44c9493cf316c5368160ad9cb9191ff79bd7cdca</div>
+<div class="about-language"><b>GraalVM Truffle Java API Reference<br>25.6.0-dev</b><br>958e1030f6ebd3337c2f613794de4aaa24a731a7</div>
 </div>
 </div>
 <div class="sub-nav">
@@ -106,8 +106,8 @@ A serializer is responsible for encoding:
 or constant operands, except primitive ones that are
 <a href="../GenerateBytecode.html#inlinePrimitiveConstants()"><code>inlined</code></a>)</li>
 <li>objects stored in non-<code>transient</code> fields of the root node</li>
-<li><a href="../../source/Source.html" title="class in com.oracle.truffle.api.source"><code>Source</code></a> objects passed in builder calls (i.e., sources
-passed to <code>beginSource</code>)</li>
+<li><a href="../../source/Source.html" title="class in com.oracle.truffle.api.source"><code>Source</code></a> objects passed in builder calls (i.e., sources passed to
+<code>beginSource</code>)</li>
 </ul></div>
 <dl class="notes">
 <dt>Since:</dt>
@@ -186,8 +186,31 @@ buffer.</div>
 <p>
 The <code>context</code> is supplied so that a <a href="BytecodeSerializer.html" title="interface in com.oracle.truffle.api.bytecode.serialization"><code>BytecodeSerializer</code></a> can transitively
 serialize other <a href="../BytecodeRootNode.html" title="interface in com.oracle.truffle.api.bytecode"><code>root nodes</code></a> (e.g., inner functions) if necessary.
+Root nodes may not be fully initialized, so this method must not execute these roots or
+request call targets/metadata updates.
 <p>
-Must not be dependent on any side-effects of the language.</div>
+The serializer should not rely on side-effects of the language.
+<p>
+The serializer should not try to deduplicate constants. The Bytecode DSL avoids serializing
+the same constant multiple times within a single serialization operation, using object
+equality to deduplicate constants (except for <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Float.html" title="class or interface in java.lang" class="external-link"><code>Float</code></a> and <a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Double.html" title="class or interface in java.lang" class="external-link"><code>Double</code></a>, which use
+raw bits to preserve distinct NaN payloads). However, the same serializer could be used for
+both <a href="../BytecodeDescriptor.html#serializeBuilderBytecode(java.io.DataOutput,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>builder bytecode</code></a> and
+<a href="../BytecodeDescriptor.html#serializeExecutionBytecode(L,java.io.DataOutput,com.oracle.truffle.api.bytecode.BytecodeConfig,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>execution bytecode</code></a>, and both payloads
+must be independently decodable.
+<p>
+<strong>Object identity</strong>: When object identity matters, the above constraint means
+that the serializer and deserializer must cooperate to return the same object for repeated
+decodings. A simple way to achieve this is by caching objects by a language-assigned ID and
+encoding the ID with the description: on deserialization, the first occurrence of the ID can
+construct the object and subsequent occurrences can reuse the cached value.
+<p>
+Reparsing also affects identity: a reparse should not construct a new object if its identity
+is important. Reparses use the same deserializer object, so if a caching scheme is used,
+reparsing should automatically reuse existing objects. If a language serializes both
+<a href="../BytecodeDescriptor.html#serializeBuilderBytecode(java.io.DataOutput,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>builder bytecode</code></a> and
+<a href="../BytecodeDescriptor.html#serializeExecutionBytecode(L,java.io.DataOutput,com.oracle.truffle.api.bytecode.BytecodeConfig,com.oracle.truffle.api.bytecode.serialization.BytecodeSerializer,com.oracle.truffle.api.bytecode.BytecodeParser)"><code>execution bytecode</code></a> it should be careful
+to reuse the same serializer instance to ensure cache IDs are consistent.</div>
 <dl class="notes">
 <dt>Throws:</dt>
 <dd><code><a href="https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/io/IOException.html" title="class or interface in java.io" class="external-link">IOException</a></code></dd>
